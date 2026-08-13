@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "2026-001",
+  "numero": 1,
+  "anio": 2026,
+  "titulo": "Adquisición de cartuchos de tinta para impresoras de la División",
+  "solicitante": {
+    "nombre": "María",
+    "apellido": "González",
+    "email": "maria.gonzalez@faa.mil.ar",
+    "sector": "usuario"
+  },
+  "catalogoVersion": "2026-08-01",
+  "renglones": [
+    {
+      "codigo": "102030",
+      "cantidad": 10,
+      "unidad": "UN",
+      "aclaracion": ""
+    },
+    {
+      "codigo": "203040",
+      "cantidad": 5,
+      "unidad": "UN",
+      "aclaracion": "Reemplaza al código 203041, no disponible en el catálogo vigente"
+    }
+  ],
+  "estado": {
+    "id": "ESPECIFICACIONES_TECNICAS",
+    "fase": 1,
+    "desde": "2026-08-01T10:15:00-03:00"
+  },
+  "fechaLimite": "2026-09-01",
+  "version": 2,
+  "actualizado": "2026-08-05T14:30:00-03:00",
+  "historico": [
+    {
+      "accion": "creacion",
+      "desde": null,
+      "hacia": "ESPECIFICACIONES_TECNICAS",
+      "quien": "maria.gonzalez@faa.mil.ar",
+      "rol": "generador",
+      "cuando": "2026-08-01T10:15:00-03:00"
+    }
+  ],
+  "auditoria": [
+    {
+      "hash": "7b1e...a4c2",
+      "hashPrevio": null,
+      "quien": "maria.gonzalez@faa.mil.ar",
+      "rol": "generador",
+      "accion": "crearExpediente",
+      "origen": {
+        "ip": "192.168.1.10",
+        "equipo": "PC-USU-01"
+      },
+      "cuando": "2026-08-01T10:15:00-03:00"
+    }
+  ]
+}

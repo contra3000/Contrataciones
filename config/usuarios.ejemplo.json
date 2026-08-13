@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0.0",
+  "usuarios": [
+    {
+      "nombre": "María",
+      "apellido": "González",
+      "email": "maria.gonzalez@faa.mil.ar",
+      "roles": ["generador"],
+      "sector": "usuario",
+      "activo": true
+    },
+    {
+      "nombre": "Juan",
+      "apellido": "Pérez",
+      "email": "juan.perez@faa.mil.ar",
+      "roles": ["gestor_abastecimiento"],
+      "sector": "abastecimiento",
+      "activo": true
+    },
+    {
+      "nombre": "Laura",
+      "apellido": "Fernández",
+      "email": "laura.fernandez@faa.mil.ar",
+      "roles": ["supervisor_abastecimiento"],
+      "sector": "abastecimiento",
+      "activo": true
+    },
+    {
+      "nombre": "Carlos",
+      "apellido": "Ramírez",
+      "email": "carlos.ramirez@faa.mil.ar",
+      "roles": ["gestor_contrataciones", "supervisor_contrataciones"],
+      "sector": "contrataciones",
+      "activo": true
+    },
+    {
+      "nombre": "Ana",
+      "apellido": "Torres",
+      "email": "ana.torres@faa.mil.ar",
+      "roles": ["asesoria_juridica"],
+      "sector": "juridica",
+      "activo": true
+    },
+    {
+      "nombre": "Luis",
+      "apellido": "Díaz",
+      "email": "luis.diaz@faa.mil.ar",
+      "roles": ["contaduria"],
+      "sector": "contaduria",
+      "activo": true
+    },
+    {
+      "nombre": "Sofía",
+      "apellido": "López",
+      "email": "sofia.lopez@faa.mil.ar",
+      "roles": ["generador"],
+      "sector": "usuario",
+      "activo": false
+    }
+  ]
+}
