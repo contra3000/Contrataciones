@@ -1,0 +1,11 @@
+node_modules/
+datos-prueba/
+app/catalogo/
+*.log
+Thumbs.db
+.DS_Store
+
+# El catalogo crudo (40 MB) no va al repositorio.
+# Vive en AppOptimizar\DataBaseITEMs\catalogo_incisos.json
+DataBaseITEMs/
+catalogo_incisos.json

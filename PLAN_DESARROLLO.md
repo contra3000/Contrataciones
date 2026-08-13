@@ -1,0 +1,301 @@
+# PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
+
+División Contrataciones Moreno · VII Brigada Aérea
+Última actualización: **2026-08-13** (ronda 4: ADR-011 a ADR-018 incorporadas; H0 cerrado salvo lo elevado a Informática)
+Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
+
+> **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
+
+---
+
+## 0. Estado general
+
+| Hito | Nombre | Estado | Depende de |
+|------|--------|--------|-----------|
+| H0 | Relevamiento de entorno | 🟡 **Casi cerrado** — sólo resta lo elevado a Informática (servidor, red, antivirus) | — |
+| H1 | Fundaciones del repositorio | ⬜ Pendiente | — |
+| H2 | Núcleo de dominio (sin UI) | ⬜ Pendiente | H1 |
+| H3 | Persistencia + servidor local | ⬜ Pendiente | H1, H2 |
+| H4 | Catálogo de ítems y autocompletado | ⬜ Pendiente | H1 |
+| H5 | Vertical Fase 1 — Wizard del Usuario | ⬜ Pendiente | H2, H3, H4 |
+| H6 | Tablero Kanban, roles y transiciones | ⬜ Pendiente | H5 |
+| H7 | Entregables y exportación AI-ready | ⬜ Pendiente | H5 |
+| H8 | KPIs, SLAs y Archivo Histórico | ⬜ Pendiente | H6 |
+| H9 | **Testing integral en local (UAT)** | ⬜ Pendiente | H6, H7 |
+| H10 | Despliegue a intranet y piloto | ⬜ Pendiente | H0, H9 |
+
+> ### ⚠️ Tarea fuera de secuencia — en curso
+> **Rescate del scraper del catálogo** (ADR-018). Al 2026-08-13 se recuperó **sólo un fragmento**: el bloque `page.evaluate()` de un script Puppeteer/Playwright, ya versionado en `Contrataciones/tools/scraper-catalogo/`. **Falta** la URL de origen, el arranque del navegador, el bucle de paginación y la escritura de salida. Ver el README de esa carpeta.
+
+**Principio rector del orden:** H5 es el primer punto donde el sistema produce valor real (resuelve el *garbage in* del FSD §1). Todo lo anterior existe para sostenerlo. Si hubiera que cortar alcance, se corta desde H8 hacia atrás, nunca desde H2.
+
+---
+
+## H0 — Relevamiento de entorno
+
+**Objetivo:** eliminar las incógnitas de infraestructura que condicionan el despliegue. **No bloquea H1–H9**, gracias al adaptador de persistencia (ADR-002), pero **sí bloquea H10**.
+
+- [ ] H0-1 · Identificar qué servidor sirve `septibri.faa.mil.ar` (IIS / Apache / nginx) y su versión — *elevado a Informática*
+- [ ] H0-2 · Confirmar si hay motor server-side disponible (ASP.NET, PHP) o si es solo estáticos — *elevado*
+- [ ] H0-3 · Averiguar si se autoriza correr un proceso propio (Node.js como servicio) y en qué equipo — *elevado* · **es la decisión de mayor impacto pendiente**
+- [ ] H0-4 · Confirmar si existe HTTPS para el host donde iría la app — *elevado*
+- [x] H0-5 · Versión exacta de Edge/Chrome en las PCs de los operadores → **109.0.5414.120, cohort Windows 7** ⇒ ADR-011
+- [ ] H0-6 · Permisos NTFS: administrador identificado y trámite ágil ✅ · **falta la ruta UNC real de `Y:`** y definir la carpeta de datos nueva ⇒ ADR-015
+- [x] H0-7 · Backup: hoy no existe, se puede establecer ⇒ pasa a ser requisito del proyecto (H3-8, H10-4)
+- [x] H0-8 · Catálogo: scraping propio del sitio estatal, actualización mensual manual ⇒ ADR-014
+- [ ] H0-9 · **Nueva** · Sistema operativo del servidor de intranet (condiciona la versión de Node) — *elevar*
+- [x] H0-10 · Sistema de firmas: **carga manual, sin retorno del firmado** ⇒ ADR-012 y ADR-016. Queda una sola verificación: probar que acepta un PDF de "Microsoft Print to PDF"
+- [x] H0-11 · Script de scraping: **conservado sólo en un historial de chat** ⇒ ADR-018, rescate urgente (H4-8)
+- [x] H0-12 · Excepción de catálogo: **ítem más similar + aclaración de hasta 200 caracteres** ⇒ enmienda de ADR-014
+- [x] H0-14 · Cuentas de Windows: **compartidas y sin contraseña** ⇒ ADR-017
+- [x] H0-15 · Cuentas de Windows: **una por PC**. La identidad del operador se basa en el **correo institucional**, no en Windows ⇒ ADR-017 Aceptada
+- [ ] H0-16 · ¿Las PCs tienen IP fija o reserva DHCP? (condiciona la restricción de rol por máquina, ADR-017 medida 4) — *elevar*
+- [x] H0-17 · El scraper corre **fuera de la intranet**; el archivo se traslada a mano. **La app no emite peticiones al exterior** ⇒ ADR-018
+- [ ] H0-18 · **Nueva** · ¿Cuál es el procedimiento admitido para trasladar un archivo desde una PC externa a la red interna? — *elevar*
+- [x] H0-13 · Validación de los 18 pasos: **cada sector confirmó su fase** ⇒ riesgo R4 baja de Alto a Bajo
+
+**Entregable:** `RELEVAMIENTO_ENTORNO.md` completado.
+**Criterio de aceptación:** ADR-003, ADR-012 y ADR-015 pasan de `Propuesta` a `Aceptada`, o son reemplazadas por la alternativa que corresponda.
+
+---
+
+## H1 — Fundaciones del repositorio
+
+**Objetivo:** que exista un esqueleto ejecutable y un documento de reglas que no se contradiga a sí mismo.
+
+- [ ] H1-1 · Definir si el proyecto vive en el repo git `Contrataciones/` (recomendado) o en una carpeta nueva. Mover los documentos de planificación al repo
+- [ ] H1-2 · Redactar `InstruccionesCodigo_v2.md` aplicando la tabla de correcciones de la auditoría §3
+- [ ] H1-3 · Estructura de directorios (ver abajo) y `.gitignore`
+- [ ] H1-4 · `config.js`: los 18 estados del FSD §4 como máquina de estados declarativa, con `fase`, `rolEjecutor`, `estadosSiguientes`, `estadosDevolucion`, `camposRequeridos`, `entregablesObligatorios`
+- [ ] H1-5 · `config.js`: catálogo cerrado de motivos de devolución (versión inicial, a validar con operadores en H9)
+- [ ] H1-6 · Esquemas JSON versionados + fixtures de ejemplo
+- [ ] H1-7 · Arnés de tests con `node --test` (built-in, cero dependencias) y un test trivial que pase
+- [ ] H1-8 · `README.md` con "cómo levantar esto en 3 comandos"
+- [ ] H1-9 · **Guardián de compatibilidad y aislamiento** (ADR-011, ADR-018): verificador que recorre `app/` y falla el build si aparece (a) `toSorted`, `Object.groupBy`, `Promise.withResolvers`, anidamiento CSS nativo, `popover`, `text-wrap: balance` o cualquier ítem de la lista de veto de Chrome 109, o (b) **cualquier URL absoluta `http://` o `https://`**. Es la única forma de que ambas restricciones sobrevivan seis meses de desarrollo
+- [ ] H1-10 · **Padrón de operadores** `config/usuarios.json`: `{ nombre, apellido, email, roles: [], sector, activo }`, con el correo institucional como clave única (ADR-017)
+
+**Estructura propuesta** (reemplaza a §3 del documento original):
+
+```
+/AppOptimizar
+├── PLAN_DESARROLLO.md            (este archivo)
+├── BITACORA_DECISIONES.md
+├── AUDITORIA_InstruccionesCodigo.md
+├── RELEVAMIENTO_ENTORNO.md
+├── app/                          → lo único que se despliega
+│   ├── index.html
+│   ├── css/main.css
+│   ├── js/
+│   │   ├── core/                 (dominio puro, sin DOM, sin red — testeable en Node)
+│   │   │   ├── namespaces.js  config.js  estados.js  validacion.js
+│   │   │   ├── auditoria.js   migraciones.js  utils.js
+│   │   ├── adapters/             (persistencia intercambiable — ADR-002)
+│   │   │   ├── repo.js           (interfaz + selector de implementación)
+│   │   │   ├── repo.memoria.js   repo.http.js   repo.fsa.js
+│   │   ├── catalogo/             (búsqueda en cascada — ADR-004)
+│   │   ├── views/                (login, kanban, expediente, dashboard, archivo)
+│   │   ├── renders/              (plantillas de entregables)
+│   │   └── export/
+│   ├── catalogo/                 (shards generados — no se editan a mano)
+│   └── assets/
+├── server/                       → servidor Node sin dependencias (ADR-003)
+├── tools/                        → build del catálogo, generadores de datos de prueba
+├── tests/                        → unit + integración + e2e
+└── datos-prueba/                 → simulacro de la carpeta de red (NO se despliega)
+```
+
+**Criterio de aceptación:** `node --test` corre en verde y `config.js` describe los 18 pasos sin que ninguna vista los conozca.
+
+---
+
+## H2 — Núcleo de dominio (sin UI)
+
+**Objetivo:** que las reglas del negocio existan, estén testeadas y no dependan del navegador. Es el activo más duradero del proyecto: sobrevive a cualquier cambio de UI o de infraestructura.
+
+- [ ] H2-1 · Motor de transiciones: `puedeAvanzar(expediente, rol)`, `avanzar()`, `devolver(motivo)`, leyendo siempre de `config.js`
+- [ ] H2-2 · Validadores por estado, derivados de `camposRequeridos`
+- [ ] H2-3 · Auditoría con hash encadenado (ADR-006)
+- [ ] H2-4 · Migraciones por `schemaVersion` (con test de un documento v1 → v2 que no pierde datos)
+- [ ] H2-5 · Registro de timestamp en cada transición (insumo del futuro motor de SLA, que queda fuera de la v1 — ADR-013)
+- [ ] H2-6 · **Tests unitarios de los 18 estados**: transición válida, transición prohibida por rol, transición prohibida por campos faltantes, devolución con y sin motivo
+
+**Criterio de aceptación:** cobertura completa de la matriz estado × rol. Un cambio en `config.js` (agregar un paso) no requiere tocar código, solo agregar el caso de test.
+
+---
+
+## H3 — Persistencia y servidor local
+
+**Objetivo:** que los datos se guarden de verdad, con concurrencia correcta, en algo que corra igual en tu PC y en el servidor.
+
+- [ ] H3-1 · Interfaz `repo` (ADR-002) y `repo.memoria.js` para tests
+- [ ] H3-2 · Servidor Node sin dependencias: estáticos + API de `repo`
+- [ ] H3-3 · Escritura atómica `tmp + rename`
+- [ ] H3-4 · Verificación de versión del lado del servidor: dos escrituras concurrentes ⇒ la segunda recibe `409 Conflicto` y la UI ofrece recargar
+- [ ] H3-5 · Numeración de expedientes serializada con lock de archivo (ADR-009)
+- [ ] H3-6 · Índice fragmentado `idx/<id>.json` (ADR-005)
+- [ ] H3-7 · Política de carpeta de red inaccesible: mensaje claro, modo lectura, borrador local que no se pierde
+- [ ] H3-8 · Script de backup de la carpeta de datos (copia diaria con retención)
+- [ ] H3-9 · `repo.http.js` en el cliente, con manejo de conflicto
+- [ ] H3-11 · El servidor registra **IP y nombre de equipo** de cada petición en la auditoría, junto al rol declarado (ADR-017, medida 3). Es el único dato de identidad que el operador no elige
+- [ ] H3-12 · Restricción opcional de rol por máquina: sólo se aceptan acciones de un rol desde las PCs de ese sector (ADR-017, medida 4) — *depende de H0-16*
+- [ ] H3-13 · Edición del padrón de operadores restringida a la máquina del Jefe de Contrataciones, verificado del lado del servidor (ADR-017, medida 5)
+- [ ] H3-10 · **Test de concurrencia automatizado**: 20 escrituras simultáneas sobre el mismo expediente ⇒ exactamente 1 gana, 19 reciben conflicto, el archivo nunca queda corrupto ni truncado
+
+**Criterio de aceptación:** H3-10 pasa 50 veces seguidas sin falsos positivos.
+
+---
+
+## H4 — Catálogo de ítems y autocompletado
+
+**Objetivo:** que el operador encuentre el ítem correcto entre 159.366 en menos de 10 segundos, sin descargar 40 MB.
+
+- [ ] H4-1 · `tools/build-catalogo.js`: genera rubros, clases, shards por clase e índice de tokens; **descarta el campo `estado`** y estampa `catalogoVersion` (ADR-004, ADR-014)
+- [x] H4-2 · Campo `estado` verificado con el usuario: los inactivos ya vienen filtrados, la columna sobra
+- [ ] H4-3 · Componente de búsqueda: texto libre sobre clases + cascada rubro → clase → ítem
+- [ ] H4-4 · Selección múltiple de renglones con cantidad y unidad de medida
+- [ ] H4-5 · Validación estricta: código inexistente = error, sin escape por texto libre (ADR-014). Falta definir el **procedimiento de excepción** (H0-12)
+- [~] H4-8 · **En curso** · Rescate del scraper. Fragmento recuperado y versionado en `Contrataciones/tools/scraper-catalogo/`. Falta el resto del script (URL, launcher, paginación, salida) o, en su defecto, la URL del sitio para reconstruirlo
+- [ ] H4-10 · Hacer el scraper **reanudable**: una corrida de 2 horas que falla al 80% sin poder retomar es una corrida que en la práctica no se hace todos los meses
+- [ ] H4-13 · Documentar el **procedimiento mensual completo**: correr el scraper en la PC sin intranet → revisar el reporte de diferencias → trasladar el archivo → `build-catalogo` → publicar `catalogo/` con su `catalogoVersion` (ADR-018)
+- [ ] H4-11 · **Reporte mensual de diferencias**: ítems nuevos, ítems que desaparecieron del origen (candidatos a baja) y descripciones modificadas. Es el mecanismo por el cual el usuario "se entera" de las bajas
+- [ ] H4-12 · Campo `aclaracion` en el renglón: opcional, máximo 200 caracteres, **impreso en el entregable** y contabilizado como indicador (enmienda ADR-014)
+- [ ] H4-9 · `datos.json` registra con qué `catalogoVersion` se cargaron sus renglones (trazabilidad para auditoría)
+- [ ] H4-6 · Caché opcional en IndexedDB de los shards ya visitados
+- [ ] H4-7 · **Medición de rendimiento** con el catálogo real: primera carga, tecleo, cambio de clase
+
+**Criterio de aceptación:** primera carga de la vista de búsqueda < 1 s sobre la red de intranet; respuesta al tecleo < 100 ms; ningún archivo servido supera los 300 KB.
+
+---
+
+## H5 — Vertical Fase 1: Wizard del Usuario Generador
+
+**Objetivo:** el primer corte vertical completo y usable. Un usuario crea un expediente, carga renglones del catálogo y genera su Especificación Técnica. **Este es el hito que justifica el proyecto.**
+
+- [ ] H5-1 · Selección de operador desde el padrón, mostrando **nombre y apellido, rol y correo institucional a la vista** (ADR-017). Sin contraseña ni PIN en la v1. Operador activo siempre visible, cambio de operador a un clic y cierre por inactividad a los 15 minutos
+- [ ] H5-2 · Wizard paso a paso con validación estricta antes de avanzar
+- [ ] H5-3 · Borrador local que sobrevive a un cierre accidental del navegador
+- [ ] H5-4 · Integración del selector de catálogo (H4)
+- [ ] H5-5 · Fast-Track: descarga del JSON modelo y carga de un JSON pre-poblado, **con validación defensiva** (un JSON generado por IA externa es entrada no confiable: validar estructura, tipos y códigos de catálogo antes de aceptarlo)
+- [ ] H5-6 · Generación del entregable de la Fase 1: HTML compuesto + hoja de impresión + **conversión a PDF listo para firmar** (ADR-012). Validar el PDF resultante contra el sistema de firmas real **antes** de construir las plantillas restantes
+- [ ] H5-7 · Persistencia real vía `repo` y aparición del expediente en el índice
+
+**Criterio de aceptación:** un usuario real de la División completa una Especificación Técnica de principio a fin, sin asistencia, en una sesión. Ese es el test.
+
+---
+
+## H6 — Tablero Kanban, roles y transiciones
+
+- [ ] H6-1 · Tablero por fase con badge de estado (sin semáforo de vencimiento — ADR-013) (ADR-010)
+- [ ] H6-2 · Vista de tarjeta con historial, entregables y responsables
+- [ ] H6-3 · Botones Avanzar / Devolver por Observación, habilitados según rol
+- [ ] H6-4 · Modal de devolución con catálogo cerrado de motivos
+- [ ] H6-5 · Visibilidad global para todos los roles, acción restringida al rol que corresponde
+- [ ] H6-6 · Manejo visible del conflicto de concurrencia (mensaje y recarga, sin pérdida de lo tipeado)
+- [ ] H6-7 · Filtros y búsqueda de expedientes
+
+**Criterio de aceptación:** recorrer los 18 pasos de punta a punta cambiando de rol, con auditoría completa y coherente al final.
+
+---
+
+## H7 — Entregables y exportación AI-ready
+
+- [ ] H7-1 · Plantillas de los entregables por fase (SCo, pliego, disposición, OC)
+- [ ] H7-2 · Impresión paginada correcta (`@media print`, saltos de página, encabezados, membrete)
+- [ ] H7-3 · Los entregables se guardan en la carpeta del expediente y se enlazan en la tarjeta
+- [ ] H7-7 · **Circuito de firma** (ADR-012, ADR-016): el PDF se genera con `Imprimir → Guardar como PDF` y el operador lo sube a mano. El firmado **no vuelve** a la app; se guarda solo una referencia (identificador, fecha, firmante)
+- [ ] H7-8 · Leyenda fija en la vista del expediente y en el `resumen.md`: **los instrumentos firmados residen fuera de este sistema**. Sin esto, tanto una auditoría como un LLM que lea el export van a interpretar que el expediente está incompleto (ADR-016)
+- [ ] H7-4 · Exportación del `datos.json` crudo
+- [ ] H7-5 · Generación de `resumen.md` narrativo desde la auditoría y el histórico
+- [ ] H7-6 · Modal de advertencia de datos sensibles, obligatorio antes de toda descarga
+
+**Criterio de aceptación:** un entregable impreso desde la app es aceptable para firma física sin retoques.
+
+---
+
+## H8 — KPIs y Archivo Histórico
+
+*(Alcance reducido: sin motor de SLA en la v1 — ADR-013)*
+
+- [ ] H8-1 · Campo opcional de fecha límite por expediente, editable a mano, sin semáforos ni alertas
+- [ ] H8-2 · Dashboard: tiempo por fase, tiempo total, tasa de devolución por motivo y por sector. **Estos números son los que después van a permitir discutir los plazos de la norma con evidencia propia**
+- [ ] H8-6 · Indicador **"renglones con aclaración, por rubro"**: es la agenda de trabajo de la actualización mensual del catálogo. Cierra el círculo entre el uso real y el mantenimiento del dato (enmienda ADR-014)
+- [ ] H8-3 · Migración a Archivo Histórico al llegar a "Perfeccionada" (ejecutada por el servidor, no por el navegador)
+- [ ] H8-4 · Vista del histórico, con listado por directorio y no por índice
+- [ ] H8-5 · Verificar que nada se borra sin confirmación explícita y sin copia previa
+
+**Criterio de aceptación:** los KPIs se calculan sobre datos reales de H9 y los números resisten una verificación manual.
+
+---
+
+## H9 — Testing integral en local (etapa previa al despliegue)
+
+**Objetivo:** agotar los errores en tu PC, con datos reales y usuarios reales, antes de que la intranet vea una sola línea.
+
+### Niveles de prueba
+
+| Nivel | Qué prueba | Herramienta | Cuándo corre |
+|---|---|---|---|
+| N1 · Unitario | Dominio puro: estados, validaciones, migraciones, hash | `node --test` (built-in) | En cada cambio |
+| N2 · Integración | Servidor: escritura atómica, conflictos, numeración, backup | `node --test` contra el servidor real | En cada cambio del servidor |
+| N3 · End-to-end | Flujos de navegador completos | Playwright (**solo en la PC de desarrollo**, no se despliega), fijando **Chromium 109** para que coincida con el parque real (ADR-011) | Antes de cada hito |
+| N4 · Carga/estrés | Catálogo real y volumen de un año | Script generador en `tools/` | H9 |
+| N5 · UAT | Operadores reales con casos reales | Guion de pruebas manual | H9 |
+
+### Tareas
+
+- [ ] H9-1 · Generador de datos de prueba: 100 expedientes distribuidos en los 18 estados, con historial verosímil
+- [ ] H9-2 · Simulacro de carpeta de red en `datos-prueba/`, y prueba adicional **contra una carpeta compartida SMB real** (una segunda PC o una unidad mapeada). *El comportamiento de SMB no se puede simular con una carpeta local: latencia, bloqueos y permisos son distintos.*
+- [ ] H9-3 · Prueba multiusuario: dos perfiles de navegador abiertos simultáneamente actuando como roles distintos sobre el mismo expediente
+- [ ] H9-4 · Suite E2E de los recorridos críticos: alta completa, avance de 18 pasos, devolución y recuperación, conflicto de concurrencia, archivado
+- [ ] H9-5 · Pruebas de degradación: red caída a mitad de un guardado, archivo corrupto, JSON de Fast-Track malformado, catálogo faltante, navegador viejo
+- [ ] H9-6 · Verificación de a11y y de navegación completa por teclado en el wizard
+- [ ] H9-7 · Prueba de impresión real en la impresora de la División **y prueba del PDF generado dentro del sistema de firmas real** (ADR-012). Si el sistema de firmas rechaza el PDF, se descubre acá y no en producción
+- [ ] H9-11 · **Prueba en una PC real del parque** (Windows 7 + Chrome 109), no solo en la PC de desarrollo. Es la única forma de validar rendimiento en el hardware que va a existir
+- [ ] H9-8 · **UAT con 2 o 3 operadores reales** sobre un expediente histórico ya tramitado en papel, comparando el resultado
+- [ ] H9-9 · Prueba de backup y **restauración** (un backup no probado no es un backup)
+- [ ] H9-10 · Registrar los hallazgos del UAT y decidir cuáles bloquean el despliegue
+
+**Criterio de aceptación de H9 (puerta de salida hacia H10):**
+1. N1 a N4 en verde.
+2. Cero defectos de severidad alta abiertos.
+3. Al menos un expediente real recorrido de punta a punta por operadores distintos, con auditoría íntegra.
+4. Restauración desde backup verificada.
+
+---
+
+## H10 — Despliegue a intranet y piloto
+
+- [ ] H10-1 · Cerrar H0 y confirmar el adaptador definitivo
+- [ ] H10-2 · Preparar el paquete de despliegue (solo `app/` + `server/` si corresponde) y el instructivo para Informática
+- [ ] H10-3 · Configurar permisos NTFS de la carpeta de datos y del Archivo Histórico
+- [ ] H10-4 · Backup automatizado en producción, con restauración probada en producción
+- [ ] H10-5 · Despliegue y enlace desde el portal de intranet existente
+- [ ] H10-6 · **Piloto en paralelo:** los primeros expedientes se tramitan en el sistema *y* por el circuito actual, hasta que la División confíe en la herramienta
+- [ ] H10-7 · Capacitación breve por rol (una página por rol, no un manual)
+- [ ] H10-8 · Plan de rollback: cómo se vuelve atrás en 10 minutos y qué pasa con los expedientes ya cargados
+- [ ] H10-9 · Definir quién mantiene esto y cómo se pide un cambio
+
+**Criterio de aceptación:** un mes de operación en paralelo sin pérdida de datos y con los operadores prefiriendo el sistema al circuito anterior.
+
+---
+
+## Riesgos abiertos
+
+| # | Riesgo | Impacto | Mitigación |
+|---|--------|---------|-----------|
+| R1 | Informática no autoriza correr un proceso propio | **Crítico** — con Chrome 109 el adaptador FSA no tiene permisos persistentes ni escritura atómica (ADR-011): cada operador tendría que volver a elegir la carpeta de red en cada sesión. Deja de ser una contingencia aceptable | ADR-002 aísla el impacto en un archivo; **ADR-015 es el argumento a presentar: un servidor propio es la opción más segura, porque permite que ningún operador tenga permiso de escritura sobre los datos** |
+| R2 | No hay HTTPS y tampoco backend | **Crítico** — sin *secure context* no hay File System Access y la app queda de solo lectura. No hay plan C | Detectar en H0-4. Alternativas: publicar la app en un host con HTTPS, alojarla en una PC custodiada actuando como servidor, o pedir la directiva empresarial que marca el origen como confiable |
+| R8 | El sistema de firmas rechaza el PDF generado | Medio — obliga a la v2 de ADR-012 (librería PDF vendida) | Probar el circuito completo en H5-6, con un solo documento, antes de construir el resto de las plantillas |
+| R9 | Un ítem necesario no está en el catálogo del mes | Medio — con catálogo cerrado, bloquea el trámite | H0-12 define el procedimiento de excepción antes de H4 |
+| R10 | El parque de PCs (Windows 7) se renueva y cambia el navegador | Bajo, y sería una mejora | ADR-011 fija un piso, no un techo de funcionamiento: el código que corre en 109 corre en versiones posteriores |
+| R3 | La carpeta de red tiene latencia alta o cortes frecuentes | Medio | H9-2 y H9-5 lo miden antes del despliegue; borrador local como red de contención |
+| R4 | ~~Los 18 estados no reflejan el circuito real~~ | **Bajo** — cada sector confirmó su fase (ronda 2, 2026-08-13) | Se mantiene la verificación de H9-8 como control final, ya no como mitigación de un riesgo alto |
+| ~~R8~~ | ~~El sistema de firmas rechaza el PDF~~ | **Cerrado** — verificado el 2026-08-13: es la mecánica diaria actual | — |
+| R12 | **Atribución equivocada por sesiones compartidas sin contraseña** | Medio — contamina la auditoría y los KPIs por sector. El caso frecuente no es la suplantación deliberada sino el descuido | ADR-017: identidad por correo institucional visible en pantalla, cierre por inactividad, registro de la máquina del lado del servidor, restricción de rol por máquina. La identidad queda **declarada y corroborada**, no verificada, y así se enuncia en la UI |
+| R15 | El padrón de operadores queda desactualizado (altas, bajas, traslados) | Medio — un operador dado de baja sigue figurando y la auditoría atribuye a alguien que ya no está | Campo `activo` en el padrón; revisión del padrón como paso de la rutina mensual del catálogo, que ya existe |
+| R13 | **Pérdida del script de scraping** (vive en un historial de chat) | Alto e inmediato — 2 horas de corrida más el conocimiento de cómo navegar el sitio | ADR-018: rescatarlo y versionarlo esta semana, fuera de la secuencia de hitos |
+| R14 | El campo de aclaración se convierte en cajón de sastre | Medio — reintroduce el *garbage in* por la puerta de atrás | Límite de 200 caracteres ya definido; medir el porcentaje de renglones con aclaración en el UAT (H8-6). Si es alto, el problema es el catálogo, no el campo |
+| R11 | Se confunde la carpeta del expediente con el archivo legal | Medio — riesgo de auditoría, no técnico | ADR-016 + H7-8: leyenda explícita en UI y en el export |
+| R5 | El catálogo se desactualiza y nadie lo regenera | Medio | H0-8 define responsable y frecuencia; el build es un solo comando |
+| R6 | El proyecto queda sin mantenedor | Alto | Cero dependencias, código comentado en español, H10-9 |
+| R7 | Adopción: los operadores siguen usando el circuito en papel | Alto | H5 primero (valor visible temprano), piloto en paralelo, capacitación por rol |
