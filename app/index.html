@@ -3,56 +3,150 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SGC - Búsqueda de ítems del catálogo</title>
+  <title>SGC - Alta de Especificación Técnica</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-  <main id="app" class="buscador">
+  <main id="app" class="app">
     <header class="cabecera">
-      <h1>SGC — Búsqueda de ítems del catálogo</h1>
-      <p class="subtitulo">Escriba una clase o rubro, elija el ítem y arme los renglones del pedido.</p>
-      <p id="sgc-estado" class="estado" role="status" aria-live="polite">Cargando catálogo…</p>
+      <h1>SGC — Alta de Especificación Técnica</h1>
+      <p class="subtitulo">Complete los cuatro pasos. El expediente queda guardado con su número y su auditoría.</p>
+      <p id="sgc-app-error" class="error-global" role="alert" hidden></p>
     </header>
 
-    <section class="seccion-busqueda" aria-label="Búsqueda de clases">
-      <label for="sgc-campo-clases" class="etiqueta">Buscar clase o rubro</label>
-      <div class="caja-combobox">
-        <input id="sgc-campo-clases" type="search" role="combobox"
-               aria-expanded="false" aria-controls="sgc-lista-clases"
-               aria-autocomplete="list" autocomplete="off"
-               placeholder="Ej.: válvula, termostato, oficina…">
-        <ul id="sgc-lista-clases" role="listbox" class="desplegable" hidden></ul>
-      </div>
+    <section id="sgc-seleccion-operador" class="seccion-operador" aria-label="Selección de operador">
+      <h2>Seleccione su operador</h2>
+      <p class="subtitulo">Identidad declarada (ADR-017). El correo queda registrado en la auditoría del expediente.</p>
+      <ul id="sgc-lista-operadores" class="lista-operadores"></ul>
     </section>
 
-    <section id="sgc-panel-items" class="seccion-items" aria-label="Ítems de la clase" hidden>
-      <h2 id="sgc-titulo-clase"></h2>
-      <p id="sgc-detalle-clase" class="detalle"></p>
-      <label for="sgc-campo-items" class="etiqueta">Filtrar ítems de la clase</label>
-      <div class="caja-combobox">
-        <input id="sgc-campo-items" type="search" role="combobox"
-               aria-expanded="false" aria-controls="sgc-lista-items"
-               aria-autocomplete="list" autocomplete="off"
-               placeholder="Filtre dentro de la clase…">
-        <ul id="sgc-lista-items" role="listbox" class="desplegable" hidden></ul>
-      </div>
-      <p id="sgc-conteo-items" class="conteo"></p>
-    </section>
+    <section id="sgc-app" class="wizard" aria-label="Asistente de la Especificación Técnica" hidden>
+      <p class="operador-actual">Operador: <span id="sgc-operador-actual"></span></p>
 
-    <section class="seccion-renglones" aria-label="Renglones del pedido">
-      <h2>Renglones del pedido</h2>
-      <ul id="sgc-lista-renglones" class="lista-renglones"></ul>
-      <p id="sgc-resumen" class="resumen" role="status" aria-live="polite">Sin renglones todavía.</p>
+      <div id="sgc-borrador-aviso" class="borrador-aviso" role="alert" hidden>
+        <p id="sgc-borrador-info"></p>
+        <button id="sgc-btn-retomar" type="button">Retomar borrador</button>
+        <button id="sgc-btn-descartar" type="button">Descartar borrador</button>
+      </div>
+
+      <ol id="sgc-pasos" class="pasos">
+        <li data-paso="identificacion"><span>1 · Identificación</span></li>
+        <li data-paso="renglones"><span>2 · Renglones</span></li>
+        <li data-paso="fundamentacion"><span>3 · Fundamentación</span></li>
+        <li data-paso="revision"><span>4 · Revisión y confirmación</span></li>
+      </ol>
+      <p id="sgc-paso-msj" class="paso-msj" role="alert" aria-live="assertive" hidden></p>
+
+      <section id="sgc-paso-identificacion" class="paso-panel" aria-labelledby="sgc-titulo-paso-1">
+        <h2 id="sgc-titulo-paso-1">1 · Identificación</h2>
+
+        <div class="fasttrack" aria-label="Carga rápida de un modelo JSON">
+          <p class="subtitulo">Fast-Track: baje el modelo, complételo por fuera y súbalo para pre-poblar el asistente.</p>
+          <button id="sgc-btn-modelo" type="button">Descargar modelo JSON</button>
+          <label class="etiqueta-inline" for="sgc-archivo-modelo">Importar JSON modelo</label>
+          <input id="sgc-archivo-modelo" type="file" accept=".json,application/json">
+          <p id="sgc-fasttrack-msj" class="fasttrack-msj" role="status" aria-live="polite" hidden></p>
+        </div>
+
+        <div class="campo">
+          <label for="sgc-titulo">Título del requerimiento</label>
+          <input id="sgc-titulo" type="text" autocomplete="off" required>
+          <p id="sgc-error-titulo" class="error-campo" role="alert" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="sgc-anio">Año</label>
+          <input id="sgc-anio" type="text" inputmode="numeric" maxlength="4" autocomplete="off" required>
+          <p id="sgc-error-anio" class="error-campo" role="alert" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="sgc-dependencia">Dependencia solicitante</label>
+          <input id="sgc-dependencia" type="text" autocomplete="off" required>
+          <p id="sgc-error-dependencia" class="error-campo" role="alert" hidden></p>
+        </div>
+      </section>
+
+      <section id="sgc-paso-renglones" class="paso-panel" aria-labelledby="sgc-titulo-paso-2" hidden>
+        <h2 id="sgc-titulo-paso-2">2 · Renglones</h2>
+        <p id="sgc-estado" class="estado" role="status" aria-live="polite">Cargando catálogo…</p>
+
+        <div class="seccion-busqueda" aria-label="Búsqueda de clases">
+          <label for="sgc-campo-clases" class="etiqueta">Buscar clase o rubro</label>
+          <div class="caja-combobox">
+            <input id="sgc-campo-clases" type="search" role="combobox"
+                   aria-expanded="false" aria-controls="sgc-lista-clases"
+                   aria-autocomplete="list" autocomplete="off"
+                   placeholder="Ej.: válvula, termostato, oficina…">
+            <ul id="sgc-lista-clases" role="listbox" class="desplegable" hidden></ul>
+          </div>
+        </div>
+
+        <div id="sgc-panel-items" class="seccion-items" aria-label="Ítems de la clase" hidden>
+          <h3 id="sgc-titulo-clase"></h3>
+          <p id="sgc-detalle-clase" class="detalle"></p>
+          <label for="sgc-campo-items" class="etiqueta">Filtrar ítems de la clase</label>
+          <div class="caja-combobox">
+            <input id="sgc-campo-items" type="search" role="combobox"
+                   aria-expanded="false" aria-controls="sgc-lista-items"
+                   aria-autocomplete="list" autocomplete="off"
+                   placeholder="Filtre dentro de la clase…">
+            <ul id="sgc-lista-items" role="listbox" class="desplegable" hidden></ul>
+          </div>
+          <p id="sgc-conteo-items" class="conteo"></p>
+        </div>
+
+        <div class="seccion-renglones" aria-label="Renglones del pedido">
+          <h3>Renglones del pedido</h3>
+          <ul id="sgc-lista-renglones" class="lista-renglones"></ul>
+          <p id="sgc-resumen" class="resumen" role="status" aria-live="polite">Sin renglones todavía.</p>
+        </div>
+      </section>
+
+      <section id="sgc-paso-fundamentacion" class="paso-panel" aria-labelledby="sgc-titulo-paso-3" hidden>
+        <h2 id="sgc-titulo-paso-3">3 · Fundamentación</h2>
+        <div class="campo">
+          <label for="sgc-justificacion">Justificación del requerimiento</label>
+          <textarea id="sgc-justificacion" rows="4" required></textarea>
+          <p id="sgc-error-justificacion" class="error-campo" role="alert" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="sgc-objetivo">Objetivo (opcional)</label>
+          <textarea id="sgc-objetivo" rows="3"></textarea>
+        </div>
+      </section>
+
+      <section id="sgc-paso-revision" class="paso-panel" aria-labelledby="sgc-titulo-paso-4" hidden>
+        <h2 id="sgc-titulo-paso-4">4 · Revisión y confirmación</h2>
+        <dl id="sgc-revision-filas" class="revision-filas"></dl>
+        <button id="sgc-persistir" type="button" class="primario">Crear expediente</button>
+        <p id="sgc-persistir-msj" class="error-global" role="alert" hidden></p>
+        <p id="sgc-exito" class="exito" role="status" hidden>
+          <strong id="sgc-exito-id"></strong> creado. El borrador local se limpió.
+        </p>
+      </section>
+
+      <nav class="navegacion" aria-label="Navegación del asistente">
+        <button id="sgc-anterior" type="button" hidden>Anterior</button>
+        <button id="sgc-siguiente" type="button" class="primario">Siguiente</button>
+      </nav>
     </section>
   </main>
 
   <script src="js/core/namespaces.js"></script>
   <script src="js/core/config.js"></script>
   <script src="js/core/utils.js"></script>
+  <script src="js/core/auditoria.js"></script>
+  <script src="js/core/migraciones.js"></script>
   <script src="js/core/validacion.js"></script>
   <script src="js/catalogo/indice.js"></script>
   <script src="js/catalogo/carga.js"></script>
+  <script src="js/catalogo/renglones.js"></script>
   <script src="js/catalogo/buscador.js"></script>
+  <script src="js/views/pasos.js"></script>
+  <script src="js/views/borrador.js"></script>
+  <script src="js/views/fasttrack.js"></script>
+  <script src="js/views/wizard.js"></script>
+  <script src="js/adapters/repo.js"></script>
+  <script src="js/adapters/repo.http.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

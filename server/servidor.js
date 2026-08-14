@@ -53,6 +53,7 @@ const dns = require('node:dns');
 
 const RAIZ = path.resolve(__dirname, '..');
 const DIR_APP = path.join(RAIZ, 'app');
+const DIR_CONFIG = path.join(RAIZ, 'config');
 const VERSION = '1.0.0';
 const PUERTO_DEFECTO = 8123;
 const LIMITE_CUERPO = 4 * 1024 * 1024; // 4 MB
@@ -301,6 +302,29 @@ function crearServidor(datosDir) {
     res.end(contenido);
   }
 
+  // Padrón de operadores (ADR-017): la app lo necesita para la selección de
+  // operador y vive fuera de app/, así que se sirve con su propia guardia de
+  // recorrido de rutas.
+  function servirConfig(req, res) {
+    const ruta = (req.url || '').split('?')[0];
+    const nombre = ruta.replace(/^\/config\//, '');
+    let destino;
+    try {
+      destino = path.join(DIR_CONFIG, nombre);
+    } catch (e) {
+      return responderJson(res, 400, { error: 'ruta inválida' });
+    }
+    if (!estaDentro(destino, DIR_CONFIG)) {
+      return responderJson(res, 403, { error: 'ruta fuera del área de configuración' });
+    }
+    if (!fs.existsSync(destino) || !fs.statSync(destino).isFile()) {
+      return responderJson(res, 404, { error: 'recurso no encontrado: config/' + nombre });
+    }
+    const tipo = MIME[path.extname(destino).toLowerCase()] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': tipo });
+    res.end(fs.readFileSync(destino));
+  }
+
   function apiSalud(req, res) {
     const accesible = datosAccesibles(datosDir);
     responderJson(res, 200, {
@@ -464,6 +488,11 @@ function crearServidor(datosDir) {
         if (esRutaApi) {
           registrarOrigen(datosDir, origen, peticion, null, null);
           return responderJson(res, 404, { error: 'ruta de API no reconocida: ' + req.method + ' ' + ruta });
+        }
+
+        if (ruta.startsWith('/config/')) {
+          registrarOrigen(datosDir, origen, peticion, null, null);
+          return servirConfig(req, res);
         }
 
         return servirEstatico(req, res);

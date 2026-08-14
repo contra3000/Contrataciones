@@ -62,13 +62,38 @@ test('la búsqueda ignora las mayúsculas', () => {
   assert.strictEqual(resultados[0].clase, 'GARRAPIÑADAS');
 });
 
-test('buscarClases devuelve los tramos de coincidencia correctos para resaltar', () => {
+test('buscarClases devuelve tramos de coincidencia válidos sobre resultado.clase', () => {
   const resultados = SGC.catalogo.indice.buscarClases('valvula', 10);
   const encontrada = resultados.filter((r) => r.clase === 'VALVULAS P/ELECTRONICA')[0];
   assert.ok(encontrada, 'debe encontrar VALVULAS P/ELECTRONICA');
-  // texto buscado: "ELECTRICIDAD Y TELEFONIA VALVULAS P/ELECTRONICA"
-  // (rubro de 24 caracteres + espacio -> VALVULAS inicia en 25, largo 7)
-  assert.deepStrictEqual(encontrada.coincidencias, [[25, 7]]);
+  // El contrato (ORDEN-RONDA-05 §2.1): los tramos son índices de `clase`,
+  // no del texto combinado rubro + clase.
+  assert.deepStrictEqual(encontrada.coincidencias, [[0, 7]]);
+  for (const [ini, lar] of encontrada.coincidencias) {
+    assert.ok(ini >= 0 && ini + lar <= encontrada.clase.length,
+      'tramo fuera de rango de la clase: [' + ini + ',' + lar + '] en "' + encontrada.clase + '"');
+    const fragmento = encontrada.clase.slice(ini, ini + lar).normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    assert.strictEqual(fragmento, 'valvula', 'el fragmento resaltado debe ser el término buscado');
+  }
+});
+
+test('los tramos de coincidencia son índices válidos de clase sobre el catálogo real', () => {
+  const terminos = ['valvula', 'termostato', 'cable', 'bano', 'electronica', 'manguera', 'filtro', 'galletita'];
+  for (const termino of terminos) {
+    const resultados = SGC.catalogo.indice.buscarClases(termino, 30);
+    assert.ok(resultados.length > 0, 'sin resultados para "' + termino + '"');
+    for (const r of resultados) {
+      for (const [ini, lar] of r.coincidencias) {
+        assert.ok(ini >= 0 && ini + lar <= r.clase.length,
+          'tramo fuera de rango de clase para "' + termino + '": [' + ini + ',' + lar + '] en "' + r.clase + '"');
+      }
+      for (const [ini, lar] of r.coincidenciasRubro) {
+        assert.ok(ini >= 0 && ini + lar <= r.rubro.length,
+          'tramo fuera de rango de rubro para "' + termino + '": [' + ini + ',' + lar + '] en "' + r.rubro + '"');
+      }
+    }
+  }
 });
 
 test('una clase conocida devuelve la cantidad de ítems que declara clases.json', () => {

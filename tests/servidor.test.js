@@ -291,6 +291,37 @@ test('tres expedientes dejan tres archivos en idx/ y tres entradas en el índice
 });
 
 // ---------------------------------------------------------------------------
+// Integración: configuración (padrón ADR-017)
+// ---------------------------------------------------------------------------
+test('sirve config/ con JSON y rechaza el recorrido de rutas y lo inexistente', async () => {
+  const datosDir = crearDirDatos('sgc-config-');
+  const ctx = await arrancarServidor(datosDir);
+  try {
+    const base = 'http://127.0.0.1:' + ctx.puerto;
+    const padron = await pedir(base, 'GET', '/config/usuarios.ejemplo.json');
+    assert.equal(padron.status, 200);
+    assert.equal(padron.body.schemaVersion, '1.0.0');
+    assert.ok(Array.isArray(padron.body.usuarios));
+    assert.equal(padron.body.usuarios.length > 0, true);
+    assert.equal(typeof padron.body.usuarios[0].email, 'string');
+
+    const directorio = await pedir(base, 'GET', '/config/');
+    assert.equal(directorio.status, 404, 'un directorio no se sirve');
+
+    const inexistente = await pedir(base, 'GET', '/config/no-existe.json');
+    assert.equal(inexistente.status, 404);
+
+    const fuera = await pedirConPath(base, 'GET', '/config/../package.json');
+    assert.equal(fuera.status, 403, 'el recorrido fuera de config/ se bloquea');
+    const codificado = await pedirConPath(base, 'GET', '/config/%2e%2e/package.json');
+    assert.equal(codificado.status, 404, 'un nombre codificado no escapa: se trata como nombre literal');
+  } finally {
+    await detenerServidor(ctx);
+    fs.rmSync(datosDir, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Recorrido de rutas
 // ---------------------------------------------------------------------------
 test('GET y PUT con ../../secreto devuelven 400 sin tocar el disco', async () => {

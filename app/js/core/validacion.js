@@ -21,7 +21,7 @@
   var MAX_ACLARACION = 200;
 
   function obtenerEstado(expediente) {
-    var id = SGC.core.utils.idEstadoActual(expediente);
+    var id = SGC.core.utils.idEstado(expediente);
     if (id === null) {
       return null;
     }
@@ -96,8 +96,45 @@
     return { valido: errores.length === 0, errores: errores };
   }
 
+  // Validación del paso Identificación del wizard (ORDEN-RONDA-05 §3.1): el
+  // operador viene del padrón y se guarda como correo; el año debe tener
+  // cuatro dígitos.
+  function validarIdentificacion(campos) {
+    var errores = [];
+    if (!campos || typeof campos !== 'object') {
+      return { valido: false, errores: ['Faltan los campos de identificación'] };
+    }
+    if (typeof campos.titulo !== 'string' || campos.titulo.trim() === '') {
+      errores.push('El título del requerimiento es obligatorio');
+    }
+    if (typeof campos.anio !== 'string' || !/^\d{4}$/.test(campos.anio)) {
+      errores.push('El año debe tener cuatro dígitos');
+    }
+    if (typeof campos.dependenciaSolicitante !== 'string' || campos.dependenciaSolicitante.trim() === '') {
+      errores.push('La dependencia solicitante es obligatoria');
+    }
+    if (typeof campos.operador !== 'string' || campos.operador.trim() === '') {
+      errores.push('El operador es obligatorio');
+    }
+    return { valido: errores.length === 0, errores: errores };
+  }
+
+  // Validación del paso Fundamentación del wizard (ORDEN-RONDA-05 §3.1).
+  function validarFundamentacion(campos) {
+    var errores = [];
+    if (!campos || typeof campos !== 'object') {
+      return { valido: false, errores: ['Faltan los campos de fundamentación'] };
+    }
+    if (typeof campos.justificacion !== 'string' || campos.justificacion.trim() === '') {
+      errores.push('La justificación del requerimiento es obligatoria');
+    }
+    return { valido: errores.length === 0, errores: errores };
+  }
+
   SGC.core.validacion = {
     validarParaAvanzar: validarParaAvanzar,
-    validarRenglon: validarRenglon
+    validarRenglon: validarRenglon,
+    validarIdentificacion: validarIdentificacion,
+    validarFundamentacion: validarFundamentacion
   };
 })(typeof window !== 'undefined' ? window : globalThis);

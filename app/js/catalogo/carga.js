@@ -20,7 +20,8 @@
     rubros: null,
     clases: null,
     clasesPorId: {},
-    fragmentos: {}
+    fragmentos: {},
+    codigosCargados: false
   };
 
   function peticion(ruta) {
@@ -85,9 +86,23 @@
     });
   }
 
+  // Carga el arreglo plano de códigos (codigos.json, ORDEN-RONDA-05 §3.4) para
+  // validar códigos importados por Fast-Track sin bajar fragmentos.
+  function cargarCodigos() {
+    if (estado.codigosCargados) {
+      return Promise.resolve(true);
+    }
+    return peticion('catalogo/codigos.json').then(function (lista) {
+      SGC.catalogo.indice.cargarCodigos(lista);
+      estado.codigosCargados = true;
+      return true;
+    });
+  }
+
   SGC.catalogo.carga = {
     iniciar: iniciar,
     cargarClase: cargarClase,
+    cargarCodigos: cargarCodigos,
     obtenerEstado: function () {
       return estado;
     }

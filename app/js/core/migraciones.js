@@ -7,8 +7,8 @@
  * con valor por defecto.
  *
  * La migración concreta de esta ronda lleva el esquema original de
- * InstruccionesCodigo.md §6.1 (`schemaVersion: 1`, con `incisos`, `auditLog`
- * y `estadoActual`) al esquema v2 de ADR-019, que incorpora `catalogoVersion`,
+ * InstruccionesCodigo.md §6.1 (`schemaVersion: 1`, con `incisos` y
+ * `auditLog`) al esquema v2 de ADR-019, que incorpora `catalogoVersion`,
  * `renglones` con `aclaracion`, `auditoria`, `solicitante`, `fechaLimite` y el
  * estado como objeto. VERSION_ACTUAL = 2.
  */

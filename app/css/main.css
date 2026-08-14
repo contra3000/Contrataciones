@@ -286,3 +286,249 @@ mark {
     margin-top: 4px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Aplicación completa (ORDEN-RONDA-05 §3.5): selección de operador y wizard.
+ * ------------------------------------------------------------------------- */
+.app {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.error-global {
+  color: var(--color-error);
+  margin-top: 8px;
+}
+
+.lista-operadores {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.lista-operadores button {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lista-operadores button:hover,
+.lista-operadores button:focus-visible {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
+}
+
+.operador-nombre {
+  font-weight: 600;
+}
+
+.operador-detalle {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.operador-actual {
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.borrador-aviso {
+  border: 1px solid var(--color-primario);
+  background-color: var(--color-fondo);
+  border-radius: var(--radio-borde);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.borrador-aviso p {
+  margin-bottom: 8px;
+}
+
+.borrador-aviso button {
+  margin-right: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.pasos {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+.pasos li {
+  flex: 1;
+  min-width: 160px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 8px 12px;
+  background-color: var(--color-fondo);
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
+}
+
+.pasos li[aria-current="step"] {
+  border-color: var(--color-primario);
+  background-color: rgba(11, 83, 148, 0.08);
+  color: var(--color-primario-oscuro);
+  font-weight: 600;
+}
+
+.paso-msj {
+  color: var(--color-error);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.paso-panel {
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.paso-panel h2 {
+  font-size: 1.1rem;
+  color: var(--color-primario-oscuro);
+  margin-bottom: 12px;
+}
+
+.paso-panel h3 {
+  font-size: 1rem;
+  color: var(--color-primario-oscuro);
+  margin-bottom: 8px;
+}
+
+.campo {
+  margin-bottom: 14px;
+}
+
+.campo label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.campo input,
+.campo textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo);
+}
+
+.campo input:focus,
+.campo textarea:focus {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
+}
+
+.error-campo {
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.fasttrack {
+  border: 1px dashed var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.fasttrack button,
+.fasttrack input[type="file"] {
+  margin-right: 10px;
+  margin-bottom: 6px;
+}
+
+.fasttrack button {
+  padding: 6px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.etiqueta-inline {
+  font-weight: 600;
+}
+
+.fasttrack-msj {
+  color: var(--color-primario-oscuro);
+  white-space: pre-line;
+  margin-top: 6px;
+}
+
+.revision-filas {
+  margin-bottom: 16px;
+}
+
+.revision-filas dt {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.revision-filas dd {
+  margin: 2px 0 4px 16px;
+}
+
+.revision-filas dd ul {
+  list-style: disc;
+  padding-left: 18px;
+}
+
+.navegacion {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.navegacion button,
+.primario {
+  padding: 10px 20px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.navegacion button.primario {
+  border-color: var(--color-primario);
+  background-color: var(--color-primario);
+  color: #ffffff;
+}
+
+.navegacion button.primario:hover,
+.navegacion button.primario:focus-visible {
+  background-color: var(--color-primario-oscuro);
+}
+
+.navegacion button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.exito {
+  color: var(--color-exito);
+  font-weight: 600;
+  margin-top: 8px;
+}

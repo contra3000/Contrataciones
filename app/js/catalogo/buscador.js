@@ -22,7 +22,6 @@
 
   var LIMITE_SUGERENCIAS = 8;
   var LIMITE_ITEMS = 60;
-  var MAX_ACLARACION = 200;
 
   var estado = {
     clases: [],
@@ -31,8 +30,6 @@
     items: [],
     itemsFiltrados: [],
     itemActivo: -1,
-    renglones: [],
-    siguienteId: 1,
     dom: {}
   };
 
@@ -158,6 +155,7 @@
     estado.dom.campoItems.value = '';
     SGC.catalogo.carga.cargarClase(clase.idClase).then(function (items) {
       estado.items = items;
+      SGC.catalogo.indice.registrarCodigos(items);
       estado.itemsFiltrados = SGC.catalogo.indice.buscarEnItems('', items, LIMITE_ITEMS);
       renderItems();
       estado.dom.campoItems.focus();
@@ -182,7 +180,7 @@
     li.appendChild(texto);
     li.addEventListener('mousedown', function (ev) {
       ev.preventDefault();
-      agregarRenglon(resultado);
+      SGC.catalogo.renglones.agregar(resultado);
     });
     return li;
   }
@@ -207,6 +205,14 @@
       ? 'primeros ' + LIMITE_ITEMS + ' de ' + cantidad + ' ítems'
       : mostrados + ' de ' + cantidad + ' ítems';
     estado.dom.conteoItems.textContent = texto;
+  }
+
+  function cerrarListaItems() {
+    var lista = estado.dom.listaItems;
+    lista.hidden = true;
+    estado.itemActivo = -1;
+    estado.dom.campoItems.setAttribute('aria-activedescendant', '');
+    estado.dom.campoItems.setAttribute('aria-expanded', 'false');
   }
 
   function marcarItemActivo(campo, lista) {
@@ -234,149 +240,6 @@
     var valor = estado.dom.campoItems.value;
     estado.itemsFiltrados = SGC.catalogo.indice.buscarEnItems(valor, estado.items, LIMITE_ITEMS);
     renderItems();
-  }
-
-  function agregarRenglon(resultado) {
-    var renglon = {
-      id: estado.siguienteId++,
-      codigo: resultado.codigo,
-      item: resultado.item,
-      cantidad: 1,
-      unidad: '',
-      aclaracion: ''
-    };
-    estado.renglones.push(renglon);
-    estado.dom.listaRenglones.appendChild(filaRenglon(renglon));
-    actualizarResumen();
-  }
-
-  function erroresDeRenglon(renglon) {
-    var v = SGC.core.validacion.validarRenglon({
-      codigo: renglon.codigo,
-      cantidad: renglon.cantidad,
-      unidad: renglon.unidad,
-      aclaracion: renglon.aclaracion
-    });
-    var errores = v.errores.slice();
-    if (errores.length === 0 && !SGC.catalogo.indice.codigoExiste(renglon.codigo, estado.items)) {
-      errores.push('El código no existe en el catálogo');
-    }
-    return errores;
-  }
-
-  function filaRenglon(renglon) {
-    var li = document.createElement('li');
-    li.className = 'renglon';
-
-    var cab = document.createElement('div');
-    cab.className = 'renglon-cab';
-    var codigo = document.createElement('span');
-    codigo.className = 'renglon-codigo';
-    codigo.textContent = renglon.codigo;
-    var item = document.createElement('span');
-    item.className = 'renglon-item';
-    item.textContent = renglon.item;
-    cab.appendChild(codigo);
-    cab.appendChild(item);
-    li.appendChild(cab);
-
-    var editor = document.createElement('div');
-    editor.className = 'renglon-editor';
-
-    var lblCantidad = document.createElement('label');
-    lblCantidad.textContent = 'Cantidad';
-    var cantidad = document.createElement('input');
-    cantidad.type = 'number';
-    cantidad.min = '0';
-    cantidad.step = 'any';
-    cantidad.value = String(renglon.cantidad);
-    cantidad.setAttribute('aria-label', 'Cantidad del ítem');
-    lblCantidad.appendChild(cantidad);
-    editor.appendChild(lblCantidad);
-
-    var lblUnidad = document.createElement('label');
-    lblUnidad.textContent = 'Unidad';
-    var unidad = document.createElement('input');
-    unidad.type = 'text';
-    unidad.maxLength = 40;
-    unidad.placeholder = 'Ej.: unidad, kg, m';
-    unidad.setAttribute('aria-label', 'Unidad de medida');
-    lblUnidad.appendChild(unidad);
-    editor.appendChild(lblUnidad);
-
-    var lblAclaracion = document.createElement('label');
-    lblAclaracion.className = 'aclaracion';
-    lblAclaracion.textContent = 'Aclaración';
-    var aclaracion = document.createElement('textarea');
-    aclaracion.maxLength = MAX_ACLARACION;
-    aclaracion.rows = 2;
-    aclaracion.setAttribute('aria-label', 'Aclaración opcional');
-    var contador = document.createElement('span');
-    contador.className = 'contador';
-    contador.textContent = '0/' + MAX_ACLARACION;
-    lblAclaracion.appendChild(aclaracion);
-    lblAclaracion.appendChild(contador);
-    editor.appendChild(lblAclaracion);
-
-    var btnQuitar = document.createElement('button');
-    btnQuitar.type = 'button';
-    btnQuitar.className = 'quitar';
-    btnQuitar.textContent = 'Quitar';
-    btnQuitar.setAttribute('aria-label', 'Quitar el renglón ' + renglon.codigo);
-    editor.appendChild(btnQuitar);
-    li.appendChild(editor);
-
-    var error = document.createElement('p');
-    error.className = 'renglon-error';
-    error.setAttribute('role', 'alert');
-    error.hidden = true;
-    li.appendChild(error);
-
-    function validarYMostrar() {
-      renglon.cantidad = cantidad.value === '' ? NaN : Number(cantidad.value);
-      renglon.unidad = unidad.value;
-      renglon.aclaracion = aclaracion.value;
-      contador.textContent = aclaracion.value.length + '/' + MAX_ACLARACION;
-      var errores = erroresDeRenglon(renglon);
-      if (errores.length > 0) {
-        error.textContent = errores.join(' · ');
-        error.hidden = false;
-      } else {
-        error.textContent = '';
-        error.hidden = true;
-      }
-      actualizarResumen();
-    }
-
-    cantidad.addEventListener('input', validarYMostrar);
-    unidad.addEventListener('input', validarYMostrar);
-    aclaracion.addEventListener('input', validarYMostrar);
-    btnQuitar.addEventListener('click', function () {
-      var indice = estado.renglones.indexOf(renglon);
-      if (indice !== -1) {
-        estado.renglones.splice(indice, 1);
-      }
-      li.remove();
-      actualizarResumen();
-    });
-
-    validarYMostrar();
-    return li;
-  }
-
-  function actualizarResumen() {
-    var total = estado.renglones.length;
-    var conErrores = 0;
-    for (var i = 0; i < estado.renglones.length; i++) {
-      if (erroresDeRenglon(estado.renglones[i]).length > 0) {
-        conErrores++;
-      }
-    }
-    var texto = total === 0
-      ? 'Sin renglones todavía.'
-      : total + ' renglón' + (total === 1 ? '' : 'es') + ' — ' +
-        conErrores + ' con error' + (conErrores === 1 ? '' : 'es');
-    estado.dom.resumen.textContent = texto;
   }
 
   function tecladoClases(ev) {
@@ -417,7 +280,9 @@
     } else if (ev.key === 'Enter') {
       ev.preventDefault();
       var objetivo = estado.itemActivo >= 0 ? estado.itemActivo : 0;
-      agregarRenglon(estado.itemsFiltrados[objetivo]);
+      SGC.catalogo.renglones.agregar(estado.itemsFiltrados[objetivo]);
+    } else if (ev.key === 'Escape') {
+      cerrarListaItems();
     }
   }
 
@@ -441,6 +306,10 @@
     estado.dom.conteoItems = qs(raiz, '#sgc-conteo-items');
     estado.dom.listaRenglones = qs(raiz, '#sgc-lista-renglones');
     estado.dom.resumen = qs(raiz, '#sgc-resumen');
+    SGC.catalogo.renglones.montar({
+      listaRenglones: estado.dom.listaRenglones,
+      resumen: estado.dom.resumen
+    });
     vincularEventos();
 
     SGC.catalogo.carga.iniciar().then(function (est) {

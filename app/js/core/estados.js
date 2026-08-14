@@ -51,7 +51,7 @@
   }
 
   function puedeAvanzar(expediente, rolOperador) {
-    var estado = obtener(utils.idEstadoActual(expediente));
+    var estado = obtener(utils.idEstado(expediente));
     if (!rolEsEjecutor(estado, rolOperador)) {
       return { permitido: false, motivo: motivoRolIncorrecto(estado, rolOperador), destinos: [] };
     }
@@ -59,7 +59,7 @@
   }
 
   function puedeDevolver(expediente, rolOperador) {
-    var estado = obtener(utils.idEstadoActual(expediente));
+    var estado = obtener(utils.idEstado(expediente));
     if (!rolEsEjecutor(estado, rolOperador)) {
       return { permitido: false, motivo: motivoRolIncorrecto(estado, rolOperador), destinos: [] };
     }
@@ -136,18 +136,13 @@
     }
   }
 
-  // Escribe el nuevo estado respetando el formato del expediente de entrada.
-  function aplicarDestino(expedienteNuevo, expediente, idDestino, estadoDestino, contexto) {
-    if (expediente.estado && typeof expediente.estado === 'object' &&
-        typeof expediente.estado.id === 'string') {
-      expedienteNuevo.estado = {
-        id: idDestino,
-        fase: estadoDestino ? estadoDestino.fase : null,
-        desde: contexto.timestamp
-      };
-    } else {
-      expedienteNuevo.estadoActual = idDestino;
-    }
+  // Escribe el nuevo estado en el esquema v2 (ADR-019).
+  function aplicarDestino(expedienteNuevo, idDestino, estadoDestino, contexto) {
+    expedienteNuevo.estado = {
+      id: idDestino,
+      fase: estadoDestino ? estadoDestino.fase : null,
+      desde: contexto.timestamp
+    };
   }
 
   function avanzar(expediente, rolOperador, idDestino, contexto) {
@@ -157,15 +152,15 @@
     if (!contexto || typeof contexto !== 'object') {
       return { ok: false, expediente: null, error: 'Falta el contexto de la operación' };
     }
-    var idActual = utils.idEstadoActual(expediente);
-    var estadoActual = obtener(idActual);
-    if (estadoActual === null) {
+    var idActual = utils.idEstado(expediente);
+    var estadoDef = obtener(idActual);
+    if (estadoDef === null) {
       return { ok: false, expediente: null, error: 'El expediente no tiene un estado actual válido' };
     }
-    if (!rolEsEjecutor(estadoActual, rolOperador)) {
-      return { ok: false, expediente: null, error: motivoRolIncorrecto(estadoActual, rolOperador) };
+    if (!rolEsEjecutor(estadoDef, rolOperador)) {
+      return { ok: false, expediente: null, error: motivoRolIncorrecto(estadoDef, rolOperador) };
     }
-    var siguientes = estadoActual.estadosSiguientes || [];
+    var siguientes = estadoDef.estadosSiguientes || [];
     if (siguientes.indexOf(idDestino) === -1) {
       return {
         ok: false,
@@ -190,7 +185,7 @@
     }
     var estadoDestino = obtener(idDestino);
     var nuevo = clonar(expediente);
-    aplicarDestino(nuevo, expediente, idDestino, estadoDestino, contexto);
+    aplicarDestino(nuevo, idDestino, estadoDestino, contexto);
     actualizarMarcas(expediente, nuevo, contexto);
     var entrada = crearEntradaAuditoria(expediente, 'avanzar', idActual, idDestino, null, null, contexto, rolOperador);
     agregarAuditoria(nuevo, entrada);
@@ -204,13 +199,13 @@
     if (!contexto || typeof contexto !== 'object') {
       return { ok: false, expediente: null, error: 'Falta el contexto de la operación' };
     }
-    var idActual = utils.idEstadoActual(expediente);
-    var estadoActual = obtener(idActual);
-    if (estadoActual === null) {
+    var idActual = utils.idEstado(expediente);
+    var estadoDef = obtener(idActual);
+    if (estadoDef === null) {
       return { ok: false, expediente: null, error: 'El expediente no tiene un estado actual válido' };
     }
-    if (!rolEsEjecutor(estadoActual, rolOperador)) {
-      return { ok: false, expediente: null, error: motivoRolIncorrecto(estadoActual, rolOperador) };
+    if (!rolEsEjecutor(estadoDef, rolOperador)) {
+      return { ok: false, expediente: null, error: motivoRolIncorrecto(estadoDef, rolOperador) };
     }
     var motivoValido = false;
     var motivos = config.MOTIVOS_DEVOLUCION;
@@ -227,7 +222,7 @@
         error: 'El motivo de devolución "' + idMotivo + '" no pertenece al catálogo'
       };
     }
-    var devoluciones = estadoActual.estadosDevolucion || [];
+    var devoluciones = estadoDef.estadosDevolucion || [];
     if (devoluciones.indexOf(idDestino) === -1) {
       return {
         ok: false,
@@ -237,7 +232,7 @@
     }
     var estadoDestino = obtener(idDestino);
     var nuevo = clonar(expediente);
-    aplicarDestino(nuevo, expediente, idDestino, estadoDestino, contexto);
+    aplicarDestino(nuevo, idDestino, estadoDestino, contexto);
     actualizarMarcas(expediente, nuevo, contexto);
     var entrada = crearEntradaAuditoria(expediente, 'devolver', idActual, idDestino, idMotivo, observacion === undefined ? null : observacion, contexto, rolOperador);
     agregarAuditoria(nuevo, entrada);

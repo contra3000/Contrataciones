@@ -156,7 +156,7 @@
   }
 
   function estadoDe(expediente) {
-    return SGC.core.utils.idEstadoActual(expediente);
+    return SGC.core.utils.idEstado(expediente);
   }
 
   function definicionEstado(idEstado) {
@@ -182,7 +182,7 @@
   // Entrada del índice fragmentado (ADR-005). La producen repo.memoria y el
   // servidor (idx/<id>.json) con el mismo formato.
   function entradaIndice(id, expediente, contexto) {
-    var estado = estadoDe(expediente) || (expediente && expediente.estadoActual) || null;
+    var estado = estadoDe(expediente);
     var def = definicionEstado(estado);
     var rolEjecutor = def ? def.rolEjecutor : null;
     var fechaLimite = null;

@@ -10,10 +10,9 @@
     throw new Error('utils.js requiere que namespaces.js se cargue primero');
   }
 
-  // Devuelve el id del estado actual de un expediente soportando los dos
-  // formatos del esquema: `estado.id` (esquema v2) o `estadoActual` (v1).
-  // null si no se puede determinar.
-  function idEstadoActual(expediente) {
+  // Devuelve el id del estado actual de un expediente en el esquema v2
+  // (ADR-019): `expediente.estado.id`. null si no se puede determinar.
+  function idEstado(expediente) {
     if (!expediente || typeof expediente !== 'object') {
       return null;
     }
@@ -21,13 +20,10 @@
         typeof expediente.estado.id === 'string') {
       return expediente.estado.id;
     }
-    if (typeof expediente.estadoActual === 'string') {
-      return expediente.estadoActual;
-    }
     return null;
   }
 
   SGC.core.utils = {
-    idEstadoActual: idEstadoActual
+    idEstado: idEstado
   };
 })(typeof window !== 'undefined' ? window : globalThis);

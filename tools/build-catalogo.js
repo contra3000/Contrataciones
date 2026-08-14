@@ -124,8 +124,21 @@ function main() {
   }
 
   const inicio = Date.now();
-  const texto = fs.readFileSync(opciones.entrada, 'utf8');
-  const registros = JSON.parse(texto);
+  let texto = null;
+  try {
+    texto = fs.readFileSync(opciones.entrada, 'utf8');
+  } catch (err) {
+    console.error('No se pudo leer el catálogo de entrada "' + opciones.entrada + '": ' + err.message);
+    process.exit(1);
+  }
+  let registros = null;
+  try {
+    registros = JSON.parse(texto);
+  } catch (err) {
+    console.error('El archivo de entrada "' + opciones.entrada + '" no es JSON válido: ' + err.message);
+    console.error('Revisá que el archivo esté completo y sin cortes.');
+    process.exit(1);
+  }
   validarRegistros(registros);
 
   const ordenados = registros.slice().sort(function (a, b) {
@@ -204,6 +217,12 @@ function main() {
 
   escribirJson(path.join(opciones.salida, 'rubros.json'), rubros);
   escribirJson(path.join(opciones.salida, 'clases.json'), clases);
+  // Arreglo plano y ordenado de los códigos del catálogo (ORDEN-RONDA-05 §3.4).
+  // Permite validar en el navegador, sin cargar fragmentos, que un código
+  // importado (Fast-Track) existe en el catálogo vigente. `ordenados` ya viene
+  // ordenado por código.
+  escribirJson(path.join(opciones.salida, 'codigos.json'),
+    ordenados.map(function (r) { return r.codigo; }));
 
   const manifiesto = {
     catalogoVersion: catalogoVersion,

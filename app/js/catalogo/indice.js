@@ -8,11 +8,19 @@
  *
  * API:
  *   montar({ rubros, clases })           precarga el índice; devuelve el conteo
- *   buscarClases(texto, limite)          -> [{idClase, rubro, clase, cantidad, coincidencias}]
+ *   buscarClases(texto, limite)          -> [{idClase, rubro, clase, cantidad, coincidencias, coincidenciasRubro}]
  *   filtrarPorRubro(rubro)               -> [{idClase, clase, cantidad}]
  *   buscarEnItems(texto, items, limite)  -> [{codigo, item, coincidencias}]
  *   registrarCodigos(lista)              alimenta el set de códigos conocidos
+ *   cargarCodigos(lista)                 alimenta el set desde codigos.json
  *   codigoExiste(codigo[, items])        existencia contra el contexto o el set
+ *
+ * Contrato de los tramos (ORDEN-RONDA-05 §2.1): la búsqueda de clases matchea
+ * sobre el texto combinado "rubro + ' ' + clase", pero los tramos se devuelven
+ * traducidos a cada campo por separado, porque la interfaz resalta cada cadena
+ * por su cuenta. `coincidencias` son índices [inicio, largo] válidos sobre
+ * `clase`; `coincidenciasRubro` son índices válidos sobre `rubro`. En
+ * `buscarEnItems`, `coincidencias` son índices válidos sobre `item`.
  */
 (function (root) {
   'use strict';
@@ -69,6 +77,30 @@
     return tramos;
   }
 
+  // Traduce los tramos de un término (válidos contra el texto combinado
+  // "rubro + ' ' + clase") a dos listas separadas: `clase` con índices de
+  // `clase`, `rubro` con índices de `rubro`. La clase comienza en la posición
+  // rubroLargo + 1 del texto combinado. Un término de una sola palabra nunca
+  // atraviesa el espacio entre rubro y clase; el caso cruzado es defensivo.
+  function tramosPorRegion(entrada, termino) {
+    var claseInicio = entrada.rubroLargo + 1;
+    var ts = tramosDeTermino(entrada.norm, entrada.origIdx, termino);
+    var clase = [];
+    var rubro = [];
+    for (var i = 0; i < ts.length; i++) {
+      var ini = ts[i][0];
+      var lar = ts[i][1];
+      if (ini >= claseInicio) {
+        clase.push([ini - claseInicio, lar]);
+      } else if (ini + lar <= claseInicio) {
+        rubro.push([ini, lar]);
+      } else {
+        clase.push([0, ini + lar - claseInicio]);
+      }
+    }
+    return { clase: clase, rubro: rubro };
+  }
+
   function montar(opciones) {
     entradas = [];
     porRubro = {};
@@ -86,6 +118,7 @@
         idClase: e[0],
         rubro: rubro,
         clase: e[2],
+        rubroLargo: rubro.length,
         cantidad: e[3],
         partes: e.length > 4 ? e[4] : 1,
         norm: mapa.norm,
@@ -112,15 +145,17 @@
     var resultados = [];
     for (var i = 0; i < entradas.length; i++) {
       var e = entradas[i];
-      var tramos = [];
+      var tramosClase = [];
+      var tramosRubro = [];
       var cumple = true;
       for (var t = 0; t < terminos.length; t++) {
-        var ts = tramosDeTermino(e.norm, e.origIdx, terminos[t]);
-        if (ts.length === 0) {
+        var porRegion = tramosPorRegion(e, terminos[t]);
+        if (porRegion.clase.length === 0 && porRegion.rubro.length === 0) {
           cumple = false;
           break;
         }
-        tramos = tramos.concat(ts);
+        tramosClase = tramosClase.concat(porRegion.clase);
+        tramosRubro = tramosRubro.concat(porRegion.rubro);
       }
       if (!cumple) {
         continue;
@@ -130,7 +165,8 @@
         rubro: e.rubro,
         clase: e.clase,
         cantidad: e.cantidad,
-        coincidencias: tramos
+        coincidencias: tramosClase,
+        coincidenciasRubro: tramosRubro
       });
       if (limite !== undefined && resultados.length >= limite) {
         break;
@@ -193,6 +229,14 @@
     }
   }
 
+  // Registra el arreglo plano de códigos de codigos.json (ORDEN-RONDA-05 §3.4)
+  // para validar existencia de códigos importados sin cargar fragmentos.
+  function cargarCodigos(lista) {
+    for (var i = 0; i < lista.length; i++) {
+      codigosVistos.add(lista[i]);
+    }
+  }
+
   function codigoExiste(codigo, items) {
     if (items) {
       for (var i = 0; i < items.length; i++) {
@@ -211,6 +255,7 @@
     filtrarPorRubro: filtrarPorRubro,
     buscarEnItems: buscarEnItems,
     registrarCodigos: registrarCodigos,
+    cargarCodigos: cargarCodigos,
     codigoExiste: codigoExiste
   };
 })(typeof window !== 'undefined' ? window : globalThis);
