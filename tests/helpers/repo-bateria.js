@@ -56,10 +56,13 @@ function correrBateria(etiqueta, crearContexto, conExtra) {
       assert.equal(resultado.version, 1);
       assert.equal(resultado.expediente.expedienteId, resultado.id);
       assert.equal(resultado.expediente.version, 1);
-      assert.equal(typeof resultado.expediente.estadoActual, 'string');
-      assert.ok(Array.isArray(resultado.expediente.auditLog));
-      assert.ok(resultado.expediente.auditLog.length >= 1);
-      assert.equal(resultado.expediente.auditLog[0].hashPrevio, null);
+      assert.equal(typeof resultado.expediente.estado, 'object');
+      assert.equal(resultado.expediente.estado.id, 'ESPECIFICACIONES_TECNICAS');
+      assert.equal(resultado.expediente.estado.fase, 1);
+      assert.equal(typeof resultado.expediente.estado.desde, 'string');
+      assert.ok(Array.isArray(resultado.expediente.auditoria));
+      assert.ok(resultado.expediente.auditoria.length >= 1);
+      assert.equal(resultado.expediente.auditoria[0].hashPrevio, null);
       assert.equal(resultado.expediente.campos.objetoGasto, 'Papel A4 75gr');
       assert.equal(resultado.expediente.incisos.length, 1);
     } finally {
@@ -167,9 +170,11 @@ function correrBateria(etiqueta, crearContexto, conExtra) {
     const ctx = await crearContexto();
     try {
       const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase());
+      const modificado = Object.assign({}, creado.expediente);
+      modificado.estado = { id: 'ADJUDICACION', fase: 7, desde: contextoBase().timestamp };
       await ctx.repo.guardarExpediente(
         creado.id,
-        Object.assign({}, creado.expediente, { estadoActual: 'ADJUDICACION' }),
+        modificado,
         1,
         contextoBase()
       );

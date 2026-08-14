@@ -10,6 +10,7 @@
   --color-exito: #047857;
 
   --fuente-base: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fuente-mono: "Consolas", "Courier New", monospace;
   --espaciado-base: 8px;
   --radio-borde: 4px;
   --tamano-fuente-base: 15px;
@@ -28,7 +29,7 @@ html {
 body {
   font-family: var(--fuente-base);
   color: var(--color-texto);
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-suave);
   line-height: 1.5;
 }
 
@@ -51,4 +52,237 @@ textarea {
 
 a {
   color: var(--color-primario);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.buscador {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.cabecera {
+  margin-bottom: 24px;
+}
+
+.cabecera h1 {
+  font-size: 1.4rem;
+  color: var(--color-primario-oscuro);
+  margin-bottom: 4px;
+}
+
+.subtitulo {
+  color: var(--color-texto-suave);
+  margin-bottom: 8px;
+}
+
+.estado {
+  font-size: 0.9rem;
+  color: var(--color-primario);
+  min-height: 1.2rem;
+}
+
+.seccion-busqueda,
+.seccion-items {
+  margin-bottom: 24px;
+}
+
+.etiqueta {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.caja-combobox {
+  position: relative;
+}
+
+.caja-combobox input[type="search"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo);
+}
+
+.caja-combobox input[type="search"]:focus {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
+}
+
+.desplegable {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  list-style: none;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.desplegable li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-fondo-suave);
+  cursor: pointer;
+}
+
+.desplegable li:last-child {
+  border-bottom: none;
+}
+
+.desplegable li.activo {
+  background-color: var(--color-fondo-suave);
+}
+
+.opcion-codigo {
+  font-family: var(--fuente-mono);
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+  white-space: nowrap;
+}
+
+.opcion-titulo {
+  flex: 1;
+  min-width: 0;
+}
+
+.opcion-detalle {
+  color: var(--color-texto-suave);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.opcion-vacia {
+  color: var(--color-texto-suave);
+  font-style: italic;
+  cursor: default;
+}
+
+mark {
+  background-color: #ffe08a;
+  color: inherit;
+  border-radius: 2px;
+}
+
+.seccion-items h2 {
+  font-size: 1.1rem;
+  color: var(--color-primario-oscuro);
+  margin-bottom: 2px;
+}
+
+.detalle,
+.conteo {
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.lista-renglones {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.renglon {
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.renglon-cab {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.renglon-codigo {
+  font-family: var(--fuente-mono);
+  font-size: 0.85rem;
+  color: var(--color-primario);
+  white-space: nowrap;
+}
+
+.renglon-item {
+  color: var(--color-texto);
+}
+
+.renglon-editor {
+  display: grid;
+  grid-template-columns: 110px 1fr 2fr auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.renglon-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.renglon-editor input,
+.renglon-editor textarea {
+  padding: 6px 8px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo);
+  width: 100%;
+}
+
+.renglon-editor textarea {
+  resize: vertical;
+}
+
+.renglon-editor .quitar {
+  margin-top: 22px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.renglon-editor .quitar:hover {
+  background-color: var(--color-fondo-suave);
+}
+
+.contador {
+  align-self: flex-end;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.renglon-error {
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.resumen {
+  margin-top: 12px;
+  font-weight: 600;
+  color: var(--color-exito);
+}
+
+@media (max-width: 640px) {
+  .renglon-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .renglon-editor .quitar {
+    margin-top: 4px;
+  }
 }

@@ -8,9 +8,9 @@
  *
  * La migración concreta de esta ronda lleva el esquema original de
  * InstruccionesCodigo.md §6.1 (`schemaVersion: 1`, con `incisos`, `auditLog`
- * y `estadoActual`) al esquema corregido de ORDEN-RONDA-01.md §2.6, que
- * incorpora `catalogoVersion`, `renglones` con `aclaracion`, `auditoria`,
- * `solicitante`, `fechaLimite` y el estado como objeto. VERSION_ACTUAL = 2.
+ * y `estadoActual`) al esquema v2 de ADR-019, que incorpora `catalogoVersion`,
+ * `renglones` con `aclaracion`, `auditoria`, `solicitante`, `fechaLimite` y el
+ * estado como objeto. VERSION_ACTUAL = 2.
  */
 (function (root) {
   'use strict';

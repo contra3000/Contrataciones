@@ -1,6 +1,5 @@
 node_modules/
 datos-prueba/
-app/catalogo/
 *.log
 Thumbs.db
 .DS_Store
@@ -9,3 +8,6 @@ Thumbs.db
 # Vive en AppOptimizar\DataBaseITEMs\catalogo_incisos.json
 DataBaseITEMs/
 catalogo_incisos.json
+
+# app/catalogo/ NO se ignora: son los fragmentos servibles generados por
+# tools/build-catalogo.js y se versionan (contenido estático versionado, ADR-004).

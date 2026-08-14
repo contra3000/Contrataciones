@@ -196,7 +196,7 @@ test('POST, GET y PUT completan el ciclo con versiones correctas', async () => {
     assert.equal(creado.status, 201);
     assert.match(creado.body.id, /^2026-\d{3}$/);
     assert.equal(creado.body.version, 1);
-    assert.equal(creado.body.expediente.estadoActual, 'ESPECIFICACIONES_TECNICAS');
+    assert.equal(creado.body.expediente.estado.id, 'ESPECIFICACIONES_TECNICAS');
 
     const leido = await pedir(base, 'GET', '/api/expedientes/' + creado.body.id);
     assert.equal(leido.status, 200);

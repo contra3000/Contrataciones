@@ -116,10 +116,10 @@
     return texto;
   }
 
-  // Construye el expediente inicial con la forma contractual (ORDEN-RONDA-03
-  // §2.4): estadoActual es una cadena y el registro de auditoría es el arreglo
-  // auditLog. La primera entrada de la cadena registra la creación. El `id`
-  // ya viene asignado por el llamador (anio-numero).
+  // Construye el expediente inicial con la forma contractual (ADR-019):
+  // `estado` es un objeto {id, fase, desde} y el registro de auditoría es el
+  // arreglo `auditoria`. La primera entrada de la cadena registra la creación.
+  // El `id` ya viene asignado por el llamador (anio-numero).
   function construirExpediente(datosIniciales, contexto, id) {
     var base = datosIniciales && typeof datosIniciales === 'object'
       ? clonar(datosIniciales) : {};
@@ -127,14 +127,19 @@
     base.anio = id.slice(0, 4);
     base.numero = id.slice(5);
     base.schemaVersion = SGC.core.migraciones.VERSION_ACTUAL;
-    if (typeof base.estadoActual !== 'string') {
-      base.estadoActual = SGC.core.config.ESTADO_INICIAL;
+    var c = contexto || {};
+    if (!base.estado || typeof base.estado !== 'object' || typeof base.estado.id !== 'string') {
+      var defInicial = definicionEstado(SGC.core.config.ESTADO_INICIAL);
+      base.estado = {
+        id: SGC.core.config.ESTADO_INICIAL,
+        fase: defInicial ? defInicial.fase : null,
+        desde: c.timestamp || null
+      };
     }
     base.version = 1;
-    if (!Array.isArray(base.auditLog)) {
-      base.auditLog = [];
+    if (!Array.isArray(base.auditoria)) {
+      base.auditoria = [];
     }
-    var c = contexto || {};
     var entrada = SGC.core.auditoria.crearEntrada(null, {
       timestamp: c.timestamp,
       email: c.email,
@@ -142,11 +147,11 @@
       equipo: c.equipo,
       accion: 'crearExpediente',
       de: null,
-      a: base.estadoActual,
+      a: base.estado.id,
       motivo: null,
       observacion: c.observacion === undefined ? null : c.observacion
     });
-    base.auditLog.push(entrada);
+    base.auditoria.push(entrada);
     return base;
   }
 

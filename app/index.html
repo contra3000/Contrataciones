@@ -3,13 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SGC - Sistema de Gestión de Contrataciones</title>
+  <title>SGC - Búsqueda de ítems del catálogo</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-  <main id="app"></main>
+  <main id="app" class="buscador">
+    <header class="cabecera">
+      <h1>SGC — Búsqueda de ítems del catálogo</h1>
+      <p class="subtitulo">Escriba una clase o rubro, elija el ítem y arme los renglones del pedido.</p>
+      <p id="sgc-estado" class="estado" role="status" aria-live="polite">Cargando catálogo…</p>
+    </header>
+
+    <section class="seccion-busqueda" aria-label="Búsqueda de clases">
+      <label for="sgc-campo-clases" class="etiqueta">Buscar clase o rubro</label>
+      <div class="caja-combobox">
+        <input id="sgc-campo-clases" type="search" role="combobox"
+               aria-expanded="false" aria-controls="sgc-lista-clases"
+               aria-autocomplete="list" autocomplete="off"
+               placeholder="Ej.: válvula, termostato, oficina…">
+        <ul id="sgc-lista-clases" role="listbox" class="desplegable" hidden></ul>
+      </div>
+    </section>
+
+    <section id="sgc-panel-items" class="seccion-items" aria-label="Ítems de la clase" hidden>
+      <h2 id="sgc-titulo-clase"></h2>
+      <p id="sgc-detalle-clase" class="detalle"></p>
+      <label for="sgc-campo-items" class="etiqueta">Filtrar ítems de la clase</label>
+      <div class="caja-combobox">
+        <input id="sgc-campo-items" type="search" role="combobox"
+               aria-expanded="false" aria-controls="sgc-lista-items"
+               aria-autocomplete="list" autocomplete="off"
+               placeholder="Filtre dentro de la clase…">
+        <ul id="sgc-lista-items" role="listbox" class="desplegable" hidden></ul>
+      </div>
+      <p id="sgc-conteo-items" class="conteo"></p>
+    </section>
+
+    <section class="seccion-renglones" aria-label="Renglones del pedido">
+      <h2>Renglones del pedido</h2>
+      <ul id="sgc-lista-renglones" class="lista-renglones"></ul>
+      <p id="sgc-resumen" class="resumen" role="status" aria-live="polite">Sin renglones todavía.</p>
+    </section>
+  </main>
+
   <script src="js/core/namespaces.js"></script>
   <script src="js/core/config.js"></script>
   <script src="js/core/utils.js"></script>
+  <script src="js/core/validacion.js"></script>
+  <script src="js/catalogo/indice.js"></script>
+  <script src="js/catalogo/carga.js"></script>
+  <script src="js/catalogo/buscador.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": 2,
   "id": "2026-001",
   "numero": 1,
   "anio": 2026,
@@ -45,16 +45,16 @@
   ],
   "auditoria": [
     {
-      "hash": "7b1e...a4c2",
-      "hashPrevio": null,
-      "quien": "maria.gonzalez@faa.mil.ar",
+      "timestamp": "2026-08-01T10:15:00-03:00",
+      "email": "maria.gonzalez@faa.mil.ar",
       "rol": "generador",
+      "equipo": "PC-USU-01",
       "accion": "crearExpediente",
-      "origen": {
-        "ip": "192.168.1.10",
-        "equipo": "PC-USU-01"
-      },
-      "cuando": "2026-08-01T10:15:00-03:00"
+      "de": null,
+      "a": "ESPECIFICACIONES_TECNICAS",
+      "motivo": null,
+      "observacion": null,
+      "hashPrevio": null
     }
   ]
 }
