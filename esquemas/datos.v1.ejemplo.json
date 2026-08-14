@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "expedienteId": "2026-009",
+  "numero": "009",
+  "anio": "2026",
+  "titulo": "Adquisición de resmas de papel A4 para la División Administración",
+  "estadoActual": "SOLICITUD_CONTRATACION",
+  "version": 3,
+  "ultimaModificacion": "2026-06-10T09:30:00.000Z",
+  "ultimoUsuario": "juan.perez@faa.mil.ar",
+  "responsables": {
+    "generador": "maria.gonzalez@faa.mil.ar",
+    "abastecimiento": "juan.perez@faa.mil.ar",
+    "contrataciones": "",
+    "juridica": "",
+    "contaduria": ""
+  },
+  "campos": {
+    "objetoGasto": "Papel A4 75gr",
+    "unidadSolicitante": "División Administración"
+  },
+  "incisos": [
+    { "codigo": "102040", "cantidad": 40, "unidad": "RESMA" },
+    { "codigo": "102041", "cantidad": 10, "unidad": "RESMA" }
+  ],
+  "entregables": [],
+  "historico": [
+    {
+      "accion": "creacion",
+      "desde": null,
+      "hacia": "ESPECIFICACIONES_TECNICAS",
+      "quien": "maria.gonzalez@faa.mil.ar",
+      "rol": "generador",
+      "cuando": "2026-06-01T10:00:00.000Z"
+    }
+  ],
+  "sla": {
+    "fechaLimite": "2026-07-01",
+    "asignadoA": "juan.perez@faa.mil.ar"
+  },
+  "auditLog": [
+    {
+      "timestamp": "2026-06-01T10:00:00.000Z",
+      "usuario": "maria.gonzalez@faa.mil.ar",
+      "rol": "generador",
+      "accion": "crearExpediente",
+      "de": null,
+      "a": "ESPECIFICACIONES_TECNICAS",
+      "detalle": null,
+      "hashPrevio": null
+    },
+    {
+      "timestamp": "2026-06-10T09:30:00.000Z",
+      "usuario": "juan.perez@faa.mil.ar",
+      "rol": "abastecimiento",
+      "accion": "avanzar",
+      "de": "ESPECIFICACIONES_TECNICAS",
+      "a": "SOLICITUD_CONTRATACION",
+      "detalle": null,
+      "hashPrevio": "9f2a01c4"
+    }
+  ]
+}

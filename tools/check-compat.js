@@ -19,14 +19,16 @@
  * Cómo se evitan los falsos positivos:
  * La fuente se analiza con un mini-lexer que distingue comentarios, cadenas
  * de texto, literales de expresión regular y código. Las comprobaciones de
- * JS/CSS/HTML y de módulos ES corren sobre el "código limpio" (sin
- * comentarios, sin cadenas —incluidas las de mensajes de error— y sin
- * literales regex); así, mencionar "Object.groupBy" en un comentario o en un
- * string no cuenta como violación. La comprobación de URLs corre sobre el
- * mismo texto con las cadenas conservadas, para capturar referencias externas
- * reales que viven en strings o atributos (fetch('https://...'), src="https://"),
- * pero siempre fuera de comentarios. El flag "v" de regex se detecta en los
- * literales regex extraídos por el lexer.
+ * JS/CSS/HTML, de módulos ES (import/export) y de URLs corren sobre el
+ * "código limpio" (sin comentarios, sin cadenas —incluidas las de mensajes
+ * de error— y sin literales regex). Así, mencionar "Object.groupBy" en un
+ * comentario o en un string no cuenta como violación, y tampoco una URL que
+ * vive dentro de un literal de cadena (fetch('https://...'),
+ * href="https://...", url("https://...")): esas son referencias declaradas,
+ * no una petición escrita en código. Lo único que se revisa con las cadenas
+ * conservadas es <script type="module"> en HTML, porque el valor de atributo
+ * va entre comillas. El flag "v" de regex se detecta en los literales regex
+ * extraídos por el lexer.
  */
 'use strict';
 
@@ -65,9 +67,15 @@ const PATRONES_HTML = [
 
 // "import"/"export" se construyen por partes para que el token vetado nunca
 // aparezca contiguo en el propio guardián (auto-inspección sin falso positivo).
-const PATRONES_MODULO = [
+// Estos dos se revisan sobre el código limpio (sin cadenas).
+const PATRONES_IMPORT_EXPORT = [
   { re: new RegExp('\\b' + 'im' + 'port' + '\\b'), motivo: 'import (módulos ES no permitidos)' },
-  { re: new RegExp('\\b' + 'ex' + 'port' + '\\b'), motivo: 'export (módulos ES no permitidos)' },
+  { re: new RegExp('\\b' + 'ex' + 'port' + '\\b'), motivo: 'export (módulos ES no permitidos)' }
+];
+
+// type="module" en HTML se revisa sobre el texto con cadenas conservadas: el
+// valor de atributo va entre comillas y no es un literal de código.
+const PATRONES_TYPE_MODULE = [
   { re: /\btype\s*=\s*["']module["']/, motivo: 'script type="module" (módulos ES no permitidos)' }
 ];
 
@@ -137,8 +145,11 @@ function analizarFuente(texto, esJS) {
       continue;
     }
 
-    // Comentario de línea
-    if (ch === '/' && sig === '/') {
+    // Comentario de línea. Sólo en JS: en CSS "//" no es comentario (los
+    // comentarios CSS son /* */) y puede aparecer dentro de un url(...) sin
+    // comillas, p. ej. url(https://...). Si se recortara acá, la URL no se
+    // detectaría (defecto encontrado por la suite adversaria, ORDEN-RONDA-02 §2.1).
+    if (ch === '/' && sig === '/' && esJS) {
       const nl = texto.indexOf('\n', i);
       const trozo = texto.slice(i, nl === -1 ? n : nl);
       aportarEspacios(trozo);
@@ -252,12 +263,12 @@ function patronesPara(archivo) {
   const lista = [];
   if (EXT_JS.indexOf(ext) !== -1) {
     lista.push.apply(lista, PATRONES_JS);
-    lista.push.apply(lista, PATRONES_MODULO);
+    lista.push.apply(lista, PATRONES_IMPORT_EXPORT);
   } else if (EXT_CSS.indexOf(ext) !== -1) {
     lista.push.apply(lista, PATRONES_CSS);
   } else if (EXT_HTML.indexOf(ext) !== -1) {
     lista.push.apply(lista, PATRONES_HTML);
-    lista.push.apply(lista, PATRONES_MODULO);
+    lista.push.apply(lista, PATRONES_IMPORT_EXPORT);
   }
   return lista;
 }
@@ -308,8 +319,24 @@ function verificarArchivo(rutaAbsoluta) {
     }
   }
 
-  // URLs: sobre el texto con cadenas conservadas (captura fetch/src reales)
-  const lineasUrl = analisis.conCadenas.split('\n');
+  // script type="module" (HTML): el valor del atributo va entre comillas, así
+  // que se revisa sobre el texto con las cadenas conservadas.
+  if (EXT_HTML.indexOf(path.extname(rutaAbsoluta).toLowerCase()) !== -1) {
+    const lineasHtml = analisis.conCadenas.split('\n');
+    for (let i = 0; i < lineasHtml.length; i++) {
+      for (const p of PATRONES_TYPE_MODULE) {
+        if (p.re.test(lineasHtml[i])) {
+          violaciones.push(rel + ':' + (i + 1) + '  ' + p.motivo);
+        }
+      }
+    }
+  }
+
+  // URLs: sobre el código limpio. Una URL dentro de un literal de cadena
+  // (fetch('https://...'), href="https://...", url("https://...")) no se
+  // reporta; sólo la que aparece escrita como código, p. ej. un @import o
+  // background: url(...) sin comillas en CSS (ADR-018).
+  const lineasUrl = analisis.sinCadenas.split('\n');
   for (let i = 0; i < lineasUrl.length; i++) {
     for (const p of PATRONES_URL) {
       if (p.re.test(lineasUrl[i])) {
