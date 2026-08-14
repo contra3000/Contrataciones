@@ -7,7 +7,9 @@
  * Para cada ítem de la lista de veto genera un archivo temporal con esa
  * violación, corre tools/check-compat.js contra él y verifica que la detecta.
  * También verifica los falsos positivos: una violación escrita dentro de un
- * comentario o de un literal de cadena NO debe reportarse.
+ * comentario o de un literal de cadena NO debe reportarse — salvo las URLs
+ * absolutas, que se reportan SIEMPRE, también dentro de un literal de cadena
+ * (ORDEN-RONDA-03 §2.1).
  *
  * Cada caso usa un directorio temporal propio, creado y eliminado dentro de
  * la suite, con archivos de menos de 50 líneas y un límite de tiempo explícito
@@ -175,6 +177,31 @@ const CASOS_POSITIVOS = [
     nombre: 'html-script-import-export',
     fragmento: /export \(módulos/,
     archivos: { 'a.html': "<script>\nimport { a } from 'b';\nexport { a };\n</script>\n" }
+  },
+  {
+    nombre: 'css-url-con-comillas',
+    fragmento: /URL absoluta/,
+    archivos: { 'a.css': 'body {\n  background: url("https://cdn.ejemplo.example/fondo.png");\n}\n' }
+  },
+  {
+    nombre: 'js-string-fetch-url',
+    fragmento: /URL absoluta/,
+    archivos: { 'a.js': "fetch('https://api.ejemplo.example/datos');\n" }
+  },
+  {
+    nombre: 'js-string-url',
+    fragmento: /URL absoluta/,
+    archivos: { 'a.js': 'var base = "https://servidor.ejemplo.example";\n' }
+  },
+  {
+    nombre: 'js-template-string-url',
+    fragmento: /URL absoluta/,
+    archivos: { 'a.js': 'var u = `https://plantilla.ejemplo.example/x`;\n' }
+  },
+  {
+    nombre: 'html-string-url',
+    fragmento: /URL absoluta/,
+    archivos: { 'a.html': '<img src="https://cdn.ejemplo.example/logo.png" alt="logo">\n' }
   }
 ];
 
@@ -194,18 +221,6 @@ const CASOS_NEGATIVOS = [
   {
     nombre: 'js-string-toSorted',
     archivos: { 'a.js': 'var nota = "a.toSorted() no se usa";\n' }
-  },
-  {
-    nombre: 'js-string-fetch-url',
-    archivos: { 'a.js': "fetch('https://api.ejemplo.example/datos');\n" }
-  },
-  {
-    nombre: 'js-string-url',
-    archivos: { 'a.js': 'var base = "https://servidor.ejemplo.example";\n' }
-  },
-  {
-    nombre: 'js-template-string-url',
-    archivos: { 'a.js': 'var u = `https://plantilla.ejemplo.example/x`;\n' }
   },
   {
     nombre: 'js-comentario-url',
@@ -228,10 +243,6 @@ const CASOS_NEGATIVOS = [
     archivos: { 'a.css': '/* text-wrap: balance no se usa */\nbody { color: black; }\n' }
   },
   {
-    nombre: 'css-url-con-comillas',
-    archivos: { 'a.css': 'body {\n  background: url("https://cdn.ejemplo.example/fondo.png");\n}\n' }
-  },
-  {
     nombre: 'css-comentario-url',
     archivos: { 'a.css': '/* fuente: https://ejemplo.example */\n' }
   },
@@ -242,10 +253,6 @@ const CASOS_NEGATIVOS = [
   {
     nombre: 'html-string-popover',
     archivos: { 'a.html': '<div data-ejemplo="popover">hola</div>\n' }
-  },
-  {
-    nombre: 'html-string-url',
-    archivos: { 'a.html': '<img src="https://cdn.ejemplo.example/logo.png" alt="logo">\n' }
   }
 ];
 

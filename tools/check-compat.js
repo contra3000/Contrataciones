@@ -19,16 +19,17 @@
  * Cómo se evitan los falsos positivos:
  * La fuente se analiza con un mini-lexer que distingue comentarios, cadenas
  * de texto, literales de expresión regular y código. Las comprobaciones de
- * JS/CSS/HTML, de módulos ES (import/export) y de URLs corren sobre el
- * "código limpio" (sin comentarios, sin cadenas —incluidas las de mensajes
- * de error— y sin literales regex). Así, mencionar "Object.groupBy" en un
- * comentario o en un string no cuenta como violación, y tampoco una URL que
- * vive dentro de un literal de cadena (fetch('https://...'),
- * href="https://...", url("https://...")): esas son referencias declaradas,
- * no una petición escrita en código. Lo único que se revisa con las cadenas
- * conservadas es <script type="module"> en HTML, porque el valor de atributo
- * va entre comillas. El flag "v" de regex se detecta en los literales regex
- * extraídos por el lexer.
+ * JS/CSS/HTML y de módulos ES (import/export) corren sobre el "código limpio"
+ * (sin comentarios, sin cadenas —incluidas las de mensajes de error— y sin
+ * literales regex). Así, mencionar "Object.groupBy" en un comentario o en un
+ * string no cuenta como violación. Las URLs absolutas, en cambio, se reportan
+ * SIEMPRE, también dentro de un literal de cadena (fetch('https://...'),
+ * href="https://...", url("https://...")): app no puede emitir ni declarar
+ * referencias al exterior (ADR-018). Sólo quedan exceptuadas las que viven
+ * dentro de un comentario. Lo único que se revisa con las cadenas conservadas,
+ * además de las URLs, es <script type="module"> en HTML, porque el valor de
+ * atributo va entre comillas. El flag "v" de regex se detecta en los literales
+ * regex extraídos por el lexer.
  */
 'use strict';
 
@@ -108,7 +109,7 @@ function esEspacio(ch) {
 //  - sinCadenas: comentarios, cadenas y regex reemplazados por espacios
 //    (preservando saltos de línea). Base para las comprobaciones de código.
 //  - conCadenas: comentarios y regex reemplazados; cadenas conservadas.
-//    Base para la detección de URLs.
+//    Base para la detección de URLs y de <script type="module">.
 //  - regexes: [{ linea, flags }] literales regex encontrados (sólo si esJS).
 function analizarFuente(texto, esJS) {
   let sin = '';
@@ -332,11 +333,11 @@ function verificarArchivo(rutaAbsoluta) {
     }
   }
 
-  // URLs: sobre el código limpio. Una URL dentro de un literal de cadena
-  // (fetch('https://...'), href="https://...", url("https://...")) no se
-  // reporta; sólo la que aparece escrita como código, p. ej. un @import o
-  // background: url(...) sin comillas en CSS (ADR-018).
-  const lineasUrl = analisis.sinCadenas.split('\n');
+  // URLs: sobre el texto con las cadenas conservadas. Una URL absoluta se
+  // reporta siempre, incluso dentro de un literal de cadena
+  // (fetch('https://...'), href="https://...", url("https://...")). Sólo las
+  // que viven dentro de un comentario quedan exceptuadas (ADR-018).
+  const lineasUrl = analisis.conCadenas.split('\n');
   for (let i = 0; i < lineasUrl.length; i++) {
     for (const p of PATRONES_URL) {
       if (p.re.test(lineasUrl[i])) {
