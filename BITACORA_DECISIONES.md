@@ -25,6 +25,7 @@ Plantilla al final del archivo.
 | 016 | La app no custodia documentos firmados | Aceptada | 2026-08-13 |
 | 017 | Identidad basada en el correo institucional, no en Windows | Aceptada | 2026-08-13 |
 | 018 | El scraper del catálogo es infraestructura del proyecto | Aceptada | 2026-08-13 |
+| 019 | Esquema de `datos.json` v2: `estado` como objeto y `auditoria` como registro | Aceptada | 2026-08-14 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -400,6 +401,31 @@ Esa distinción es importante y hay que sostenerla en el código: el **scraper**
 1. Se elimina del alcance la carga de archivos firmados y su versionado (simplifica H7).
 2. **La carpeta del expediente no es el archivo legal completo.** Hay que enunciarlo en la interfaz — un texto fijo en la vista del expediente y en el `resumen.md` exportado — para que nadie lo tome por tal en una auditoría. Es la contrapartida honesta de esta simplificación.
 3. El `resumen.md` para ingesta por LLM debe declarar explícitamente que los instrumentos firmados están fuera del sistema; de lo contrario, un modelo que lo lea va a concluir que el expediente está incompleto o adulterado.
+
+---
+
+## ADR-019 — Esquema de `datos.json` v2
+
+**Estado:** Aceptada · 2026-08-14 · *Cierra la tensión abierta en `ORDEN-RONDA-03.md` §2.4*
+
+**Contexto.** `InstruccionesCodigo.md` §6.1 definía `estadoActual` como cadena y `auditLog` como arreglo de auditoría. Durante la ronda 2 la implementación que quedó en producción reestructuró ambos: `estado` pasó a ser un objeto `{id, fase, desde}` y el registro de auditoría a llamarse `auditoria`. La desviación fue documentada por su autor y excede las correcciones que la orden autorizaba.
+
+**Decisión.** Se **acepta** el esquema v2 y se lo declara contrato vigente, reemplazando a §6.1 en esos dos campos. La forma canónica queda:
+
+```
+estado:    { id, fase, desde }        // no una cadena suelta
+auditoria: [ { timestamp, email, rol, equipo, accion, de, a, motivo, observacion, hashPrevio } ]
+```
+
+**Fundamento.** Tres razones, en orden de peso.
+
+1. **`estado` como objeto es mejor diseño.** La fase se deriva del estado y tenerla al lado evita que cada consumidor la recalcule contra `config.js`; `desde` da el instante de entrada al estado, que es el insumo exacto del futuro motor de SLA (ADR-013) y hoy se perdería.
+2. **Revertir cuesta más de lo que corrige.** El motor de transiciones, las migraciones, el adaptador de persistencia y el servidor ya están escritos y probados contra esta forma. Cambiarla ahora es tocar cuatro módulos en verde para volver a un nombre.
+3. **La migración ya contempla el paso.** La ruta v1 → v2 preserva todos los campos originales y deriva los nuevos, verificado por batería externa.
+
+**Lo que esta ADR no perdona.** Se acepta el resultado, no el procedimiento: la desviación debió proponerse antes de implementarse. La regla sigue en pie — quien se aparte de un contrato dictado lo justifica **antes**, o lo revierte.
+
+**Consecuencias.** `InstruccionesCodigo.md` §6.1 queda derogado en lo referido a `estadoActual` y `auditLog`; el resto de §6.1 sigue vigente. Toda orden futura que hable del esquema cita esta ADR y no §6.1.
 
 ---
 

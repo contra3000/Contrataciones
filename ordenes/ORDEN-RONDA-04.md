@@ -34,11 +34,13 @@ Y algo nuevo, que a partir de acá es permanente: **esta ronda deja la aplicaci�
 
 ## 2. Correcciones arrastradas (obligatorias)
 
-### 2.1 — Trabajo de la ronda 3 sin registrar
+### 2.1 — El esquema de `datos.json` queda cerrado por ADR-019
 
-Si en tu repositorio hay trabajo de la ronda 3 sin commitear, o falta el `INFORME-RONDA-03.md`, resolvelo **primero**: escribí el informe retroactivo con las siete secciones —incluida la 7, con la evidencia real de los tests de concurrencia— y dejalo en un commit propio con mensaje `Ronda 3 — H3 Persistencia y servidor` antes de empezar lo nuevo.
+La tensión que dejó abierta `ORDEN-RONDA-03.md` §2.4 está resuelta: se **acepta** el esquema v2 —`estado` como objeto `{id, fase, desde}` y `auditoria` como arreglo de registro— y se lo declara contrato vigente. Leé **ADR-019** en `BITACORA_DECISIONES.md`.
 
-Si la ronda 3 quedó interrumpida por un permiso denegado, **decilo en la sección 4**: qué pediste, para qué, y qué no pudiste terminar por eso. No es una excusa, es información que necesito.
+Lo que corresponde hacer en esta ronda: revisar que `esquemas/datos.ejemplo.json`, `esquemas/datos.v1.ejemplo.json` y las migraciones estén alineados con esa forma, y **que ningún comentario del código siga citando `estadoActual` o `auditLog` como si fueran vigentes**. A partir de acá el esquema se cita como ADR-019, no como §6.1.
+
+Queda dicho para el futuro: se aceptó el resultado, no el procedimiento. Una desviación de un contrato dictado se propone **antes** de implementarla.
 
 ### 2.2 — La aplicación tiene que arrancar con un comando
 
@@ -146,9 +148,18 @@ Si algo te fue denegado y eso te impidió terminar, decilo acá.
 
 ---
 
-## 4. Reglas de conducta
+## 4. Reglas de conducta y cierre
 
-Las siete de `ORDEN-RONDA-01.md` §3, sin cambios. Commit único: `Ronda 4 — H4 Catalogo y autocompletado`.
+Las siete de `ORDEN-RONDA-01.md` §3, sin cambios.
+
+**El cierre es parte del trabajo, no un trámite.** Terminada la tarea:
+
+1. `node --test` y `node tools/check-compat.js` en verde.
+2. `INFORME-RONDA-04.md` completo, con sus ocho secciones.
+3. **Un solo commit**, mensaje `Ronda 4 — H4 Catalogo y autocompletado`. Sin push.
+4. `git status` limpio: nada de trabajo suelto sin registrar.
+
+El punto 3 no es formalidad. Al terminar vos, **un auditor va a clonar este repositorio y sólo va a ver lo commiteado**: lo que quede sin registrar, para él no existe. En las tres rondas anteriores hubo tres sesiones que terminaron con trabajo correcto sin commitear y se dio por no entregado. Si te estás quedando sin margen, **commiteá primero y refiná después**.
 
 ---
 
