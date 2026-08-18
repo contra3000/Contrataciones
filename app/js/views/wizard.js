@@ -195,6 +195,14 @@
   }
 
   function retomarBorrador(registro) {
+    var chequeo = borrador.validarForma(registro.datos);
+    if (!chequeo.valido) {
+      estado.dom.borradorInfo.textContent =
+        'El borrador guardado no se puede aplicar: ' + chequeo.motivo +
+        '. Puede descartarlo y empezar de nuevo.';
+      estado.dom.borradorAviso.hidden = false;
+      return;
+    }
     estado.datos = JSON.parse(JSON.stringify(registro.datos));
     if (estado.datos.identificacion && estado.datos.identificacion.operador) {
       estado.datos.identificacion.operador = estado.operador.email;
@@ -254,10 +262,31 @@
     estado.dom.fasttrackMsj.hidden = true;
     var lector = new FileReader();
     lector.onload = function () {
-      var verificar = function (codigo) {
-        return SGC.catalogo.indice.codigoExiste(codigo);
-      };
-      var preparar = function () {
+      // Estructura y tipos primero, con verificación de códigos en blanco:
+      // un archivo mal formado se rechaza sin tocar la red. La existencia de
+      // los códigos la valida el servidor (ORDEN-RONDA-06 §2.2): el cliente
+      // ya no baja el universo de códigos.
+      var estructural = fasttrack.importar(String(lector.result), function () {
+        return true;
+      });
+      if (!estructural.ok) {
+        estado.dom.fasttrackMsj.textContent = 'No se pudo importar el archivo:\n' + estructural.errores.join('\n');
+        estado.dom.fasttrackMsj.hidden = false;
+        return;
+      }
+      var codigos = estructural.datos.renglones.map(function (r) {
+        return r.codigo;
+      });
+      if (typeof estado.repo.validarCodigos !== 'function') {
+        estado.dom.fasttrackMsj.textContent =
+          'No se pudo validar el archivo: el servidor de catálogo no está disponible. El archivo no se importa.';
+        estado.dom.fasttrackMsj.hidden = false;
+        return;
+      }
+      estado.repo.validarCodigos(codigos).then(function (respuesta) {
+        var verificar = function (codigo) {
+          return respuesta.invalidos.indexOf(codigo) === -1;
+        };
         var resultado = fasttrack.importar(String(lector.result), verificar);
         if (!resultado.ok) {
           estado.dom.fasttrackMsj.textContent = 'No se pudo importar el archivo:\n' + resultado.errores.join('\n');
@@ -267,15 +296,18 @@
         estado.datos = resultado.datos;
         estado.datos.identificacion.operador = estado.operador.email;
         aplicarDatosAlFormulario();
+        SGC.catalogo.indice.registrarCodigos(estado.datos.renglones);
         SGC.catalogo.renglones.cargar(estado.datos.renglones);
         guardarBorrador();
         estado.dom.fasttrackMsj.textContent = 'Modelo importado correctamente. Revisá los pasos y seguí.';
         estado.dom.fasttrackMsj.hidden = false;
         estado.dom.archivoModelo.value = '';
         irAPaso(1, false);
-      };
-      SGC.catalogo.carga.cargarCodigos().then(preparar).catch(function (err) {
-        estado.dom.fasttrackMsj.textContent = 'No se pudo cargar el índice de códigos: ' + err.message;
+      }).catch(function (err) {
+        estado.dom.fasttrackMsj.textContent =
+          'No se pudo validar el archivo contra el servidor: ' +
+          (err && err.message ? err.message : 'error de red') +
+          '. El archivo no se importa.';
         estado.dom.fasttrackMsj.hidden = false;
       });
     };

@@ -532,3 +532,320 @@ mark {
   font-weight: 600;
   margin-top: 8px;
 }
+
+/* ---------------------------------------------------------------------------
+   Tablero Kanban (ORDEN-RONDA-06 §3.1)
+--------------------------------------------------------------------------- */
+.tablero-nav {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.tablero-nav button {
+  padding: 10px 20px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.tablero-nav button.primario {
+  border-color: var(--color-primario);
+  background-color: var(--color-primario);
+  color: #ffffff;
+}
+
+.tablero-nav button.primario:hover,
+.tablero-nav button.primario:focus-visible {
+  background-color: var(--color-primario-oscuro);
+}
+
+.kanban-cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.kanban-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.kanban-columnas {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 260px;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.kanban-columna {
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 8px;
+}
+
+.kanban-columna-titulo {
+  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+  border-bottom: 1px solid var(--color-borde);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.kanban-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-tarjeta {
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: var(--color-fondo-suave);
+}
+
+.kanban-numero {
+  font-family: var(--fuente-mono);
+  font-size: 0.85rem;
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+.kanban-titulo {
+  font-size: 0.95rem;
+}
+
+.kanban-etiqueta {
+  font-size: 0.85rem;
+  align-self: flex-start;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
+  padding: 1px 8px;
+}
+
+.kanban-operador,
+.kanban-fecha {
+  font-size: 0.8rem;
+  color: var(--color-texto-suave);
+}
+
+.kanban-abrir {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------------
+   Expediente (ORDEN-RONDA-06 §3.2) y diálogo de transición
+--------------------------------------------------------------------------- */
+.expediente {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.expediente-cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.expediente-cabecera button {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.expediente-cuerpo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .expediente-cuerpo {
+    grid-template-columns: 1fr;
+  }
+}
+
+.expediente-seccion {
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 12px;
+}
+
+.expediente-seccion h3 {
+  margin-bottom: 8px;
+}
+
+.expediente-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.accion-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 360px;
+}
+
+.accion-bloque button {
+  padding: 10px 20px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.accion-bloque button.primario {
+  border-color: var(--color-primario);
+  background-color: var(--color-primario);
+  color: #ffffff;
+}
+
+.accion-bloque button.primario:hover,
+.accion-bloque button.primario:focus-visible {
+  background-color: var(--color-primario-oscuro);
+}
+
+.accion-bloque button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.accion-porque {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.exp-mensaje {
+  font-weight: 600;
+}
+
+.exp-mensaje-ok {
+  color: var(--color-exito);
+}
+
+.exp-mensaje-error {
+  color: var(--color-error);
+}
+
+.conflicto {
+  border: 1px solid var(--color-error);
+  background-color: #fef2f2;
+  border-radius: var(--radio-borde);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conflicto button {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.lista-auditoria {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lista-auditoria li {
+  border-left: 3px solid var(--color-primario);
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exp-aud-cabecera {
+  font-family: var(--fuente-mono);
+  font-size: 0.85rem;
+}
+
+.exp-aud-autor {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.exp-aud-detalle {
+  font-size: 0.85rem;
+}
+
+.dialogo {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  max-width: 480px;
+  margin: 10vh auto;
+  z-index: 10;
+}
+
+.dialogo select,
+.dialogo textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  font: inherit;
+}
+
+.dialogo-acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.dialogo-acciones button {
+  padding: 8px 16px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.dialogo-acciones button.primario {
+  border-color: var(--color-primario);
+  background-color: var(--color-primario);
+  color: #ffffff;
+}
+
+.dialogo-acciones button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+

@@ -200,6 +200,8 @@
       fase: def ? def.fase : null,
       sector: sectorDeRol(rolEjecutor),
       rolEjecutor: rolEjecutor,
+      ultimoOperador: (contexto && contexto.email) ||
+        (expediente && typeof expediente.ultimoUsuario === 'string' ? expediente.ultimoUsuario : null),
       fechaLimite: fechaLimite,
       actualizado: (contexto && contexto.timestamp) ||
         (expediente && expediente.ultimaModificacion) || null

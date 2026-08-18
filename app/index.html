@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SGC - Alta de Especificación Técnica</title>
+  <title>SGC — Circuito de contrataciones</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
   <main id="app" class="app">
     <header class="cabecera">
-      <h1>SGC — Alta de Especificación Técnica</h1>
-      <p class="subtitulo">Complete los cuatro pasos. El expediente queda guardado con su número y su auditoría.</p>
+      <h1>SGC — Circuito de contrataciones</h1>
+      <p class="subtitulo">Alta de la Especificación Técnica y tablero de expedientes.</p>
       <p id="sgc-app-error" class="error-global" role="alert" hidden></p>
     </header>
 
@@ -129,6 +129,89 @@
         <button id="sgc-siguiente" type="button" class="primario">Siguiente</button>
       </nav>
     </section>
+
+    <nav id="sgc-tablero-nav" class="tablero-nav" aria-label="Navegación principal" hidden>
+      <button id="sgc-nav-alta" type="button" class="primario">Alta de Especificación</button>
+      <button id="sgc-nav-tablero" type="button">Tablero</button>
+    </nav>
+
+    <section id="sgc-kanban" class="kanban" aria-label="Tablero de expedientes" hidden>
+      <header class="kanban-cabecera">
+        <h2>Tablero de expedientes</h2>
+        <div class="kanban-filtros">
+          <label for="sgc-kanban-busqueda">Buscar</label>
+          <input id="sgc-kanban-busqueda" type="search" autocomplete="off"
+                 placeholder="Número, título, estado, operador…">
+          <label for="sgc-kanban-fase">Fase</label>
+          <select id="sgc-kanban-fase"></select>
+          <button id="sgc-kanban-refrescar" type="button">Refrescar</button>
+        </div>
+        <p id="sgc-kanban-conteo" class="conteo" role="status" aria-live="polite"></p>
+        <p id="sgc-kanban-error" class="error-global" role="alert" hidden></p>
+      </header>
+      <div id="sgc-kanban-columnas" class="kanban-columnas"></div>
+    </section>
+
+    <section id="sgc-expediente" class="expediente" aria-label="Expediente" hidden>
+      <header class="expediente-cabecera">
+        <button id="sgc-expediente-volver" type="button">Volver al tablero</button>
+        <h2 id="sgc-expediente-titulo"></h2>
+        <p id="sgc-expediente-resumen" class="detalle"></p>
+      </header>
+      <p id="sgc-expediente-mensaje" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
+      <div id="sgc-expediente-conflicto" class="conflicto" role="alert" hidden>
+        <p id="sgc-expediente-conflicto-texto"></p>
+        <button id="sgc-expediente-recargar" type="button">Recargar expediente</button>
+      </div>
+
+      <div class="expediente-cuerpo">
+        <section class="expediente-seccion" aria-labelledby="sgc-expediente-datos-titulo">
+          <h3 id="sgc-expediente-datos-titulo">Datos</h3>
+          <dl id="sgc-expediente-datos" class="revision-filas"></dl>
+        </section>
+        <section class="expediente-seccion" aria-labelledby="sgc-expediente-renglones-titulo">
+          <h3 id="sgc-expediente-renglones-titulo">Renglones</h3>
+          <ul id="sgc-expediente-renglones" class="lista-renglones"></ul>
+        </section>
+      </div>
+
+      <section class="expediente-acciones" aria-label="Acciones del expediente">
+        <div class="accion-bloque">
+          <button id="sgc-expediente-avanzar" type="button" class="primario">Avanzar</button>
+          <p id="sgc-expediente-avanzar-porque" class="accion-porque"></p>
+        </div>
+        <div class="accion-bloque">
+          <button id="sgc-expediente-devolver" type="button">Devolver por observación</button>
+          <p id="sgc-expediente-devolver-porque" class="accion-porque"></p>
+        </div>
+      </section>
+
+      <section class="expediente-seccion" aria-labelledby="sgc-expediente-auditoria-titulo">
+        <h3 id="sgc-expediente-auditoria-titulo">Auditoría</h3>
+        <ol id="sgc-expediente-auditoria" class="lista-auditoria"></ol>
+      </section>
+    </section>
+
+    <div id="sgc-expediente-dialogo" class="dialogo" role="dialog" aria-modal="true"
+         aria-labelledby="sgc-expediente-dialogo-titulo" hidden>
+      <h3 id="sgc-expediente-dialogo-titulo"></h3>
+      <div id="sgc-expediente-dialogo-destino-bloque">
+        <label for="sgc-expediente-dialogo-destino">Estado de destino</label>
+        <select id="sgc-expediente-dialogo-destino"></select>
+      </div>
+      <div id="sgc-expediente-dialogo-motivo-bloque">
+        <label for="sgc-expediente-dialogo-motivo">Motivo de la devolución</label>
+        <select id="sgc-expediente-dialogo-motivo"></select>
+      </div>
+      <div id="sgc-expediente-dialogo-observacion-bloque">
+        <label for="sgc-expediente-dialogo-observacion">Observación (opcional)</label>
+        <textarea id="sgc-expediente-dialogo-observacion" rows="3"></textarea>
+      </div>
+      <div class="dialogo-acciones">
+        <button id="sgc-expediente-dialogo-confirmar" type="button" class="primario">Confirmar</button>
+        <button id="sgc-expediente-dialogo-cancelar" type="button">Cancelar</button>
+      </div>
+    </div>
   </main>
 
   <script src="js/core/namespaces.js"></script>
@@ -137,6 +220,7 @@
   <script src="js/core/auditoria.js"></script>
   <script src="js/core/migraciones.js"></script>
   <script src="js/core/validacion.js"></script>
+  <script src="js/core/estados.js"></script>
   <script src="js/catalogo/indice.js"></script>
   <script src="js/catalogo/carga.js"></script>
   <script src="js/catalogo/renglones.js"></script>
@@ -145,6 +229,9 @@
   <script src="js/views/borrador.js"></script>
   <script src="js/views/fasttrack.js"></script>
   <script src="js/views/wizard.js"></script>
+  <script src="js/views/kanban.js"></script>
+  <script src="js/views/expediente-dialogo.js"></script>
+  <script src="js/views/expediente.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.http.js"></script>
   <script src="js/app.js"></script>

@@ -134,6 +134,21 @@
         });
       },
 
+      // Valida contra el catálogo del servidor qué códigos no existen
+      // (ORDEN-RONDA-06 §2.2). No es parte del contrato ADR-002: es una
+      // capacidad propia del adaptador HTTP, porque la verificación vive del
+      // lado del servidor. Devuelve {invalidos, catalogoVersion}.
+      validarCodigos: function (codigos) {
+        return pedirConErrorRed('POST', ruta(['catalogo', 'validar-codigos']), {
+          codigos: codigos
+        }).then(function (respuesta) {
+          if (respuesta.status !== 200) {
+            throw errorDeRespuesta(respuesta, 'no se pudo validar los códigos contra el catálogo del servidor');
+          }
+          return respuesta.cuerpo;
+        });
+      },
+
       listarArchivoHistorico: function () {
         return Promise.reject(errorNoExpuesto('listarArchivoHistorico'));
       },

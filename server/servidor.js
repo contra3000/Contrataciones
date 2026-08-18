@@ -34,6 +34,10 @@
  *     sin tocar el disco. El servidor jamás escribe fuera de --datos.
  *  7. Carpeta de datos inaccesible: /api/salud lo informa y toda escritura
  *     falla con un mensaje legible en español, nunca con una excepción cruda.
+ *  8. POST /api/catalogo/validar-codigos: el cliente manda una lista acotada
+ *     (máximo MAX_CODIGOS_POR_LLAMADA) y el servidor responde cuáles no
+ *     existen en el catálogo que tiene en disco. El cliente ya no baja
+ *     codigos.json (ORDEN-RONDA-06 §2.2).
  *
  * Estructura del directorio de datos:
  *   <datos>/
@@ -57,6 +61,9 @@ const DIR_CONFIG = path.join(RAIZ, 'config');
 const VERSION = '1.0.0';
 const PUERTO_DEFECTO = 8123;
 const LIMITE_CUERPO = 4 * 1024 * 1024; // 4 MB
+// Máximo de códigos que acepta una llamada a POST /api/catalogo/validar-codigos
+// (ORDEN-RONDA-06 §2.2). Se documenta en el informe de la ronda.
+const MAX_CODIGOS_POR_LLAMADA = 1000;
 
 const APP_CORE = [
   'namespaces.js',
@@ -351,6 +358,71 @@ function crearServidor(datosDir) {
     responderJson(res, 200, entradas);
   }
 
+  // Catálogo en memoria para validar códigos (ORDEN-RONDA-06 §2.2). Se carga
+  // perezosamente en la primera llamada y se cachea: el cliente ya no baja
+  // codigos.json, la validación de existencia vive del lado del servidor.
+  let catalogoCache = null;
+  function cargarCatalogo() {
+    if (catalogoCache) {
+      return catalogoCache;
+    }
+    const dirItems = path.join(DIR_APP, 'catalogo', 'items');
+    if (!fs.existsSync(dirItems)) {
+      return null;
+    }
+    let version = null;
+    try {
+      const manifiesto = JSON.parse(fs.readFileSync(path.join(DIR_APP, 'catalogo', 'manifiesto.json'), 'utf8'));
+      version = manifiesto.catalogoVersion || null;
+    } catch (e) {
+      version = null;
+    }
+    const codigos = new Set();
+    for (const archivo of fs.readdirSync(dirItems)) {
+      if (!archivo.endsWith('.json')) {
+        continue;
+      }
+      const items = JSON.parse(fs.readFileSync(path.join(dirItems, archivo), 'utf8'));
+      for (const item of items) {
+        if (item && typeof item.codigo === 'string') {
+          codigos.add(item.codigo);
+        }
+      }
+    }
+    catalogoCache = { version, codigos };
+    return catalogoCache;
+  }
+
+  function apiValidarCodigos(req, res, contextoCuerpo) {
+    const cuerpo = parsearCuerpo(contextoCuerpo);
+    if (!cuerpo || !Array.isArray(cuerpo.codigos)) {
+      return responderJson(res, 400, { error: 'cuerpo inválido: se espera {codigos: [...]}' });
+    }
+    if (cuerpo.codigos.length > MAX_CODIGOS_POR_LLAMADA) {
+      return responderJson(res, 400, {
+        error: 'la lista supera el máximo de ' + MAX_CODIGOS_POR_LLAMADA + ' códigos por llamada'
+      });
+    }
+    for (const codigo of cuerpo.codigos) {
+      if (typeof codigo !== 'string') {
+        return responderJson(res, 400, { error: 'cada código debe ser una cadena' });
+      }
+    }
+    const catalogo = cargarCatalogo();
+    if (!catalogo) {
+      return responderJson(res, 503, { error: 'el catálogo no está disponible en el servidor' });
+    }
+    const invalidos = [];
+    const vistos = new Set();
+    for (const codigo of cuerpo.codigos) {
+      if (!catalogo.codigos.has(codigo) && !vistos.has(codigo)) {
+        vistos.add(codigo);
+        invalidos.push(codigo);
+      }
+    }
+    return responderJson(res, 200, { invalidos: invalidos, catalogoVersion: catalogo.version });
+  }
+
   function apiCrear(req, res, contextoCuerpo) {
     const cuerpo = parsearCuerpo(contextoCuerpo);
     if (!cuerpo || typeof cuerpo !== 'object') {
@@ -483,6 +555,22 @@ function crearServidor(datosDir) {
               return responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
             });
           }
+        }
+
+        if (ruta === '/api/catalogo/validar-codigos' && req.method === 'POST') {
+          return leerCuerpo(req).then((texto) => {
+            let contexto = null;
+            try {
+              const cuerpo = parsearCuerpo(texto);
+              contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
+            } catch (e) {
+              // el cuerpo inválido lo reporta apiValidarCodigos
+            }
+            registrarOrigen(datosDir, origen, peticion, null, contexto);
+            return apiValidarCodigos(req, res, texto);
+          }).catch((e) => {
+            return responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+          });
         }
 
         if (esRutaApi) {

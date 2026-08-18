@@ -322,6 +322,86 @@ test('sirve config/ con JSON y rechaza el recorrido de rutas y lo inexistente', 
 });
 
 // ---------------------------------------------------------------------------
+// Integración: validación de códigos por servidor (ORDEN-RONDA-06 §2.2)
+// ---------------------------------------------------------------------------
+test('POST /api/catalogo/validar-codigos devuelve exactamente los códigos inexistentes', async () => {
+  const datosDir = crearDirDatos('sgc-validar-');
+  const ctx = await arrancarServidor(datosDir);
+  try {
+    const base = 'http://127.0.0.1:' + ctx.puerto;
+
+    const mezcla = await pedir(base, 'POST', '/api/catalogo/validar-codigos', {
+      codigos: ['2.1.1-439.102', '99.9-9999.9', '2.1.1-439.102', '99.9-9999.9', '00.0-0000.0']
+    });
+    assert.equal(mezcla.status, 200);
+    assert.deepEqual(mezcla.body.invalidos, ['99.9-9999.9', '00.0-0000.0'],
+      'sólo los inexistentes, una vez cada uno aunque el código se repita');
+    assert.match(mezcla.body.catalogoVersion, /^[0-9a-f]{8}$/, 'se devuelve la versión del catálogo');
+
+    const vacio = await pedir(base, 'POST', '/api/catalogo/validar-codigos', { codigos: [] });
+    assert.equal(vacio.status, 200);
+    assert.deepEqual(vacio.body.invalidos, []);
+
+    const todosValidos = await pedir(base, 'POST', '/api/catalogo/validar-codigos', {
+      codigos: ['2.1.1-439.102']
+    });
+    assert.equal(todosValidos.status, 200);
+    assert.deepEqual(todosValidos.body.invalidos, [], 'nada que no exista, nada que informar');
+
+    const masDelMaximo = await pedir(base, 'POST', '/api/catalogo/validar-codigos', {
+      codigos: Array.from({ length: 1001 }, () => 'x')
+    });
+    assert.equal(masDelMaximo.status, 400);
+    assert.match(masDelMaximo.body.error, /máximo/);
+
+    const sinArreglo = await pedir(base, 'POST', '/api/catalogo/validar-codigos', { codigos: 'x' });
+    assert.equal(sinArreglo.status, 400);
+  } finally {
+    await detenerServidor(ctx);
+    fs.rmSync(datosDir, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Concurrencia (ORDEN-RONDA-06 §3.3): dos operadores con la misma versión.
+// ---------------------------------------------------------------------------
+test('el segundo guardado con la misma versión esperada recibe un 409 con conflicto', async () => {
+  const datosDir = crearDirDatos('sgc-conflicto-');
+  const ctx = await arrancarServidor(datosDir);
+  try {
+    const base = 'http://127.0.0.1:' + ctx.puerto;
+    const creado = await pedir(base, 'POST', '/api/expedientes', {
+      datosIniciales: { titulo: 'Resmas A4', anio: '2026' },
+      contexto: contextoBase({ email: 'maria.gonzalez@faa.mil.ar' })
+    });
+    const id = creado.body.id;
+
+    const leido = await pedir(base, 'GET', '/api/expedientes/' + id);
+    const primero = await pedir(base, 'PUT', '/api/expedientes/' + id, {
+      expediente: Object.assign({}, leido.body.expediente, { titulo: 'Resmas A4 (mod)' }),
+      versionEsperada: 1,
+      contexto: contextoBase({ email: 'maria.gonzalez@faa.mil.ar' })
+    });
+    assert.equal(primero.status, 200);
+
+    const segundo = await pedir(base, 'PUT', '/api/expedientes/' + id, {
+      expediente: Object.assign({}, leido.body.expediente, { titulo: 'Resmas A4 (otro operador)' }),
+      versionEsperada: 1,
+      contexto: contextoBase({ email: 'carlos.ramirez@faa.mil.ar' })
+    });
+    assert.equal(segundo.status, 409);
+    assert.deepEqual(segundo.body, { conflicto: true, versionRemota: 2 });
+
+    const final = await pedir(base, 'GET', '/api/expedientes/' + id);
+    assert.equal(final.body.expediente.titulo, 'Resmas A4 (mod)',
+      'el primer cambio queda; el conflicto no pisa lo ajeno');
+  } finally {
+    await detenerServidor(ctx);
+    fs.rmSync(datosDir, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Recorrido de rutas
 // ---------------------------------------------------------------------------
 test('GET y PUT con ../../secreto devuelven 400 sin tocar el disco', async () => {

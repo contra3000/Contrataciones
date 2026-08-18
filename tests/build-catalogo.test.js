@@ -138,14 +138,6 @@ test('ningún fragmento supera ' + LIMITE_FRAGMENTO + ' bytes', () => {
   assert.ok(max <= LIMITE_FRAGMENTO, 'el fragmento más grande es de ' + max + ' bytes');
 });
 
-test('el build emite codigos.json ordenado con todos los códigos del catálogo', () => {
-  const codigos = leerJson(path.join(dirA, 'codigos.json'));
-  assert.strictEqual(codigos.length, esperado.registros);
-  for (let i = 1; i < codigos.length; i++) {
-    assert.ok(codigos[i - 1] < codigos[i], 'codigos.json debe estar ordenado ascendentemente');
-  }
-});
-
 test('el build es determinista: dos corridas producen archivos byte a byte idénticos', () => {
   ejecutarBuild(dirB, FIXTURE);
   const archivosA = listar(dirA);
@@ -172,8 +164,6 @@ test('la verificación del catálogo completo (159.366 filas) se saltea con avis
     const manifiesto = leerJson(path.join(dir, 'manifiesto.json'));
     assert.strictEqual(manifiesto.registros, 159366);
     assert.strictEqual(manifiesto.rubros, 50);
-    const codigos = leerJson(path.join(dir, 'codigos.json'));
-    assert.strictEqual(codigos.length, 159366);
     let suma = 0;
     const dirItems = path.join(dir, 'items');
     for (const nombre of fs.readdirSync(dirItems)) {

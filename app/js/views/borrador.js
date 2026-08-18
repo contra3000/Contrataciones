@@ -52,6 +52,37 @@
     storage.removeItem(CLAVE);
   }
 
+  // Verifica la forma interna de los datos de un borrador antes de aplicarlos
+  // (ORDEN-RONDA-06 §2.1). El borrador vive en sessionStorage y puede venir de
+  // una versión anterior del formulario, así que no basta con que `operador`
+  // sea una cadena y `datos` un objeto: cada sección debe tener la forma que
+  // la aplicación espera. Devuelve {valido, motivo}; el motivo es un texto
+  // legible para el usuario.
+  function validarForma(datos) {
+    if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
+      return { valido: false, motivo: 'los datos no son un objeto' };
+    }
+    if (!datos.identificacion || typeof datos.identificacion !== 'object' ||
+        Array.isArray(datos.identificacion)) {
+      return { valido: false, motivo: 'falta la sección de identificación' };
+    }
+    if (!Array.isArray(datos.renglones)) {
+      return { valido: false, motivo: 'la lista de renglones no es un arreglo' };
+    }
+    for (var i = 0; i < datos.renglones.length; i++) {
+      var r = datos.renglones[i];
+      if (!r || typeof r !== 'object' || typeof r.codigo !== 'string' ||
+          typeof r.cantidad !== 'number' || typeof r.unidad !== 'string') {
+        return { valido: false, motivo: 'el renglón ' + (i + 1) + ' no tiene la forma esperada' };
+      }
+    }
+    if (!datos.fundamentacion || typeof datos.fundamentacion !== 'object' ||
+        Array.isArray(datos.fundamentacion)) {
+      return { valido: false, motivo: 'falta la sección de fundamentación' };
+    }
+    return { valido: true, motivo: null };
+  }
+
   function operadorDe(storage) {
     var registro = leer(storage);
     return registro ? registro.operador : null;
@@ -62,6 +93,7 @@
     guardar: guardar,
     leer: leer,
     limpiar: limpiar,
+    validarForma: validarForma,
     operadorDe: operadorDe
   };
 })(typeof window !== 'undefined' ? window : globalThis);

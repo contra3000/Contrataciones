@@ -217,12 +217,6 @@ function main() {
 
   escribirJson(path.join(opciones.salida, 'rubros.json'), rubros);
   escribirJson(path.join(opciones.salida, 'clases.json'), clases);
-  // Arreglo plano y ordenado de los códigos del catálogo (ORDEN-RONDA-05 §3.4).
-  // Permite validar en el navegador, sin cargar fragmentos, que un código
-  // importado (Fast-Track) existe en el catálogo vigente. `ordenados` ya viene
-  // ordenado por código.
-  escribirJson(path.join(opciones.salida, 'codigos.json'),
-    ordenados.map(function (r) { return r.codigo; }));
 
   const manifiesto = {
     catalogoVersion: catalogoVersion,

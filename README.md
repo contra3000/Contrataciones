@@ -38,9 +38,11 @@ se ofrece a otro operador). Al confirmar el paso 4, el expediente queda en el
 servidor con su número, su entrada en el índice fragmentado y su auditoría con
 el correo del operador; el borrador se limpia.
 
-El catálogo son fragmentos estáticos de menos de 300 KB cada uno (más
-`codigos.json`, el índice plano de códigos para el Fast-Track); nunca se
-descarga el archivo completo de ~40 MB. La carpeta `datos/` es donde el
+El catálogo son fragmentos estáticos de menos de 300 KB cada uno; nunca se
+descarga el archivo completo de ~40 MB. La validez de los códigos importados por
+el Fast-Track se consulta al servidor (`POST /api/catalogo/validar-codigos`),
+que responde sólo cuáles no existen, sin bajar el universo de códigos al
+cliente. La carpeta `datos/` es donde el
 servidor guarda los expedientes y el registro (ya viene creada; se puede apuntar
 a otra carpeta con `--datos`).
 
@@ -78,7 +80,7 @@ app/                 → lo único que se despliega
   index.html
   css/main.css
   catalogo/          → fragmentos del catálogo generados (manifiesto, rubros,
-                       clases, codigos.json, items/) — se regeneran con
+                       clases, items/) — se regeneran con
                        tools/build-catalogo.js
   js/
     core/            → núcleo declarativo (namespaces, config, utils, validacion)

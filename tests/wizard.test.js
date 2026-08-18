@@ -9,8 +9,12 @@
  *    catalogo.test.js, que valida contra resultado.clase.
  *  - No se avanza de paso con el paso inválido y el motivo queda a la vista.
  *  - El borrador sobrevive a la recarga y no se ofrece a un operador distinto.
- *  - Fast-Track con entrada hostil: código inexistente, aclaración larga y
- *    <script> como dato plano, sin inyección (la app nunca asigna innerHTML).
+ *  - Un borrador corrupto o de una versión vieja (renglones ausente, null o de
+ *    tipo equivocado) no se aplica, da un mensaje legible y sigue ofrecido
+ *    (ORDEN-RONDA-06 §2.1).
+ *  - Fast-Track con entrada hostil: código inexistente (validado contra el
+ *    servidor, ORDEN-RONDA-06 §2.2), aclaración larga y <script> como dato
+ *    plano, sin inyección (la app nunca asigna innerHTML).
  *  - Alta completa contra el servidor: datos.json, entrada en idx/, número
  *    único, auditoría con el correo y catalogoVersion registrada.
  *  - Fallo del servidor a mitad de la confirmación: borrador intacto.
@@ -23,8 +27,13 @@ const path = require('node:path');
 
 const RAIZ = path.join(__dirname, '..');
 
-const { Nodo, documento, registrar, crearStoragePlano, obtenerConteoInnerHTML } =
-  require('./helpers/dom-stub.js');
+const { documento, crearStoragePlano, obtenerConteoInnerHTML } = require('./helpers/dom-stub.js');
+const {
+  armarWizard,
+  completarHastaRevision,
+  nuevaVuelta,
+  esperarCondicion
+} = require('./helpers/wizard-montura.js');
 const {
   crearDirDatos,
   arrancarServidor,
@@ -63,108 +72,6 @@ const CODIGO_REAL = '2.1.1-439.102';
 const repoFalso = {
   crearExpediente: () => Promise.reject(new Error('repositorio de prueba sin servidor'))
 };
-
-const nuevaVuelta = () => new Promise((resolver) => setImmediate(resolver));
-
-function esperarCondicion(condicion, etiqueta, timeoutMs) {
-  return new Promise((resolver, rechazar) => {
-    const inicio = Date.now();
-    const temporizador = setInterval(() => {
-      if (condicion()) {
-        clearInterval(temporizador);
-        resolver();
-      } else if (Date.now() - inicio > (timeoutMs || 5000)) {
-        clearInterval(temporizador);
-        rechazar(new Error('el tiempo se agotó esperando: ' + etiqueta));
-      }
-    }, 20);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Montura del DOM mínimo
-// ---------------------------------------------------------------------------
-function nodo(tag, id) {
-  return registrar(new Nodo(tag, id));
-}
-
-function armarWizard() {
-  const app = nodo('main', 'app');
-
-  const seleccion = nodo('section', 'sgc-seleccion-operador');
-  seleccion.appendChild(nodo('ul', 'sgc-lista-operadores'));
-  app.appendChild(seleccion);
-
-  const wiz = nodo('section', 'sgc-app');
-  wiz.appendChild(nodo('span', 'sgc-operador-actual'));
-
-  const aviso = nodo('div', 'sgc-borrador-aviso');
-  aviso.hidden = true;
-  aviso.appendChild(nodo('p', 'sgc-borrador-info'));
-  aviso.appendChild(nodo('button', 'sgc-btn-retomar'));
-  aviso.appendChild(nodo('button', 'sgc-btn-descartar'));
-  wiz.appendChild(aviso);
-
-  const pasosNav = nodo('ol', 'sgc-pasos');
-  for (const idPaso of ['identificacion', 'renglones', 'fundamentacion', 'revision']) {
-    const li = nodo('li');
-    li.setAttribute('data-paso', idPaso);
-    pasosNav.appendChild(li);
-  }
-  wiz.appendChild(pasosNav);
-  wiz.appendChild(nodo('p', 'sgc-paso-msj'));
-
-  const paso1 = nodo('section', 'sgc-paso-identificacion');
-  paso1.appendChild(nodo('button', 'sgc-btn-modelo'));
-  paso1.appendChild(nodo('input', 'sgc-archivo-modelo'));
-  paso1.appendChild(nodo('p', 'sgc-fasttrack-msj'));
-  paso1.appendChild(nodo('input', 'sgc-titulo'));
-  paso1.appendChild(nodo('p', 'sgc-error-titulo'));
-  paso1.appendChild(nodo('input', 'sgc-anio'));
-  paso1.appendChild(nodo('p', 'sgc-error-anio'));
-  paso1.appendChild(nodo('input', 'sgc-dependencia'));
-  paso1.appendChild(nodo('p', 'sgc-error-dependencia'));
-  wiz.appendChild(paso1);
-
-  const paso2 = nodo('section', 'sgc-paso-renglones');
-  paso2.appendChild(nodo('ul', 'sgc-lista-renglones'));
-  paso2.appendChild(nodo('p', 'sgc-resumen'));
-  wiz.appendChild(paso2);
-
-  const paso3 = nodo('section', 'sgc-paso-fundamentacion');
-  paso3.appendChild(nodo('textarea', 'sgc-justificacion'));
-  paso3.appendChild(nodo('p', 'sgc-error-justificacion'));
-  paso3.appendChild(nodo('textarea', 'sgc-objetivo'));
-  wiz.appendChild(paso3);
-
-  const paso4 = nodo('section', 'sgc-paso-revision');
-  paso4.appendChild(nodo('dl', 'sgc-revision-filas'));
-  paso4.appendChild(nodo('button', 'sgc-persistir'));
-  paso4.appendChild(nodo('p', 'sgc-persistir-msj'));
-  const exito = nodo('p', 'sgc-exito');
-  exito.appendChild(nodo('strong', 'sgc-exito-id'));
-  paso4.appendChild(exito);
-  wiz.appendChild(paso4);
-
-  wiz.appendChild(nodo('button', 'sgc-anterior'));
-  wiz.appendChild(nodo('button', 'sgc-siguiente'));
-  app.appendChild(wiz);
-
-  return { raiz: app, nodos: documento.porId };
-}
-
-function completarHastaRevision(w, codigo) {
-  w.nodos['sgc-titulo'].value = 'Resmas A4';
-  w.nodos['sgc-anio'].value = '2026';
-  w.nodos['sgc-dependencia'].value = 'División Usuario';
-  w.nodos['sgc-siguiente'].click();
-  SGC.catalogo.renglones.cargar([
-    { codigo, item: codigo, cantidad: 2, unidad: 'UN', aclaracion: '' }
-  ]);
-  w.nodos['sgc-siguiente'].click();
-  w.nodos['sgc-justificacion'].value = 'Se necesita reponer insumos en uso corriente.';
-  w.nodos['sgc-siguiente'].click();
-}
 
 // ---------------------------------------------------------------------------
 // Infraestructura de prueba en Node (sin navegador)
@@ -248,52 +155,137 @@ test('el borrador sobrevive a la recarga y no se ofrece a un operador distinto',
 });
 
 // ---------------------------------------------------------------------------
-// §3.6.4 — Fast-Track con entrada hostil
+// §3.5.1 / ORDEN-RONDA-06 §2.1 — Borrador corrupto o de una versión vieja
 // ---------------------------------------------------------------------------
-test('Fast-Track rechaza códigos inexistentes y aclaraciones largas; el <script> queda como dato', async () => {
-  globalThis.sessionStorage = crearStoragePlano();
-  SGC.catalogo.indice.cargarCodigos([CODIGO_REAL]);
-  const cargarOriginal = SGC.catalogo.carga.cargarCodigos;
-  SGC.catalogo.carga.cargarCodigos = () => Promise.resolve(true);
+test('un borrador con renglones ausente, null o de tipo equivocado no se aplica, da mensaje y sigue ofrecido', () => {
+  const formasInvalidas = {
+    'sin la clave renglones': {
+      identificacion: { titulo: 'A', anio: '2026', dependenciaSolicitante: 'D', operador: MARIA.email },
+      fundamentacion: { justificacion: 'J', objetivo: '' }
+    },
+    'renglones nulos': {
+      identificacion: { titulo: 'A', anio: '2026', dependenciaSolicitante: 'D', operador: MARIA.email },
+      renglones: null,
+      fundamentacion: { justificacion: 'J', objetivo: '' }
+    },
+    'renglones cadena': {
+      identificacion: { titulo: 'A', anio: '2026', dependenciaSolicitante: 'D', operador: MARIA.email },
+      renglones: '2.1.1-439.102',
+      fundamentacion: { justificacion: 'J', objetivo: '' }
+    },
+    'renglones número': {
+      identificacion: { titulo: 'A', anio: '2026', dependenciaSolicitante: 'D', operador: MARIA.email },
+      renglones: 3,
+      fundamentacion: { justificacion: 'J', objetivo: '' }
+    },
+    'renglones objeto': {
+      identificacion: { titulo: 'A', anio: '2026', dependenciaSolicitante: 'D', operador: MARIA.email },
+      renglones: { codigo: '2.1.1-439.102' },
+      fundamentacion: { justificacion: 'J', objetivo: '' }
+    },
+    'un elemento que no es objeto': {
+      identificacion: { titulo: 'A', anio: '2026', dependenciaSolicitante: 'D', operador: MARIA.email },
+      renglones: ['2.1.1-439.102'],
+      fundamentacion: { justificacion: 'J', objetivo: '' }
+    }
+  };
 
-  try {
+  for (const nombre of Object.keys(formasInvalidas)) {
+    const storage = crearStoragePlano();
+    globalThis.sessionStorage = storage;
+    SGC.views.borrador.guardar(storage, formasInvalidas[nombre], MARIA.email);
+
     const w = armarWizard();
     SGC.views.wizard.montar(w.raiz);
     SGC.views.wizard.vincularRenglones();
     SGC.views.wizard.seleccionarOperador(MARIA, repoFalso);
+    assert.equal(w.nodos['sgc-borrador-aviso'].hidden, false, nombre + ': se ofrece el borrador');
 
-    function archivoCon(objeto) {
-      w.nodos['sgc-archivo-modelo'].files = [{ contenido: JSON.stringify(objeto) }];
-      w.nodos['sgc-archivo-modelo'].emit('change');
-    }
-
-    const validoBase = {
-      anio: '2026', dependenciaSolicitante: 'D', justificacion: 'J', objetivo: '',
-      renglones: [{ codigo: CODIGO_REAL, cantidad: 1, unidad: 'UN', aclaracion: '' }]
-    };
-
-    archivoCon(Object.assign({}, validoBase, { titulo: 'T', renglones: [{ codigo: '99.9-9999.9', cantidad: 1, unidad: 'UN', aclaracion: '' }] }));
-    await nuevaVuelta();
-    assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
-    assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /99\.9-9999\.9/);
-    assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /no existen en el catálogo/);
-    assert.equal(w.nodos['sgc-titulo'].value, '', 'no se toca el formulario');
-
-    archivoCon(Object.assign({}, validoBase, { titulo: 'T', renglones: [{ codigo: CODIGO_REAL, cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(201) }] }));
-    await nuevaVuelta();
-    assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
-    assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /200 caracteres/);
-
-    archivoCon(Object.assign({}, validoBase, { titulo: '<script>alert(1)</script>' }));
-    await nuevaVuelta();
-    assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
-    assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /importado correctamente/);
-    assert.equal(w.nodos['sgc-titulo'].value, '<script>alert(1)</script>',
-      'el contenido llega como valor de campo, no como HTML');
-  } finally {
-    SGC.catalogo.carga.cargarCodigos = cargarOriginal;
+    w.nodos['sgc-btn-retomar'].click();
+    assert.equal(w.nodos['sgc-borrador-aviso'].hidden, false,
+      nombre + ': el borrador sigue ofrecido, no desaparece');
+    assert.match(w.nodos['sgc-borrador-info'].textContent, /no se puede aplicar/,
+      nombre + ': el mensaje es legible');
+    assert.equal(w.nodos['sgc-titulo'].value, '', nombre + ': no se aplica nada al formulario');
   }
+});
+
+// ---------------------------------------------------------------------------
+// §3.6.4 — Fast-Track con entrada hostil
+// ---------------------------------------------------------------------------
+test('Fast-Track rechaza códigos inexistentes y aclaraciones largas; el <script> queda como dato', async () => {
+  globalThis.sessionStorage = crearStoragePlano();
+
+  // El Fast-Track valida la existencia de los códigos contra el servidor
+  // (ORDEN-RONDA-06 §2.2): el stub de repo responde el veredicto del servidor.
+  const repoConServidor = {
+    validarCodigos: (codigos) => Promise.resolve({
+      invalidos: codigos.filter((c) => c === '99.9-9999.9'),
+      catalogoVersion: 'abcdef12'
+    })
+  };
+  const w = armarWizard();
+  SGC.views.wizard.montar(w.raiz);
+  SGC.views.wizard.vincularRenglones();
+  SGC.views.wizard.seleccionarOperador(MARIA, repoConServidor);
+
+  function archivoCon(objeto) {
+    w.nodos['sgc-archivo-modelo'].files = [{ contenido: JSON.stringify(objeto) }];
+    w.nodos['sgc-archivo-modelo'].emit('change');
+  }
+
+  const validoBase = {
+    anio: '2026', dependenciaSolicitante: 'D', justificacion: 'J', objetivo: '',
+    renglones: [{ codigo: CODIGO_REAL, cantidad: 1, unidad: 'UN', aclaracion: '' }]
+  };
+
+  archivoCon(Object.assign({}, validoBase, { titulo: 'T', renglones: [{ codigo: '99.9-9999.9', cantidad: 1, unidad: 'UN', aclaracion: '' }] }));
+  await nuevaVuelta();
+  assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
+  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /99\.9-9999\.9/);
+  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /no existen en el catálogo/);
+  assert.equal(w.nodos['sgc-titulo'].value, '', 'no se toca el formulario');
+
+  archivoCon(Object.assign({}, validoBase, { titulo: 'T', renglones: [{ codigo: CODIGO_REAL, cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(201) }] }));
+  await nuevaVuelta();
+  assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
+  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /200 caracteres/);
+
+  archivoCon(Object.assign({}, validoBase, { titulo: '<script>alert(1)</script>' }));
+  await nuevaVuelta();
+  assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
+  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /importado correctamente/);
+  assert.equal(w.nodos['sgc-titulo'].value, '<script>alert(1)</script>',
+    'el contenido llega como valor de campo, no como HTML');
   assert.equal(obtenerConteoInnerHTML(), 0, 'la app nunca asigna innerHTML');
+});
+
+test('Fast-Track con el servidor de catálogo caído: no acepta el archivo y lo avisa (ORDEN-RONDA-06 §2.2)', async () => {
+  globalThis.sessionStorage = crearStoragePlano();
+
+  const repoSinServidor = {
+    validarCodigos: () => Promise.reject(new Error('RED'))
+  };
+  const w = armarWizard();
+  SGC.views.wizard.montar(w.raiz);
+  SGC.views.wizard.vincularRenglones();
+  SGC.views.wizard.seleccionarOperador(MARIA, repoSinServidor);
+
+  w.nodos['sgc-archivo-modelo'].files = [{
+    contenido: JSON.stringify({
+      titulo: 'T', anio: '2026', dependenciaSolicitante: 'D', justificacion: 'J', objetivo: '',
+      renglones: [{ codigo: CODIGO_REAL, cantidad: 1, unidad: 'UN', aclaracion: '' }]
+    })
+  }];
+  w.nodos['sgc-archivo-modelo'].emit('change');
+  await nuevaVuelta();
+
+  assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
+  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /no se importa/,
+    'el aviso dice que el archivo no se importa');
+  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /servidor/,
+    'el aviso señala al servidor de catálogo');
+  assert.equal(w.nodos['sgc-titulo'].value, '', 'no se toca el formulario');
 });
 
 // ---------------------------------------------------------------------------
@@ -309,12 +301,12 @@ test('alta completa: datos.json, entrada en idx/, número único, auditoría con
       url.startsWith('http') ? url : base + '/' + url, opciones);
 
     await SGC.catalogo.carga.iniciar();
-    await SGC.catalogo.carga.cargarCodigos();
-    const version = SGC.catalogo.carga.obtenerEstado().manifiesto.catalogoVersion;
-    const codigos = JSON.parse(fs.readFileSync(path.join(RAIZ, 'app', 'catalogo', 'codigos.json'), 'utf8'));
-    const codigo = codigos[0];
+    const estadoCat = SGC.catalogo.carga.obtenerEstado();
+    const version = estadoCat.manifiesto.catalogoVersion;
+    const items = await SGC.catalogo.carga.cargarClase(estadoCat.clases[0][0]);
+    const codigo = items[0].codigo;
     assert.equal(SGC.catalogo.indice.codigoExiste(codigo), true,
-      'el índice de códigos del catálogo real reconoce el código');
+      'el catálogo real reconoce el código de la clase cargada');
 
     globalThis.sessionStorage = crearStoragePlano();
     const repo = SGC.adapters.repoHttp.crear(base);
@@ -358,7 +350,7 @@ test('alta completa: datos.json, entrada en idx/, número único, auditoría con
 // ---------------------------------------------------------------------------
 test('si el servidor falla al confirmar, el borrador sigue ahí y el mensaje es legible', async () => {
   globalThis.sessionStorage = crearStoragePlano();
-  SGC.catalogo.indice.cargarCodigos([CODIGO_REAL]);
+  SGC.catalogo.indice.registrarCodigos([{ codigo: CODIGO_REAL }]);
 
   const repoFalla = {
     crearExpediente: () => Promise.reject(new Error('la carpeta de datos no está accesible'))

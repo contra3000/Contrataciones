@@ -12,7 +12,6 @@
  *   filtrarPorRubro(rubro)               -> [{idClase, clase, cantidad}]
  *   buscarEnItems(texto, items, limite)  -> [{codigo, item, coincidencias}]
  *   registrarCodigos(lista)              alimenta el set de códigos conocidos
- *   cargarCodigos(lista)                 alimenta el set desde codigos.json
  *   codigoExiste(codigo[, items])        existencia contra el contexto o el set
  *
  * Contrato de los tramos (ORDEN-RONDA-05 §2.1): la búsqueda de clases matchea
@@ -229,14 +228,6 @@
     }
   }
 
-  // Registra el arreglo plano de códigos de codigos.json (ORDEN-RONDA-05 §3.4)
-  // para validar existencia de códigos importados sin cargar fragmentos.
-  function cargarCodigos(lista) {
-    for (var i = 0; i < lista.length; i++) {
-      codigosVistos.add(lista[i]);
-    }
-  }
-
   function codigoExiste(codigo, items) {
     if (items) {
       for (var i = 0; i < items.length; i++) {
@@ -255,7 +246,6 @@
     filtrarPorRubro: filtrarPorRubro,
     buscarEnItems: buscarEnItems,
     registrarCodigos: registrarCodigos,
-    cargarCodigos: cargarCodigos,
     codigoExiste: codigoExiste
   };
 })(typeof window !== 'undefined' ? window : globalThis);

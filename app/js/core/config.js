@@ -258,10 +258,30 @@
   var ESTADO_INICIAL = 'ESPECIFICACIONES_TECNICAS';
   var ESTADO_FINAL = 'PERFECCIONADA';
 
+  // ---------------------------------------------------------------------------
+  // Fases del FSD §4 (ORDEN-RONDA-06 §3.1). El tablero Kanban arma una columna
+  // por fase (ADR-010), nunca por estado: dieciocho columnas obligarían a
+  // desplazamiento horizontal permanente. El estado puntual va como etiqueta
+  // dentro de la tarjeta.
+  // ---------------------------------------------------------------------------
+  var FASES = [
+    { numero: 1, titulo: 'Fase 1 · Usuario' },
+    { numero: 2, titulo: 'Fase 2 · Abastecimiento' },
+    { numero: 3, titulo: 'Fase 3 · Contrataciones' },
+    { numero: 4, titulo: 'Fase 4 · Asesoría Jurídica' },
+    { numero: 5, titulo: 'Fase 5 · Contrataciones' },
+    { numero: 6, titulo: 'Fase 6 · Asesoría Jurídica' },
+    { numero: 7, titulo: 'Fase 7 · Contrataciones' },
+    { numero: 8, titulo: 'Fase 8 · Contaduría' },
+    { numero: 9, titulo: 'Fase 9 · Contrataciones' },
+    { numero: 10, titulo: 'Fase 10 · Abastecimiento' }
+  ];
+
   SGC.core.config = {
     ROLES: ROLES,
     ESTADOS: ESTADOS,
     MOTIVOS_DEVOLUCION: MOTIVOS_DEVOLUCION,
+    FASES: FASES,
     ESTADO_INICIAL: ESTADO_INICIAL,
     ESTADO_FINAL: ESTADO_FINAL
   };
