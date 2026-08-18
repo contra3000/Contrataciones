@@ -26,6 +26,8 @@ Plantilla al final del archivo.
 | 017 | Identidad basada en el correo institucional, no en Windows | Aceptada | 2026-08-13 |
 | 018 | El scraper del catálogo es infraestructura del proyecto | Aceptada | 2026-08-13 |
 | 019 | Esquema de `datos.json` v2: `estado` como objeto y `auditoria` como registro | Aceptada | 2026-08-14 |
+| 020 | Índice del catálogo en formato compacto | Aceptada | 2026-08-14 |
+| 021 | El servidor autoriza las transiciones; el cliente sólo declara la intención | Aceptada | 2026-08-18 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -426,6 +428,75 @@ auditoria: [ { timestamp, email, rol, equipo, accion, de, a, motivo, observacion
 **Lo que esta ADR no perdona.** Se acepta el resultado, no el procedimiento: la desviación debió proponerse antes de implementarse. La regla sigue en pie — quien se aparte de un contrato dictado lo justifica **antes**, o lo revierte.
 
 **Consecuencias.** `InstruccionesCodigo.md` §6.1 queda derogado en lo referido a `estadoActual` y `auditLog`; el resto de §6.1 sigue vigente. Toda orden futura que hable del esquema cita esta ADR y no §6.1.
+
+---
+
+## ADR-020 — Índice del catálogo en formato compacto
+
+**Estado:** Aceptada · 2026-08-14
+
+**Contexto.** La ORDEN-RONDA-04 §3.5 fija el presupuesto de rendimiento: el índice inicial (rubros + clases) debe pesar **menos de 300 KB**. La primera versión de `tools/build-catalogo.js` generaba `clases.json` con entradas objeto `{idClase, rubro, clase, cantidad, partes}`: pesó 681 KB, muy por encima del presupuesto. El rubro repetido por entrada costaba 121 KB de los 681; el resto eran las claves del objeto y los nombres de clase. ADR-004 estimaba ~200 KB.
+
+**Decisión.** El índice se genera en formato compacto de arreglos:
+
+- `rubros.json` — `[{idRubro, rubro}]` (50 entradas, ~2 KB).
+- `clases.json` — `[[idClase, idRubro, clase, cantidad, partes], …]` (6909 entradas, ~250 KB). El rubro va por índice (`idRubro`) y `idClase` identifica al fragmento `items/<idClase>.json` (`partes` indica en cuántos archivos se partió la clase).
+
+`SGC.catalogo.indice.montar` es la única capa que interpreta este formato y expone la API documentada en la orden §3.2 (`buscarClases` → `{idClase, rubro, clase, cantidad, coincidencias}`, etc.). Los fragmentos de ítems mantienen el formato simple `[{codigo, item}, …]`.
+
+**Fundamento.** Medición real: 2 KB + 250 KB = 252 KB < 300 KB, contra 683 KB del formato objeto. La búsqueda sigue siendo la misma (la normalización y los tramos no cambian); sólo cambia el byte-format del índice.
+
+**Consecuencias.** El consumidor del índice (batería externa incluida) debe pasar por `indice.montar`; no hay contrato de lectura directa sobre las claves internas. El catálogo generado se versiona completo en el repositorio (contenido estático versionado, ADR-004).
+
+---
+
+## ADR-021 — El servidor autoriza las transiciones; el cliente sólo declara la intención
+
+**Estado:** Aceptada · 2026-08-18
+
+**Contexto.** La auditoría del ciclo 06 detectó, y el revisor reprodujo en vivo, que **el servidor no valida ni el rol ni la transición**. `apiGuardar` comprueba que el cuerpo esté bien formado y que la versión coincida, y después escribe el expediente recibido tal cual. `estados.js` ni siquiera se carga del lado del servidor: el motor de transiciones corre en el navegador, el cliente manda el expediente con el estado **ya cambiado**, y el servidor lo guarda.
+
+Reproducción, contra el servidor real:
+
+```
+GET  /api/expedientes/2026-001   -> ESPECIFICACIONES_TECNICAS (fase 1, version 1)
+PUT  /api/expedientes/2026-001   con estado = PERFECCIONADA y rol "generador"
+     -> 200 OK  {"version":2}
+GET  /api/expedientes/2026-001   -> PERFECCIONADA (fase 10)
+```
+
+Un rol `generador` llevó un expediente del paso 1 al 18 con una sola petición. El único control es el bloqueo optimista, que **no es un control de autorización**: es un mecanismo de concurrencia, y la versión actual se obtiene con un `GET` previo.
+
+El circuito de dieciocho pasos —que es la razón de existir del sistema— es eludible desde afuera de la interfaz.
+
+**El origen del defecto es del revisor, no del desarrollador.** ADR-002 definió el adaptador de persistencia como almacén, la orden de la ronda 3 describió al servidor como "almacén versionado" sin motor de dominio, y `estados.js` quedó ubicado en `app/js/core/`, del lado del cliente. El desarrollador construyó lo que se le pidió y declaró el riesgo en su informe.
+
+**Decisión.** El servidor pasa a ser la autoridad de las transiciones. Concretamente:
+
+1. **Extremos por intención.** El cambio de estado deja de viajar como un documento completo y pasa a declararse:
+
+```
+POST /api/expedientes/:id/avanzar
+     {versionEsperada, destino, contexto}
+POST /api/expedientes/:id/devolver
+     {versionEsperada, destino, idMotivo, observacion, contexto}
+```
+
+   El servidor lee el expediente, ejecuta `SGC.core.estados.avanzar` / `devolver` con el rol del contexto, y persiste **el resultado del motor**, no lo que mandó el cliente. Si el motor rechaza, responde `403` con el motivo en español.
+
+2. **`PUT` deja de poder cambiar el estado.** Sigue existiendo para editar campos del expediente, pero si el documento recibido trae un `estado` distinto del que hay en disco, responde `409` con un error explícito. El estado sólo se mueve por los extremos de intención.
+
+3. **El servidor carga el núcleo de dominio.** `estados.js`, `validacion.js` y `config.js` se cargan del lado del servidor igual que ya se cargan `auditoria.js` y `migraciones.js`. El motor es puro y no toca el DOM: fue diseñado así desde la ronda 2 justamente para esto.
+
+4. **La auditoría la escribe el servidor.** La entrada de transición se genera del lado del servidor, con el rol validado y el origen de la petición (ADR-017 medida 3), no con lo que declare el cliente.
+
+**Fundamento.** Es la regla general: *la validación que corre en el cliente es una comodidad para el usuario; la que corre en el servidor es la que gobierna.* La primera evita que alguien pierda tiempo llenando un formulario que va a ser rechazado; la segunda es la que impide que el expediente termine donde no debe.
+
+Los extremos por intención son mejores que "validar el documento recibido" porque eliminan la clase entera de problema: el cliente no puede mandar un estado arbitrario si el estado no viaja. Y no es trabajo nuevo — `estados.js` ya está escrito, es puro y está probado con la matriz completa de 18 estados por 7 roles.
+
+**Sobre el modelo de amenaza.** Con menos de diez usuarios en una intranet cerrada y cuentas de Windows compartidas (ADR-017), un ataque deliberado es improbable. Lo que sí es plenamente plausible es el **error honesto**: alguien que se sienta en una PC con la sesión lógica de otro, o una herramienta que reintente una petición guardada. La defensa no se construye para el atacante: se construye para que el circuito administrativo sea el que decide, siempre.
+
+**Consecuencias.** `repo.http.js` cambia de forma para las transiciones. `repo.memoria.js` tiene que reproducir la misma semántica, incluido el rechazo por rol. La matriz de permisos pasa a estar verificada en dos capas, y la del servidor es la que cuenta. La interfaz no cambia para el usuario.
 
 ---
 
