@@ -52,6 +52,7 @@ require(path.join(RAIZ, 'app', 'js', 'catalogo', 'renglones.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'pasos.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'borrador.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'fasttrack.js'));
+require(path.join(RAIZ, 'app', 'js', 'views', 'wizard-formulario.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'wizard.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.http.js'));
 

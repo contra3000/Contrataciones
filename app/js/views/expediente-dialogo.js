@@ -10,9 +10,12 @@
  *  - La devolución por observación: exige un motivo del catálogo cerrado de
  *    config.js y admite una observación opcional; sin motivo el confirmar
  *    queda deshabilitado.
- *  - La escritura (`repo.guardarExpediente`) y la traducción del 409 a un
- *    resultado con `conflicto` (nunca una excepción, nunca una sobrescritura
- *    silenciosa).
+ *  - La transición se pide por intención (ADR-021): repo.avanzar/devolver. El
+ *    cliente declara el destino y el contexto; el servidor ejecuta el motor y
+ *    persiste su resultado. Un 403 del motor (rechazo por rol, destino o
+ *    validación) llega como {ok:false, error} con el motivo; el 409 se traduce
+ *    a un resultado con `conflicto` (nunca una excepción, nunca una
+ *    sobrescritura silenciosa).
  *
  * La vista de expediente llama `avanzar(...)` / `devolver(...)` y recibe el
  * resultado por callback: `{ok:true, version}` o `{ok:false, conflicto:true,
@@ -27,7 +30,6 @@
   }
 
   var config = SGC.core.config;
-  var estados = SGC.core.estados;
 
   var estado = {
     repo: null,
@@ -64,28 +66,34 @@
     };
   }
 
-  function guardar(expediente, nuevo, version, contexto, onResultado) {
-    estado.repo.guardarExpediente(expediente.expedienteId, nuevo, version, contexto)
-      .then(function (respuesta) {
-        if (respuesta && respuesta.conflicto) {
-          onResultado({ ok: false, conflicto: true, versionRemota: respuesta.versionRemota });
-          return;
-        }
-        onResultado({ ok: true, version: respuesta.version });
-      })
-      .catch(function (err) {
-        onResultado({ ok: false, conflicto: false, error: err.message });
-      });
+  // Traduce la respuesta del adaptador (que ya tradujo los códigos del
+  // servidor) al contrato que espera la vista: un conflicto o un rechazo del
+  // motor son resultados esperados del negocio, nunca excepciones.
+  function reportarResultado(respuesta, onResultado) {
+    if (!respuesta) {
+      onResultado({ ok: false, conflicto: false, error: 'el repositorio no devolvió respuesta' });
+      return;
+    }
+    if (respuesta.conflicto) {
+      onResultado({ ok: false, conflicto: true, versionRemota: respuesta.versionRemota });
+      return;
+    }
+    if (respuesta.ok) {
+      onResultado({ ok: true, version: respuesta.version, expediente: respuesta.expediente });
+      return;
+    }
+    onResultado({ ok: false, conflicto: false, error: respuesta.error });
   }
 
   function ejecutarAvance(expediente, version, rol, destino, operador, onResultado) {
     var ctx = contexto(operador, rol);
-    var resultado = estados.avanzar(expediente, rol, destino, ctx);
-    if (!resultado.ok) {
-      onResultado({ ok: false, conflicto: false, error: resultado.error });
-      return;
-    }
-    guardar(expediente, resultado.expediente, version, ctx, onResultado);
+    estado.repo.avanzar(expediente.expedienteId, version, destino, ctx)
+      .then(function (respuesta) {
+        reportarResultado(respuesta, onResultado);
+      })
+      .catch(function (err) {
+        onResultado({ ok: false, conflicto: false, error: err.message });
+      });
   }
 
   function cerrarDialogo() {
@@ -143,12 +151,13 @@
       return;
     }
     var ctx = contexto(t.operador, t.rol);
-    var resultado = estados.devolver(t.expediente, t.rol, destino, motivo, observacion, ctx);
-    if (!resultado.ok) {
-      t.onResultado({ ok: false, conflicto: false, error: resultado.error });
-      return;
-    }
-    guardar(t.expediente, resultado.expediente, t.version, ctx, t.onResultado);
+    estado.repo.devolver(t.expediente.expedienteId, t.version, destino, motivo, observacion, ctx)
+      .then(function (respuesta) {
+        reportarResultado(respuesta, t.onResultado);
+      })
+      .catch(function (err) {
+        t.onResultado({ ok: false, conflicto: false, error: err.message });
+      });
   }
 
   function pedirAvanzar(expediente, version, rol, destinos, operador, onResultado) {

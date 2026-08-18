@@ -34,7 +34,9 @@
     'guardarExpediente',
     'listarArchivoHistorico',
     'archivar',
-    'guardarEntregable'
+    'guardarEntregable',
+    'avanzar',
+    'devolver'
   ];
 
   var activa = null;
@@ -119,7 +121,10 @@
   // Construye el expediente inicial con la forma contractual (ADR-019):
   // `estado` es un objeto {id, fase, desde} y el registro de auditoría es el
   // arreglo `auditoria`. La primera entrada de la cadena registra la creación.
-  // El `id` ya viene asignado por el llamador (anio-numero).
+  // El `id` ya viene asignado por el llamador (anio-numero). El estado inicial
+  // siempre es el de la configuración: un `estado` que venga en los datos no
+  // se respeta, así la creación no es un camino para saltarse el circuito
+  // (ORDEN-RONDA-07-AUDITORIA.md §11).
   function construirExpediente(datosIniciales, contexto, id) {
     var base = datosIniciales && typeof datosIniciales === 'object'
       ? clonar(datosIniciales) : {};
@@ -128,14 +133,12 @@
     base.numero = id.slice(5);
     base.schemaVersion = SGC.core.migraciones.VERSION_ACTUAL;
     var c = contexto || {};
-    if (!base.estado || typeof base.estado !== 'object' || typeof base.estado.id !== 'string') {
-      var defInicial = definicionEstado(SGC.core.config.ESTADO_INICIAL);
-      base.estado = {
-        id: SGC.core.config.ESTADO_INICIAL,
-        fase: defInicial ? defInicial.fase : null,
-        desde: c.timestamp || null
-      };
-    }
+    var defInicial = definicionEstado(SGC.core.config.ESTADO_INICIAL);
+    base.estado = {
+      id: SGC.core.config.ESTADO_INICIAL,
+      fase: defInicial ? defInicial.fase : null,
+      desde: c.timestamp || null
+    };
     base.version = 1;
     if (!Array.isArray(base.auditoria)) {
       base.auditoria = [];
@@ -145,6 +148,7 @@
       email: c.email,
       rol: c.rol,
       equipo: c.equipo,
+      origen: c.origen,
       accion: 'crearExpediente',
       de: null,
       a: base.estado.id,

@@ -25,7 +25,7 @@
   }
 
   var CAMPOS_ENTRADA = [
-    'timestamp', 'email', 'rol', 'equipo', 'accion',
+    'timestamp', 'email', 'rol', 'equipo', 'origen', 'accion',
     'de', 'a', 'motivo', 'observacion', 'hashPrevio'
   ];
 
@@ -53,12 +53,15 @@
 
   // Crea la entrada siguiente de la cadena. `entradaPrevia` es la última
   // entrada existente (o null si es la primera): su hash queda como hashPrevio.
+  // El origen de la petición (ADR-017 medida 3) llega en `datos.origen` y lo
+  // registra el servidor, que es quien conoce la dirección y el equipo reales.
   function crearEntrada(entradaPrevia, datos) {
     return {
       timestamp: datos.timestamp,
       email: datos.email,
       rol: datos.rol,
       equipo: datos.equipo,
+      origen: datos.origen === undefined ? null : datos.origen,
       accion: datos.accion,
       de: datos.de,
       a: datos.a,

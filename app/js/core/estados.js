@@ -99,6 +99,7 @@
       email: contexto.email,
       rol: contexto.rol || rolOperador,
       equipo: contexto.equipo,
+      origen: contexto.origen,
       accion: accion,
       de: de,
       a: a,

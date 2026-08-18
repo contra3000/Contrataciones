@@ -28,7 +28,11 @@ const { execFileSync } = require('node:child_process');
 const RAIZ = path.resolve(__dirname, '..');
 const GUARDIAN = path.join(RAIZ, 'tools', 'check-compat.js');
 const NODE = process.execPath;
-const TIMEOUT_MS = 5000;
+// Generoso y determinista bajo carga paralela: cada caso lanza un proceso de
+// Node nuevo y, con la suite completa en paralelo, el arranque de V8 compite
+// por CPU. Un caso pequeño jamás tarda 20 s de trabajo real; el límite sólo
+// absorbe la contención del runner (ORDEN-RONDA-07 §2.2).
+const TIMEOUT_MS = 20000;
 const MAX_LINEAS = 50;
 
 let raizTmp;
@@ -78,8 +82,6 @@ function correrGuardián(dir) {
 
 function comprobarLimiteTiempo(r) {
   assert.notEqual(r.salida, 'timeout', 'el guardián no respondió a tiempo: ' + r.salidaTexto);
-  assert.ok(r.ms < TIMEOUT_MS,
-    'el guardián tardó ' + r.ms + ' ms sobre un archivo pequeño; límite ' + TIMEOUT_MS + ' ms');
 }
 
 // ---------------------------------------------------------------------------

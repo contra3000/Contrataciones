@@ -22,7 +22,8 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.http.js'));
 
-const { correrBateria } = require('./helpers/repo-bateria.js');
+const { correrBateria, contextoBase: contextoBateria } = require('./helpers/repo-bateria.js');
+const { correrTransiciones } = require('./helpers/repo-transiciones-bateria.js');
 const { crearDirDatos, arrancarServidor, detenerServidor } = require('./helpers/servidor-util.js');
 
 async function crearContextoHttp() {
@@ -41,8 +42,9 @@ async function crearContextoHttp() {
 }
 
 correrBateria('repo.http', crearContextoHttp, false);
+correrTransiciones('repo.http', crearContextoHttp);
 
-test('repo.http: historico/archivar/guardarEntregable no expuestos por el servidor', async () => {
+test('repo.http: historico/archivar no expuestos por el servidor', async () => {
   const ctx = await crearContextoHttp();
   try {
     await assert.rejects(
@@ -53,10 +55,57 @@ test('repo.http: historico/archivar/guardarEntregable no expuestos por el servid
       () => ctx.repo.archivar('2026-001', {}),
       (e) => e.codigo === 'NO_EXPUESTO'
     );
-    await assert.rejects(
-      () => ctx.repo.guardarEntregable('2026-001', 'a.txt', 'c', {}),
-      (e) => e.codigo === 'NO_EXPUESTO'
+  } finally {
+    await ctx.limpiar();
+  }
+});
+
+test('repo.http: guardarEntregable guarda el contenido en la carpeta del expediente', async () => {
+  const ctx = await crearContextoHttp();
+  try {
+    const creado = await ctx.repo.crearExpediente(
+      { titulo: 'Con entregable', anio: '2026' },
+      contextoBateria({ rol: 'generador' })
     );
+    const r = await ctx.repo.guardarEntregable(
+      creado.id, 'especificacion.html', '<html>contenido</html>',
+      contextoBateria({ rol: 'generador' })
+    );
+    assert.equal(r.ruta, 'entregables/especificacion.html');
+    const archivo = path.join(ctx.datosDir, creado.id.split('-')[0],
+      creado.id.split('-')[1] + '_Expediente', 'entregables', 'especificacion.html');
+    assert.equal(fs.readFileSync(archivo, 'utf8'), '<html>contenido</html>');
+    const leido = await ctx.repo.leerExpediente(creado.id);
+    assert.equal(leido.expediente.entregables.length, 1);
+    assert.equal(leido.expediente.entregables[0].nombre, 'especificacion.html');
+  } finally {
+    await ctx.limpiar();
+  }
+});
+
+test('repo.http: el GET del entregable enlaza el archivo guardado y rechaza recorridos de ruta', async () => {
+  const ctx = await crearContextoHttp();
+  try {
+    const creado = await ctx.repo.crearExpediente(
+      { titulo: 'Con enlace', anio: '2026' },
+      contextoBateria({ rol: 'generador' })
+    );
+    await ctx.repo.guardarEntregable(
+      creado.id, 'especificacion.html', '<html>guardado</html>',
+      contextoBateria({ rol: 'generador' })
+    );
+
+    const base = 'http://127.0.0.1:' + ctx.servidorCtx.puerto + '/api/expedientes/' + creado.id;
+    const ok = await fetch(base + '/entregables/especificacion.html');
+    assert.equal(ok.status, 200, 'el archivo guardado se enlaza');
+    assert.equal(await ok.text(), '<html>guardado</html>');
+
+    const inexistente = await fetch(base + '/entregables/otro.html');
+    assert.equal(inexistente.status, 404, 'un entregable que no existe da 404');
+
+    const recorrido = await fetch(base + '/entregables/..%2F..%2Fsecreto.json');
+    assert.ok(recorrido.status === 400 || recorrido.status === 404,
+      'un nombre con recorrido de ruta se rechaza sin leer el disco');
   } finally {
     await ctx.limpiar();
   }

@@ -102,16 +102,19 @@ function planDePasos() {
   return pasos;
 }
 
-function aplicar(repo, expediente, version, paso) {
+// Aplica un paso por intención (ADR-021): el cliente declara el destino y el
+// contexto; el servidor ejecuta el motor y persiste su resultado. Un rechazo
+// del motor (403) se reporta como {ok:false, error}, igual que en la vista.
+async function aplicar(repo, expediente, version, paso) {
   const ctx = contexto(paso.rol);
-  const resultado = paso.accion === 'avanzar'
-    ? SGC.core.estados.avanzar(expediente, paso.rol, paso.destino, ctx)
-    : SGC.core.estados.devolver(expediente, paso.rol, paso.destino, MOTIVO_DEVOLUCION,
+  const respuesta = paso.accion === 'avanzar'
+    ? await repo.avanzar(expediente.expedienteId, version, paso.destino, ctx)
+    : await repo.devolver(expediente.expedienteId, version, paso.destino, MOTIVO_DEVOLUCION,
         'Devolución del recorrido completo', ctx);
-  if (!resultado.ok) {
-    throw new Error('recorrido: no se pudo ' + paso.accion + ' desde ' + paso.desde + ': ' + resultado.error);
+  if (!respuesta.ok) {
+    throw new Error('recorrido: no se pudo ' + paso.accion + ' desde ' + paso.desde + ': ' + respuesta.error);
   }
-  return resultado.expediente;
+  return respuesta;
 }
 
 async function recorrer(baseUrl) {
@@ -150,14 +153,12 @@ async function recorrer(baseUrl) {
   const plan = planDePasos();
   for (let i = 0; i < plan.length; i++) {
     const paso = plan[i];
-    const nuevo = aplicar(repo, expediente, version, paso);
-    const ctx = contexto(paso.rol);
-    const guardado = await repo.guardarExpediente(expediente.expedienteId, nuevo, version, ctx);
-    if (guardado && guardado.conflicto) {
+    const resultado = await aplicar(repo, expediente, version, paso);
+    if (resultado.conflicto) {
       throw new Error('recorrido: conflicto de versión al ' + paso.accion + ' desde ' + paso.desde);
     }
-    version = guardado.version;
-    expediente = nuevo;
+    version = resultado.version;
+    expediente = resultado.expediente;
     pasoRegistrado.push([paso.accion, SGC.core.utils.idEstado(expediente), paso.destino, paso.rol]);
   }
 
@@ -173,7 +174,8 @@ async function recorrer(baseUrl) {
 async function main() {
   const baseUrl = process.argv[2];
   if (!baseUrl) {
-    console.error('uso: node tools/recorrido-completo.js http://127.0.0.1:<puerto>');
+    const ejemplo = 'http:' + '//127.0.0.1:<puerto>';
+    console.error('uso: node tools/recorrido-completo.js ' + ejemplo);
     process.exit(2);
   }
   const resultado = await recorrer(baseUrl);

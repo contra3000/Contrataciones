@@ -35,6 +35,7 @@
     // La vista de expediente necesita los roles del operador para habilitar o
     // no los botones. El tablero es de visibilidad global (ADR-010).
     SGC.views.expediente.seleccionarOperador(operador);
+    SGC.views.exportar.seleccionarOperador(operador);
     document.getElementById('sgc-tablero-nav').hidden = false;
   }
 
@@ -60,6 +61,27 @@
     SGC.views.expediente.montar(contenedor);
     SGC.views.expediente.fijarRepo(repo);
     SGC.views.expediente.onVolver(alternarTablero);
+
+    // Documento y exportación (ORDEN-RONDA-07 §3.2-§3.4): imprime, guarda el
+    // documento generado en la carpeta del expediente y exporta JSON o
+    // resumen.md. Las descargas pasan por el modal de advertencia (FSD §6).
+    SGC.views.exportar.montar(contenedor);
+    SGC.views.exportar.fijarRepo(repo);
+    SGC.views.exportar.fijarProveedor(function () {
+      return SGC.views.expediente.obtener();
+    });
+    SGC.views.exportar.fijarDescargador(function (nombre, contenido) {
+      var blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = nombre;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    SGC.views.exportar.fijarNavegador(function (url) {
+      window.open(url, '_blank');
+    });
 
     // El buscador del paso 2 inicia la carga del catálogo y actualiza su
     // propio estado. Después se le avisa al asistente para guardar borradores

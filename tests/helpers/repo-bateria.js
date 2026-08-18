@@ -170,23 +170,15 @@ function correrBateria(etiqueta, crearContexto, conExtra) {
     const ctx = await crearContexto();
     try {
       const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase());
-      const modificado = Object.assign({}, creado.expediente);
-      modificado.estado = { id: 'ADJUDICACION', fase: 7, desde: contextoBase().timestamp };
-      await ctx.repo.guardarExpediente(
-        creado.id,
-        modificado,
-        1,
-        contextoBase()
-      );
       const indice = await ctx.repo.listarIndice();
       assert.equal(indice.length, 1);
       const entrada = indice[0];
       assert.equal(entrada.id, creado.id);
       assert.equal(entrada.titulo, creado.expediente.titulo);
-      assert.equal(entrada.estado, 'ADJUDICACION');
-      assert.equal(entrada.fase, 7);
-      assert.equal(entrada.rolEjecutor, 'contrataciones');
-      assert.equal(entrada.sector, 'contrataciones');
+      assert.equal(entrada.estado, 'ESPECIFICACIONES_TECNICAS');
+      assert.equal(entrada.fase, 1);
+      assert.equal(entrada.rolEjecutor, 'generador');
+      assert.equal(entrada.sector, 'usuario');
       assert.equal(entrada.actualizado, '2026-08-14T10:00:00.000Z');
     } finally {
       await ctx.limpiar();
@@ -230,12 +222,12 @@ function correrBateria(etiqueta, crearContexto, conExtra) {
       }
     });
 
-    test(titulo('guardarEntregable devuelve la ruta y conserva el contenido'), async () => {
+    test(titulo('guardarEntregable devuelve la ruta relativa al expediente y conserva el contenido'), async () => {
       const ctx = await crearContexto();
       try {
         const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase());
         const r = await ctx.repo.guardarEntregable(creado.id, 'pliego.pdf', 'contenido', contextoBase());
-        assert.equal(r.ruta, 'entregables/' + creado.id + '/pliego.pdf');
+        assert.equal(r.ruta, 'entregables/pliego.pdf');
       } finally {
         await ctx.limpiar();
       }

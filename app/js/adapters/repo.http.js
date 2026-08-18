@@ -7,9 +7,13 @@
  * - Los errores de red sí son excepciones, con mensaje en español y código
  *   'RED'.
  * - Un expediente inexistente rechaza con código 'NO_ENCONTRADO'.
- * - historico / archivar / guardarEntregable no están expuestos por el
- *   servidor (ORDEN-RONDA-03 §3.4): lanzan un error en español con código
- *   'NO_EXPUESTO'.
+ * - historico / archivar no están expuestos por el servidor (ORDEN-RONDA-03
+ *   §3.4): lanzan un error en español con código 'NO_EXPUESTO'. guardarEntregable
+ *   sí se expone desde la ronda 7 (ORDEN-RONDA-07 §3.3).
+ * - Las transiciones por intención (ADR-021) se piden con avanzar/devolver: el
+ *   servidor ejecuta el motor y persiste su resultado. Un 403 (rechazo por rol,
+ *   destino o validación) se devuelve como {ok:false, error} con el motivo del
+ *   motor, nunca como excepción.
  *
  * La base se inyecta en la factoría: este archivo no contiene ninguna
  * dirección literal (ADR-018). Usa `fetch`, presente en Chrome 42+ y en
@@ -134,6 +138,82 @@
         });
       },
 
+      // Transiciones por intención (ADR-021): el cliente declara el destino y
+      // el contexto; el servidor ejecuta el motor y persiste su resultado. El
+      // rechazo por rol, destino o validación (403) se devuelve como un
+      // resultado {ok:false, error} con el motivo del motor, igual que un
+      // conflicto de versión: es un resultado esperado del negocio, no una
+      // excepción.
+      avanzar: function (id, versionEsperada, destino, contexto) {
+        return pedirConErrorRed('POST', ruta(['expedientes', id, 'avanzar']), {
+          versionEsperada: versionEsperada,
+          destino: destino,
+          contexto: contexto
+        }).then(function (respuesta) {
+          if (respuesta.status === 200) {
+            return {
+              ok: true,
+              version: respuesta.cuerpo.version,
+              expediente: respuesta.cuerpo.expediente
+            };
+          }
+          if (respuesta.status === 403) {
+            return {
+              ok: false,
+              conflicto: false,
+              error: respuesta.cuerpo.error
+            };
+          }
+          if (respuesta.status === 409) {
+            return {
+              ok: false,
+              conflicto: true,
+              versionRemota: respuesta.cuerpo.versionRemota
+            };
+          }
+          if (respuesta.status === 404) {
+            throw errorNoEncontrado(id);
+          }
+          throw errorDeRespuesta(respuesta, 'no se pudo avanzar el expediente ' + id);
+        });
+      },
+
+      devolver: function (id, versionEsperada, destino, idMotivo, observacion, contexto) {
+        return pedirConErrorRed('POST', ruta(['expedientes', id, 'devolver']), {
+          versionEsperada: versionEsperada,
+          destino: destino,
+          idMotivo: idMotivo,
+          observacion: observacion === undefined ? null : observacion,
+          contexto: contexto
+        }).then(function (respuesta) {
+          if (respuesta.status === 200) {
+            return {
+              ok: true,
+              version: respuesta.cuerpo.version,
+              expediente: respuesta.cuerpo.expediente
+            };
+          }
+          if (respuesta.status === 403) {
+            return {
+              ok: false,
+              conflicto: false,
+              error: respuesta.cuerpo.error
+            };
+          }
+          if (respuesta.status === 409) {
+            return {
+              ok: false,
+              conflicto: true,
+              versionRemota: respuesta.cuerpo.versionRemota
+            };
+          }
+          if (respuesta.status === 404) {
+            throw errorNoEncontrado(id);
+          }
+          throw errorDeRespuesta(respuesta, 'no se pudo devolver el expediente ' + id);
+        });
+      },
+
       // Valida contra el catálogo del servidor qué códigos no existen
       // (ORDEN-RONDA-06 §2.2). No es parte del contrato ADR-002: es una
       // capacidad propia del adaptador HTTP, porque la verificación vive del
@@ -157,8 +237,25 @@
         return Promise.reject(errorNoExpuesto('archivar'));
       },
 
-      guardarEntregable: function () {
-        return Promise.reject(errorNoExpuesto('guardarEntregable'));
+      // Guarda el entregable generado en la carpeta del expediente y lo
+      // registra en `entregables` de datos.json (ORDEN-RONDA-07 §3.3).
+      guardarEntregable: function (id, nombre, contenido, contexto) {
+        return pedirConErrorRed('POST', ruta(['expedientes', id, 'entregables']), {
+          nombre: nombre,
+          contenido: contenido,
+          contexto: contexto
+        }).then(function (respuesta) {
+          if (respuesta.status === 201) {
+            return {
+              ruta: respuesta.cuerpo.ruta,
+              version: respuesta.cuerpo.version
+            };
+          }
+          if (respuesta.status === 404) {
+            throw errorNoEncontrado(id);
+          }
+          throw errorDeRespuesta(respuesta, 'no se pudo guardar el entregable "' + nombre + '" del expediente ' + id);
+        });
       }
     };
   }

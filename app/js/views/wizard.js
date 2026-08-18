@@ -19,6 +19,7 @@
   var pasos = SGC.views.pasos;
   var borrador = SGC.views.borrador;
   var fasttrack = SGC.views.fasttrack;
+  var formulario = SGC.views.wizardFormulario;
 
   var estado = {
     operador: null,
@@ -33,34 +34,12 @@
     return raiz.querySelector(selector);
   }
 
-  function campoInput(idCampo) {
-    return estado.dom.campos[idCampo];
-  }
-
-  function leerCampo(idCampo) {
-    var nodo = campoInput(idCampo);
-    return nodo ? nodo.value : '';
-  }
-
   function sincronizarDesdeFormulario() {
-    estado.datos.identificacion.titulo = leerCampo('titulo');
-    estado.datos.identificacion.anio = leerCampo('anio');
-    estado.datos.identificacion.dependenciaSolicitante = leerCampo('dependenciaSolicitante');
-    estado.datos.fundamentacion.justificacion = leerCampo('justificacion');
-    estado.datos.fundamentacion.objetivo = leerCampo('objetivo');
-    estado.datos.renglones = SGC.catalogo.renglones.obtener();
+    formulario.sincronizar(estado);
   }
 
   function guardarBorrador() {
-    if (!estado.operador) {
-      return;
-    }
-    sincronizarDesdeFormulario();
-    try {
-      borrador.guardar(storage(), estado.datos, estado.operador.email);
-    } catch (e) {
-      // sessionStorage puede estar bloqueado; el borrador es mejor esfuerzo
-    }
+    formulario.guardarBorrador(estado, storage());
   }
 
   function storage() {
@@ -68,25 +47,7 @@
   }
 
   function mostrarErrores(errores) {
-    for (var clave in estado.dom.errores) {
-      if (Object.prototype.hasOwnProperty.call(estado.dom.errores, clave)) {
-        estado.dom.errores[clave].textContent = '';
-        estado.dom.errores[clave].hidden = true;
-      }
-    }
-    var lista = [];
-    for (var i = 0; i < errores.length; i++) {
-      var e = errores[i];
-      var nodo = estado.dom.errores[e.campo];
-      if (nodo) {
-        nodo.textContent = e.mensaje;
-        nodo.hidden = false;
-      } else {
-        lista.push(e.mensaje);
-      }
-    }
-    estado.dom.pasoMsj.textContent = lista.join(' · ');
-    estado.dom.pasoMsj.hidden = lista.length === 0;
+    formulario.mostrarErrores(estado, errores);
   }
 
   function irAPaso(n, validarSalida) {
@@ -189,47 +150,19 @@
   }
 
   function ofrecerBorrador(registro) {
-    estado.dom.borradorAviso.hidden = false;
-    estado.dom.borradorInfo.textContent =
-      'Hay un borrador de ' + registro.operador + ' guardado el ' + registro.guardado + '.';
+    formulario.ofrecer(estado, registro);
   }
 
   function retomarBorrador(registro) {
-    var chequeo = borrador.validarForma(registro.datos);
-    if (!chequeo.valido) {
-      estado.dom.borradorInfo.textContent =
-        'El borrador guardado no se puede aplicar: ' + chequeo.motivo +
-        '. Puede descartarlo y empezar de nuevo.';
-      estado.dom.borradorAviso.hidden = false;
-      return;
-    }
-    estado.datos = JSON.parse(JSON.stringify(registro.datos));
-    if (estado.datos.identificacion && estado.datos.identificacion.operador) {
-      estado.datos.identificacion.operador = estado.operador.email;
-    }
-    estado.dom.borradorAviso.hidden = true;
-    aplicarDatosAlFormulario();
-    SGC.catalogo.renglones.cargar(estado.datos.renglones);
-    irAPaso(0, false);
+    formulario.retomar(estado, registro, irAPaso);
   }
 
   function descartarBorrador() {
-    try {
-      borrador.limpiar(storage());
-    } catch (e) {
-      // ignorar
-    }
-    estado.dom.borradorAviso.hidden = true;
+    formulario.descartar(estado, storage());
   }
 
   function aplicarDatosAlFormulario() {
-    var id = estado.datos.identificacion || {};
-    var fund = estado.datos.fundamentacion || {};
-    campoInput('titulo').value = id.titulo || '';
-    campoInput('anio').value = id.anio || '';
-    campoInput('dependenciaSolicitante').value = id.dependenciaSolicitante || '';
-    campoInput('justificacion').value = fund.justificacion || '';
-    campoInput('objetivo').value = fund.objetivo || '';
+    formulario.aplicar(estado);
   }
 
   function seleccionarOperador(operador, repo) {

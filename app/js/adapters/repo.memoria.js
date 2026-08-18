@@ -7,6 +7,14 @@
  *    ADR-009; acá no hay carrera porque es un solo hilo).
  *  - guardarExpediente valida versionEsperada contra la versión actual; si no
  *    coincide devuelve {ok:false, conflicto:true, versionRemota} sin escribir.
+ *  - avanzar/devolver reproducen la semántica del servidor (ADR-021): antes de
+ *    correr el motor cruzan el contexto contra el padrón de usuarios
+ *    (config/usuarios.ejemplo.json, leído en Node); el rechazo se devuelve
+ *    como {ok:false, error} y sólo el resultado del motor se persiste.
+ *  - guardarExpediente conserva la auditoría de disco: el PUT edita campos,
+ *    no puede agregar ni borrar entradas de la cadena (ADR-021).
+ *  - guardarEntregable guarda el contenido, lo registra en `entregables` del
+ *    expediente y versiona (igual que el servidor, ORDEN-RONDA-07 §3.3).
  *  - El expediente y el contexto recibidos se conservan tal cual; el formato
  *    del expediente inicial y del índice es el compartido por repo.js, el
  *    mismo que usa el servidor.
@@ -21,6 +29,24 @@
   var SGC = root.SGC;
   if (!SGC || !SGC.adapters || !SGC.adapters.repo) {
     throw new Error('repo.memoria.js requiere que namespaces.js y repo.js se carguen primero');
+  }
+
+  // Padrón de usuarios para el cruce de autorización (ADR-021). En Node se lee
+  // del archivo de configuración; si no hay `require` (navegador) o el archivo
+  // no está, queda vacío y la verificación rechaza todo (fail closed).
+  var PADRON = [];
+  if (typeof require === 'function') {
+    try {
+      var nodeFs = require('node:fs');
+      var nodePath = require('node:path');
+      var padron = JSON.parse(nodeFs.readFileSync(
+        nodePath.join(__dirname, '..', '..', '..', 'config', 'usuarios.ejemplo.json'), 'utf8'));
+      if (Array.isArray(padron.usuarios)) {
+        PADRON.push(...padron.usuarios);
+      }
+    } catch (e) {
+      // Padrón vacío: verificar() rechaza todo contexto.
+    }
   }
 
   var repo = SGC.adapters.repo;
@@ -45,13 +71,57 @@
       return siguiente;
     }
 
-    function registroDe(id) {
-      var registro = expedientes[id];
-      if (!registro) {
-        throw errorNoEncontrado(id);
-      }
-      return registro;
+function registroDe(id) {
+    var registro = expedientes[id];
+    if (!registro) {
+      throw errorNoEncontrado(id);
     }
+    return registro;
+  }
+
+  function motor() {
+    if (!SGC.core || !SGC.core.estados) {
+      throw new Error('repo.memoria: avanzar/devolver requieren que estados.js se cargue primero');
+    }
+    return SGC.core.estados;
+  }
+
+  // Aplica una transición con la misma semántica que el servidor real
+  // (ADR-021): primero cruza el contexto contra el padrón de usuarios; después
+  // el motor decide con el rol del contexto; el rechazo se devuelve como
+  // {ok:false, error} y sólo el resultado del motor se persiste.
+  function transicionEnMemoria(id, versionEsperada, tipo, args) {
+    var registro = registroDe(id);
+    var ctx = args.contexto || {};
+    if (!SGC.core || !SGC.core.autorizacion) {
+      throw new Error('repo.memoria: las transiciones requieren que autorizacion.js se cargue primero');
+    }
+    var autorizacion = SGC.core.autorizacion.verificar(PADRON, ctx);
+    if (!autorizacion.ok) {
+      return Promise.resolve({ ok: false, conflicto: false, error: autorizacion.error });
+    }
+    if (registro.version !== versionEsperada) {
+      return Promise.resolve({ ok: false, conflicto: true, versionRemota: registro.version });
+    }
+    var resultado = tipo === 'avanzar'
+      ? motor().avanzar(registro.expediente, ctx.rol, args.destino, ctx)
+      : motor().devolver(registro.expediente, ctx.rol, args.destino, args.idMotivo,
+        args.observacion === undefined ? null : args.observacion, ctx);
+    if (!resultado.ok) {
+      return Promise.resolve({ ok: false, conflicto: false, error: resultado.error });
+    }
+    var snapshot = JSON.parse(JSON.stringify(registro.expediente));
+    historico[id].push({
+      version: registro.version,
+      expediente: snapshot,
+      contexto: registro.contexto
+    });
+    var actualizado = JSON.parse(JSON.stringify(resultado.expediente));
+    registro.expediente = actualizado;
+    registro.version = actualizado.version;
+    registro.contexto = ctx;
+    return Promise.resolve({ ok: true, version: registro.version, expediente: actualizado });
+  }
 
     function entradaIndice(id) {
       var registro = expedientes[id];
@@ -116,6 +186,10 @@
           });
           var actualizado = JSON.parse(JSON.stringify(expedienteNuevo));
           actualizado.version = registro.version + 1;
+          // ADR-021: la auditoría la escribe el servidor (acá, el adaptador
+          // que reproduce su semántica). El PUT edita campos pero no puede
+          // agregar ni borrar entradas de la cadena.
+          actualizado.auditoria = JSON.parse(JSON.stringify(registro.expediente.auditoria));
           registro.expediente = actualizado;
           registro.version = registro.version + 1;
           registro.contexto = contexto || {};
@@ -172,13 +246,68 @@
 
       guardarEntregable: function (id, nombre, contenido, contexto) {
         try {
-          registroDe(id);
+          var registro = registroDe(id);
           if (typeof nombre !== 'string' || nombre.length === 0) {
             throw new Error('guardarEntregable: el nombre del entregable es obligatorio');
           }
+          var snapshot = JSON.parse(JSON.stringify(registro.expediente));
+          historico[id].push({
+            version: registro.version,
+            expediente: snapshot,
+            contexto: registro.contexto
+          });
+          var actualizado = JSON.parse(JSON.stringify(registro.expediente));
+          actualizado.version = registro.version + 1;
+          if (!Array.isArray(actualizado.entregables)) {
+            actualizado.entregables = [];
+          }
+          var ctx = contexto || {};
+          actualizado.entregables.push({
+            nombre: nombre,
+            ruta: 'entregables/' + nombre,
+            guardado: typeof ctx.timestamp === 'string' ? ctx.timestamp : null,
+            email: typeof ctx.email === 'string' ? ctx.email : null,
+            equipo: typeof ctx.equipo === 'string' ? ctx.equipo : null
+          });
+          if (typeof ctx.timestamp === 'string') {
+            if (typeof actualizado.actualizado === 'string') {
+              actualizado.actualizado = ctx.timestamp;
+            }
+            if (typeof actualizado.ultimaModificacion === 'string') {
+              actualizado.ultimaModificacion = ctx.timestamp;
+            }
+          }
+          if (typeof ctx.email === 'string' && typeof actualizado.ultimoUsuario === 'string') {
+            actualizado.ultimoUsuario = ctx.email;
+          }
+          registro.expediente = actualizado;
+          registro.version = actualizado.version;
+          registro.contexto = ctx;
           entregables[id][nombre] = contenido;
-          return Promise.resolve({
-            ruta: 'entregables/' + id + '/' + nombre
+          return Promise.resolve({ ruta: 'entregables/' + nombre, version: registro.version });
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      },
+
+      avanzar: function (id, versionEsperada, destino, contexto) {
+        try {
+          return transicionEnMemoria(id, versionEsperada, 'avanzar', {
+            destino: destino,
+            contexto: contexto
+          });
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      },
+
+      devolver: function (id, versionEsperada, destino, idMotivo, observacion, contexto) {
+        try {
+          return transicionEnMemoria(id, versionEsperada, 'devolver', {
+            destino: destino,
+            idMotivo: idMotivo,
+            observacion: observacion,
+            contexto: contexto
           });
         } catch (e) {
           return Promise.reject(e);

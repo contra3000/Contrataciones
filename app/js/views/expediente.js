@@ -253,6 +253,9 @@
     renderDatos(estado.dom.datos, expediente);
     renderRenglones(estado.dom.renglones, expediente);
     renderAuditoria(estado.dom.auditoria, expediente);
+    // Documento de Especificación Técnica (ORDEN-RONDA-07 §3.1): se compone
+    // desde el expediente con nodos DOM (la app nunca asigna innerHTML).
+    SGC.renders.especificacionTecnica.montar(estado.dom.documento, expediente);
 
     var avance = rolPara(expediente, 'puedeAvanzar');
     var devolucion = rolPara(expediente, 'puedeDevolver');
@@ -340,6 +343,7 @@
     estado.dom.mensaje = qs(raiz, '#sgc-expediente-mensaje');
     estado.dom.conflicto = qs(raiz, '#sgc-expediente-conflicto');
     estado.dom.conflictoTexto = qs(raiz, '#sgc-expediente-conflicto-texto');
+    estado.dom.documento = qs(raiz, '#sgc-expediente-documento');
 
     qs(raiz, '#sgc-expediente-volver').addEventListener('click', function () {
       if (typeof estado.onVolver === 'function') {
@@ -365,6 +369,9 @@
     },
     onVolver: function (fn) {
       estado.onVolver = fn;
+    },
+    obtener: function () {
+      return { expediente: estado.expediente, version: estado.version };
     },
     abrir: abrir
   };
