@@ -57,8 +57,24 @@ for (const estadoDef of config.ESTADOS) {
         'la versión no cambia tras el intento de ' + rol);
     }
 
+    // ORDEN-RONDA-08 §2.1: para avanzar fuera de un estado que produce
+    // documento hay que guardar antes su entregable (el motor lo exige).
+    let versionFinal = version;
+    const entregable = config.entregableDelEstado(estadoDef.id);
+    if (entregable) {
+      const g = await pedir(base, 'POST', '/api/expedientes/' + id + '/entregables', {
+        id: entregable.id,
+        nombre: entregable.archivo,
+        contenido: '<p>Documento de ' + entregable.id + '</p>',
+        contexto: contexto(estadoDef.rolEjecutor)
+      });
+      assert.equal(g.status, 201,
+        estadoDef.id + ' guarda su entregable ' + entregable.id);
+      versionFinal = g.body.version;
+    }
+
     const ok = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {
-      versionEsperada: version,
+      versionEsperada: versionFinal,
       destino,
       contexto: contexto(estadoDef.rolEjecutor)
     });
@@ -67,7 +83,7 @@ for (const estadoDef of config.ESTADOS) {
         estadoDef.id + ' avanza con su rol ejecutor ' + estadoDef.rolEjecutor);
       const leido = await pedir(base, 'GET', '/api/expedientes/' + id);
       assert.equal(leido.body.expediente.estado.id, estadoDef.estadosSiguientes[0]);
-      assert.equal(leido.body.version, version + 1);
+      assert.equal(leido.body.version, versionFinal + 1);
       assert.equal(estadoEnDisco(entorno.datosDir, id), estadoDef.estadosSiguientes[0],
         'el servidor persiste el resultado del motor');
     } else {

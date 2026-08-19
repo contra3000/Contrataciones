@@ -31,6 +31,7 @@ function expedienteEn(idEstado) {
     version: 1,
     actualizado: '2026-08-01T10:15:00.000Z',
     renglones: [],
+    entregables: est ? (est.entregablesObligatorios || []).slice() : [],
     auditoria: []
   };
 }
@@ -172,6 +173,15 @@ test('8. recorrido completo con devolución: 18 estados, cadena íntegra', () =>
       const reavance = estados.avanzar(ex, estadoPorId('AUTORIZACION_SCo').rolEjecutor, 'REVISION_SCo', ctx);
       assert.equal(reavance.ok, true, reavance.error);
       ex = reavance.expediente;
+    }
+
+    // Un expediente que está en un estado productor ya generó su documento:
+    // el motor no lo exige de nuevo (lo exige la validación al avanzar).
+    const obligatorios = estado.entregablesObligatorios || [];
+    for (const idEntregable of obligatorios) {
+      if (ex.entregables.indexOf(idEntregable) === -1) {
+        ex.entregables.push(idEntregable);
+      }
     }
 
     const destino = estado.estadosSiguientes[0];

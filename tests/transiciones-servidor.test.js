@@ -153,8 +153,19 @@ test('la auditoría de una transición la escribe el servidor y registra el orig
   });
   const id = creado.body.id;
 
+  // ORDEN-RONDA-08 §2.1: la Fase 1 exige su documento para poder avanzar;
+  // se guarda primero y se avanza con la versión que el guardado devuelve.
+  const entregable = await pedir(base, 'POST', '/api/expedientes/' + id + '/entregables', {
+    id: 'especificacion-tecnica',
+    nombre: 'especificacion-tecnica.html',
+    contenido: '<p>Especificación</p>',
+    contexto: contexto('generador', { timestamp: '2026-08-18T11:03:00.000Z' })
+  });
+  assert.equal(entregable.status, 201);
+  assert.equal(entregable.body.version, 2);
+
   const r = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {
-    versionEsperada: 1,
+    versionEsperada: entregable.body.version,
     destino: 'SOLICITUD_CONTRATACION',
     contexto: contexto('generador', { timestamp: '2026-08-18T11:05:00.000Z' })
   });
@@ -162,7 +173,7 @@ test('la auditoría de una transición la escribe el servidor y registra el orig
 
   const leido = await pedir(base, 'GET', '/api/expedientes/' + id);
   const auditoria = leido.body.expediente.auditoria;
-  assert.equal(auditoria.length, 2, 'creación + avance');
+  assert.equal(auditoria.length, 2, 'creación + avance (el entregable no escribe auditoría)');
 
   const entrada = auditoria[1];
   assert.equal(entrada.accion, 'avanzar');

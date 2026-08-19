@@ -7,9 +7,11 @@
  * - Los errores de red sí son excepciones, con mensaje en español y código
  *   'RED'.
  * - Un expediente inexistente rechaza con código 'NO_ENCONTRADO'.
- * - historico / archivar no están expuestos por el servidor (ORDEN-RONDA-03
- *   §3.4): lanzan un error en español con código 'NO_EXPUESTO'. guardarEntregable
- *   sí se expone desde la ronda 7 (ORDEN-RONDA-07 §3.3).
+ * - archivar no está expuesto por el servidor (ORDEN-RONDA-03 §3.4): lanza un
+ *   error en español con código 'NO_EXPUESTO'. guardarEntregable sí se expone
+ *   desde la ronda 7 (ORDEN-RONDA-07 §3.3) y listarArchivoHistorico desde la
+ *   ronda 8 (ORDEN-RONDA-08 §2.2): GET /api/archivo lee el directorio del
+ *   Archivo Histórico, no el índice.
  * - Las transiciones por intención (ADR-021) se piden con avanzar/devolver: el
  *   servidor ejecuta el motor y persiste su resultado. Un 403 (rechazo por rol,
  *   destino o validación) se devuelve como {ok:false, error} con el motivo del
@@ -229,8 +231,16 @@
         });
       },
 
+      // Archivo Histórico (ORDEN-RONDA-08 §2.2): el servidor expone
+      // GET /api/archivo, que lee el directorio ArchivoHistorico (no el
+      // índice) y devuelve las entradas de los expedientes archivados.
       listarArchivoHistorico: function () {
-        return Promise.reject(errorNoExpuesto('listarArchivoHistorico'));
+        return pedirConErrorRed('GET', ruta(['archivo'])).then(function (respuesta) {
+          if (respuesta.status !== 200) {
+            throw errorDeRespuesta(respuesta, 'no se pudo listar el archivo histórico');
+          }
+          return respuesta.cuerpo.expedientes;
+        });
       },
 
       archivar: function () {
@@ -238,18 +248,27 @@
       },
 
       // Guarda el entregable generado en la carpeta del expediente y lo
-      // registra en `entregables` de datos.json (ORDEN-RONDA-07 §3.3).
-      guardarEntregable: function (id, nombre, contenido, contexto) {
-        return pedirConErrorRed('POST', ruta(['expedientes', id, 'entregables']), {
+      // registra en `entregables` de datos.json (ORDEN-RONDA-07 §3.3). El
+      // `idEntregable` (opcional, ORDEN-RONDA-08 §2.1) identifica el documento
+      // del circuito según config.ENTREGABLES; el servidor lo valida.
+      guardarEntregable: function (id, nombre, contenido, contexto, idEntregable) {
+        var cuerpo = {
           nombre: nombre,
           contenido: contenido,
           contexto: contexto
-        }).then(function (respuesta) {
+        };
+        if (typeof idEntregable === 'string' && idEntregable.length > 0) {
+          cuerpo.id = idEntregable;
+        }
+        return pedirConErrorRed('POST', ruta(['expedientes', id, 'entregables']), cuerpo).then(function (respuesta) {
           if (respuesta.status === 201) {
             return {
               ruta: respuesta.cuerpo.ruta,
               version: respuesta.cuerpo.version
             };
+          }
+          if (respuesta.status === 400) {
+            throw errorDeRespuesta(respuesta, 'el servidor rechazó el entregable del expediente ' + id);
           }
           if (respuesta.status === 404) {
             throw errorNoEncontrado(id);

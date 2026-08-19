@@ -119,6 +119,19 @@ async function crearEnEstado(base, datosDir, idEstado, assert) {
   let version = creado.body.version;
   const pasos = caminoHasta(idEstado);
   for (const paso of pasos) {
+    // ORDEN-RONDA-08 §2.1: el estado que se abandona ya produjo su documento;
+    // se guarda antes de avanzar usando la versión que el guardado devuelve.
+    const entregable = config.entregableDelEstado(paso.desde);
+    if (entregable) {
+      const g = await pedir(base, 'POST', '/api/expedientes/' + id + '/entregables', {
+        id: entregable.id,
+        nombre: entregable.archivo,
+        contenido: '<p>Documento de ' + entregable.id + '</p>',
+        contexto: contexto(paso.rol)
+      });
+      assert.equal(g.status, 201, 'se guarda el entregable ' + entregable.id);
+      version = g.body.version;
+    }
     const r = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {
       versionEsperada: version,
       destino: paso.destino,

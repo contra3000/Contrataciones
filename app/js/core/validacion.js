@@ -45,9 +45,21 @@
     return valor !== undefined && valor !== null && valor !== '';
   }
 
+  // Un entregable puede registrarse como cadena (id directo, como en los
+  // tests de configuración) o como objeto {id, nombre, ruta, ...} (como lo
+  // guarda el servidor desde la ronda 8). Ambas formas cierran la exigencia.
   function entregablePresente(expediente, idEntregable) {
-    return Array.isArray(expediente.entregables) &&
-      expediente.entregables.indexOf(idEntregable) !== -1;
+    var lista = Array.isArray(expediente.entregables) ? expediente.entregables : [];
+    for (var i = 0; i < lista.length; i++) {
+      var e = lista[i];
+      if (typeof e === 'string' && e === idEntregable) {
+        return true;
+      }
+      if (e && typeof e === 'object' && e.id === idEntregable) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function validarParaAvanzar(expediente) {

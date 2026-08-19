@@ -22,13 +22,23 @@
     document.getElementById('sgc-app').hidden = false;
     document.getElementById('sgc-kanban').hidden = true;
     document.getElementById('sgc-expediente').hidden = true;
+    document.getElementById('sgc-archivo').hidden = true;
   }
 
   function alternarTablero() {
     document.getElementById('sgc-app').hidden = true;
     document.getElementById('sgc-expediente').hidden = true;
+    document.getElementById('sgc-archivo').hidden = true;
     document.getElementById('sgc-kanban').hidden = false;
     SGC.views.kanban.refrescar();
+  }
+
+  function alternarArchivo() {
+    document.getElementById('sgc-app').hidden = true;
+    document.getElementById('sgc-expediente').hidden = true;
+    document.getElementById('sgc-kanban').hidden = true;
+    document.getElementById('sgc-archivo').hidden = false;
+    SGC.views.archivo.refrescar();
   }
 
   function operadorSeleccionado(operador) {
@@ -62,6 +72,19 @@
     SGC.views.expediente.fijarRepo(repo);
     SGC.views.expediente.onVolver(alternarTablero);
 
+    // Archivo Histórico (ORDEN-RONDA-08 §2.2): vista de sólo lectura que abre
+    // el expediente archivado en la vista de expediente (que deshabilita las
+    // operaciones cuando `archivado`).
+    SGC.views.archivo.montar(contenedor);
+    SGC.views.archivo.fijarRepo(repo);
+    SGC.views.archivo.onAbrir(function (id) {
+      document.getElementById('sgc-archivo').hidden = true;
+      document.getElementById('sgc-app').hidden = true;
+      document.getElementById('sgc-kanban').hidden = true;
+      document.getElementById('sgc-expediente').hidden = false;
+      SGC.views.expediente.abrir(id);
+    });
+
     // Documento y exportación (ORDEN-RONDA-07 §3.2-§3.4): imprime, guarda el
     // documento generado en la carpeta del expediente y exporta JSON o
     // resumen.md. Las descargas pasan por el modal de advertencia (FSD §6).
@@ -92,6 +115,7 @@
 
     document.getElementById('sgc-nav-alta').addEventListener('click', alternarAlta);
     document.getElementById('sgc-nav-tablero').addEventListener('click', alternarTablero);
+    document.getElementById('sgc-nav-archivo').addEventListener('click', alternarArchivo);
 
     // Padrón de operadores (ADR-017): se sirve desde config/.
     fetch('config/usuarios.ejemplo.json').then(function (res) {

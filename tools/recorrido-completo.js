@@ -29,6 +29,14 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.http.js'));
+// Plantillas del circuito (ORDEN-RONDA-08 §2.1): el recorrido compone y guarda
+// el documento de cada fase antes de poder avanzar.
+require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
 
 const SGC = globalThis.SGC;
 const config = SGC.core.config;
@@ -117,6 +125,21 @@ async function aplicar(repo, expediente, version, paso) {
   return respuesta;
 }
 
+// ORDEN-RONDA-08 §2.1: si el estado que se abandona produce un documento, se
+// compone con su plantilla y se guarda como entregable antes de avanzar
+// (validacion exige el entregable del estado). Devuelve la versión que el
+// guardado deja en el servidor.
+async function guardarEntregableDelEstado(repo, expediente, version, idEstado, rol) {
+  const plantilla = SGC.renders.documento.paraEstado(idEstado);
+  if (!plantilla) {
+    return version;
+  }
+  const contenido = plantilla.componer(expediente);
+  const guardado = await repo.guardarEntregable(
+    expediente.expedienteId, plantilla.nombre, contenido, contexto(rol), plantilla.id);
+  return guardado.version;
+}
+
 async function recorrer(baseUrl) {
   if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
     throw new Error('recorrer() requiere la base del servidor');
@@ -153,6 +176,9 @@ async function recorrer(baseUrl) {
   const plan = planDePasos();
   for (let i = 0; i < plan.length; i++) {
     const paso = plan[i];
+    if (paso.accion === 'avanzar') {
+      version = await guardarEntregableDelEstado(repo, expediente, version, paso.desde, paso.rol);
+    }
     const resultado = await aplicar(repo, expediente, version, paso);
     if (resultado.conflicto) {
       throw new Error('recorrido: conflicto de versión al ' + paso.accion + ' desde ' + paso.desde);

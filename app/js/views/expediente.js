@@ -98,6 +98,9 @@
     if (accion === 'devolver') {
       return 'Devolución por observación';
     }
+    if (accion === 'archivar') {
+      return 'Archivo en el Histórico';
+    }
     return accion;
   }
 
@@ -253,16 +256,45 @@
     renderDatos(estado.dom.datos, expediente);
     renderRenglones(estado.dom.renglones, expediente);
     renderAuditoria(estado.dom.auditoria, expediente);
-    // Documento de Especificación Técnica (ORDEN-RONDA-07 §3.1): se compone
-    // desde el expediente con nodos DOM (la app nunca asigna innerHTML).
-    SGC.renders.especificacionTecnica.montar(estado.dom.documento, expediente);
+
+    // Documento del estado (ORDEN-RONDA-08 §2.1): se compone con la plantilla
+    // que produce el estado actual (nodos DOM, nunca innerHTML). Si el estado
+    // no produce documento, la sección se oculta.
+    var plantilla = SGC.renders.documento.paraEstado(idEstado);
+    if (estado.dom.documentoSeccion) {
+      estado.dom.documentoSeccion.hidden = !plantilla;
+    }
+    if (plantilla) {
+      if (estado.dom.documentoTitulo) {
+        estado.dom.documentoTitulo.textContent = plantilla.titulo;
+      }
+      if (estado.dom.documento) {
+        plantilla.montar(estado.dom.documento, expediente);
+      }
+    }
+
+    // ORDEN-RONDA-08 §2.2: un expediente archivado es sólo lectura.
+    var archivado = expediente.archivado === true;
+    if (estado.dom.archivado) {
+      estado.dom.archivado.hidden = !archivado;
+    }
 
     var avance = rolPara(expediente, 'puedeAvanzar');
     var devolucion = rolPara(expediente, 'puedeDevolver');
-    estado.dom.avanzar.disabled = !avance.permiso.permitido;
-    estado.dom.devolver.disabled = !devolucion.permiso.permitido;
-    estado.dom.avanzarPorque.textContent = avance.permiso.permitido ? '' : avance.permiso.motivo;
-    estado.dom.devolverPorque.textContent = devolucion.permiso.permitido ? '' : devolucion.permiso.motivo;
+    estado.dom.avanzar.disabled = archivado || !avance.permiso.permitido;
+    estado.dom.devolver.disabled = archivado || !devolucion.permiso.permitido;
+    estado.dom.avanzarPorque.textContent = archivado
+      ? 'El expediente está archivado.'
+      : (avance.permiso.permitido ? '' : avance.permiso.motivo);
+    estado.dom.devolverPorque.textContent = archivado
+      ? 'El expediente está archivado.'
+      : (devolucion.permiso.permitido ? '' : devolucion.permiso.motivo);
+
+    // Las acciones de exportación (exportar.js) adaptan documento, nombre e id
+    // al estado actual. En las monturas de test puede no estar montado.
+    if (SGC.views.exportar && typeof SGC.views.exportar.actualizar === 'function') {
+      SGC.views.exportar.actualizar();
+    }
   }
 
   function avisar(mensaje, esError) {
@@ -344,6 +376,9 @@
     estado.dom.conflicto = qs(raiz, '#sgc-expediente-conflicto');
     estado.dom.conflictoTexto = qs(raiz, '#sgc-expediente-conflicto-texto');
     estado.dom.documento = qs(raiz, '#sgc-expediente-documento');
+    estado.dom.documentoTitulo = qs(raiz, '#sgc-expediente-documento-titulo');
+    estado.dom.documentoSeccion = qs(raiz, '#sgc-expediente-documento-seccion');
+    estado.dom.archivado = qs(raiz, '#sgc-expediente-archivado');
 
     qs(raiz, '#sgc-expediente-volver').addEventListener('click', function () {
       if (typeof estado.onVolver === 'function') {

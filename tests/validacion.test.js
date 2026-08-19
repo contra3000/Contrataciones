@@ -24,11 +24,33 @@ function expedienteEn(idEstado) {
   };
 }
 
-test('1. con arreglos de requisitos vacíos todo es válido', () => {
+test('1. sin requisitos todo es válido; con entregablesObligatorios los exige (ORDEN-RONDA-08 §2.1)', () => {
   for (const estado of config.ESTADOS) {
     const r = validacion.validarParaAvanzar(expedienteEn(estado.id));
-    assert.deepEqual(r, { valido: true, faltantes: { campos: [], entregables: [] } },
-      'en ' + estado.id);
+    const obligatorios = estado.entregablesObligatorios || [];
+    if (obligatorios.length === 0) {
+      assert.deepEqual(r, { valido: true, faltantes: { campos: [], entregables: [] } },
+        'en ' + estado.id);
+    } else {
+      assert.equal(r.valido, false, 'en ' + estado.id + ' sin su documento no se avanza');
+      assert.deepEqual(r.faltantes.entregables, obligatorios, 'en ' + estado.id);
+    }
+  }
+});
+
+test('1b. los cinco estados que producen documento exigen su entregable y lo aceptan guardado como objeto', () => {
+  for (const estado of config.ESTADOS) {
+    const obligatorios = estado.entregablesObligatorios || [];
+    if (obligatorios.length === 0) {
+      continue;
+    }
+    for (const idEntregable of obligatorios) {
+      const conObjeto = expedienteEn(estado.id);
+      conObjeto.entregables = [{ id: idEntregable, nombre: 'documento.html', ruta: 'entregables/documento.html' }];
+      const r = validacion.validarParaAvanzar(conObjeto);
+      assert.deepEqual(r, { valido: true, faltantes: { campos: [], entregables: [] } },
+        'en ' + estado.id + ' el entregable ' + idEntregable + ' cierra la exigencia');
+    }
   }
 });
 

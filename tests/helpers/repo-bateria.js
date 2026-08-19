@@ -186,23 +186,21 @@ function correrBateria(etiqueta, crearContexto, conExtra) {
   });
 
   if (conExtra) {
-    test(titulo('listarArchivoHistorico conserva los snapshots por versión'), async () => {
+    test(titulo('listarArchivoHistorico lista los expedientes archivados con su origen'), async () => {
       const ctx = await crearContexto();
       try {
         const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase());
-        await ctx.repo.guardarExpediente(
-          creado.id,
-          Object.assign({}, creado.expediente, { marca: 'v2' }),
-          1,
-          contextoBase()
-        );
-        const historico = await ctx.repo.listarArchivoHistorico({ id: creado.id });
-        assert.equal(historico.length, 1);
-        assert.equal(historico[0].version, 1);
-        const porVersion = await ctx.repo.listarArchivoHistorico({ id: creado.id, version: 1 });
-        assert.equal(porVersion.length, 1);
-        const inexistente = await ctx.repo.listarArchivoHistorico({ id: creado.id, version: 99 });
-        assert.deepEqual(inexistente, []);
+        await ctx.repo.archivar(creado.id, contextoBase());
+        const archivo = await ctx.repo.listarArchivoHistorico();
+        assert.equal(archivo.length, 1);
+        assert.equal(archivo[0].id, creado.id);
+        assert.equal(archivo[0].titulo, 'Adquisición de resmas de papel A4');
+        assert.equal(archivo[0].estado, 'ESPECIFICACIONES_TECNICAS');
+        assert.equal(archivo[0].archivadoEn, '2026-08-14T10:00:00.000Z');
+        const porId = await ctx.repo.listarArchivoHistorico({ id: creado.id });
+        assert.equal(porId.length, 1);
+        const porOtro = await ctx.repo.listarArchivoHistorico({ id: '2099-999' });
+        assert.deepEqual(porOtro, []);
       } finally {
         await ctx.limpiar();
       }

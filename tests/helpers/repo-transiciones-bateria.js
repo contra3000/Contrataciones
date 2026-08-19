@@ -36,6 +36,21 @@ function contextoPadron(rol, extra) {
   }, extra || {});
 }
 
+// Crea el expediente y guarda el documento que la Fase 1 (ESPECIFICACIONES_
+// TECNICAS) exige para poder avanzar (ORDEN-RONDA-08 §2.1). El guardado
+// versiona: el expediente queda en versión 2 y el siguiente avanzar pasa a 3.
+async function crearConEntregable(ctx) {
+  const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase({ rol: 'generador' }));
+  await ctx.repo.guardarEntregable(
+    creado.id,
+    'especificacion-tecnica.html',
+    '<p>especificación</p>',
+    contextoBase({ rol: 'generador' }),
+    'especificacion-tecnica'
+  );
+  return creado;
+}
+
 function correrTransiciones(etiqueta, crearContexto) {
   const titulo = (nombre) => etiqueta + ': ' + nombre;
   const config = globalThis.SGC.core.config;
@@ -47,13 +62,13 @@ function correrTransiciones(etiqueta, crearContexto) {
   test(titulo('avanzar con el rol correcto devuelve ok y persiste el resultado del motor'), async () => {
     const ctx = await crearContexto();
     try {
-      const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase({ rol: 'generador' }));
-      const r = await ctx.repo.avanzar(creado.id, 1, destinoInicial, contextoPadron('generador'));
+      const creado = await crearConEntregable(ctx);
+      const r = await ctx.repo.avanzar(creado.id, 2, destinoInicial, contextoPadron('generador'));
       assert.equal(r.ok, true);
-      assert.equal(r.version, 2);
+      assert.equal(r.version, 3);
       assert.equal(r.expediente.estado.id, destinoInicial);
       const leido = await ctx.repo.leerExpediente(creado.id);
-      assert.equal(leido.version, 2);
+      assert.equal(leido.version, 3);
       assert.equal(leido.expediente.estado.id, destinoInicial);
       const ultimo = leido.expediente.auditoria[leido.expediente.auditoria.length - 1];
       assert.equal(ultimo.accion, 'avanzar');
@@ -87,14 +102,14 @@ function correrTransiciones(etiqueta, crearContexto) {
   test(titulo('avanzar con versión vieja devuelve conflicto sin tocar el estado'), async () => {
     const ctx = await crearContexto();
     try {
-      const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase({ rol: 'generador' }));
-      await ctx.repo.avanzar(creado.id, 1, destinoInicial, contextoPadron('generador'));
-      const r = await ctx.repo.avanzar(creado.id, 1, destinoInicial, contextoPadron('generador'));
+      const creado = await crearConEntregable(ctx);
+      await ctx.repo.avanzar(creado.id, 2, destinoInicial, contextoPadron('generador'));
+      const r = await ctx.repo.avanzar(creado.id, 2, destinoInicial, contextoPadron('generador'));
       assert.equal(r.ok, false);
       assert.equal(r.conflicto, true);
-      assert.equal(r.versionRemota, 2);
+      assert.equal(r.versionRemota, 3);
       const leido = await ctx.repo.leerExpediente(creado.id);
-      assert.equal(leido.version, 2);
+      assert.equal(leido.version, 3);
       assert.equal(leido.expediente.estado.id, destinoInicial);
     } finally {
       await ctx.limpiar();
@@ -104,15 +119,15 @@ function correrTransiciones(etiqueta, crearContexto) {
   test(titulo('devolver sin motivo válido devuelve rechazo por catálogo'), async () => {
     const ctx = await crearContexto();
     try {
-      const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase({ rol: 'generador' }));
-      await ctx.repo.avanzar(creado.id, 1, destinoInicial, contextoPadron('generador'));
-      const r = await ctx.repo.devolver(creado.id, 2, 'ESPECIFICACIONES_TECNICAS',
+      const creado = await crearConEntregable(ctx);
+      await ctx.repo.avanzar(creado.id, 2, destinoInicial, contextoPadron('generador'));
+      const r = await ctx.repo.devolver(creado.id, 3, 'ESPECIFICACIONES_TECNICAS',
         'NO_EXISTE', null, contextoPadron(defDestino.rolEjecutor));
       assert.equal(r.ok, false);
       assert.match(r.error, /no pertenece al catálogo/);
       const leido = await ctx.repo.leerExpediente(creado.id);
       assert.equal(leido.expediente.estado.id, destinoInicial);
-      assert.equal(leido.version, 2);
+      assert.equal(leido.version, 3);
     } finally {
       await ctx.limpiar();
     }
@@ -121,12 +136,12 @@ function correrTransiciones(etiqueta, crearContexto) {
   test(titulo('devolver con motivo válido y rol correcto ejecuta'), async () => {
     const ctx = await crearContexto();
     try {
-      const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase({ rol: 'generador' }));
-      await ctx.repo.avanzar(creado.id, 1, destinoInicial, contextoPadron('generador'));
-      const r = await ctx.repo.devolver(creado.id, 2, 'ESPECIFICACIONES_TECNICAS',
+      const creado = await crearConEntregable(ctx);
+      await ctx.repo.avanzar(creado.id, 2, destinoInicial, contextoPadron('generador'));
+      const r = await ctx.repo.devolver(creado.id, 3, 'ESPECIFICACIONES_TECNICAS',
         'ERRORES_FORMALES', 'Observación', contextoPadron(defDestino.rolEjecutor));
       assert.equal(r.ok, true);
-      assert.equal(r.version, 3);
+      assert.equal(r.version, 4);
       assert.equal(r.expediente.estado.id, 'ESPECIFICACIONES_TECNICAS');
       const leido = await ctx.repo.leerExpediente(creado.id);
       const ultimo = leido.expediente.auditoria[leido.expediente.auditoria.length - 1];
@@ -142,16 +157,16 @@ function correrTransiciones(etiqueta, crearContexto) {
   test(titulo('devolver con rol válido en el padrón pero sin potestad sobre el estado recibe rechazo del motor'), async () => {
     const ctx = await crearContexto();
     try {
-      const creado = await ctx.repo.crearExpediente(datosIniciales(), contextoBase({ rol: 'generador' }));
-      await ctx.repo.avanzar(creado.id, 1, destinoInicial, contextoPadron('generador'));
-      const r = await ctx.repo.devolver(creado.id, 2, 'ESPECIFICACIONES_TECNICAS',
+      const creado = await crearConEntregable(ctx);
+      await ctx.repo.avanzar(creado.id, 2, destinoInicial, contextoPadron('generador'));
+      const r = await ctx.repo.devolver(creado.id, 3, 'ESPECIFICACIONES_TECNICAS',
         'ERRORES_FORMALES', null, contextoPadron('juridica'));
       assert.equal(r.ok, false);
       assert.equal(r.conflicto, false);
       assert.match(r.error, new RegExp('no puede operar sobre "' + destinoInicial + '"'));
       const leido = await ctx.repo.leerExpediente(creado.id);
       assert.equal(leido.expediente.estado.id, destinoInicial);
-      assert.equal(leido.version, 2);
+      assert.equal(leido.version, 3);
     } finally {
       await ctx.limpiar();
     }

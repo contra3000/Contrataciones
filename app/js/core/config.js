@@ -47,7 +47,7 @@
       estadosSiguientes: ['SOLICITUD_CONTRATACION'],
       estadosDevolucion: [],
       camposRequeridos: [],
-      entregablesObligatorios: []
+      entregablesObligatorios: ['especificacion-tecnica']
     },
     {
       id: 'SOLICITUD_CONTRATACION',
@@ -58,7 +58,7 @@
       estadosSiguientes: ['ANALISIS_SCo'],
       estadosDevolucion: ['ESPECIFICACIONES_TECNICAS'],
       camposRequeridos: [],
-      entregablesObligatorios: []
+      entregablesObligatorios: ['solicitud-contratacion']
     },
     {
       id: 'ANALISIS_SCo',
@@ -135,7 +135,7 @@
       estadosSiguientes: ['PUBLICACION'],
       estadosDevolucion: ['DILIGENCIA'],
       camposRequeridos: [],
-      entregablesObligatorios: []
+      entregablesObligatorios: ['pliego-bases-condiciones']
     },
     {
       id: 'PUBLICACION',
@@ -190,7 +190,7 @@
       estadosSiguientes: ['ADJUDICACION'],
       estadosDevolucion: ['DICTAMEN_FINAL'],
       camposRequeridos: [],
-      entregablesObligatorios: []
+      entregablesObligatorios: ['disposicion-adjudicacion']
     },
     {
       id: 'ADJUDICACION',
@@ -223,7 +223,7 @@
       estadosSiguientes: ['PERFECCIONADA'],
       estadosDevolucion: ['AFECTACION'],
       camposRequeridos: [],
-      entregablesObligatorios: []
+      entregablesObligatorios: ['orden-compra']
     },
     {
       id: 'PERFECCIONADA',
@@ -259,6 +259,62 @@
   var ESTADO_FINAL = 'PERFECCIONADA';
 
   // ---------------------------------------------------------------------------
+  // Entregables del circuito (ORDEN-RONDA-08 §2.1). Cada documento que una fase
+  // produce queda registrado con un id estable: el mismo id es el que
+  // `validacion.validarParaAvanzar` exige en `entregablesObligatorios`, el que
+  // `guardarEntregable` guarda en la entrada del expediente y el que la vista
+  // usa para elegir la plantilla. El id no cambia aunque cambie el nombre del
+  // archivo o el título impreso.
+  // ---------------------------------------------------------------------------
+  var ENTREGABLES = [
+    {
+      id: 'especificacion-tecnica',
+      estado: 'ESPECIFICACIONES_TECNICAS',
+      fase: 1,
+      archivo: 'especificacion-tecnica.html',
+      titulo: 'Especificación Técnica'
+    },
+    {
+      id: 'solicitud-contratacion',
+      estado: 'SOLICITUD_CONTRATACION',
+      fase: 2,
+      archivo: 'solicitud-contratacion.html',
+      titulo: 'Solicitud de Contratación (SCo)'
+    },
+    {
+      id: 'pliego-bases-condiciones',
+      estado: 'FIRMAS_PLIEGO_DISPOSICION',
+      fase: 5,
+      archivo: 'pliego-bases-condiciones.html',
+      titulo: 'Pliego de Bases y Condiciones'
+    },
+    {
+      id: 'disposicion-adjudicacion',
+      estado: 'FIRMA_DISPOSICION',
+      fase: 7,
+      archivo: 'disposicion-adjudicacion.html',
+      titulo: 'Disposición de Adjudicación'
+    },
+    {
+      id: 'orden-compra',
+      estado: 'GENERACION_ORDEN_COMPRA',
+      fase: 9,
+      archivo: 'orden-compra.html',
+      titulo: 'Orden de Compra'
+    }
+  ];
+
+  // El entregable que produce un estado (o null si el estado no produce).
+  function entregableDelEstado(idEstado) {
+    for (var i = 0; i < ENTREGABLES.length; i++) {
+      if (ENTREGABLES[i].estado === idEstado) {
+        return ENTREGABLES[i];
+      }
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
   // Fases del FSD §4 (ORDEN-RONDA-06 §3.1). El tablero Kanban arma una columna
   // por fase (ADR-010), nunca por estado: dieciocho columnas obligarían a
   // desplazamiento horizontal permanente. El estado puntual va como etiqueta
@@ -280,9 +336,11 @@
   SGC.core.config = {
     ROLES: ROLES,
     ESTADOS: ESTADOS,
+    ENTREGABLES: ENTREGABLES,
     MOTIVOS_DEVOLUCION: MOTIVOS_DEVOLUCION,
     FASES: FASES,
     ESTADO_INICIAL: ESTADO_INICIAL,
-    ESTADO_FINAL: ESTADO_FINAL
+    ESTADO_FINAL: ESTADO_FINAL,
+    entregableDelEstado: entregableDelEstado
   };
 })(typeof window !== 'undefined' ? window : globalThis);

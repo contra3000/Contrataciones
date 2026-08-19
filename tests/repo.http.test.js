@@ -44,17 +44,18 @@ async function crearContextoHttp() {
 correrBateria('repo.http', crearContextoHttp, false);
 correrTransiciones('repo.http', crearContextoHttp);
 
-test('repo.http: historico/archivar no expuestos por el servidor', async () => {
+test('repo.http: archivar no expuesto y listarArchivoHistorico lee /api/archivo', async () => {
   const ctx = await crearContextoHttp();
   try {
-    await assert.rejects(
-      () => ctx.repo.listarArchivoHistorico({}),
-      (e) => e.codigo === 'NO_EXPUESTO'
-    );
     await assert.rejects(
       () => ctx.repo.archivar('2026-001', {}),
       (e) => e.codigo === 'NO_EXPUESTO'
     );
+    // ORDEN-RONDA-08 §2.2: listarArchivoHistorico ahora habla con
+    // GET /api/archivo (el directorio del histórico). En un servidor fresco,
+    // sin expedientes archivados, devuelve la lista vacía.
+    const archivo = await ctx.repo.listarArchivoHistorico();
+    assert.deepEqual(archivo, []);
   } finally {
     await ctx.limpiar();
   }
