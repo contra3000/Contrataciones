@@ -114,6 +114,7 @@ function crearServidor(datosDir) {
     apiDevolver,
     apiGuardarEntregable,
     apiLeerEntregable,
+    apiGuardarPresupuesto,
     apiValidarCodigos,
     servirConfig,
     servirEstatico
@@ -244,6 +245,22 @@ function crearServidor(datosDir) {
               }
               ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
               return apiGuardarEntregable(req, res, id, texto);
+            }).catch((e) => {
+              return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+            });
+          }
+          // Presupuestos adjuntos (ORDEN-RONDA-09 §3.2).
+          if (req.method === 'POST' && accion === 'presupuestos') {
+            return ayudantes.leerCuerpo(req).then((texto) => {
+              let contexto = null;
+              try {
+                const cuerpo = ayudantes.parsearCuerpo(texto);
+                contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
+              } catch (e) {
+                // el cuerpo inválido lo reporta apiGuardarPresupuesto
+              }
+              ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
+              return apiGuardarPresupuesto(req, res, id, texto);
             }).catch((e) => {
               return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
             });

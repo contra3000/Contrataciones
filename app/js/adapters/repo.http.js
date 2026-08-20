@@ -275,6 +275,31 @@
           }
           throw errorDeRespuesta(respuesta, 'no se pudo guardar el entregable "' + nombre + '" del expediente ' + id);
         });
+      },
+
+      // Guarda un presupuesto adjunto (ORDEN-RONDA-09 §3.2): PDF o imagen en
+      // base64. El servidor valida tipo y tamaño y decide el nombre del
+      // archivo en disco; devuelve el id estable que los valores de
+      // referencia citan. No es parte del contrato ADR-002: es una capacidad
+      // propia del adaptador, porque el archivo vive del lado del servidor.
+      guardarPresupuesto: function (id, datos, contexto) {
+        return pedirConErrorRed('POST', ruta(['expedientes', id, 'presupuestos']), {
+          nombreOriginal: datos.nombreOriginal,
+          tipo: datos.tipo,
+          contenido: datos.contenido,
+          contexto: contexto
+        }).then(function (respuesta) {
+          if (respuesta.status === 201) {
+            return respuesta.cuerpo;
+          }
+          if (respuesta.status === 400) {
+            throw errorDeRespuesta(respuesta, 'el servidor rechazó el presupuesto del expediente ' + id);
+          }
+          if (respuesta.status === 404) {
+            throw errorNoEncontrado(id);
+          }
+          throw errorDeRespuesta(respuesta, 'no se pudo guardar el presupuesto del expediente ' + id);
+        });
       }
     };
   }

@@ -25,10 +25,12 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'auditoria.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'migraciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'requerimiento.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
@@ -181,4 +183,92 @@ test('un expediente sin renglones no rompe ninguna plantilla', () => {
     const html = plantilla.componer(expedienteEn(estadoId, []));
     assert.ok(html.includes('</html>'), estadoId + ' compone completo');
   }
+});
+
+// ORDEN-RONDA-09 §3.5 (ADR-022): la plantilla del requerimiento descompone el
+// código en IPP / Clase / Ítem, imprime el total en letras, la planilla de
+// máximos con cantidadMinima opcional, la justificación de OCA con su causal y
+// el bloque de imputación vacío o completo.
+function expedienteConRequerimiento(extra) {
+  const exp = expedienteEn('ESPECIFICACIONES_TECNICAS', [
+    {
+      codigo: '2.5.8-378.186', cantidad: 2, unidad: 'UN', aclaracion: '',
+      valoresReferencia: [
+        { presupuestoId: 'presupuesto-1', base: 'unitario', valor: 100 },
+        { presupuestoId: 'presupuesto-2', base: 'total', valor: 300 }
+      ],
+      cantidadMaxima: 100
+    }
+  ]);
+  exp.requerimiento = Object.assign({}, extra && extra.requerimiento);
+  exp.imputacion = (extra && extra.imputacion) || [];
+  return exp;
+}
+
+test('el requerimiento descompone el código, imprime el preventivo en letras y la OCA', () => {
+  const plantilla = documentoRender.paraEstado('ESPECIFICACIONES_TECNICAS');
+  const expediente = expedienteConRequerimiento({
+    requerimiento: { justificacionOCA: 'No se puede prefijar la cantidad exacta' }
+  });
+
+  const html = plantilla.componer(expediente);
+  // Código '2.5.8-378.186' descompuesto en tres columnas (ADR-022 §1).
+  assert.ok(html.includes('258'), 'imprime el IPP sin puntos');
+  assert.ok(html.includes('378'), 'imprime la clase');
+  assert.ok(html.includes('186'), 'imprime el ítem');
+  assert.ok(html.includes('2.5.8-378.186'), 'conserva el código completo');
+  // Preventivo con bases mixtas: 100 unitario y 300/2=150 total -> 125 promedio
+  // -> 125 * 2 = 250. Total general en números y en letras.
+  assert.ok(html.includes('Total general: $ 250,00'), 'el preventivo en números');
+  assert.ok(html.includes('LA SUMA DE: PESOS DOSCIENTOS CINCUENTA CON 00/100.-'),
+    'el total en letras');
+  // OCA activada por cantidadMaxima: justificación y causal normativa.
+  assert.ok(html.includes('No se puede prefijar la cantidad exacta'),
+    'la justificación de OCA se imprime');
+  assert.ok(html.includes('Art. 25 inc. c) del Decreto 1023/01'), 'la causal como ayuda');
+  assert.ok(html.includes('Cantidad máxima (por Solicitud de Provisión)'),
+    'la etiqueta del máximo explica su alcance');
+  assert.ok(html.includes('Sin imputación'), 'la imputación vacía se anota');
+
+  const contenedor = nodo('div', 'sgc-plantilla-requerimiento');
+  plantilla.montar(contenedor, expediente);
+  const texto = textoDelContenedor(contenedor);
+  assert.ok(texto.includes('258') && texto.includes('378') && texto.includes('186'),
+    'monta las tres columnas');
+  assert.ok(texto.includes('LA SUMA DE: PESOS DOSCIENTOS CINCUENTA CON 00/100.-'),
+    'monta el total en letras');
+});
+
+test('la cantidad mínima se imprime sólo si tiene valor y la imputación completa lo hace', () => {
+  const plantilla = documentoRender.paraEstado('ESPECIFICACIONES_TECNICAS');
+
+  const sinMinima = plantilla.componer(expedienteConRequerimiento({}));
+  assert.ok(!sinMinima.includes('>37<'), 'cantidadMinima vacía no se imprime');
+
+  const conMinima = plantilla.componer(expedienteConRequerimiento({
+    requerimiento: { oca: true },
+    imputacion: [{
+      Ejerc: '2026', R: '1', S: '2', C: '3', Ft: '4', PG: '5', Sp: '6',
+      Py: '7', Ac: '8', Ob: '9', UG: '10', I: '11', Pppal: '12',
+      Ppcial: '13', Spa: '14', M: '15'
+    }]
+  }));
+  // El renglón de expedienteConRequerimiento no trae cantidadMinima; se fuerza
+  // con oca:true (imputación completa + planilla), pero la mínima sigue vacía.
+  assert.ok(!conMinima.includes('>37<'), 'sigue sin imprimirse la mínima ausente');
+
+  const expediente = expedienteConRequerimiento({
+    requerimiento: { oca: true },
+    imputacion: [{
+      Ejerc: '2026', R: '1', S: '2', C: '3', Ft: '4', PG: '5', Sp: '6',
+      Py: '7', Ac: '8', Ob: '9', UG: '10', I: '11', Pppal: '12',
+      Ppcial: '13', Spa: '14', M: '15'
+    }]
+  });
+  expediente.renglones[0].cantidadMinima = 37;
+  const conValor = plantilla.componer(expediente);
+  assert.ok(conValor.includes('>37<'), 'cantidadMinima con valor sí se imprime');
+  assert.ok(conValor.includes('Ejerc'), 'la tabla de imputación imprime sus encabezados');
+  assert.ok(conValor.includes('>2026<'), 'la fila de imputación se imprime');
+  assert.ok(!conValor.includes('Sin imputación'), 'con imputación no dice que falta');
 });

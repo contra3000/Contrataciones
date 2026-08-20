@@ -7,9 +7,14 @@
  *
  * - El origen debe ser un respaldo creado por tools/respaldo.js
  *   (sgc-respaldo-<fecha>.<hora>).
+ * - Antes de copiar valida el respaldo (ORDEN-RONDA-09 corrección 2.3):
+ *   contador.json, idx/ y que los JSON parseen; si algo falla aborta y dice
+ *   qué está mal.
  * - Copia el contenido del respaldo en el destino (creándolo si hace falta),
  *   por encima de lo que haya. Es una restauración destructiva: el operador
- *   debe apuntar a una carpeta de datos vacía o descartable.
+ *   debe apuntar a una carpeta de datos vacía o descartable, y se le listan
+ *   los archivos del destino que no estaban en el respaldo y quedan mezclados
+ *   (corrección 2.2).
  * - Exporta `restaurar(origen, destino)` para que los tests corran la misma
  *   lógica.
  *
@@ -48,6 +53,14 @@ function main() {
     verificar(opciones);
     const resultado = restaurarRespaldo(opciones.origen, opciones.destino);
     console.log('Restaurado: ' + resultado.origen + ' -> ' + resultado.destino);
+    if (resultado.huerfanos && resultado.huerfanos.length > 0) {
+      console.log('Archivos del destino que NO estaban en el respaldo (quedan mezclados con lo restaurado):');
+      for (const rel of resultado.huerfanos) {
+        console.log('  - ' + rel);
+      }
+    } else {
+      console.log('El destino no tenía archivos ajenos al respaldo.');
+    }
     console.log('ADVERTENCIA: la restauración copió por encima de lo que hubiera en el destino.');
   } catch (e) {
     console.error('restaurar: ' + e.message);

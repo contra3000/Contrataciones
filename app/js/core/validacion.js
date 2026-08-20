@@ -105,7 +105,24 @@
         renglon.aclaracion.length > MAX_ACLARACION) {
       errores.push('La aclaración no puede superar los ' + MAX_ACLARACION + ' caracteres');
     }
+    // ORDEN-RONDA-09 §3.3/§3.4 (ADR-022): valores de referencia y cantidades
+    // máximas/mínimas. Requerimiento.js es el dueño de esas reglas; si el
+    // módulo no está cargado (tests de configuración), no se agregan errores.
+    if (SGC.core.requerimiento) {
+      errores = errores.concat(SGC.core.requerimiento.validarValoresReferencia(renglon));
+      errores = errores.concat(SGC.core.requerimiento.validarCantidades(renglon));
+    }
     return { valido: errores.length === 0, errores: errores };
+  }
+
+  // Validación agregada del requerimiento (ORDEN-RONDA-09 §3.6): valores de
+  // referencia de todos los renglones y cantidades máximas/mínimas. Sin
+  // estado: valida el expediente completo, no una transición.
+  function validarRequerimiento(expediente) {
+    if (SGC.core.requerimiento) {
+      return SGC.core.requerimiento.validarRequerimiento(expediente);
+    }
+    return { valido: true, errores: [] };
   }
 
   // Validación del paso Identificación del wizard (ORDEN-RONDA-05 §3.1): el
@@ -147,6 +164,7 @@
     validarParaAvanzar: validarParaAvanzar,
     validarRenglon: validarRenglon,
     validarIdentificacion: validarIdentificacion,
-    validarFundamentacion: validarFundamentacion
+    validarFundamentacion: validarFundamentacion,
+    validarRequerimiento: validarRequerimiento
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -103,6 +103,59 @@ function podar(destino, retener) {
   return lista.slice(0, retener);
 }
 
+// Lista los archivos de una carpeta con rutas relativas a `base`, en orden.
+function listarArchivos(carpeta, base) {
+  const resultado = [];
+  if (!fs.existsSync(carpeta)) {
+    return resultado;
+  }
+  const raiz = base || carpeta;
+  const recorrer = (actual) => {
+    const entradas = fs.readdirSync(actual, { withFileTypes: true });
+    for (const entrada of entradas) {
+      const desde = path.join(actual, entrada.name);
+      if (entrada.isDirectory()) {
+        recorrer(desde);
+      } else if (entrada.isFile()) {
+        resultado.push(path.relative(raiz, desde));
+      }
+    }
+  };
+  recorrer(carpeta);
+  resultado.sort();
+  return resultado;
+}
+
+// Archivos del destino que NO estaban en el respaldo: quedan mezclados con lo
+// restaurado y el operador debe saberlo (ORDEN-RONDA-09 corrección 2.2).
+function archivosHuerfanos(origen, destino) {
+  const delOrigen = new Set(listarArchivos(origen, origen));
+  return listarArchivos(destino, destino).filter((rel) => !delOrigen.has(rel));
+}
+
+// Valida un respaldo antes de restaurarlo (ORDEN-RONDA-09 corrección 2.3):
+// que exista contador.json, que exista idx/ y que todo JSON a restaurar
+// parsee. Si algo falla, se aborta la restauración y se dice qué está mal.
+function validarRespaldo(origen) {
+  const errores = [];
+  if (!fs.existsSync(path.join(origen, 'contador.json'))) {
+    errores.push('falta contador.json en el respaldo');
+  }
+  const idx = path.join(origen, 'idx');
+  if (!fs.existsSync(idx) || !fs.statSync(idx).isDirectory()) {
+    errores.push('falta la carpeta idx/ en el respaldo');
+  }
+  const jsonDe = (rel) => /\.json$/i.test(rel);
+  for (const rel of listarArchivos(origen, origen).filter(jsonDe)) {
+    try {
+      JSON.parse(fs.readFileSync(path.join(origen, rel), 'utf8'));
+    } catch (e) {
+      errores.push('el JSON no parsea: ' + rel);
+    }
+  }
+  return { valido: errores.length === 0, errores };
+}
+
 // Crea un respaldo de datosDir en destino con lock y rename atómico. Devuelve
 // el informe: { nombre, ruta, retenidos, eliminados }.
 function crearRespaldo(datosDir, destino, retener) {
@@ -132,8 +185,10 @@ function crearRespaldo(datosDir, destino, retener) {
 }
 
 // Restaura el contenido de un respaldo en destino (creándolo si hace falta).
-// Cada archivo se copia por encima del que haya; el operador debe apuntar a
-// una carpeta de datos vacía o descartable.
+// Antes de copiar valida el respaldo (ORDEN-RONDA-09 corrección 2.3): si
+// contador.json, idx/ o algún JSON falla, aborta sin tocar el destino y dice
+// qué está mal. Devuelve además los archivos del destino que no estaban en el
+// respaldo y quedan mezclados (corrección 2.2).
 function restaurarRespaldo(origen, destino) {
   if (!fs.existsSync(origen)) {
     throw new Error('el respaldo no existe: "' + origen + '"');
@@ -141,9 +196,15 @@ function restaurarRespaldo(origen, destino) {
   if (!fs.statSync(origen).isDirectory() || !esRespaldo(path.basename(origen))) {
     throw new Error('el origen no parece un respaldo SGC (debe llamarse ' + PREFIJO + '...): "' + origen + '"');
   }
+  const validacion = validarRespaldo(origen);
+  if (!validacion.valido) {
+    throw new Error('el respaldo no es válido y NO se restaura: ' +
+      validacion.errores.join('; '));
+  }
   fs.mkdirSync(destino, { recursive: true });
+  const huerfanos = archivosHuerfanos(origen, destino);
   copiarCarpeta(origen, destino);
-  return { origen, destino };
+  return { origen, destino, huerfanos };
 }
 
 module.exports = {
@@ -154,6 +215,9 @@ module.exports = {
   nombreRespaldo,
   esRespaldo,
   listarRespaldos,
+  listarArchivos,
+  archivosHuerfanos,
+  validarRespaldo,
   podar,
   crearRespaldo,
   restaurarRespaldo

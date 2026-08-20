@@ -157,10 +157,12 @@ function idDeRuta(req) {
   return id;
 }
 
-// Id y acción de las rutas de intención (ADR-021) y de entregables (§3.3):
+// Id y acción de las rutas de intención (ADR-021), de entregables (§3.3) y de
+// presupuestos adjuntos (ORDEN-RONDA-09 §3.2):
 //   /api/expedientes/<id>/avanzar
 //   /api/expedientes/<id>/devolver
 //   /api/expedientes/<id>/entregables
+//   /api/expedientes/<id>/presupuestos
 // Devuelve null si la ruta no matchea exactamente ese patrón (por ejemplo,
 // una acción desconocida o más segmentos, como el ataque "2026-001/../..").
 function accionDeRuta(req) {
@@ -169,7 +171,8 @@ function accionDeRuta(req) {
   if (partes.length !== 4 || partes[0] !== 'api' || partes[1] !== 'expedientes') {
     return null;
   }
-  if (partes[3] !== 'avanzar' && partes[3] !== 'devolver' && partes[3] !== 'entregables') {
+  if (partes[3] !== 'avanzar' && partes[3] !== 'devolver' &&
+      partes[3] !== 'entregables' && partes[3] !== 'presupuestos') {
     return null;
   }
   const id = partes[2];

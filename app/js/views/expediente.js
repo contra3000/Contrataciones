@@ -163,21 +163,11 @@
       }
       agregarCampo(dl, etiquetaCampo(k), identificacion[k]);
     }
-    if (datos.fechaCreacion) {
-      agregarCampo(dl, 'Fecha de creación', formatearFecha(datos.fechaCreacion));
-    }
-    if (datos.fechaLimite) {
-      agregarCampo(dl, 'Fecha límite', formatearFecha(datos.fechaLimite));
-    }
-    if (datos.prioridad) {
-      agregarCampo(dl, 'Prioridad', datos.prioridad);
-    }
-    if (datos.rubro) {
-      agregarCampo(dl, 'Rubro', datos.rubro);
-    }
-    if (datos.tipo) {
-      agregarCampo(dl, 'Tipo', datos.tipo);
-    }
+    if (datos.fechaCreacion) { agregarCampo(dl, 'Fecha de creación', formatearFecha(datos.fechaCreacion)); }
+    if (datos.fechaLimite) { agregarCampo(dl, 'Fecha límite', formatearFecha(datos.fechaLimite)); }
+    if (datos.prioridad) { agregarCampo(dl, 'Prioridad', datos.prioridad); }
+    if (datos.rubro) { agregarCampo(dl, 'Rubro', datos.rubro); }
+    if (datos.tipo) { agregarCampo(dl, 'Tipo', datos.tipo); }
   }
 
   function renderRenglones(ul, expediente) {
@@ -283,12 +273,8 @@
     var devolucion = rolPara(expediente, 'puedeDevolver');
     estado.dom.avanzar.disabled = archivado || !avance.permiso.permitido;
     estado.dom.devolver.disabled = archivado || !devolucion.permiso.permitido;
-    estado.dom.avanzarPorque.textContent = archivado
-      ? 'El expediente está archivado.'
-      : (avance.permiso.permitido ? '' : avance.permiso.motivo);
-    estado.dom.devolverPorque.textContent = archivado
-      ? 'El expediente está archivado.'
-      : (devolucion.permiso.permitido ? '' : devolucion.permiso.motivo);
+    estado.dom.avanzarPorque.textContent = archivado ? 'El expediente está archivado.' : (avance.permiso.permitido ? '' : avance.permiso.motivo);
+    estado.dom.devolverPorque.textContent = archivado ? 'El expediente está archivado.' : (devolucion.permiso.permitido ? '' : devolucion.permiso.motivo);
 
     // Las acciones de exportación (exportar.js) adaptan documento, nombre e id
     // al estado actual. En las monturas de test puede no estar montado.
@@ -311,13 +297,8 @@
   }
 
   function manejarResultado(respuesta) {
-    if (!respuesta) {
-      return;
-    }
-    if (respuesta.conflicto) {
-      mostrarConflicto(respuesta.versionRemota);
-      return;
-    }
+    if (!respuesta) { return; }
+    if (respuesta.conflicto) { mostrarConflicto(respuesta.versionRemota); return; }
     if (respuesta.ok) {
       avisar('Cambio guardado (versión ' + respuesta.version + ').', false);
       abrir(estado.id);

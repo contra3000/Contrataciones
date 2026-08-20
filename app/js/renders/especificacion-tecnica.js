@@ -4,11 +4,14 @@
  * Compone el documento de la Especificación Técnica desde el expediente
  * (datos.json). HTML, no PDF: el PDF lo produce el navegador (ADR-012).
  *
- * Sólo aporta sus secciones: encabezado institucional, identificación del
- * requerimiento, la tabla de renglones con código, cantidad, unidad y la
- * aclaración cuando exista (si no se imprime, la diferencia queda sólo en la
- * base), la fundamentación y la firma. Las partes comunes (escapado, modelo,
- * estilos, pie con el origen del documento) viven en renders/documento.js.
+ * Desde ORDEN-RONDA-09 (ADR-022) la Fase 1 del circuito imprime el
+ * Requerimiento completo (Solicitud de Gastos, renders/requerimiento.js), que
+ * es el documento que corresponde en la práctica al pedido de fondos. Esta
+ * plantilla queda como base técnica del anexo de Especificaciones Técnicas del
+ * pliego (H12, aún pendiente): por eso su `estado` es null y no compite con la
+ * plantilla del requerimiento, que es la que `paraEstado` devuelve para
+ * 'ESPECIFICACIONES_TECNICAS'. El acceso directo sigue funcionando
+ * (renders.test.js y el resumen la usan por su nombre, no por estado).
  *
  * Dos salidas desde un único `modelo` (fuente única):
  *  - `componer(expediente)` -> string HTML escapado, para guardar el archivo
@@ -80,7 +83,7 @@
   }
 
   SGC.renders.especificacionTecnica = {
-    estado: 'ESPECIFICACIONES_TECNICAS',
+    estado: null,
     id: 'especificacion-tecnica',
     nombre: 'especificacion-tecnica.html',
     titulo: 'Especificación Técnica',

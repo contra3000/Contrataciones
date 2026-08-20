@@ -26,6 +26,7 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'auditoria.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'migraciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'requerimiento.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.http.js'));
@@ -33,6 +34,7 @@ require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.http.js'));
 // el documento de cada fase antes de poder avanzar.
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
