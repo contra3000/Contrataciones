@@ -44,6 +44,9 @@
     if (accion === 'devolver') {
       return 'devolvió el expediente por observación';
     }
+    if (accion === 'archivar') {
+      return 'archivó el expediente en el Archivo Histórico';
+    }
     return accion;
   }
 

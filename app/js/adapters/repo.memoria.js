@@ -199,29 +199,25 @@ function registroDe(id) {
         }
       },
 
+      // Archivo Histórico (ORDEN-RONDA-08 §2.2): lista los expedientes archivados
+      // con el mismo formato que GET /api/archivo (entradas de índice más
+      // archivadoEn). El filtro por id acota la lista.
       listarArchivoHistorico: function (filtros) {
         var filtro = filtros || {};
         var resultado = [];
-        var ids = filtro.id ? [filtro.id] : Object.keys(historico);
-        for (var i = 0; i < ids.length; i++) {
-          var id = ids[i];
-          var entradas = historico[id] || [];
-          for (var j = 0; j < entradas.length; j++) {
-            var entrada = entradas[j];
-            if (filtro.version !== undefined && entrada.version !== filtro.version) {
+        for (var i = 0; i < orden.length; i++) {
+          var id = orden[i];
+          var registro = expedientes[id];
+          if (registro.expediente.archivado === true) {
+            if (filtro.id && filtro.id !== id) {
               continue;
             }
-            resultado.push({
-              id: id,
-              version: entrada.version,
-              expediente: entrada.expediente,
-              contexto: entrada.contexto
-            });
+            var entrada = repo.entradaIndice(id, registro.expediente, registro.contexto);
+            entrada.archivadoEn = typeof registro.expediente.archivadoEn === 'string'
+              ? registro.expediente.archivadoEn : null;
+            resultado.push(entrada);
           }
         }
-        resultado.sort(function (a, b) {
-          return a.version - b.version;
-        });
         return Promise.resolve(resultado);
       },
 
@@ -234,21 +230,39 @@ function registroDe(id) {
             expediente: snapshot,
             contexto: registro.contexto
           });
+          var c = contexto || {};
           registro.expediente.archivado = true;
+          registro.expediente.archivadoEn = typeof c.timestamp === 'string' ? c.timestamp : null;
           registro.expediente.version = registro.version + 1;
           registro.version = registro.version + 1;
-          registro.contexto = contexto || {};
+          registro.contexto = c;
           return Promise.resolve({ ok: true, version: registro.version });
         } catch (e) {
           return Promise.reject(e);
         }
       },
 
-      guardarEntregable: function (id, nombre, contenido, contexto) {
+      guardarEntregable: function (id, nombre, contenido, contexto, idEntregable) {
         try {
           var registro = registroDe(id);
           if (typeof nombre !== 'string' || nombre.length === 0) {
             throw new Error('guardarEntregable: el nombre del entregable es obligatorio');
+          }
+          // ORDEN-RONDA-08 §2.1: el id del entregable debe existir en el
+          // catálogo de entregables; si viene, se registra para que la
+          // validación del circuito lo dé por cumplido.
+          if (typeof idEntregable === 'string' && idEntregable.length > 0) {
+            var conocido = false;
+            var catalogo = SGC.core.config.ENTREGABLES;
+            for (var c = 0; catalogo && c < catalogo.length; c++) {
+              if (catalogo[c].id === idEntregable) {
+                conocido = true;
+                break;
+              }
+            }
+            if (!conocido) {
+              throw new Error('guardarEntregable: id de entregable desconocido: ' + idEntregable);
+            }
           }
           var snapshot = JSON.parse(JSON.stringify(registro.expediente));
           historico[id].push({
@@ -262,13 +276,17 @@ function registroDe(id) {
             actualizado.entregables = [];
           }
           var ctx = contexto || {};
-          actualizado.entregables.push({
+          var entrada = {
             nombre: nombre,
             ruta: 'entregables/' + nombre,
             guardado: typeof ctx.timestamp === 'string' ? ctx.timestamp : null,
             email: typeof ctx.email === 'string' ? ctx.email : null,
             equipo: typeof ctx.equipo === 'string' ? ctx.equipo : null
-          });
+          };
+          if (typeof idEntregable === 'string' && idEntregable.length > 0) {
+            entrada.id = idEntregable;
+          }
+          actualizado.entregables.push(entrada);
           if (typeof ctx.timestamp === 'string') {
             if (typeof actualizado.actualizado === 'string') {
               actualizado.actualizado = ctx.timestamp;

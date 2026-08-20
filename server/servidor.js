@@ -51,6 +51,7 @@ const PUERTO_DEFECTO = 8123;
 const ayudantes = require('./ayudantes.js');
 const manejadores = require('./manejadores.js');
 const expedientes = require('./expedientes.js');
+const archivo = require('./archivo.js');
 
 const APP_CORE = [
   'namespaces.js',
@@ -95,6 +96,10 @@ function crearServidor(datosDir) {
     DIR_CONFIG,
     ayudantes
   };
+  // ORDEN-RONDA-08 §2.2: recuperación del arranque. Cierra cualquier archivo
+  // interrumpido de rondas anteriores (staging abandonado, original sin marca,
+  // índice huérfano) antes de servir.
+  archivo.recuperarArchivados(datosDir);
   const api = Object.assign(
     manejadores.crearManejadores(entorno),
     expedientes.crearManejadoresExpedientes(entorno)
@@ -130,6 +135,13 @@ function crearServidor(datosDir) {
         if (req.method === 'GET' && ruta === '/api/indice') {
           ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
           return apiIndice(req, res);
+        }
+
+        // Archivo Histórico (ORDEN-RONDA-08 §2.2): lista el directorio, no el
+        // índice fragmentado, así el histórico sobrevive a la purga del índice.
+        if (req.method === 'GET' && ruta === '/api/archivo') {
+          ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
+          return archivo.apiArchivo(datosDir, repo)(req, res);
         }
 
         // Creación: se lee el cuerpo para registrar el contexto recibido.

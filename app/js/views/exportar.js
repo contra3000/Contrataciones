@@ -6,9 +6,9 @@
  *  - Imprimir / Guardar como PDF: window.print() con la hoja de impresión
  *    (app/css/impresion.css, ADR-012).
  *  - Guardar documento generado: repo.guardarEntregable con el HTML compuesto
- *    (SGC.renders.especificacionTecnica.componer), y enlace al archivo
- *    guardado desde la vista (§3.3, ADR-016: se guarda el generado, no el
- *    firmado).
+ *    por la plantilla del estado actual (SGC.renders.documento.paraEstado,
+ *    ORDEN-RONDA-08 §2.1), y enlace al archivo guardado desde la vista (§3.3,
+ *    ADR-016: se guarda el generado, no el firmado).
  *  - Exportar JSON: el datos.json crudo del expediente (§3.4).
  *  - Exportar resumen.md: el relato generado por SGC.renders.resumen (§3.4).
  *
@@ -28,9 +28,6 @@
     throw new Error('exportar.js requiere que namespaces.js se cargue primero');
   }
 
-  var renderDoc = SGC.renders.especificacionTecnica;
-  var NOMBRE_DOCUMENTO = 'especificacion-tecnica.html';
-
   var estado = {
     repo: null,
     operador: null,
@@ -38,11 +35,22 @@
     descargador: null,
     navegador: null,
     dom: {},
-    pendiente: null
+    pendiente: null,
+    plantilla: null
   };
 
   function qs(raiz, selector) {
     return raiz.querySelector(selector);
+  }
+
+  // Plantilla del documento que produce el estado actual (ORDEN-RONDA-08
+  // §2.1): documento, nombre de archivo e id del entregable del circuito.
+  function plantillaActual() {
+    var expediente = expedienteActual();
+    if (!expediente) {
+      return null;
+    }
+    return SGC.renders.documento.paraEstado(SGC.core.utils.idEstado(expediente));
   }
 
   function contextoActual() {
@@ -122,11 +130,13 @@
       'copia queda bajo su responsabilidad. ¿Confirma la descarga?');
   }
 
-  function enlazarDocumento(ruta) {
+  function enlazarDocumento(ruta, plantilla) {
     var expediente = expedienteActual();
     if (!expediente) {
       return;
     }
+    var titulo = plantilla ? plantilla.titulo : 'documento';
+    var idEntregable = plantilla ? plantilla.id : null;
     estado.dom.enlace.href = ruta;
     estado.dom.enlace.hidden = false;
     estado.dom.enlace.addEventListener('click', function (ev) {
@@ -134,9 +144,9 @@
         ev.preventDefault();
       }
       estado.pendiente = { tipo: 'abrir', url: estado.dom.enlace.href };
-      abrirModal('Va a abrir el documento guardado de la Especificación ' +
-        'Técnica del expediente ' + expediente.expedienteId + '. Es información ' +
-        'de un sistema aislado; su manejo queda bajo su responsabilidad. ¿Confirma?');
+      abrirModal('Va a abrir el ' + titulo + ' guardado del expediente ' +
+        expediente.expedienteId + '. Es información de un sistema aislado; su ' +
+        'manejo queda bajo su responsabilidad. ¿Confirma?');
     });
   }
 
@@ -145,22 +155,34 @@
     if (!expediente) {
       return;
     }
-    var contenido = renderDoc.componer(expediente);
+    var plantilla = plantillaActual();
+    if (!plantilla) {
+      avisar('Este estado no produce un documento para guardar.', true);
+      return;
+    }
+    var contenido = plantilla.componer(expediente);
     if (!estado.repo || typeof estado.repo.guardarEntregable !== 'function') {
       avisar('No hay repositorio configurado para guardar el documento.', true);
       return;
     }
-    estado.repo.guardarEntregable(expediente.expedienteId, NOMBRE_DOCUMENTO,
-      contenido, contextoActual()).then(function (respuesta) {
+    estado.repo.guardarEntregable(expediente.expedienteId, plantilla.nombre,
+      contenido, contextoActual(), plantilla.id).then(function (respuesta) {
       avisar('Documento guardado en la carpeta del expediente (' + respuesta.ruta +
         ', versión ' + respuesta.version + ').', false);
-      enlazarDocumento('api/expedientes/' + expediente.expedienteId + '/entregables/' + NOMBRE_DOCUMENTO);
+      enlazarDocumento('api/expedientes/' + expediente.expedienteId +
+        '/entregables/' + plantilla.nombre, plantilla);
     }).catch(function (err) {
       avisar('No se pudo guardar el documento: ' + err.message, true);
     });
   }
 
   function imprimir() {
+    var plantilla = plantillaActual();
+    if (plantilla) {
+      // ORDEN-RONDA-08 §2.1: el @page de impresion.css declara el título del
+      // documento; se sobreescribe con el de la hoja visible.
+      SGC.renders.documento.fijarTituloImpresion(plantilla.titulo);
+    }
     root.document.body.classList.add('imprimiendo');
     if (typeof root.print === 'function') {
       root.print();
@@ -198,6 +220,11 @@
     },
     fijarNavegador: function (fn) {
       estado.navegador = fn;
+    },
+    // Lo llama la vista de expediente en cada render: recalcula la plantilla
+    // del documento según el estado actual.
+    actualizar: function () {
+      estado.plantilla = plantillaActual();
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

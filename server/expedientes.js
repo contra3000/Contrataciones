@@ -13,6 +13,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const archivo = require('./archivo.js');
+
 function crearManejadoresExpedientes(entorno) {
   const {
     datosDir,
@@ -125,7 +127,15 @@ function crearManejadoresExpedientes(entorno) {
     const entrada = repo.entradaIndice(id, nuevo, contexto);
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true });
     escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
-    return responderJson(res, 200, { version: nuevaVersion, expediente: nuevo });
+    // ORDEN-RONDA-08 §2.2: al llegar al estado final el servidor archiva en el
+    // mismo ciclo de la transición: copia al Archivo Histórico, marca el
+    // original (entrada `archivar` encadenada) y purga su entrada del índice.
+    // La versión no vuelve a subir: la transición ya lo hizo.
+    let respondido = nuevo;
+    if (nuevo.estado && nuevo.estado.id === SGC.core.config.ESTADO_FINAL) {
+      respondido = archivo.archivarExpediente(datosDir, id, contexto);
+    }
+    return responderJson(res, 200, { version: nuevaVersion, expediente: respondido });
   }
 
   function apiAvanzar(req, res, id, contextoCuerpo, origen) {
@@ -160,6 +170,20 @@ function crearManejadoresExpedientes(entorno) {
     if (!nombreEntregableValido(nombre)) {
       return responderJson(res, 400, { error: 'el nombre del entregable no es válido (sin rutas, ni puntos de recorrido)' });
     }
+    // ORDEN-RONDA-08 §2.1: si se declara el id del documento del circuito, debe
+    // existir en config.ENTREGABLES; se registra para que la validación del
+    // estado lo dé por cumplido.
+    const idEntregable = (cuerpo.id === undefined || cuerpo.id === null) ? null : cuerpo.id;
+    if (idEntregable !== null) {
+      if (typeof idEntregable !== 'string' || idEntregable.length === 0) {
+        return responderJson(res, 400, { error: 'el id del entregable debe ser una cadena no vacía' });
+      }
+      const catalogo = SGC.core.config.ENTREGABLES;
+      const conocido = catalogo ? catalogo.some((e) => e.id === idEntregable) : false;
+      if (!conocido) {
+        return responderJson(res, 400, { error: 'el id del entregable no existe en el catálogo: ' + idEntregable });
+      }
+    }
     const exp = rutaExpediente(datosDir, id);
     if (!fs.existsSync(exp.datos)) {
       return responderJson(res, 404, { error: 'expediente no encontrado: ' + id });
@@ -184,6 +208,7 @@ function crearManejadoresExpedientes(entorno) {
     actualizado.entregables.push({
       nombre,
       ruta: 'entregables/' + nombre,
+      id: idEntregable,
       guardado: typeof contexto.timestamp === 'string' ? contexto.timestamp : null,
       email: typeof contexto.email === 'string' ? contexto.email : null,
       equipo: typeof contexto.equipo === 'string' ? contexto.equipo : null

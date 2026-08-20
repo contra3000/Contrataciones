@@ -53,26 +53,38 @@ test('el recorrido completo llega a Perfeccionada con devolución, reavance y ca
   assert.equal(ultimo[0], 'avanzar');
   assert.equal(ultimo[1], 'PERFECCIONADA', 'el recorrido termina en el estado final');
 
-  const esperados = 1 + resultado.pasos.filter((p) => p[0] === 'avanzar').length + 1;
+  const esperados = 1 + resultado.pasos.filter((p) => p[0] === 'avanzar').length + 1 + 1;
   assert.equal(resultado.expediente.auditoria.length, esperados,
-    'creación + avances + devolución quedan en la auditoría');
+    'creación + avances + devolución + archivo quedan en la auditoría');
 
   assert.deepEqual(resultado.verificacion, { integra: true, rotaEn: null },
     'la cadena de auditoría queda íntegra (ADR-006)');
+
+  const ultima = resultado.expediente.auditoria[resultado.expediente.auditoria.length - 1];
+  assert.equal(ultima.accion, 'archivar',
+    'al llegar a Perfeccionada el servidor archiva y encadena la entrada');
 
   const leido = await pedir(base, 'GET', '/api/expedientes/' + resultado.id);
   assert.equal(leido.status, 200);
   assert.equal(leido.body.expediente.estado.id, 'PERFECCIONADA',
     'el servidor persiste el estado final');
   assert.equal(leido.body.expediente.estado.fase, 10);
+  assert.equal(leido.body.expediente.archivado, true,
+    'el original queda marcado como archivado (no se borra)');
+  assert.ok(leido.body.expediente.archivadoEn, 'se registra cuándo se archivó');
 
+  // ORDEN-RONDA-08 §2.2: al archivar, el expediente sale del índice activo y
+  // pasa al Archivo Histórico, que se lee del directorio (GET /api/archivo).
   const indice = await pedir(base, 'GET', '/api/indice');
   const entrada = indice.body.find((e) => e.id === resultado.id);
-  assert.ok(entrada, 'el expediente figura en el índice');
-  assert.equal(entrada.fase, 10);
-  assert.equal(entrada.estado, 'PERFECCIONADA');
-  assert.equal(entrada.ultimoOperador, 'carlos.ramirez@faa.mil.ar',
-    'el último operador del índice es el que ejecutó el avance final hacia Perfeccionada');
+  assert.equal(entrada, undefined, 'el expediente archivado ya no figura en el índice activo');
+
+  const archivo = await pedir(base, 'GET', '/api/archivo');
+  const arch = archivo.body.expedientes.find((e) => e.id === resultado.id);
+  assert.ok(arch, 'el expediente figura en el archivo histórico');
+  assert.equal(arch.estado, 'PERFECCIONADA');
+  assert.equal(arch.fase, 10);
+  assert.ok(arch.archivadoEn, 'la entrada del histórico lleva cuándo se archivó');
 });
 
 test('cada avance del plan usa el rol ejecutor del estado que se abandona', () => {

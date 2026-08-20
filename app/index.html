@@ -134,6 +134,7 @@
     <nav id="sgc-tablero-nav" class="tablero-nav" aria-label="Navegación principal" hidden>
       <button id="sgc-nav-alta" type="button" class="primario">Alta de Especificación</button>
       <button id="sgc-nav-tablero" type="button">Tablero</button>
+      <button id="sgc-nav-archivo" type="button">Archivo Histórico</button>
     </nav>
 
     <section id="sgc-kanban" class="kanban" aria-label="Tablero de expedientes" hidden>
@@ -153,6 +154,20 @@
       <div id="sgc-kanban-columnas" class="kanban-columnas"></div>
     </section>
 
+    <section id="sgc-archivo" class="archivo" aria-label="Archivo Histórico" hidden>
+      <header class="archivo-cabecera">
+        <button id="sgc-archivo-volver" type="button">Volver al tablero</button>
+        <h2>Archivo Histórico</h2>
+        <p class="subtitulo">Expedientes que completaron el circuito y quedaron archivados. Sólo lectura.</p>
+        <div class="archivo-filtros">
+          <button id="sgc-archivo-refrescar" type="button">Refrescar</button>
+        </div>
+        <p id="sgc-archivo-conteo" class="conteo" role="status" aria-live="polite"></p>
+        <p id="sgc-archivo-error" class="error-global" role="alert" hidden></p>
+      </header>
+      <ul id="sgc-archivo-lista" class="lista-archivo"></ul>
+    </section>
+
     <section id="sgc-expediente" class="expediente" aria-label="Expediente" hidden>
       <header class="expediente-cabecera">
         <button id="sgc-expediente-volver" type="button">Volver al tablero</button>
@@ -160,6 +175,9 @@
         <p id="sgc-expediente-resumen" class="detalle"></p>
       </header>
       <p id="sgc-expediente-mensaje" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
+      <p id="sgc-expediente-archivado" class="archivado-aviso" role="status" hidden>
+        Expediente archivado en el Archivo Histórico. No admite más operaciones.
+      </p>
       <div id="sgc-expediente-conflicto" class="conflicto" role="alert" hidden>
         <p id="sgc-expediente-conflicto-texto"></p>
         <button id="sgc-expediente-recargar" type="button">Recargar expediente</button>
@@ -176,8 +194,8 @@
         </section>
       </div>
 
-      <section class="expediente-seccion" aria-labelledby="sgc-expediente-documento-titulo">
-        <h3 id="sgc-expediente-documento-titulo">Documento de Especificación Técnica</h3>
+      <section class="expediente-seccion" id="sgc-expediente-documento-seccion" aria-labelledby="sgc-expediente-documento-titulo">
+        <h3 id="sgc-expediente-documento-titulo">Documento del estado</h3>
         <div class="documento-acciones" aria-label="Acciones del documento">
           <button id="sgc-expediente-documento-imprimir" type="button" class="primario">Imprimir / Guardar como PDF</button>
           <button id="sgc-expediente-documento-guardar" type="button">Guardar documento generado</button>
@@ -247,7 +265,12 @@
   <script src="js/core/migraciones.js"></script>
   <script src="js/core/validacion.js"></script>
   <script src="js/core/estados.js"></script>
+  <script src="js/renders/documento.js"></script>
   <script src="js/renders/especificacion-tecnica.js"></script>
+  <script src="js/renders/solicitud-contratacion.js"></script>
+  <script src="js/renders/pliego-bases-condiciones.js"></script>
+  <script src="js/renders/disposicion-adjudicacion.js"></script>
+  <script src="js/renders/orden-compra.js"></script>
   <script src="js/renders/resumen.js"></script>
   <script src="js/catalogo/indice.js"></script>
   <script src="js/catalogo/carga.js"></script>
@@ -262,6 +285,7 @@
   <script src="js/views/expediente-dialogo.js"></script>
   <script src="js/views/expediente.js"></script>
   <script src="js/views/exportar.js"></script>
+  <script src="js/views/archivo.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.http.js"></script>
   <script src="js/app.js"></script>

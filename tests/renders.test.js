@@ -34,6 +34,7 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'migraciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'resumen.js'));
 

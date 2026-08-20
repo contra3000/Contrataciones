@@ -22,7 +22,12 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'migraciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'expediente-dialogo.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'expediente.js'));
 
@@ -66,6 +71,17 @@ function armarExpediente() {
   secReng.appendChild(nodo('ul', 'sgc-expediente-renglones'));
   cuerpo.appendChild(secReng);
   exp.appendChild(cuerpo);
+
+  // Documento del estado (ORDEN-RONDA-08 §2.1): la vista compone la plantilla
+  // correspondiente según el estado; la montura aporta la sección y el título.
+  const secDoc = nodo('section', 'sgc-expediente-documento-seccion');
+  secDoc.appendChild(nodo('h3', 'sgc-expediente-documento-titulo'));
+  secDoc.appendChild(nodo('div', 'sgc-expediente-documento'));
+  exp.appendChild(secDoc);
+
+  const avisoArchivo = nodo('p', 'sgc-expediente-archivado');
+  avisoArchivo.hidden = true;
+  exp.appendChild(avisoArchivo);
 
   const acciones = nodo('section', 'sgc-expediente-acciones');
   const b1 = nodo('div', 'sgc-expediente-avanzar-bloque');
@@ -131,6 +147,9 @@ function expedienteEnEstado(idEstado, numero) {
     fase: def ? def.fase : null,
     desde: '2026-08-14T10:00:00.000Z'
   };
+  // ORDEN-RONDA-08 §2.1: un expediente que está en un estado productor ya
+  // generó su documento; sin él, el motor no lo deja avanzar.
+  expediente.entregables = (def && def.entregablesObligatorios || []).slice();
   return expediente;
 }
 

@@ -1,27 +1,16 @@
 /*
- * especificacion-tecnica.js
- * ORDEN-RONDA-07 §3.1 (patrón del circuito) y ORDEN-RONDA-08 §2.1.
- * Compone el documento de la Especificación Técnica desde el expediente
- * (datos.json). HTML, no PDF: el PDF lo produce el navegador (ADR-012).
- *
- * Sólo aporta sus secciones: encabezado institucional, identificación del
- * requerimiento, la tabla de renglones con código, cantidad, unidad y la
- * aclaración cuando exista (si no se imprime, la diferencia queda sólo en la
- * base), la fundamentación y la firma. Las partes comunes (escapado, modelo,
- * estilos, pie con el origen del documento) viven en renders/documento.js.
- *
- * Dos salidas desde un único `modelo` (fuente única):
- *  - `componer(expediente)` -> string HTML escapado, para guardar el archivo
- *    en la carpeta del expediente (entregable, §3.3).
- *  - `montar(contenedor, expediente)` -> nodos DOM con textContent, para
- *    mostrarlo e imprimirlo desde la página (la app nunca asigna innerHTML).
+ * solicitud-contratacion.js
+ * ORDEN-RONDA-08 §2.1. Compone la Solicitud de Contratación (SCo), el
+ * documento que produce la Fase 2 (estado SOLICITUD_CONTRATACION). La
+ * estructura es la de la Especificación Técnica (el patrón del circuito) y
+ * reutiliza las partes comunes de renders/documento.js.
  */
 (function (root) {
   'use strict';
 
   var SGC = root.SGC;
   if (!SGC || !SGC.renders) {
-    throw new Error('especificacion-tecnica.js requiere que namespaces.js se cargue primero');
+    throw new Error('solicitud-contratacion.js requiere que namespaces.js se cargue primero');
   }
 
   var d = SGC.renders.documento;
@@ -49,7 +38,7 @@
 
   function componer(expediente) {
     var m = d.modelo(expediente);
-    return d.documentoHtml(m, 'Especificación Técnica', seccionesHtml(m));
+    return d.documentoHtml(m, 'Solicitud de Contratación (SCo)', seccionesHtml(m));
   }
 
   function montar(contenedor, expediente) {
@@ -58,7 +47,7 @@
     }
     d.limpiar(contenedor);
     var m = d.modelo(expediente);
-    d.encabezadoDom(contenedor, m, 'Especificación Técnica');
+    d.encabezadoDom(contenedor, m, 'Solicitud de Contratación (SCo)');
     d.h2Dom(contenedor, 'Identificación del requerimiento');
     d.pDom(contenedor, 'doc-titulo', m.titulo);
     d.dlDom(contenedor, [
@@ -79,14 +68,12 @@
     d.pieDom(contenedor, m);
   }
 
-  SGC.renders.especificacionTecnica = {
-    estado: 'ESPECIFICACIONES_TECNICAS',
-    id: 'especificacion-tecnica',
-    nombre: 'especificacion-tecnica.html',
-    titulo: 'Especificación Técnica',
-    modelo: d.modelo,
+  SGC.renders.solicitudContratacion = {
+    estado: 'SOLICITUD_CONTRATACION',
+    id: 'solicitud-contratacion',
+    nombre: 'solicitud-contratacion.html',
+    titulo: 'Solicitud de Contratación (SCo)',
     componer: componer,
-    montar: montar,
-    esc: d.esc
+    montar: montar
   };
 })(typeof window !== 'undefined' ? window : globalThis);
