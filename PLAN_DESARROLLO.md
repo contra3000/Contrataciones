@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-13** (ronda 4: ADR-011 a ADR-018 incorporadas; H0 cerrado salvo lo elevado a Informática)
+Última actualización: **2026-08-20** · cierre del ciclo 8 · incorporados H11, H12 y H13 desde los entregables reales del circuito
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -13,19 +13,22 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | Hito | Nombre | Estado | Depende de |
 |------|--------|--------|-----------|
 | H0 | Relevamiento de entorno | 🟡 **Casi cerrado** — sólo resta lo elevado a Informática (servidor, red, antivirus) | — |
-| H1 | Fundaciones del repositorio | ⬜ Pendiente | — |
-| H2 | Núcleo de dominio (sin UI) | ⬜ Pendiente | H1 |
-| H3 | Persistencia + servidor local | ⬜ Pendiente | H1, H2 |
-| H4 | Catálogo de ítems y autocompletado | ⬜ Pendiente | H1 |
-| H5 | Vertical Fase 1 — Wizard del Usuario | ⬜ Pendiente | H2, H3, H4 |
-| H6 | Tablero Kanban, roles y transiciones | ⬜ Pendiente | H5 |
-| H7 | Entregables y exportación AI-ready | ⬜ Pendiente | H5 |
-| H8 | KPIs, SLAs y Archivo Histórico | ⬜ Pendiente | H6 |
-| H9 | **Testing integral en local (UAT)** | ⬜ Pendiente | H6, H7 |
+| H1 | Fundaciones del repositorio | ✅ **Terminado** — ciclo 1 | — |
+| H2 | Núcleo de dominio (sin UI) | ✅ **Terminado** — ciclo 2 | H1 |
+| H3 | Persistencia + servidor local | ✅ **Terminado** — ciclos 3 y 8 (respaldo) | H1, H2 |
+| H4 | Catálogo de ítems y autocompletado | ✅ **Terminado** — ciclo 4 | H1 |
+| H5 | Vertical Fase 1 — Wizard del Usuario | ✅ **Terminado** — ciclo 5 | H2, H3, H4 |
+| H6 | Tablero Kanban, roles y transiciones | ✅ **Terminado** — ciclos 6 y 7 (autorización) | H5 |
+| H7 | Entregables y exportación AI-ready | ✅ **Terminado** — ciclos 7 y 8 | H5 |
+| H8 | KPIs y Archivo Histórico | 🟡 **40%** — archivo histórico hecho (ciclo 8); faltan los KPIs | H6 |
+| H9 | **Testing integral en local (UAT)** | 🟡 **40%** — auditoría independiente activa y prueba manual hecha; falta UAT con operadores | H6, H7 |
+| H11 | Requerimiento completo y presupuestos | ⬜ Pendiente — **nuevo, 2026-08-19** | H7 |
+| H12 | EETT con regla de desborde | ⬜ Pendiente — **nuevo** | H11 |
+| H13 | ANEXO 1 y salida hacia el pliego | ⬜ Pendiente — **nuevo** | H11, H12 |
 | H10 | Despliegue a intranet y piloto | ⬜ Pendiente | H0, H9 |
 
-> ### ⚠️ Tarea fuera de secuencia — en curso
-> **Rescate del scraper del catálogo** (ADR-018). Al 2026-08-13 se recuperó **sólo un fragmento**: el bloque `page.evaluate()` de un script Puppeteer/Playwright, ya versionado en `Contrataciones/tools/scraper-catalogo/`. **Falta** la URL de origen, el arranque del navegador, el bucle de paginación y la escritura de salida. Ver el README de esa carpeta.
+> ### ⚠️ Sigue pendiente
+> **Rescate del scraper del catálogo** (ADR-018). Al 2026-08-20 se conserva **sólo un fragmento**: el bloque `page.evaluate()` de un script Puppeteer/Playwright, ya versionado en `Contrataciones/tools/scraper-catalogo/`. **Falta** la URL de origen, el arranque del navegador, el bucle de paginación y la escritura de salida. Ver el README de esa carpeta.
 
 **Principio rector del orden:** H5 es el primer punto donde el sistema produce valor real (resuelve el *garbage in* del FSD §1). Todo lo anterior existe para sostenerlo. Si hubiera que cortar alcance, se corta desde H8 hacia atrás, nunca desde H2.
 
@@ -279,6 +282,62 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 
 ---
 
+---
+
+## H11 · H12 · H13 — Los entregables reales del circuito
+
+**Agregados el 2026-08-19**, al incorporarse los documentos reales del proceso actual (`EjemplosProcesoActual/`). El análisis completo está en `ANALISIS_ENTREGABLES_REALES.md` y las decisiones de datos en **ADR-022**.
+
+Van **después de H8** y **antes del pulido**. Alcance: estructura de datos y generación funcional. **Sin estilos**: lo cosmético se hace al final del roadmap.
+
+Dos hallazgos que abaratan todo esto:
+
+- **El código de catálogo ya encaja.** El "Código SIByS" de los documentos oficiales es nuestro `codigo` partido en tres (`2.5.8-378.186` → IPP `2.5.8` / Clase `378` / Ítem `186`), verificado contra el catálogo real. No hay tabla de equivalencias que construir.
+- **El pliego no se rehace.** `DocUOC/Generador de Pliegos/` ya funciona con datos en YAML, y casi todo ese YAML sale de la suma del requerimiento y el ANEXO 1. La aplicación **emite el YAML**; el generador existente sigue produciendo el pliego.
+
+### H11 — Requerimiento completo y presupuestos
+
+- [ ] H11-1 · Extender el esquema del expediente con los campos del `MODELO REQ.` (Solicitud de Gastos): encabezado, rubro comercial, modalidad y procedimiento sugeridos, objeto, prioridad
+- [ ] H11-2 · Bloque de **imputación presupuestaria** (16 campos) con propiedad del rol `contaduria`, editable sólo en el paso 16 (ADR-022 §4)
+- [ ] H11-3 · **Adjuntos**: el usuario sube presupuestos en PDF o imagen, que se guardan en la carpeta del expediente
+- [ ] H11-4 · **Valores de referencia** por renglón: N valores, cada uno con `{presupuestoId, base: unitario|total, valor}` (ADR-022 §2)
+- [ ] H11-5 · **Normalización y promedio**: todo a unitario antes de promediar; preventivo por renglón y total de la contratación. Rechazar la base `total` si la cantidad es cero
+- [ ] H11-6 · `cantidadMaxima` por renglón, cargada por el usuario, con la etiqueta y la ayuda que expliquen que es el tope **por Solicitud de Provisión** (ADR-022 §3, que diverge del Art. 112 de forma deliberada y registrada)
+- [ ] H11-10 · `cantidadMinima` opcional por renglón (Art. 52 de la disposición); se imprime sólo si tiene valor
+- [ ] H11-7 · Justificación de Orden de Compra Abierta como campo del requerimiento, no como archivo aparte
+- [ ] H11-8 · Descomposición del código en IPP / Clase / Ítem al imprimir
+- [ ] H11-9 · Plantilla del requerimiento, que reemplaza a la Especificación Técnica genérica del ciclo 7
+
+**Criterio de aceptación:** un requerimiento con tres renglones, dos presupuestos y bases mixtas produce el preventivo correcto, verificable a mano.
+
+### H12 — EETT con regla de desborde
+
+- [ ] H12-1 · Límite de aclaración a **256 caracteres** (enmienda de ADR-014); actualizar validador, tests y contador visible
+- [ ] H12-2 · Al pasarse: el requerimiento imprime `"según anexo [alfa|bravo|charly]"` y el renglón entra al anexo con el texto completo
+- [ ] H12-3 · Bloque de condiciones particulares comunes a todos los renglones, opcional
+- [ ] H12-4 · Nomenclatura automática de anexos
+- [ ] H12-5 · Si ningún renglón desborda y no hay condiciones particulares, **el anexo no se genera**
+- [ ] H12-6 · Ficha por renglón: `Renglón N° | Código SIByS | Descripción ONC | Especificaciones Técnicas`
+
+**Criterio de aceptación:** un renglón de 250 caracteres queda en el requerimiento; uno de 300 dispara el anexo y deja la referencia correcta.
+
+### H13 — ANEXO 1 y salida hacia el pliego
+
+- [ ] H13-1 · Formulario de ANEXO 1 para el rol Abastecimiento, con sus 14 secciones
+- [ ] H13-2 · Las secciones 9 a 12 (interadministrativas, bienes de uso, hardware/software, infraestructura) como **bloques condicionales**, no catorce secciones con "NO CORRESPONDE" repetido
+- [ ] H13-3 · **Precarga** desde el requerimiento: objeto, justificación, datos de la unidad, cantidades
+- [ ] H13-4 · El campo de precio de referencia se deriva de los presupuestos que cargó el usuario
+- [ ] H13-5 · Planilla de OCA cuando la modalidad lo pide, con las cantidades del requerimiento
+- [ ] H13-6 · **Exportación del YAML** que consume el generador de pliegos existente
+
+**Criterio de aceptación:** el YAML emitido produce un pliego con el generador actual, sin edición manual.
+
+### Pendiente de definir
+
+- Las **Disposiciones** de Autorización y Adjudicación no tienen plantilla todavía. Cuando estén, se mapean igual que el pliego.
+- La **normativa en Markdown** con las causales de Orden de Compra Abierta no aparece en el proyecto. Es necesaria para H11-7.
+
+
 ## Riesgos abiertos
 
 | # | Riesgo | Impacto | Mitigación |
@@ -296,6 +355,8 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | R13 | **Pérdida del script de scraping** (vive en un historial de chat) | Alto e inmediato — 2 horas de corrida más el conocimiento de cómo navegar el sitio | ADR-018: rescatarlo y versionarlo esta semana, fuera de la secuencia de hitos |
 | R14 | El campo de aclaración se convierte en cajón de sastre | Medio — reintroduce el *garbage in* por la puerta de atrás | Límite de 200 caracteres ya definido; medir el porcentaje de renglones con aclaración en el UAT (H8-6). Si es alto, el problema es el catálogo, no el campo |
 | R11 | Se confunde la carpeta del expediente con el archivo legal | Medio — riesgo de auditoría, no técnico | ADR-016 + H7-8: leyenda explícita en UI y en el export |
+| R17 | La `cantidadMaxima` alimenta el pliego con una semántica distinta a la del Art. 112 | Alto y legal — el pliego obligaría al proveedor a menos de lo necesario | ADR-022 §3: la plantilla del pliego rotula el campo con el significado real, o deriva el máximo contractual. Revisar en H13 |
+| R16 | El promedio de valores de referencia mezcla bases unitarias y totales | Alto y silencioso — produce un preventivo plausible pero sin significado | ADR-022 §2: normalizar a unitario antes de promediar; test con bases mixtas verificable a mano |
 | R5 | El catálogo se desactualiza y nadie lo regenera | Medio | H0-8 define responsable y frecuencia; el build es un solo comando |
 | R6 | El proyecto queda sin mantenedor | Alto | Cero dependencias, código comentado en español, H10-9 |
 | R7 | Adopción: los operadores siguen usando el circuito en papel | Alto | H5 primero (valor visible temprano), piloto en paralelo, capacitación por rol |

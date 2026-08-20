@@ -28,6 +28,7 @@ Plantilla al final del archivo.
 | 019 | Esquema de `datos.json` v2: `estado` como objeto y `auditoria` como registro | Aceptada | 2026-08-14 |
 | 020 | Índice del catálogo en formato compacto | Aceptada | 2026-08-14 |
 | 021 | El servidor autoriza las transiciones; el cliente sólo declara la intención | Aceptada | 2026-08-18 |
+| 022 | Modelo de datos del requerimiento real (Solicitud de Gastos) | Aceptada | 2026-08-19 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -289,7 +290,13 @@ Tres consecuencias que hay que implementar:
 
 1. **La aclaración se imprime en el entregable.** Si no aparece en el documento que se firma, la diferencia queda solo en la base y el proveedor cotiza otra cosa. Es exactamente el *garbage out* que el FSD quiere evitar.
 2. **La aclaración es un indicador, no solo un campo.** Un renglón con aclaración es un ítem que el catálogo no cubrió. El dashboard debe medir "renglones con aclaración, por rubro": esa lista es la agenda de trabajo de la actualización mensual del catálogo, y cierra el círculo entre el uso y el mantenimiento del dato.
-3. **Riesgo a vigilar en el piloto:** 200 caracteres son suficientes para reintroducir ambigüedad si el campo se usa como cajón de sastre. Si en el UAT aparece un porcentaje alto de renglones con aclaración, el problema no es el campo: es que el catálogo no está cumpliendo su función.
+### Enmienda 2026-08-19 — el límite es 256, no 200
+
+El límite de la aclaración pasa de **200 a 256 caracteres**: 256 es el límite del sistema oficial, y el nuestro tiene que coincidir con el del formulario que finalmente se carga. El 200 fue una elección nuestra sin respaldo normativo.
+
+Alcance del cambio: `validarRenglon`, sus tests, el contador visible del wizard, y la regla de desborde hacia el anexo de EETT (ADR-022). Todo lo demás queda igual.
+
+3. **Riesgo a vigilar en el piloto:** 256 caracteres son suficientes para reintroducir ambigüedad si el campo se usa como cajón de sastre. Si en el UAT aparece un porcentaje alto de renglones con aclaración, el problema no es el campo: es que el catálogo no está cumpliendo su función.
 
 ---
 
@@ -452,9 +459,9 @@ auditoria: [ { timestamp, email, rol, equipo, accion, de, a, motivo, observacion
 
 ## ADR-021 — El servidor autoriza las transiciones; el cliente sólo declara la intención
 
-**Estado:** Aceptada · 2026-08-18
+**Estado:** Aceptada · 2026-08-18 · *Implementada y verificada en el ciclo 07*
 
-**Contexto.** La auditoría del ciclo 06 detectó, y el revisor reprodujo en vivo, que **el servidor no valida ni el rol ni la transición**. `apiGuardar` comprueba que el cuerpo esté bien formado y que la versión coincida, y después escribe el expediente recibido tal cual. `estados.js` ni siquiera se carga del lado del servidor: el motor de transiciones corre en el navegador, el cliente manda el expediente con el estado **ya cambiado**, y el servidor lo guarda.
+**Contexto.** La auditoría del ciclo 06 detectó, y el revisor reprodujo en vivo, que el servidor no validaba ni el rol ni la transición. `apiGuardar` comprobaba que el cuerpo estuviera bien formado y que la versión coincidiera, y después escribía el expediente recibido tal cual. `estados.js` ni siquiera se cargaba del lado del servidor: el motor corría en el navegador, el cliente mandaba el expediente con el estado ya cambiado, y el servidor lo guardaba.
 
 Reproducción, contra el servidor real:
 
@@ -465,15 +472,13 @@ PUT  /api/expedientes/2026-001   con estado = PERFECCIONADA y rol "generador"
 GET  /api/expedientes/2026-001   -> PERFECCIONADA (fase 10)
 ```
 
-Un rol `generador` llevó un expediente del paso 1 al 18 con una sola petición. El único control es el bloqueo optimista, que **no es un control de autorización**: es un mecanismo de concurrencia, y la versión actual se obtiene con un `GET` previo.
+Un rol `generador` llevó un expediente del paso 1 al 18 con una sola petición. El único control era el bloqueo optimista, que **no es un control de autorización**: es un mecanismo de concurrencia, y la versión actual se obtiene con un `GET` previo.
 
-El circuito de dieciocho pasos —que es la razón de existir del sistema— es eludible desde afuera de la interfaz.
+**El origen del defecto fue del revisor, no del desarrollador.** ADR-002 definió el adaptador de persistencia como almacén, la orden de la ronda 3 describió al servidor como "almacén versionado" sin motor de dominio, y `estados.js` quedó ubicado en `app/js/core/`, del lado del cliente. El desarrollador construyó lo que se le pidió y declaró el riesgo en su informe.
 
-**El origen del defecto es del revisor, no del desarrollador.** ADR-002 definió el adaptador de persistencia como almacén, la orden de la ronda 3 describió al servidor como "almacén versionado" sin motor de dominio, y `estados.js` quedó ubicado en `app/js/core/`, del lado del cliente. El desarrollador construyó lo que se le pidió y declaró el riesgo en su informe.
+**Decisión.** El servidor es la autoridad de las transiciones.
 
-**Decisión.** El servidor pasa a ser la autoridad de las transiciones. Concretamente:
-
-1. **Extremos por intención.** El cambio de estado deja de viajar como un documento completo y pasa a declararse:
+1. **Extremos por intención.** El cambio de estado se declara, no viaja como documento:
 
 ```
 POST /api/expedientes/:id/avanzar
@@ -484,19 +489,92 @@ POST /api/expedientes/:id/devolver
 
    El servidor lee el expediente, ejecuta `SGC.core.estados.avanzar` / `devolver` con el rol del contexto, y persiste **el resultado del motor**, no lo que mandó el cliente. Si el motor rechaza, responde `403` con el motivo en español.
 
-2. **`PUT` deja de poder cambiar el estado.** Sigue existiendo para editar campos del expediente, pero si el documento recibido trae un `estado` distinto del que hay en disco, responde `409` con un error explícito. El estado sólo se mueve por los extremos de intención.
+2. **`PUT` no puede cambiar el estado.** Sigue existiendo para editar campos; si el documento recibido trae un `estado` distinto del que hay en disco, responde `409`.
 
-3. **El servidor carga el núcleo de dominio.** `estados.js`, `validacion.js` y `config.js` se cargan del lado del servidor igual que ya se cargan `auditoria.js` y `migraciones.js`. El motor es puro y no toca el DOM: fue diseñado así desde la ronda 2 justamente para esto.
+3. **El servidor carga el núcleo de dominio.** `estados.js`, `validacion.js` y `config.js` se cargan del lado del servidor. El motor es puro y no toca el DOM: fue diseñado así desde la ronda 2 justamente para esto.
 
-4. **La auditoría la escribe el servidor.** La entrada de transición se genera del lado del servidor, con el rol validado y el origen de la petición (ADR-017 medida 3), no con lo que declare el cliente.
+4. **La auditoría la escribe el servidor**, con el rol validado y el origen de la petición (ADR-017 medida 3).
 
-**Fundamento.** Es la regla general: *la validación que corre en el cliente es una comodidad para el usuario; la que corre en el servidor es la que gobierna.* La primera evita que alguien pierda tiempo llenando un formulario que va a ser rechazado; la segunda es la que impide que el expediente termine donde no debe.
+5. **El rol declarado se cruza contra el padrón.** Añadido durante la implementación, no estaba en la decisión original: el servidor verifica que el rol del contexto le corresponda al correo en `config/usuarios.ejemplo.json`. Sin eso, la autorización se muda al servidor pero sigue dependiendo de un dato que el cliente elige.
 
-Los extremos por intención son mejores que "validar el documento recibido" porque eliminan la clase entera de problema: el cliente no puede mandar un estado arbitrario si el estado no viaja. Y no es trabajo nuevo — `estados.js` ya está escrito, es puro y está probado con la matriz completa de 18 estados por 7 roles.
+**Fundamento.** *La validación que corre en el cliente es una comodidad para el usuario; la que corre en el servidor es la que gobierna.* Los extremos por intención eliminan la clase entera de problema: el cliente no puede mandar un estado arbitrario si el estado no viaja.
 
-**Sobre el modelo de amenaza.** Con menos de diez usuarios en una intranet cerrada y cuentas de Windows compartidas (ADR-017), un ataque deliberado es improbable. Lo que sí es plenamente plausible es el **error honesto**: alguien que se sienta en una PC con la sesión lógica de otro, o una herramienta que reintente una petición guardada. La defensa no se construye para el atacante: se construye para que el circuito administrativo sea el que decide, siempre.
+**Sobre el modelo de amenaza.** Con menos de diez usuarios en una intranet cerrada y cuentas de Windows compartidas (ADR-017), un ataque deliberado es improbable. Lo plenamente plausible es el error honesto: alguien operando con la sesión lógica de otro, o una herramienta que reintente una petición guardada. La defensa no se construye para el atacante: se construye para que el circuito administrativo sea el que decide, siempre.
 
-**Consecuencias.** `repo.http.js` cambia de forma para las transiciones. `repo.memoria.js` tiene que reproducir la misma semántica, incluido el rechazo por rol. La matriz de permisos pasa a estar verificada en dos capas, y la del servidor es la que cuenta. La interfaz no cambia para el usuario.
+**Verificación (ciclo 07).** Auditor: 13 escenarios laterales cerrados y matriz de 18 × 7 con 119 peticiones contra el servidor real, con verificación de disco tras cada rechazo. Revisor: los tres vectores principales reproducidos de forma independiente, con el expediente intacto en disco.
+
+---
+
+## ADR-022 — Modelo de datos del requerimiento real (Solicitud de Gastos)
+
+**Estado:** Aceptada · 2026-08-19
+
+**Contexto.** Se incorporaron al proyecto los entregables reales del circuito actual (`EjemplosProcesoActual/`): el requerimiento (`MODELO REQ..xlsx`, una *Solicitud de Gastos*), el anexo de especificaciones técnicas, y el ANEXO 1 que Abastecimiento eleva a la UOC. Su análisis está en `ANALISIS_ENTREGABLES_REALES.md`.
+
+**Decisión.** Cinco definiciones que fijan el modelo de datos del requerimiento.
+
+### 1. El código de catálogo se descompone, no se traduce
+
+El "Código SIByS" de los documentos oficiales es exactamente nuestro `codigo`, partido en tres:
+
+| Nuestro código | IPP | Clase | Ítem |
+|---|---|---|---|
+| `2.5.8-378.186` | `2.5.8` (se imprime `258`) | `378` | `186` |
+
+Verificado contra el catálogo: los tres renglones del EETT de ejemplo existen con el texto idéntico, y la "Descripción ONC" del documento **es** el campo `item`. No hace falta tabla de equivalencias: es partir la cadena al imprimir.
+
+### 2. Los valores de referencia son mixtos y se normalizan antes de promediar
+
+El usuario carga, por renglón, un valor por cada presupuesto adjunto. **Habitualmente es un precio unitario, pero puede ser el total del renglón** cuando el presupuesto viene cotizado así.
+
+Por lo tanto cada valor lleva su **base**:
+
+```
+{ presupuestoId, base: 'unitario' | 'total', valor }
+```
+
+Y el cálculo es, en este orden:
+
+1. **Normalizar** todo a unitario: `base === 'total'` ⇒ `valor / cantidad`.
+2. **Promediar** los unitarios normalizados.
+3. **Valor preventivo del renglón** = promedio unitario × cantidad.
+4. **Valor preventivo de la contratación** = suma de los preventivos de todos los renglones.
+
+Promediar sin normalizar —mezclar un unitario con un total en la misma media— produce un número sin significado. Es el error que esta ADR existe para impedir, y es invisible: da un número plausible.
+
+Si `cantidad` es cero o falta, el valor con base `total` no se puede normalizar: se rechaza en la validación en vez de dividir por cero.
+
+### 3. `CANT. MÁXIMA`: se adopta el uso de la División, que difiere de la norma
+
+En la planilla de Orden de Compra Abierta, la cantidad máxima **la carga el usuario generador junto con la cantidad solicitada**, y en el uso de la División significa: **cuánto del renglón se le puede requerir al proveedor en una sola Solicitud de Provisión.**
+
+**La norma dice otra cosa, y hay que dejarlo escrito.** El Art. 112 del Decreto 1030/16:
+
+> *"La jurisdicción o entidad contratante determinará, para cada renglón del pliego de bases y condiciones particulares, el número máximo de unidades que podrán requerirse **durante el lapso de vigencia del contrato** y la frecuencia aproximada con que se realizarán las solicitudes de provisión. El cocontratante estará obligado a proveer hasta el máximo de unidades determinadas en dicho pliego."*
+
+Es decir: para la norma el máximo es **acumulado sobre toda la vigencia** y **obliga al proveedor**; lo que varía por entrega es la *frecuencia aproximada*, que es un campo separado y ya existe en el ANEXO 1 §7.
+
+**Decisión: se implementa el uso de la División**, por indicación expresa del Jefe de Contrataciones. La divergencia queda registrada acá para que, si alguien la cuestiona más adelante, el registro muestre que se conocía la norma y se eligió deliberadamente.
+
+**Riesgo a vigilar (R17).** Este campo alimenta el pliego, que es un documento con efectos legales. Si el pliego lo rotula con la semántica del Art. 112 —"máximo durante la vigencia del contrato"— pero se completa con un valor por entrega, el documento dice algo distinto de lo que se quiso decir, y en contra del organismo: obligaría al proveedor a mucho menos de lo necesario. **Mitigación:** la plantilla del pliego tiene que rotular el campo con el significado que realmente tiene, o derivar el máximo contractual de la cantidad solicitada. Revisar al construir H13.
+
+### 3.1. Cantidad mínima (opcional)
+
+El Art. 52 de la disposición reglamentaria exige que, en modalidad OCA, el pliego indique por renglón cuatro datos: el máximo de unidades, el plazo de vigencia del contrato, la frecuencia aproximada de solicitudes de provisión, y **opcionalmente la cantidad mínima que la jurisdicción se obliga a contratar**.
+
+Se agrega `cantidadMinima` al renglón, **opcional y vacía por defecto**. Sólo se imprime cuando tiene valor: es un compromiso que la División asume, no un dato de relleno.
+
+### 4. La imputación presupuestaria no es del requerimiento inicial
+
+Los dieciséis campos (`Ejerc, R, S, C, Ft, PG, Sp, Py, Ac, Ob, UG, I, Pppal, Ppcial, Spa, M`) **los carga Contaduría en la fase de Afectación (paso 16)**, no el usuario generador.
+
+El documento del requerimiento imprime ese bloque vacío en la Fase 1 y completo después de la afectación. Los campos pertenecen al rol `contaduria` y sólo son editables en ese estado, con la misma matriz de autorización del servidor que gobierna todo lo demás (ADR-021).
+
+### 5. La justificación de Orden de Compra Abierta vive dentro del requerimiento
+
+Hoy se arma como archivo separado. Pasa a ser un campo de texto libre del requerimiento, que se imprime cuando la modalidad OCA está activada. Un entregable menos, sin perder información.
+
+**Consecuencias.** El usuario pasa de presentar cinco archivos o más a presentar **dos documentos generados más los presupuestos adjuntos**. El promedio de referencia y el valor preventivo dejan de calcularse a mano.
 
 ---
 
