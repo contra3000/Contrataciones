@@ -21,7 +21,10 @@
     throw new Error('fasttrack.js requiere que namespaces.js se cargue primero');
   }
 
-  var MAX_ACLARACION = 200;
+  // Definición única en config.js (ORDEN-RONDA-10 §2.1); lectura perezosa.
+  function maxAclaracionTotal() {
+    return SGC.core.config.MAX_ACLARACION_TOTAL;
+  }
 
   function modelo() {
     return {
@@ -112,8 +115,8 @@
         valido = false;
       }
       var aclaracion = typeof r.aclaracion === 'string' ? r.aclaracion : '';
-      if (aclaracion.length > MAX_ACLARACION) {
-        errores.push(prefijo + 'la aclaración supera los ' + MAX_ACLARACION + ' caracteres');
+      if (SGC.core.utils.contarCaracteres(aclaracion) > maxAclaracionTotal()) {
+        errores.push(prefijo + 'la aclaración supera los ' + maxAclaracionTotal() + ' caracteres');
         aclaracionesLargas++;
         valido = false;
       }
@@ -160,7 +163,7 @@
   }
 
   SGC.views.fasttrack = {
-    MAX_ACLARACION: MAX_ACLARACION,
+    MAX_ACLARACION: SGC.core.config.MAX_ACLARACION,
     modelo: modelo,
     importar: importar
   };

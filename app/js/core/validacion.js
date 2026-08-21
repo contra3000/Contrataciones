@@ -7,8 +7,9 @@
  *    (todo es válido) y con arreglos poblados; no los puebla por su cuenta.
  *  - `validarRenglon` aplica la enmienda de ADR-014: `codigo` obligatorio,
  *    `cantidad` numérica positiva, `unidad` presente y `aclaracion` opcional
- *    de máximo 200 caracteres. Sólo valida forma: la existencia del código en
- *    el catálogo real se valida en otra capa, fuera de esta ronda.
+ *    de máximo MAX_ACLARACION_TOTAL caracteres (config.js, hoy 2000). Sólo
+ *    valida forma: la existencia del código en el catálogo real se valida en
+ *    otra capa, fuera de esta ronda.
  */
 (function (root) {
   'use strict';
@@ -18,7 +19,12 @@
     throw new Error('validacion.js requiere que namespaces.js se cargue primero');
   }
 
-  var MAX_ACLARACION = 200;
+  // La definición única del límite vive en config.js (ORDEN-RONDA-10 §2.1).
+  // Se lee perezosamente dentro de cada función para no depender del orden de
+  // carga entre módulos.
+  function maxAclaracionTotal() {
+    return SGC.core.config.MAX_ACLARACION_TOTAL;
+  }
 
   function obtenerEstado(expediente) {
     var id = SGC.core.utils.idEstado(expediente);
@@ -100,10 +106,15 @@
     if (typeof renglon.unidad !== 'string' || renglon.unidad.trim() === '') {
       errores.push('La unidad de medida es obligatoria');
     }
+    // ORDEN-RONDA-10 §2.1: el tope duro de entrada es MAX_ACLARACION_TOTAL
+    // (config.js). Superar los 256 no es error acá: ese texto desborda al
+    // anexo de EETT (core/anexo-eett.js) y se acepta hasta el tope. El conteo
+    // es el mismo criterio de todo el sistema: puntos de código
+    // (utils.contarCaracteres, ORDEN-RONDA-10-CIERRE §2).
     if (renglon.aclaracion !== undefined && renglon.aclaracion !== null &&
         typeof renglon.aclaracion === 'string' &&
-        renglon.aclaracion.length > MAX_ACLARACION) {
-      errores.push('La aclaración no puede superar los ' + MAX_ACLARACION + ' caracteres');
+        SGC.core.utils.contarCaracteres(renglon.aclaracion) > maxAclaracionTotal()) {
+      errores.push('La aclaración no puede superar los ' + maxAclaracionTotal() + ' caracteres');
     }
     // ORDEN-RONDA-09 §3.3/§3.4 (ADR-022): valores de referencia y cantidades
     // máximas/mínimas. Requerimiento.js es el dueño de esas reglas; si el
@@ -156,8 +167,44 @@
     }
     if (typeof campos.justificacion !== 'string' || campos.justificacion.trim() === '') {
       errores.push('La justificación del requerimiento es obligatoria');
+    } else if (campos.justificacion.length > SGC.core.config.MAX_JUSTIFICACION) {
+      // ORDEN-RONDA-10-CIERRE §1.3: mismo criterio que valida el servidor
+      // (validarJustificaciones); la constante vive en config.js.
+      errores.push('La justificación no puede superar los ' +
+        SGC.core.config.MAX_JUSTIFICACION + ' caracteres');
     }
     return { valido: errores.length === 0, errores: errores };
+  }
+
+  // Tope duro de los textos de justificación (ORDEN-RONDA-10-CIERRE §1.3,
+  // auditoría §2.4): el servidor lo aplica por su cuenta al crear (POST) y al
+  // guardar (PUT), sin ayuda de la pantalla. Cubre los dos lugares donde vive
+  // una justificación: la fundamentación del wizard y el campo del encabezado
+  // del requerimiento que se prellena desde ella.
+  function validarJustificaciones(expediente) {
+    var errores = [];
+    if (!expediente || typeof expediente !== 'object') {
+      return errores;
+    }
+    var limite = SGC.core.config.MAX_JUSTIFICACION;
+    var candidatos = [];
+    var fund = expediente.fundamentacion;
+    if (fund && typeof fund.justificacion === 'string') {
+      candidatos.push({ nombre: 'la justificación de la necesidad', texto: fund.justificacion });
+    }
+    var rq = expediente.requerimiento;
+    if (rq && typeof rq.justificacionNecesidad === 'string') {
+      candidatos.push({
+        nombre: '"Justificación de la necesidad" del requerimiento',
+        texto: rq.justificacionNecesidad
+      });
+    }
+    for (var i = 0; i < candidatos.length; i++) {
+      if (candidatos[i].texto.length > limite) {
+        errores.push(candidatos[i].nombre + ' no puede superar los ' + limite + ' caracteres');
+      }
+    }
+    return errores;
   }
 
   SGC.core.validacion = {
@@ -165,6 +212,7 @@
     validarRenglon: validarRenglon,
     validarIdentificacion: validarIdentificacion,
     validarFundamentacion: validarFundamentacion,
+    validarJustificaciones: validarJustificaciones,
     validarRequerimiento: validarRequerimiento
   };
 })(typeof window !== 'undefined' ? window : globalThis);

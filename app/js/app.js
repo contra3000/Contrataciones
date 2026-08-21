@@ -46,6 +46,7 @@
     // no los botones. El tablero es de visibilidad global (ADR-010).
     SGC.views.expediente.seleccionarOperador(operador);
     SGC.views.exportar.seleccionarOperador(operador);
+    SGC.views.requerimientoFormulario.seleccionarOperador(operador);
     document.getElementById('sgc-tablero-nav').hidden = false;
   }
 
@@ -105,6 +106,12 @@
     SGC.views.exportar.fijarNavegador(function (url) {
       window.open(url, '_blank');
     });
+
+    // Carga del requerimiento (ORDEN-RONDA-10 §3.1): formulario, valores y
+    // presupuestos dentro de la vista de expediente. La vista de expediente
+    // le avisa en cada render (requerimientoFormulario.actualizar()).
+    SGC.views.requerimientoFormulario.montar(contenedor);
+    SGC.views.requerimientoFormulario.fijarRepo(repo);
 
     // El buscador del paso 2 inicia la carga del catálogo y actualiza su
     // propio estado. Después se le avisa al asistente para guardar borradores

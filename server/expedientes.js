@@ -15,16 +15,6 @@ const path = require('node:path');
 
 const archivo = require('./archivo.js');
 
-// Presupuestos adjuntos (ORDEN-RONDA-09 §3.2): PDF o imagen, con un tope de
-// 2 MB por archivo. El límite convive con el tope de 4 MB del cuerpo (base64
-// infla ~33%) y es lo que se documenta como límite del presupuesto.
-const TIPOS_PRESUPUESTO = {
-  'application/pdf': 'pdf',
-  'image/png': 'png',
-  'image/jpeg': 'jpg'
-};
-const LIMITE_PRESUPUESTO = 2 * 1024 * 1024;
-
 function crearManejadoresExpedientes(entorno) {
   const {
     datosDir,
@@ -42,12 +32,52 @@ function crearManejadoresExpedientes(entorno) {
 
   const SGC = globalThis.SGC;
 
+  // Guardia del servidor sobre los renglones (ORDEN-RONDA-10 §3.1, auditoría
+  // §2.1): la pantalla es conveniencia; esta guardia es la regla. Valida la
+  // forma de cada renglón (validarRenglon: cantidades, aclaración, valores de
+  // referencia) y que cada presupuestoId citado exista de verdad entre los
+  // presupuestos del expediente. En la creación todavía no hay presupuestos,
+  // así que se pasa un conjunto vacío y cualquier cita es rechazada.
+  function erroresDeRenglones(recibidos, presupuestosIds) {
+    const errores = [];
+    for (let i = 0; i < recibidos.length; i++) {
+      const r = recibidos[i];
+      const v = SGC.core.validacion.validarRenglon(r);
+      if (!v.valido) {
+        errores.push('Renglón ' + (i + 1) + ': ' + v.errores.join(' · '));
+        continue;
+      }
+      const valores = Array.isArray(r.valoresReferencia) ? r.valoresReferencia : [];
+      for (let j = 0; j < valores.length; j++) {
+        const vr = valores[j];
+        if (vr && typeof vr === 'object' && typeof vr.presupuestoId === 'string' &&
+            vr.presupuestoId !== '' && !presupuestosIds.has(vr.presupuestoId)) {
+          errores.push('Renglón ' + (i + 1) + ': el valor de referencia ' + (j + 1) +
+            ' cita el presupuesto "' + vr.presupuestoId + '", que no existe en este expediente');
+        }
+      }
+    }
+    return errores;
+  }
+
   function apiCrear(req, res, contextoCuerpo) {
     const cuerpo = parsearCuerpo(contextoCuerpo);
     if (!cuerpo || typeof cuerpo !== 'object') {
       return responderJson(res, 400, { error: 'cuerpo inválido: se espera {datosIniciales, contexto}' });
     }
     const datosIniciales = cuerpo.datosIniciales || {};
+    // ORDEN-RONDA-10-CIERRE §1.3: la creación valida lo mismo que el PUT, y
+    // antes de quemar un número de expediente con el lock de ADR-009.
+    if (Array.isArray(datosIniciales.renglones)) {
+      const erroresRenglones = erroresDeRenglones(datosIniciales.renglones, new Set());
+      if (erroresRenglones.length > 0) {
+        return responderJson(res, 400, { error: erroresRenglones.join(' · ') });
+      }
+    }
+    const erroresTextos = SGC.core.validacion.validarJustificaciones(datosIniciales);
+    if (erroresTextos.length > 0) {
+      return responderJson(res, 400, { error: erroresTextos.join(' · ') });
+    }
     const contexto = cuerpo.contexto || {};
     const anio = repo.anioDe(datosIniciales, contexto) ||
       String(new Date().getFullYear());
@@ -235,89 +265,9 @@ function crearManejadoresExpedientes(entorno) {
     res.end(fs.readFileSync(archivo, 'utf8'));
   }
 
-  // Guardar un presupuesto adjunto (ORDEN-RONDA-09 §3.2). El nombre del
-  // archivo en disco lo decide el servidor (`presupuesto-<n>.<ext>`), nunca
-  // el cliente: un nombre que venga del usuario es una vía de recorrido de
-  // rutas. Cada presupuesto lleva un id estable porque los valores de
-  // referencia lo citan; la escritura es atómica y versionada.
-  function apiGuardarPresupuesto(req, res, id, contextoCuerpo) {
-    const cuerpo = parsearCuerpo(contextoCuerpo);
-    if (!cuerpo || typeof cuerpo !== 'object' ||
-        typeof cuerpo.nombreOriginal !== 'string' ||
-        typeof cuerpo.tipo !== 'string' || typeof cuerpo.contenido !== 'string') {
-      return responderJson(res, 400, { error: 'cuerpo inválido: se espera {nombreOriginal, tipo, contenido, contexto}' });
-    }
-    const extension = TIPOS_PRESUPUESTO[cuerpo.tipo];
-    if (!extension) {
-      return responderJson(res, 400, { error: 'tipo de archivo no permitido: "' + cuerpo.tipo + '". Se admiten PDF e imágenes (application/pdf, image/png, image/jpeg)' });
-    }
-    const base64Limpio = String(cuerpo.contenido).replace(/\s+/g, '');
-    if (base64Limpio.length === 0) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto está vacío' });
-    }
-    // Buffer.from(..., 'base64') ignora en silencio los caracteres ajenos al
-    // alfabeto: "no-es-base64!!!" decodifica a bytes. Se exige el alfabeto
-    // estricto para no aceptar basura como archivo.
-    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64Limpio)) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto no es base64 válido' });
-    }
-    let buffer = null;
-    try {
-      buffer = Buffer.from(base64Limpio, 'base64');
-    } catch (e) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto no es base64 válido' });
-    }
-    if (buffer.length === 0) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto no es base64 válido' });
-    }
-    if (buffer.length > LIMITE_PRESUPUESTO) {
-      return responderJson(res, 400, { error: 'el presupuesto excede el límite de ' + Math.round(LIMITE_PRESUPUESTO / (1024 * 1024)) + ' MB' });
-    }
-    const exp = rutaExpediente(datosDir, id);
-    if (!fs.existsSync(exp.datos)) {
-      return responderJson(res, 404, { error: 'expediente no encontrado: ' + id });
-    }
-    const actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
-    const contexto = cuerpo.contexto || {};
-    const numero = (Array.isArray(actual.presupuestos) ? actual.presupuestos : []).length + 1;
-    const archivo = 'presupuesto-' + numero + '.' + extension;
-    const ruta = path.join(exp.dir, 'presupuestos', archivo);
-    if (!estaDentro(ruta, exp.dir)) {
-      return responderJson(res, 400, { error: 'recorrido de rutas no permitido' });
-    }
-    const nuevaVersion = actual.version + 1;
-    fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
-    fs.mkdirSync(path.join(exp.dir, 'presupuestos'), { recursive: true });
-    escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'), JSON.stringify(actual, null, 2));
-    escribirAtomico(ruta, buffer);
-    const actualizado = JSON.parse(JSON.stringify(actual));
-    actualizado.version = nuevaVersion;
-    if (!Array.isArray(actualizado.presupuestos)) {
-      actualizado.presupuestos = [];
-    }
-    actualizado.presupuestos.push({
-      id: 'presupuesto-' + numero,
-      nombreOriginal: String(cuerpo.nombreOriginal).slice(0, 200),
-      archivo: archivo,
-      ruta: 'presupuestos/' + archivo,
-      tipo: cuerpo.tipo,
-      peso: buffer.length,
-      subido: typeof contexto.timestamp === 'string' ? contexto.timestamp : null,
-      email: typeof contexto.email === 'string' ? contexto.email : null,
-      equipo: typeof contexto.equipo === 'string' ? contexto.equipo : null
-    });
-    if (typeof contexto.timestamp === 'string') {
-      if (typeof actualizado.actualizado === 'string') { actualizado.actualizado = contexto.timestamp; }
-      if (typeof actualizado.ultimaModificacion === 'string') { actualizado.ultimaModificacion = contexto.timestamp; }
-    }
-    if (typeof contexto.email === 'string' && typeof actualizado.ultimoUsuario === 'string') {
-      actualizado.ultimoUsuario = contexto.email;
-    }
-    escribirAtomico(exp.datos, JSON.stringify(actualizado, null, 2));
-    const entrada = repo.entradaIndice(id, actualizado, contexto);
-    fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true }); escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
-    return responderJson(res, 201, { id: 'presupuesto-' + numero, archivo: archivo, ruta: 'presupuestos/' + archivo, peso: buffer.length, version: nuevaVersion });
-  }
+  // Guardar un presupuesto adjunto: vive en server/presupuestos.js
+  // (ORDEN-RONDA-09 §3.2), separado por responsabilidad para que este archivo
+  // no supere las 400 líneas.
 
   function apiGuardar(req, res, id, contextoCuerpo) {
     const cuerpo = parsearCuerpo(contextoCuerpo);
@@ -340,6 +290,24 @@ function crearManejadoresExpedientes(entorno) {
     if (expedienteNuevo.estado !== undefined && expedienteNuevo.estado !== null &&
         !estadoIgual(expedienteNuevo.estado, actual.estado)) {
       return responderJson(res, 409, { error: 'el estado de un expediente no se cambia por PUT; use POST /api/expedientes/' + id + '/avanzar o /api/expedientes/' + id + '/devolver' });
+    }
+    // ORDEN-RONDA-10 §3.1 (auditoría §2.1): el servidor valida los renglones
+    // por su cuenta, con las mismas reglas que la pantalla (erroresDeRenglones)
+    // y la existencia de cada presupuestoId citado contra los presupuestos que
+    // el expediente tiene de verdad en disco.
+    if (Array.isArray(expedienteNuevo.renglones)) {
+      const presupuestosIds = new Set((Array.isArray(actual.presupuestos) ? actual.presupuestos : [])
+        .map((p) => (p && typeof p.id === 'string') ? p.id : ''));
+      const erroresRenglones = erroresDeRenglones(expedienteNuevo.renglones, presupuestosIds);
+      if (erroresRenglones.length > 0) {
+        return responderJson(res, 400, { error: erroresRenglones.join(' · ') });
+      }
+    }
+    // ORDEN-RONDA-10-CIERRE §1.3: la justificación también tiene tope duro en
+    // el servidor; un texto de 50.000 caracteres no entra ni por accidente.
+    const erroresTextos = SGC.core.validacion.validarJustificaciones(expedienteNuevo);
+    if (erroresTextos.length > 0) {
+      return responderJson(res, 400, { error: erroresTextos.join(' · ') });
     }
     // ORDEN-RONDA-09 §3.1 (ADR-022 §4): la imputación presupuestaria la
     // completa Contaduría en la Afectación. La restricción vive acá, con la
@@ -387,7 +355,6 @@ function crearManejadoresExpedientes(entorno) {
     apiDevolver,
     apiGuardarEntregable,
     apiLeerEntregable,
-    apiGuardarPresupuesto,
     apiGuardar
   };
 }

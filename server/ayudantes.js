@@ -219,8 +219,19 @@ function leerCuerpo(req) {
     req.on('data', (trozo) => {
       datos = Buffer.concat([datos, trozo]);
       if (datos.length > LIMITE_CUERPO) {
-        req.destroy();
-        reject(new Error('cuerpo de petición demasiado grande (límite ' + LIMITE_CUERPO + ' bytes)'));
+        // ORDEN-RONDA-10-CIERRE §1.2: un cliente legítimo que se pasa el límite
+        // tiene derecho a una explicación. En lugar de destruir el socket sin
+        // más, se marca el rechazo como 413 y se deja de consumir el cuerpo:
+        // responderErrorPeticion() responde primero y la conexión se cierra
+        // después de enviar la respuesta (Connection: close).
+        const exceso = new Error('el cuerpo de la petición supera el límite de ' +
+          Math.round(LIMITE_CUERPO / (1024 * 1024)) + ' MB (' + LIMITE_CUERPO +
+          ' bytes); achique el contenido y reintente');
+        exceso.codigoEstado = 413;
+        req.removeAllListeners('data');
+        req.removeAllListeners('end');
+        req.resume();
+        reject(exceso);
       }
     });
     req.on('end', () => resolve(datos.toString('utf8')));
@@ -247,6 +258,25 @@ function responderErrorEsp(codigoEstado, mensaje) {
   };
 }
 
+// Rechazo de una petición cuyo cuerpo no se pudo leer (ORDEN-RONDA-10-CIERRE
+// §1.2). Un error marcado con codigoEstado (el 413 del límite de cuerpo)
+// responde con ese código y Connection: close, de modo que la explicación
+// llegue al cliente antes de que se corte la conexión; el resto sigue siendo
+// el 400 genérico de siempre.
+function responderErrorPeticion(res, e) {
+  const codigoEstado = e && e.codigoEstado ? e.codigoEstado : 400;
+  const detalle = e && e.message ? e.message : 'cuerpo ilegible';
+  if (codigoEstado === 413) {
+    res.writeHead(codigoEstado, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Connection': 'close'
+    });
+    res.end(JSON.stringify({ error: detalle }));
+    return;
+  }
+  responderJson(res, codigoEstado, { error: 'no se pudo procesar la petición: ' + detalle });
+}
+
 module.exports = {
   LIMITE_CUERPO,
   MIME,
@@ -266,5 +296,6 @@ module.exports = {
   leerCuerpo,
   parsearCuerpo,
   responderJson,
-  responderErrorEsp
+  responderErrorEsp,
+  responderErrorPeticion
 };

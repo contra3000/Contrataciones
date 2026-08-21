@@ -115,12 +115,20 @@
     lineas.push('');
     lineas.push('## Instrumentos firmados');
     lineas.push('');
+    // ORDEN-RONDA-10-CIERRE §1.1: la leyenda comparte las tres superficies
+    // (pie del entregable, este resumen y la pantalla); la constante es la
+    // misma que imprime el pie de los documentos.
+    lineas.push('> ' + SGC.renders.documento.LEYENDA_ADR016);
     lineas.push('> **ADR-016**: los instrumentos firmados de este circuito ' +
-      '(pliego y especificaciones, disposición de autorización, orden de ' +
+      '(pliego y especificaciones, disposición de adjudicación, orden de ' +
       'compra y demás) se firman fuera de este sistema, en el circuito de ' +
       'firmas vigente. Este sistema guarda y referencia el documento generado ' +
       'de la Especificación Técnica, no la versión firmada; por lo tanto, ' +
       'la ausencia de firmas dentro del expediente digital no es una omisión.');
+    lineas.push('');
+    // Leyenda obligatoria de ADR-023 §5: sin ella, un auditor externo (o un
+    // LLM que lea el export) atribuiría al sistema actos que ocurren fuera.
+    lineas.push('> ' + SGC.renders.documento.LEYENDA_ADR023);
     lineas.push('');
     return lineas.join('\n');
   }

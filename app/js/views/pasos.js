@@ -24,7 +24,10 @@
     throw new Error('pasos.js requiere que namespaces.js se cargue primero');
   }
 
-  var MAX_ACLARACION = 200;
+  // Definición única en config.js (ORDEN-RONDA-10 §2.1); lectura perezosa.
+  function maxAclaracionTotal() {
+    return SGC.core.config.MAX_ACLARACION_TOTAL;
+  }
 
   var PASOS = [
     { id: 'identificacion', titulo: 'Identificación' },
@@ -189,7 +192,7 @@
   function aclaracionesValidas(renglones) {
     for (var i = 0; i < renglones.length; i++) {
       if (typeof renglones[i].aclaracion === 'string' &&
-          renglones[i].aclaracion.length > MAX_ACLARACION) {
+          SGC.core.utils.contarCaracteres(renglones[i].aclaracion) > maxAclaracionTotal()) {
         return false;
       }
     }
@@ -226,7 +229,7 @@
 
   SGC.views.pasos = {
     PASOS: PASOS,
-    MAX_ACLARACION: MAX_ACLARACION,
+    MAX_ACLARACION: SGC.core.config.MAX_ACLARACION,
     validarPaso: validarPaso,
     datosParaPersistir: datosParaPersistir,
     resumen: resumen,
