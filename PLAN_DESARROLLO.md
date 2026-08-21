@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-20** · cierre del ciclo 9 · incorporados H14, H15, H16 y H17 por indicación del Jefe de Contrataciones
+Última actualización: **2026-08-21** · ciclo 10 no cerrado (trabajo hecho, sin publicar) · incorporado H18 (credenciales) y la sección de candidatos a V2
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -29,6 +29,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H15 | Observabilidad y tableros de indicadores por rol | ⬜ Pendiente — **nuevo** · **antes del UAT** | H8 |
 | H16 | Sistema de estilos aplicado a toda la app | ⬜ Pendiente — **nuevo** · final del roadmap | H13 |
 | H17 | Identidad de la app y documentación IA-friendly | ⬜ Pendiente — **nuevo** · lo último | H16 |
+| H18 | Credenciales y administración del padrón | ⬜ Pendiente — **nuevo, 2026-08-21** · **antes del UAT** | H5 |
 | H10 | Despliegue a intranet y piloto | ⬜ Pendiente | H0, H9 |
 
 > ### ⚠️ Sigue pendiente
@@ -426,6 +427,49 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 **Criterio de aceptación:** un desarrollador —o una IA— que nunca vio el proyecto implementa un cambio pequeño y correcto leyendo sólo el repositorio.
 
 
+### H18 — Credenciales y administración del padrón
+
+*(ADR-027. Supera parcialmente a ADR-017. Tiene que estar **antes del UAT**: si los operadores prueban sin clave, el registro del UAT no acredita quién hizo qué, que es justamente lo que el UAT viene a validar.)*
+
+- [ ] H18-1 · Campo `credencial` en el padrón: `{algoritmo:'scrypt', sal, N, r, p, hash}`, con `node:crypto`. **Cero dependencias nuevas**
+- [ ] H18-2 · Verificación en tiempo constante (`timingSafeEqual`). **Ninguna clave en texto plano, en ningún lado, nunca**
+- [ ] H18-3 · **El padrón con credenciales no se sirve por HTTP.** Vive fuera de toda carpeta servida como estática, y **hay un test que lo verifica** — no una revisión visual
+- [ ] H18-4 · Entrada con correo institucional + clave; sesión del lado del servidor con cookie `HttpOnly`, `SameSite=Strict`, identificador de `crypto.randomBytes`
+- [ ] H18-5 · **El rol se deriva de la sesión, no del cuerpo de la petición.** El cliente deja de declarar `contexto.rol`. Si el operador tiene varios roles, elige entre los suyos
+- [ ] H18-6 · La auditoría y el registro de eventos pasan a anotar el operador **verificado**, no el declarado (cierra R12)
+- [ ] H18-7 · Cierre por inactividad a los 15 minutos (H5-1) y cierre explícito con botón visible
+- [ ] H18-8 · Demora fija de 1 segundo en cada intento fallido; bloqueo tras diez fallos seguidos, que sólo levanta el Jefe de Contrataciones
+- [ ] H18-9 · `tools/padron.js`: alta, cambio de clave, desactivación. **Imprime el hash y no guarda la clave en ningún lado**
+- [ ] H18-10 · Cambio de clave por el propio operador (opcional, recomendado: después del cambio ni el Jefe conoce la clave)
+- [ ] H18-11 · El padrón real vive en la carpeta de datos y entra en el respaldo (H3-8). En el repositorio queda sólo `usuarios.ejemplo.json`, **sin credenciales**
+- [ ] H18-12 · Migración: los expedientes existentes conservan el operador que tengan registrado; no se reescribe historia
+
+**Criterio de aceptación:** un operador no puede ejecutar ninguna acción con el rol de otro, verificado **contra el servidor**; y el padrón con hashes no es descargable desde el navegador.
+
+---
+
+## Candidatos a la V2 — fuera del alcance del piloto
+
+Se registran acá para que no se pierdan y para que **no entren al piloto por goteo**. Nada de esta sección se construye antes del despliegue.
+
+### V2-1 — Consolidación de pedidos por área (ADR-028)
+
+El paso previo real que hoy no existe en ningún sistema: cada área carga sus necesidades contra un período abierto, y el usuario consolidador las ve todas y las traduce a renglones. Hoy eso pasa por relaciones personales, y **cuando falla, un área queda afuera y se entera tarde**.
+
+**Por qué no ahora:** multiplica los usuarios de menos de diez a todas las áreas de la unidad —lo que rompe el dimensionamiento de ADR-008 y de ADR-027—, reintroduce plazos que ADR-013 dejó fuera a propósito, y **puede excluir más de lo que incluye** si el pedido formal pasa a ser "cargarlo en la aplicación" antes de que todas las áreas estén en el padrón.
+
+**Lo que sí se hace ahora, porque es barato y produce la evidencia:**
+
+- [ ] V2-1a · Campo **`areaSolicitante`** por renglón, opcional, texto libre. Una columna
+- [ ] V2-1b · Indicador (ADR-024): renglones por área solicitante, y **renglones sin origen declarado**. Al cabo del piloto eso responde con datos qué áreas aparecen, cuáles nunca aparecen y cuánto del requerimiento no tiene origen registrado
+
+### V2-2 — Otros
+
+- Motor de SLA con los plazos de la norma (ADR-013), a discutir **con la evidencia de tiempos que el piloto genere**, no antes
+- Validación cruzada completa de referencias entre presupuestos y valores (R-09-1, si sobrevive a H11-12)
+- Aviso por dispersión alta entre presupuestos de un mismo renglón (R-09-3), si el indicador de H15 muestra que pasa seguido
+
+
 ## Riesgos abiertos
 
 | # | Riesgo | Impacto | Mitigación |
@@ -453,3 +497,6 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 | R20 | El registro de eventos se usa para evaluar personas | Medio — dato con contenido operativo sobre operadores identificados | H15-9: entra en la advertencia de datos sensibles; su uso queda sujeto al criterio del Jefe de Contrataciones, y conviene decirlo antes de que alguien lo descubra |
 | R21 | Un precio del año anterior se hereda como valor de referencia sin que nadie lo note | Alto y silencioso — es R16 por la puerta de atrás | ADR-025 regla 3: el expediente creado "como base" nace **sin presupuestos y sin valores de referencia**; copia por lista blanca, nunca por lista negra |
 | R22 | La aplicación se copia y no hay forma de reconocerla | Bajo, pero irreversible si no se prepara antes | ADR-026 y H17: sello de compilación impreso en cada entregable, huella estructural del registro de auditoría, etiqueta firmada con GPG y hash publicado de la v1 |
+| R23 | **Trabajo hecho que no se publica** (ciclo 10: ronda completa sin commit, sin push y sin informe) | Alto — se quema una auditoría entera y el avance no cuenta | **Control de entrega** antes de largar al auditor: `git log --oneline -1`, `git status --short` y existencia del informe. Si algo falla, el auditor no arranca. **Cuidado**: `git status` sobre el montaje puede cortarse por tiempo y devolver vacío — mirar el código de salida |
+| R24 | Sin HTTPS, la clave del operador viaja en claro por la intranet | Medio, aceptado por el Jefe de Contrataciones — red cerrada, sin datos personales | ADR-027: **estas claves no pueden ser la misma que la de ningún otro sistema del organismo**. Si H0-4 confirma HTTPS, el riesgo desaparece |
+| R25 | El Jefe de Contrataciones es el único administrador del padrón, sin autoservicio de reposición | Bajo hoy, **alto si entra V2-1** — decenas de usuarios pidiendo claves | ADR-027 §6: correcto a esta escala. Se revisa el día que ADR-028 pase a Aceptada |

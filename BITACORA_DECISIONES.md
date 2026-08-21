@@ -33,6 +33,8 @@ Plantilla al final del archivo.
 | 024 | Registro de eventos amplio; los indicadores se eligen después | Aceptada | 2026-08-20 |
 | 025 | Un expediente perfeccionado puede usarse como plantilla de uno nuevo | Aceptada | 2026-08-20 |
 | 026 | Identidad y marcado de autoría de la aplicación | Propuesta | 2026-08-20 |
+| 027 | Credenciales artesanales: una clave por operador, definida por el Jefe | Aceptada | 2026-08-21 |
+| 028 | Consolidación de pedidos por área, como paso previo al requerimiento | Propuesta (V2) | 2026-08-21 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -326,6 +328,8 @@ Además, H0-2.5 (cuentas de Windows compartidas y sin contraseña) **refuerza** 
 ---
 
 ## ADR-017 — Identidad basada en el correo institucional, no en Windows
+
+> **Superada parcialmente por ADR-027 (2026-08-21).** Donde esta ADR dice *"sin contraseña ni PIN en la v1"*, ahora hay **una clave por operador** definida a mano por el Jefe de Contrataciones. Todo lo demás —correo institucional como identidad, visible en pantalla, registro de la máquina de origen— se mantiene. La atribución pasa de *declarada y corroborada* a **verificada**.
 
 **Estado:** Aceptada · 2026-08-13
 
@@ -746,6 +750,101 @@ Lo que sobrevive a la copia y a la evolución no es una firma: son **rasgos idio
 **Fundamento.** El objetivo declarado no es impedir la copia —es deseable que la aplicación se difunda— sino **poder reconocerla**. Eso se logra con rasgos, no con criptografía.
 
 **Consecuencias.** El documento de marcas silenciosas queda fuera del repositorio y en poder del Jefe de Contrataciones: una marca publicada deja de ser marca. Pendiente de decidir en H17: la licencia exacta y si el pie de los entregables lleva también el número de versión del catálogo.
+
+---
+
+## ADR-027 — Credenciales artesanales: una clave por operador, definida por el Jefe de Contrataciones
+
+**Estado:** Aceptada · 2026-08-21 · *Supera parcialmente a ADR-017 ("sin contraseña ni PIN en la v1")*
+
+**Contexto.** ADR-017 resolvió la identidad con el correo institucional **declarado y corroborado**, sin contraseña: el operador se elige de una lista, el servidor cruza el rol contra el padrón y registra la máquina de origen. Era suficiente para desarrollar, pero deja la atribución en "declarada": cualquiera puede elegir el nombre de cualquiera, y eso contamina la auditoría y los indicadores (R12).
+
+La alternativa habitual —enviar un código de un solo uso al correo del usuario— exige que la aplicación mande correo. **Eso está descartado**: la app no emite peticiones al exterior (ADR-018), no hay servidor de correo disponible desde la intranet y sería una dependencia nueva en un sistema que tiene cero.
+
+**Decisión.** El Jefe de Contrataciones define **una clave por operador** y el rol que le corresponde, a mano, en el padrón. El operador entra con **correo institucional + clave**.
+
+### 1. La clave nunca se guarda en texto plano
+
+Aunque la red sea cerrada y los datos poco sensibles. El padrón guarda, por usuario:
+
+```
+{ email, nombre, apellido, roles: [], sector, activo,
+  credencial: { algoritmo: 'scrypt', sal, N, r, p, hash } }
+```
+
+Se usa `node:crypto` (`scrypt`), que ya viene con Node: **cero dependencias nuevas**. La verificación es una comparación en tiempo constante (`timingSafeEqual`).
+
+Guardar contraseñas en claro es la clase de decisión que no tiene defensa cuando alguien la mira de afuera, cuesta veinte líneas evitarla, y protege contra el caso realista: que el archivo del padrón termine en un respaldo, en un correo o en una carpeta compartida.
+
+### 2. El padrón con credenciales **no se sirve por HTTP**
+
+Vive del lado del servidor, fuera de cualquier carpeta servida como estática. Un padrón con hashes descargable desde el navegador convierte el esfuerzo del punto 1 en decorado. **Esto se verifica con un test**, no con una revisión visual.
+
+### 3. El rol deja de ser declarado por el cliente
+
+Es la ganancia grande, y no es sobre seguridad: es sobre la calidad del registro.
+
+Hoy el cliente manda un `contexto` con el rol y el servidor lo cruza contra el padrón (ADR-021 §5). Con sesión autenticada, **el rol se deriva del operador autenticado** y el cliente deja de declarar nada. Si un operador tiene más de un rol (el padrón lo admite), elige cuál ejerce, y sólo entre los suyos.
+
+Consecuencia directa: el "quién hizo qué" del registro de auditoría y de los indicadores pasa de **declarado** a **verificado**. Los KPIs empiezan a medir personas, no elecciones de una lista.
+
+### 4. Sesión
+
+- Cookie de sesión `HttpOnly`, `SameSite=Strict`, con identificador aleatorio de `crypto.randomBytes`. La sesión vive **del lado del servidor**, no en el navegador.
+- **Cierre por inactividad a los 15 minutos**, que ya estaba decidido (H5-1), y cierre explícito con un botón visible.
+- El operador activo, su rol y su correo siguen **siempre a la vista en pantalla** (ADR-017): la clave agrega certeza, no reemplaza la visibilidad.
+
+### 5. Contra el tanteo, lo mínimo y barato
+
+Demora fija de un segundo en cada intento fallido, y bloqueo del usuario tras diez fallos seguidos —que sólo levanta el Jefe de Contrataciones—. A esta escala no hace falta más, y cualquier cosa más elaborada estorba.
+
+### 6. Sin autoservicio: el Jefe de Contrataciones es el administrador
+
+No hay "olvidé mi contraseña". Si un operador la pierde, el Jefe genera otra y se la entrega. **A menos de diez usuarios es la respuesta correcta**: cero infraestructura, cero correo, cero superficie. Se vuelve insostenible si el padrón crece a decenas de usuarios — ver ADR-028, que es exactamente el escenario donde eso pasaría.
+
+Se entrega una herramienta `tools/padron.js` para dar de alta, cambiar clave y desactivar, que **imprime el hash y nunca guarda la clave en ningún lado**.
+
+### 7. El operador puede cambiar su clave
+
+Opcional pero recomendado, y tiene una ventaja que no es obvia: después del cambio, **ni siquiera el Jefe de Contrataciones conoce la clave del operador**. Eso mejora la atribución, que es el objetivo de todo esto.
+
+**Fundamento.** El modelo de amenaza no cambió (ADR-021): red cerrada, menos de diez usuarios, nada de información personal circulando. Lo que se compra con la clave no es defensa contra un atacante: es que **el registro de tiempos y el tablero de indicadores dejen de basarse en una elección de lista**. Un sistema cuyo propósito declarado es registrar quién hizo qué y cuándo (ADR-023) necesita saber quién es quién.
+
+**Alternativas consideradas.** *(a)* Código de un solo uso por correo: descartada, exige que la app mande correo y contradice ADR-018. *(b)* Sin clave, como hasta ahora: descartada, deja R12 abierto justo cuando los indicadores empiezan a importar. *(c)* Integración con el directorio de Windows: descartada, las cuentas son compartidas y sin contraseña (ADR-017), así que autenticaría a la PC, no a la persona.
+
+**Consecuencias y riesgos que se asumen.**
+
+- **Sin HTTPS, la clave viaja en claro por la intranet** (depende de H0-4). Con la red cerrada y sin datos personales, el Jefe de Contrataciones acepta el riesgo — **pero de ahí se sigue una regla que no es negociable: estas claves no pueden ser la misma que la de ningún otro sistema del organismo.** Si H0-4 confirma HTTPS, el punto desaparece.
+- El Jefe de Contrataciones pasa a ser el administrador de altas, bajas y reposiciones. Con el padrón actual es un trámite de minutos.
+- El padrón con credenciales **no va al repositorio**. En el repo queda `usuarios.ejemplo.json` sin credenciales, como hasta ahora; el real vive en la carpeta de datos y entra en el respaldo (H3-8).
+- ADR-017 se mantiene en todo lo demás: identidad por correo institucional, visible en pantalla, con registro de máquina de origen.
+
+---
+
+## ADR-028 — Consolidación de pedidos por área, como paso previo al requerimiento
+
+**Estado:** Propuesta · 2026-08-21 · **Fuera del alcance de la v1. Candidata a V2.**
+
+**Contexto.** Hoy el circuito empieza cuando un usuario designado carga un requerimiento —por ejemplo, de ferretería—. Pero antes de eso, informalmente, ese usuario junta las necesidades de las áreas de la unidad: trabajos, repuestos, reemplazos, reparaciones. **Ese paso existe en la realidad y no existe en ningún sistema.** Cuando funciona, funciona por relaciones personales; cuando no, **un área queda afuera y se entera cuando ya no puede pedir**.
+
+Es, literalmente, el eslabón anterior al *garbage in* que el FSD §1 identifica como el problema a resolver: si el insumo del requerimiento es un conjunto de mensajes sueltos y memoria, el requerimiento nace incompleto por diseño.
+
+**Decisión propuesta.** Un módulo de **pedidos de área** anterior al paso 1: cada área carga sus necesidades contra un período abierto; el usuario consolidador las ve todas, las agrupa, las traduce a renglones de catálogo y arma el requerimiento. El pedido de cada área queda trazado hasta el renglón que lo satisfizo — o hasta el motivo por el que no se incluyó, que es el dato que hoy nadie tiene.
+
+**Por qué no ahora.** No por el costo de construirlo, sino por tres cosas que cambia:
+
+1. **Multiplica los usuarios.** Se pasa de menos de diez operadores identificados a, potencialmente, todas las áreas de la unidad. ADR-008 (escala asumida) y ADR-027 (claves artesanales, sin autoservicio de reposición) están dimensionadas para el primer número, no para el segundo. **La decisión de credenciales que se toma hoy funciona para la v1 y hay que volver a mirarla el día que esto entre.**
+2. **Reintroduce plazos por la puerta de atrás.** Un período de recepción con fecha de cierre es un SLA, y el Jefe de Contrataciones descartó explícitamente meter ese ruido en la v1: *"este sistema tiene que ser RÁPIDO, ÁGIL Y PRÁCTICO"* (ADR-013). El módulo no tiene sentido sin fechas.
+3. **Puede excluir más de lo que incluye.** Hoy un área sin acceso al sistema igual pide por teléfono. Si el pedido formal pasa a ser "cargarlo en la aplicación", **un área sin acceso queda más afuera que antes**, y con una excusa formal. Es el riesgo central y no es técnico: el módulo sólo mejora las cosas si primero todas las áreas están en el padrón y saben usarlo.
+
+**Lo que sí se hace ahora, porque es barato y produce la evidencia.**
+
+- **Campo `areaSolicitante` por renglón**, opcional, texto libre: quién pidió esto. Una columna. El consolidador puede registrar el origen de cada renglón desde la v1.
+- **El indicador correspondiente** (ADR-024): renglones por área solicitante, y renglones sin origen declarado. **Al cabo del piloto eso responde con datos la pregunta que hoy se responde de memoria: qué áreas aparecen, cuáles nunca aparecen, y cuánto del requerimiento no tiene origen registrado.** Si el problema es tan grande como parece, los números lo van a mostrar, y V2 se va a diseñar sobre evidencia en vez de sobre una intuición — aunque la intuición sea correcta.
+
+**Fundamento.** La idea es buena y ataca una falla real que el resto del sistema no ve. La objeción no es al qué sino al cuándo: **es exactamente el tipo de alcance que hunde un piloto**, porque triplica los usuarios y agrega un problema organizativo —quién tiene acceso, quién avisa, con cuánta anticipación— justo cuando lo que hay que demostrar es que el circuito principal funciona.
+
+**Consecuencias.** Ninguna en la v1, salvo una columna opcional y un indicador. Queda anotado que **ADR-008 y ADR-027 se revisan cuando esta ADR pase a Aceptada**, y que la condición previa no es de software: es que todas las áreas estén en el padrón.
 
 ---
 
