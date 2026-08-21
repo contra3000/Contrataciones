@@ -29,6 +29,10 @@ Plantilla al final del archivo.
 | 020 | Índice del catálogo en formato compacto | Aceptada | 2026-08-14 |
 | 021 | El servidor autoriza las transiciones; el cliente sólo declara la intención | Aceptada | 2026-08-18 |
 | 022 | Modelo de datos del requerimiento real (Solicitud de Gastos) | Aceptada | 2026-08-19 |
+| 023 | Frontera: la aplicación no autoriza nada; el servidor sólo controla el acceso | Aceptada | 2026-08-20 |
+| 024 | Registro de eventos amplio; los indicadores se eligen después | Aceptada | 2026-08-20 |
+| 025 | Un expediente perfeccionado puede usarse como plantilla de uno nuevo | Aceptada | 2026-08-20 |
+| 026 | Identidad y marcado de autoría de la aplicación | Propuesta | 2026-08-20 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -459,7 +463,9 @@ auditoria: [ { timestamp, email, rol, equipo, accion, de, a, motivo, observacion
 
 ## ADR-021 — El servidor autoriza las transiciones; el cliente sólo declara la intención
 
-**Estado:** Aceptada · 2026-08-18 · *Implementada y verificada en el ciclo 07*
+**Estado:** Aceptada · 2026-08-18 · *Implementada y verificada en el ciclo 07* · **Acotada por ADR-023**
+
+> **Nota de vocabulario (2026-08-20).** El título de esta ADR induce a error. Lo que el servidor hace es **validar** peticiones y **registrar** hechos: control de acceso técnico. **Esta aplicación no autoriza gasto, no imputa y no adjudica**; esos actos se perfeccionan con la firma de la autoridad competente, fuera del sistema. Léase junto con **ADR-023**, que fija la frontera. La decisión técnica de abajo no cambia en una sola línea.
 
 **Contexto.** La auditoría del ciclo 06 detectó, y el revisor reprodujo en vivo, que el servidor no validaba ni el rol ni la transición. `apiGuardar` comprobaba que el cuerpo estuviera bien formado y que la versión coincidiera, y después escribía el expediente recibido tal cual. `estados.js` ni siquiera se cargaba del lado del servidor: el motor corría en el navegador, el cliente mandaba el expediente con el estado ya cambiado, y el servidor lo guardaba.
 
@@ -575,6 +581,171 @@ El documento del requerimiento imprime ese bloque vacío en la Fase 1 y completo
 Hoy se arma como archivo separado. Pasa a ser un campo de texto libre del requerimiento, que se imprime cuando la modalidad OCA está activada. Un entregable menos, sin perder información.
 
 **Consecuencias.** El usuario pasa de presentar cinco archivos o más a presentar **dos documentos generados más los presupuestos adjuntos**. El promedio de referencia y el valor preventivo dejan de calcularse a mano.
+
+---
+
+## ADR-023 — Frontera: la aplicación no autoriza nada; el servidor sólo controla el acceso
+
+**Estado:** Aceptada · 2026-08-20 · *Aclara y acota a ADR-021*
+
+**Contexto.** El título de ADR-021 dice *"El servidor autoriza las transiciones"*, y la orden de auditoría del ciclo 09 §3 dice *"la imputación presupuestaria: es autorización, no formulario"*. Leído desde afuera —y con razón— eso suena a que la aplicación **autoriza gasto**, o a que hay alguien operando del lado del servidor. No es así, y la ambigüedad es del vocabulario, no del código: en castellano administrativo *autorizar* significa **conceder una facultad mediante un acto administrativo firmado**, y en jerga informática *authorization* significa **decidir si una petición se ejecuta**. Son dos cosas distintas y en este proyecto sólo existe la segunda.
+
+**Decisión.** Se fija la frontera y se adopta un vocabulario que no la borre.
+
+### 1. Qué es esta aplicación
+
+Un **generador documental, un registro de tiempos y un seguimiento de procesos**. Produce documentos listos para imprimir y firmar, registra cuándo pasó cada cosa y quién la declaró, y exporta datos. Nada más.
+
+### 2. Qué NO hace, y no va a hacer
+
+- **No autoriza gasto.** La autorización del gasto es un acto administrativo que se materializa en una Disposición firmada, fuera de esta aplicación, por la autoridad competente. La app imprime el proyecto de esa Disposición; no la emite.
+- **No imputa presupuesto.** Contaduría imputa en el sistema presupuestario oficial. Lo que la app guarda son los **dieciséis campos transcriptos** para que salgan impresos en el documento. Si la app dijera lo contrario, sería falso.
+- **No adjudica, no perfecciona, no compromete.** Registra que eso ocurrió y cuándo.
+- **No custodia documentos firmados** (ADR-016).
+- **Nadie opera del lado del servidor.** El proceso de Node no tiene interfaz, ni consola de administración, ni usuario que entre a él. Recibe peticiones HTTP de los navegadores de la intranet, valida, escribe archivos y responde. Es un archivador con reglas, no un puesto de trabajo.
+
+### 3. Qué sí hace el servidor, y por qué no es "autorizar"
+
+El servidor **decide si acepta o rechaza una petición**. Eso es control de acceso, y es lo que ADR-021 implementa. Existe por una razón que no es de seguridad:
+
+> **Sin control de acceso, el registro de tiempos y el seguimiento serían mentira.**
+
+Si cualquier navegador puede escribir cualquier estado, entonces la fecha en que un expediente "pasó a Adjudicación" no significa nada, la traza de auditoría no acredita nada y los KPIs miden ruido. El control de acceso no está para impedir un ataque —con menos de diez usuarios en una intranet cerrada, el ataque es improbable (ADR-021, *Sobre el modelo de amenaza*)—: está para que **el dato registrado sea el dato real**. Es un requisito de la función de registro, no una función de autoridad.
+
+Lo mismo vale para la imputación: la restricción "sólo `contaduria`, sólo en `AFECTACION`" no le concede a Contaduría una facultad que no tenga. Refleja en el archivador una facultad que Contaduría ya tiene por la norma, para que el archivador no atribuya a otro un dato que no cargó.
+
+### 4. El vocabulario, corregido
+
+Para que la confusión no vuelva:
+
+| Se decía | Se dice | Por qué |
+|---|---|---|
+| "el servidor autoriza las transiciones" | **"el servidor valida las transiciones"** / "el control de acceso vive en el servidor" | *Autorizar* es un acto administrativo; el servidor valida y registra |
+| "autorización server-side de la imputación" | **"la imputación sólo la registra el rol Contaduría, y sólo en la fase de Afectación"** | Describe lo que hace: registrar, no habilitar |
+| "matriz de autorización 18 × 7" | **"matriz de permisos de registro"** (se admite el nombre viejo en los tests, por costo de cambio) | Es una matriz de quién puede registrar qué |
+| "aprobar el expediente" | **"registrar la aprobación"** | La aprobación la hace una persona firmando |
+
+Los nombres internos de código (`autorizacion.js`, `verificar`) **no se renombran**: el ripple no se justifica y en jerga técnica el término es correcto. Lo que se corrige es **todo texto que ve un operador o un auditor externo**: pantallas, mensajes de error, documentos generados, informes y órdenes.
+
+### 5. La leyenda obligatoria
+
+En la pantalla del expediente, en el pie de cada entregable generado y en el `resumen.md` del export, junto a la leyenda de ADR-016:
+
+> *Este sistema genera documentos, registra tiempos y sigue el estado del trámite. **No autoriza, no imputa y no adjudica**: esos actos se perfeccionan con la firma de la autoridad competente, fuera de este sistema.*
+
+Sin esto, tanto una auditoría externa como un LLM que lea el export van a interpretar que el expediente se resolvió acá adentro.
+
+**Fundamento.** El riesgo no es técnico: es que alguien —un auditor, un superior, un juez— lea "la aplicación autorizó" y le atribuya al sistema una facultad que no tiene, o que un operador crea que porque el sistema lo dejó avanzar, el acto está autorizado. Un sistema que se describe con más autoridad de la que tiene es un pasivo.
+
+**Alternativas consideradas.** *(a)* No hacer nada, porque el código ya es correcto: descartada, porque el problema está en el texto y el texto es lo que se lee. *(b)* Renombrar todo, incluido el código: descartada por costo y porque en el dominio técnico el término es el correcto.
+
+**Consecuencias.** Ninguna línea de lógica cambia. Cambian textos de interfaz, la leyenda del pie de los entregables, y el vocabulario de las órdenes y los informes. Queda pendiente de validar en el UAT (H9-8) que la leyenda se entienda sin explicación.
+
+---
+
+## ADR-024 — Registro de eventos amplio; los indicadores se eligen después
+
+**Estado:** Aceptada · 2026-08-20
+
+**Contexto.** H8 define un puñado de indicadores: tiempo por fase, tiempo total, tasa de devolución por motivo y por sector, renglones con aclaración. Elegirlos ahora, antes de tener un solo mes de operación real, es adivinar. Y el dato que no se registra **no se puede recuperar después**: el 2026 se mide una sola vez.
+
+**Decisión.** Se separa la **captura** del **análisis**.
+
+### 1. Se registra todo evento, no sólo los que alimentan un indicador
+
+Además de la cadena de auditoría de las transiciones (ADR-006), que se conserva tal cual, el servidor escribe un **registro de eventos** append-only por expediente con, como mínimo:
+
+- toda transición, con estado origen, destino, rol, correo, máquina y marca de tiempo;
+- toda **devolución**, con motivo y observación;
+- toda **edición** de campos (qué grupo de campos, no el contenido), con versión anterior y nueva;
+- todo **conflicto de concurrencia** (409) y todo **rechazo** (403), con la razón;
+- toda **generación de entregable** y toda exportación;
+- **altas y bajas de renglones**, y cada uso del campo `aclaracion` con su longitud;
+- **búsquedas de catálogo sin resultado** (es el indicador más honesto de que el catálogo no alcanza);
+- **tiempo de permanencia con la pantalla abierta** por paso, en granularidad gruesa;
+- la `catalogoVersion` y la versión de la aplicación vigentes en el momento del evento.
+
+Formato: una línea JSON por evento (`eventos.jsonl`), append-only, con la misma escritura atómica del resto. Es texto plano, se lee con cualquier cosa, y no obliga a decidir hoy qué columnas van a importar mañana.
+
+### 2. Los indicadores son una vista, no un dato
+
+Ningún indicador se persiste calculado. Todos se derivan del registro de eventos en el momento de mostrarlos. Un indicador nuevo sobre datos viejos es entonces posible; un indicador nuevo sobre datos que no se capturaron, no.
+
+### 3. Cada rol arma su propio tablero
+
+El tablero no es una pantalla fija. Es un **catálogo de fichas de indicador** —cada una con su definición declarativa (qué evento, qué agregación, qué corte)— y una preferencia por operador que dice cuáles ve y en qué orden. La preferencia se guarda en el padrón, junto al operador, no en el navegador: una PC compartida no debe imponerle el tablero de un rol al siguiente que se siente.
+
+Se entrega un **tablero por defecto por rol** para que nadie tenga que configurar nada el primer día, y se permite agregar, quitar y reordenar fichas.
+
+### 4. Un tablero de exploración
+
+Además de las fichas, una vista cruda: filtrar el registro de eventos y exportarlo a CSV/JSON. Es lo que permite que dentro de seis meses aparezca un indicador que hoy no se nos ocurre — y también lo que alimenta el análisis por LLM, que es un objetivo declarado del proyecto (FSD).
+
+**Fundamento.** El costo de escribir una línea más en un `.jsonl` es despreciable —menos de cien expedientes por año (ADR-008)—. El costo de no haberla escrito es que el dato no existe. La asimetría decide.
+
+**Alternativas consideradas.** *(a)* Registrar sólo lo que alimenta los KPIs definidos: descartada, es la que garantiza el arrepentimiento. *(b)* Base de datos: descartada, contradice ADR-003 (cero dependencias) sin necesidad a esta escala.
+
+**Consecuencias.** Crece el volumen en disco (estimado: unos pocos MB por año, despreciable). Aparece un dato con contenido operativo sobre el desempeño de personas identificadas: **el registro de eventos se trata como dato sensible**, entra en la advertencia previa a toda descarga (H7-6) y su uso queda sujeto al criterio del Jefe de Contrataciones. Conviene decirlo antes de que alguien lo descubra.
+
+---
+
+## ADR-025 — Un expediente perfeccionado puede usarse como plantilla de uno nuevo
+
+**Estado:** Aceptada · 2026-08-20
+
+**Contexto.** Buena parte de lo que se contrata se repite todos los años con los mismos renglones y casi el mismo texto. Hoy eso se resuelve copiando y pegando un Excel del año pasado. La pregunta era si reproducirlo dentro del sistema es barato.
+
+**Decisión.** Sí, y es de las cosas más baratas del roadmap, **porque el dato ya está guardado**. El expediente perfeccionado conserva su `datos.json` íntegro en el Archivo Histórico (H8-3). "Usar como base" es leer ese JSON, quedarse con los campos reutilizables y crear un expediente nuevo.
+
+Reglas:
+
+1. **Se copian** los renglones (código, descripción, unidad, cantidad, aclaración, máximos y mínimos de OCA), el objeto, la justificación de la necesidad, las especificaciones técnicas, el rubro comercial, la modalidad y el procedimiento sugeridos.
+2. **No se copia nada** que sea un hecho del expediente viejo: número, fechas, estado, auditoría, registro de eventos, entregables generados, **presupuestos adjuntos**, **valores de referencia**, imputación presupuestaria, ni ninguna referencia a firmas.
+3. **Los precios nunca se heredan.** Un precio del año pasado que reaparece como valor de referencia sin que nadie lo note es exactamente el defecto silencioso que ADR-022 §2 existe para evitar. El expediente nuevo nace sin presupuestos.
+4. **Los códigos de catálogo se revalidan** contra la `catalogoVersion` vigente. Un ítem que ya no existe se marca y se le pide al usuario que lo reemplace; no se copia en silencio.
+5. **El expediente nuevo declara su origen**: `basadoEn: "<número del expediente origen>"`, visible en la pantalla y registrado en el evento de creación. Es trazabilidad, y además es un indicador (ADR-024): cuánto de lo que se contrata es repetición.
+6. **El expediente origen no se toca.** Es de sólo lectura por estar archivado, y así queda.
+
+**Fundamento.** El costo es una función de copia con lista blanca de campos, un botón en la vista del Archivo Histórico y la revalidación de códigos, que ya existe. El beneficio es la carga inicial de un expediente recurrente, que es donde el usuario abandona hoy.
+
+**Alternativas consideradas.** *(a)* Plantillas propias, mantenidas aparte: descartada, agrega un artefacto que hay que mantener y desactualizar. *(b)* Copiar el expediente entero y limpiarlo después: descartada, una lista negra olvida un campo y ese campo es el que hace daño. **Lista blanca, siempre.**
+
+**Consecuencias.** Un camino nuevo para que entren datos viejos al sistema; se mitiga con las reglas 3 y 4. Requiere que el Archivo Histórico conserve el `datos.json` completo, que es lo que ya hace.
+
+---
+
+## ADR-026 — Identidad y marcado de autoría de la aplicación
+
+**Estado:** Propuesta · 2026-08-20 · *se resuelve al final del roadmap (H17)*
+
+**Contexto.** La aplicación va a circular: es probable que se copie a otras unidades, y deseable que se mejore. La pregunta es cómo reconocerla más adelante, cuando vuelva copiada o evolucionada.
+
+**Decisión propuesta.** Distinguir tres cosas que suelen confundirse bajo la palabra "firmar":
+
+### 1. Firma criptográfica del ejecutable (Authenticode, GPG de binario)
+
+**No aplica y no sirve para este objetivo.** Certifica que un binario salió de quien tiene el certificado y que no fue alterado en tránsito. Es para que el sistema operativo no muestre una advertencia. Requiere un certificado pago, y sobre todo: **el que copia el código simplemente no lo firma, o lo firma con lo suyo**. No sobrevive a la copia. Aquí además no hay binario: son archivos de texto servidos por HTTP.
+
+### 2. Prueba de paternidad (lo que sí protege legalmente)
+
+- **Commits y etiquetas firmados con GPG** (`git commit -S`, `git tag -s v1.0.0`) con la clave asociada al correo institucional. Acredita quién escribió qué y cuándo, con fecha cierta y verificable por terceros.
+- **Cabecera de autoría y licencia** en cada archivo fuente, `LICENCIA` y `AUTORES.md` en la raíz. Es lo primero que borra quien copia — y borrarlo es prueba de dolo, no de propiedad.
+- **Hash publicado de la versión 1**: el SHA-256 del paquete, comunicado por correo institucional con fecha. Prueba de anterioridad, cuesta cinco minutos.
+
+### 3. Huella identificatoria (lo que permite reconocerla en la calle)
+
+Lo que sobrevive a la copia y a la evolución no es una firma: son **rasgos idiosincráticos que nadie reproduciría por casualidad** y que un copista apurado no borra porque no los ve. Los cartógrafos ponían calles inexistentes en sus mapas para detectar plagio; el equivalente aquí:
+
+- **Sello de compilación visible en el producto, no en el código.** Un módulo `version.js` con `{nombre, version, commit, fecha, autor, unidad}` y una vista "Acerca de" — pero sobre todo **un pie impreso en cada entregable generado**: *"Generado por SGC v1.0 · build a3f9c1 · División Contrataciones Moreno"*. Es la marca más eficaz de todas, porque viaja en el PDF que circula por toda la Fuerza, no en un repositorio que nadie mira.
+- **Huella estructural en los datos.** El formato exacto del registro de auditoría y el algoritmo de encadenado (ADR-006) ya son idiosincráticos: **cualquier `datos.json` producido por esta aplicación o por un descendiente suyo lo delata**, aunque le hayan cambiado el nombre, los colores y la pantalla entera. Se documenta el rasgo por escrito, y no se toca.
+- **Marcas silenciosas deliberadas**: un puñado de identificadores, constantes y textos de comentario arbitrarios, elegidos de antemano, registrados en un documento **fuera del repositorio**. Inocuos, sin efecto en el funcionamiento, y estadísticamente imposibles por coincidencia.
+- **El orden del catálogo declarado.** Los fragmentos del catálogo y la `catalogoVersion` (hash FNV-1a del contenido normalizado, ADR-004) son reproducibles sólo con este build exacto. Dos aplicaciones que emitan el mismo `catalogoVersion` comparten linaje.
+
+**Lo que no se hace:** ninguna marca que altere datos del organismo, ningún ítem ficticio en el catálogo, ninguna telemetría, ningún mecanismo que degrade el funcionamiento de una copia. La marca identifica; no sabotea.
+
+**Fundamento.** El objetivo declarado no es impedir la copia —es deseable que la aplicación se difunda— sino **poder reconocerla**. Eso se logra con rasgos, no con criptografía.
+
+**Consecuencias.** El documento de marcas silenciosas queda fuera del repositorio y en poder del Jefe de Contrataciones: una marca publicada deja de ser marca. Pendiente de decidir en H17: la licencia exacta y si el pie de los entregables lleva también el número de versión del catálogo.
 
 ---
 

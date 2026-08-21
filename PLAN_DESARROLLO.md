@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-20** · cierre del ciclo 8 · incorporados H11, H12 y H13 desde los entregables reales del circuito
+Última actualización: **2026-08-20** · cierre del ciclo 9 · incorporados H14, H15, H16 y H17 por indicación del Jefe de Contrataciones
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -22,9 +22,13 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H7 | Entregables y exportación AI-ready | ✅ **Terminado** — ciclos 7 y 8 | H5 |
 | H8 | KPIs y Archivo Histórico | 🟡 **40%** — archivo histórico hecho (ciclo 8); faltan los KPIs | H6 |
 | H9 | **Testing integral en local (UAT)** | 🟡 **40%** — auditoría independiente activa y prueba manual hecha; falta UAT con operadores | H6, H7 |
-| H11 | Requerimiento completo y presupuestos | ⬜ Pendiente — **nuevo, 2026-08-19** | H7 |
-| H12 | EETT con regla de desborde | ⬜ Pendiente — **nuevo** | H11 |
-| H13 | ANEXO 1 y salida hacia el pliego | ⬜ Pendiente — **nuevo** | H11, H12 |
+| H11 | Requerimiento completo y presupuestos | 🟡 **70%** — ciclo 9: modelo, cálculo, servidor y plantilla listos; **falta la pantalla de carga** | H7 |
+| H12 | EETT con regla de desborde | ⬜ Pendiente — ciclo 10 | H11 |
+| H13 | ANEXO 1 y salida hacia el pliego | ⬜ Pendiente — ciclo 11 | H11, H12 |
+| H14 | Expediente adjudicado como base de uno nuevo | ⬜ Pendiente — **nuevo, 2026-08-20** | H8 |
+| H15 | Observabilidad y tableros de indicadores por rol | ⬜ Pendiente — **nuevo** · **antes del UAT** | H8 |
+| H16 | Sistema de estilos aplicado a toda la app | ⬜ Pendiente — **nuevo** · final del roadmap | H13 |
+| H17 | Identidad de la app y documentación IA-friendly | ⬜ Pendiente — **nuevo** · lo último | H16 |
 | H10 | Despliegue a intranet y piloto | ⬜ Pendiente | H0, H9 |
 
 > ### ⚠️ Sigue pendiente
@@ -308,11 +312,16 @@ Dos hallazgos que abaratan todo esto:
 - [ ] H11-8 · Descomposición del código en IPP / Clase / Ítem al imprimir
 - [ ] H11-9 · Plantilla del requerimiento, que reemplaza a la Especificación Técnica genérica del ciclo 7
 
-**Criterio de aceptación:** un requerimiento con tres renglones, dos presupuestos y bases mixtas produce el preventivo correcto, verificable a mano.
+- [ ] H11-11 · **Pantalla de carga del requerimiento** (pendiente del ciclo 9, declarado por el desarrollador): formulario de los 16 campos del encabezado, subida de presupuestos y edición de los valores de referencia por renglón. Hoy sólo se pueden cargar por API — **es la pieza que falta para que el usuario final use H11**
+- [ ] H11-12 · El presupuesto se elige de una lista, no se escribe el identificador a mano (cierra R-09-1: hoy un `presupuestoId` inexistente pasa la validación de forma)
+
+**Estado al 2026-08-20 (ciclo 9): 70%.** H11-1 a H11-10 terminados y auditados; el cálculo del preventivo verificado con cinco casos manuales por el auditor y otro por el revisor. Faltan H11-11 y H11-12, que van en el ciclo 10.
+
+**Criterio de aceptación:** un requerimiento con tres renglones, dos presupuestos y bases mixtas produce el preventivo correcto, verificable a mano, **cargado desde la pantalla**.
 
 ### H12 — EETT con regla de desborde
 
-- [ ] H12-1 · Límite de aclaración a **256 caracteres** (enmienda de ADR-014); actualizar validador, tests y contador visible
+- [ ] H12-1 · Límite de aclaración a **256 caracteres** (enmienda de ADR-014); actualizar validador, tests y contador visible. **Hallazgo H1-09 del ciclo 9**: hoy hay `MAX_ACLARACION = 200` en cuatro archivos (`core/validacion.js`, `catalogo/renglones.js`, `views/fasttrack.js`, `views/pasos.js`) y el test lo verifica
 - [ ] H12-2 · Al pasarse: el requerimiento imprime `"según anexo [alfa|bravo|charly]"` y el renglón entra al anexo con el texto completo
 - [ ] H12-3 · Bloque de condiciones particulares comunes a todos los renglones, opcional
 - [ ] H12-4 · Nomenclatura automática de anexos
@@ -338,6 +347,85 @@ Dos hallazgos que abaratan todo esto:
 - La **normativa en Markdown** con las causales de Orden de Compra Abierta no aparece en el proyecto. Es necesaria para H11-7.
 
 
+---
+
+## H14 · H15 · H16 · H17 — Reuso, observabilidad, estilo e identidad
+
+**Agregados el 2026-08-20**, por indicación del Jefe de Contrataciones al cierre del ciclo 9.
+
+El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el sistema captura, y el dato que no se captura durante el UAT no se recupera. **H16 y H17 van al final**, después de que todo funcione: son pulido e identidad, no función.
+
+### H14 — Un expediente adjudicado como base de uno nuevo
+
+*(ADR-025. Es lo más barato del roadmap: el dato ya está guardado.)*
+
+- [ ] H14-1 · Botón **"Usar como base"** en la vista del Archivo Histórico, sobre expedientes perfeccionados
+- [ ] H14-2 · Copia por **lista blanca** de campos: renglones (código, descripción, unidad, cantidad, aclaración, máximos y mínimos), objeto, justificación de la necesidad, especificaciones técnicas, rubro comercial, modalidad y procedimiento sugeridos
+- [ ] H14-3 · **Nunca se copian**: número, fechas, estado, auditoría, registro de eventos, entregables, **presupuestos adjuntos**, **valores de referencia**, imputación, ni referencias a firmas
+- [ ] H14-4 · **Revalidación de códigos** contra la `catalogoVersion` vigente: un ítem que ya no existe se marca y se pide reemplazo, no se copia en silencio
+- [ ] H14-5 · El expediente nuevo registra `basadoEn` y lo muestra en pantalla
+- [ ] H14-6 · Pantalla de revisión antes de crear: el usuario ve qué se copió y qué no, y puede desmarcar renglones
+
+**Criterio de aceptación:** un expediente del año anterior con cinco renglones produce uno nuevo en menos de un minuto, **sin un solo precio heredado** y con los códigos dados de baja marcados.
+
+### H15 — Observabilidad y tableros de indicadores por rol
+
+*(ADR-024. Absorbe y amplía a H8-2 y H8-6. Tiene que estar **antes** del UAT.)*
+
+- [ ] H15-1 · **Registro de eventos** `eventos.jsonl` append-only por expediente, escrito por el servidor con la misma escritura atómica del resto
+- [ ] H15-2 · Instrumentar los eventos de ADR-024 §1: transiciones, devoluciones con motivo, ediciones por grupo de campos, conflictos 409, rechazos 403 con razón, generación de entregables, exportaciones, altas y bajas de renglones, uso y longitud de `aclaracion`, **búsquedas de catálogo sin resultado**, permanencia por paso, `catalogoVersion` y versión de la app vigentes
+- [ ] H15-3 · **Ningún indicador se persiste calculado**: todos se derivan del registro al mostrarlos
+- [ ] H15-4 · **Catálogo de fichas de indicador**, declarativas: qué evento, qué agregación, qué corte. Agregar una ficha no debe requerir tocar la vista
+- [ ] H15-5 · **Tablero configurable por operador**: qué fichas ve y en qué orden. La preferencia se guarda **en el padrón, junto al operador**, no en el navegador — una PC compartida no debe imponerle el tablero de un rol al siguiente
+- [ ] H15-6 · **Tablero por defecto por rol**, para que nadie tenga que configurar nada el primer día
+- [ ] H15-7 · **Vista de exploración**: filtrar el registro de eventos y exportarlo a CSV y JSON. Es lo que permite que dentro de seis meses aparezca un indicador que hoy no se nos ocurre, y lo que alimenta el análisis por LLM
+- [ ] H15-8 · Indicadores de arranque: tiempo por fase, tiempo total, tasa de devolución por motivo y por sector, renglones con aclaración por rubro (H8-6), **búsquedas sin resultado**, **dispersión entre presupuestos de un mismo renglón** (R-09-3), porcentaje de expedientes creados con `basadoEn`
+- [ ] H15-9 · El registro de eventos entra en la **advertencia de datos sensibles** previa a toda descarga (H7-6): tiene contenido operativo sobre personas identificadas
+- [ ] H15-10 · Aviso suave en la carga: cuando los valores de referencia de un renglón difieren más de un umbral configurable, se marca sin bloquear
+
+**Criterio de aceptación:** un indicador que nadie pidió durante el desarrollo se puede construir sobre los datos ya capturados, sin volver a instrumentar nada.
+
+### H16 — Sistema de estilos aplicado a toda la aplicación y a los entregables
+
+*(Fin del roadmap. Toma el paquete que ya existe en `EjemplosProcesoActual/DocUOC/Generador de Pliegos/estilos/guia_estilos/paquete/`: `tokens.json`, `styles.css`, `design-system.md`, `templates/`.)*
+
+- [ ] H16-1 · Traducir `tokens.json` a variables CSS **compatibles con Chrome 109** (ADR-011: sin anidamiento nativo, sin `text-wrap: balance`)
+- [ ] H16-2 · Hoja de estilos única de la aplicación derivada de los tokens; ningún color ni tipografía escrita a mano fuera de ese archivo
+- [ ] H16-3 · Aplicar a **la aplicación entera**: wizard, kanban, expediente, catálogo, tableros, archivo
+- [ ] H16-4 · Aplicar a **los entregables impresos**: requerimiento, EETT, ANEXO 1, disposiciones, con su membrete y su pie
+- [ ] H16-5 · El guardián de compatibilidad se extiende al CSS nuevo
+- [ ] H16-6 · Verificación de impresión real en A4 de cada plantilla, en una PC del parque
+- [ ] H16-7 · Revisión de accesibilidad: contraste y navegación por teclado sobre la paleta final
+
+**Criterio de aceptación:** un entregable impreso desde la app y uno producido por el generador de pliegos se ven de la misma familia, sin retoques.
+
+### H17 — Identidad de la aplicación y documentación para que la mejore una IA
+
+*(ADR-026. Lo último del roadmap.)*
+
+**Identidad y marcado**
+
+- [ ] H17-1 · `LICENCIA` y `AUTORES.md` en la raíz; cabecera de autoría en cada archivo fuente
+- [ ] H17-2 · **Commits y etiqueta de versión firmados con GPG** con la clave del correo institucional; `git tag -s v1.0.0`
+- [ ] H17-3 · **Hash SHA-256 del paquete v1** publicado por correo institucional, con fecha. Prueba de anterioridad
+- [ ] H17-4 · `app/js/core/version.js` con `{nombre, version, commit, fecha, autor, unidad}` y vista **"Acerca de"**
+- [ ] H17-5 · **Pie impreso en cada entregable generado**: *"Generado por SGC v1.0 · build a3f9c1 · División Contrataciones Moreno"*. Es la marca que más viaja, porque va en el PDF que circula
+- [ ] H17-6 · Documentar por escrito la **huella estructural** del registro de auditoría (ADR-006): identifica a cualquier descendiente aunque le cambien la interfaz entera
+- [ ] H17-7 · Elegir y registrar las **marcas silenciosas**, en un documento **fuera del repositorio**, en poder del Jefe de Contrataciones
+
+**Documentación IA-friendly**
+
+- [ ] H17-8 · `ARQUITECTURA.md` en la raíz: mapa de carpetas, qué hace cada módulo, por dónde entra una petición y por dónde sale un documento. Es lo primero que lee cualquiera, humano o no
+- [ ] H17-9 · **Cabecera de contrato en cada módulo**: propósito, qué recibe, qué devuelve, **qué invariantes no puede romper**, y qué ADR lo gobierna
+- [ ] H17-10 · **Glosario dominio ↔ código**: "renglón", "preventivo", "OCA", "imputación", "perfeccionada" con su nombre exacto en el código. Sin esto, una IA traduce mal el vocabulario administrativo
+- [ ] H17-11 · `CONTRIBUIR.md` con las reglas duras que no se negocian: cero dependencias, Chrome 109, 400 líneas por archivo, español en el dominio, el guardián tiene que pasar
+- [ ] H17-12 · Los **tests como ejemplos ejecutables**: cada regla de negocio con un test que la nombre en castellano. Es la documentación que no se desactualiza
+- [ ] H17-13 · Índice de ADRs por tema al frente de la bitácora, para que se pueda encontrar la decisión sin leer las veintitantas
+- [ ] H17-14 · **Prueba de la documentación**: darle el repositorio a un LLM sin contexto previo y pedirle un cambio acotado. Si no puede, la documentación no está lista. Es el único criterio de aceptación honesto
+
+**Criterio de aceptación:** un desarrollador —o una IA— que nunca vio el proyecto implementa un cambio pequeño y correcto leyendo sólo el repositorio.
+
+
 ## Riesgos abiertos
 
 | # | Riesgo | Impacto | Mitigación |
@@ -360,3 +448,8 @@ Dos hallazgos que abaratan todo esto:
 | R5 | El catálogo se desactualiza y nadie lo regenera | Medio | H0-8 define responsable y frecuencia; el build es un solo comando |
 | R6 | El proyecto queda sin mantenedor | Alto | Cero dependencias, código comentado en español, H10-9 |
 | R7 | Adopción: los operadores siguen usando el circuito en papel | Alto | H5 primero (valor visible temprano), piloto en paralelo, capacitación por rol |
+| R18 | **Se lee que la aplicación "autoriza" gasto** y se le atribuye una facultad que no tiene | Alto y reputacional — un auditor, un superior o un LLM que lea el export puede concluir que el acto se perfeccionó acá | **ADR-023**: frontera explícita, vocabulario corregido en todo texto que ve un operador, y leyenda obligatoria en pantalla, en el pie de cada entregable y en el export |
+| R19 | **Se llega al UAT sin instrumentación** y el primer mes de operación real no deja datos | Alto e irreversible — el 2026 se mide una sola vez | **ADR-024** y H15 **antes** de H9. El registro de eventos captura más de lo que los indicadores definidos necesitan |
+| R20 | El registro de eventos se usa para evaluar personas | Medio — dato con contenido operativo sobre operadores identificados | H15-9: entra en la advertencia de datos sensibles; su uso queda sujeto al criterio del Jefe de Contrataciones, y conviene decirlo antes de que alguien lo descubra |
+| R21 | Un precio del año anterior se hereda como valor de referencia sin que nadie lo note | Alto y silencioso — es R16 por la puerta de atrás | ADR-025 regla 3: el expediente creado "como base" nace **sin presupuestos y sin valores de referencia**; copia por lista blanca, nunca por lista negra |
+| R22 | La aplicación se copia y no hay forma de reconocerla | Bajo, pero irreversible si no se prepara antes | ADR-026 y H17: sello de compilación impreso en cada entregable, huella estructural del registro de auditoría, etiqueta firmada con GPG y hash publicado de la v1 |
