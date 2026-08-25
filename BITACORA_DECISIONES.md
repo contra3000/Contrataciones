@@ -35,6 +35,7 @@ Plantilla al final del archivo.
 | 026 | Identidad y marcado de autoría de la aplicación | Propuesta | 2026-08-20 |
 | 027 | Credenciales artesanales: una clave por operador, definida por el Jefe | Aceptada | 2026-08-21 |
 | 028 | Consolidación de pedidos por área, como paso previo al requerimiento | Propuesta (V2) | 2026-08-21 |
+| 029 | Una dependencia que falta falla ruidosamente; nunca apaga una regla en silencio | Aceptada | 2026-08-21 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -845,6 +846,42 @@ Es, literalmente, el eslabón anterior al *garbage in* que el FSD §1 identifica
 **Fundamento.** La idea es buena y ataca una falla real que el resto del sistema no ve. La objeción no es al qué sino al cuándo: **es exactamente el tipo de alcance que hunde un piloto**, porque triplica los usuarios y agrega un problema organizativo —quién tiene acceso, quién avisa, con cuánta anticipación— justo cuando lo que hay que demostrar es que el circuito principal funciona.
 
 **Consecuencias.** Ninguna en la v1, salvo una columna opcional y un indicador. Queda anotado que **ADR-008 y ADR-027 se revisan cuando esta ADR pase a Aceptada**, y que la condición previa no es de software: es que todas las áreas estén en el padrón.
+
+---
+
+## ADR-029 — Una dependencia que falta falla ruidosamente; nunca apaga una regla en silencio
+
+**Estado:** Aceptada · 2026-08-21 · *Nace del hallazgo H-02 del ciclo 10*
+
+**Contexto.** El defecto de severidad alta del ciclo 10 no fue una validación olvidada. Era peor y más difícil de ver: la validación existía, y **una guardia defensiva la desactivaba sin decir nada**.
+
+```js
+// app/js/core/validacion.js
+if (SGC.core.requerimiento) {
+  errores = errores.concat(SGC.core.requerimiento.validarValoresReferencia(renglon));
+  errores = errores.concat(SGC.core.requerimiento.validarCantidades(renglon));
+}
+```
+
+El comentario justificaba el `if` por conveniencia: *"si el módulo no está cargado (tests de configuración), no se agregan errores"*. Y el servidor cargaba el núcleo **sin** `requerimiento.js`. Resultado: siete peticiones que debían rechazarse devolvían `200`, durante dos ciclos, sin un solo error en ningún log y con la suite entera en verde.
+
+La forma del defecto es la que importa: **código escrito para que los tests no rompan, que en producción apaga un control**. Es indetectable por tests —porque los tests son la razón por la que existe— y sólo se encuentra pegándole al servidor desde afuera, que es lo que hizo el auditor.
+
+Tras la corrección, el auditor verificó que **el patrón sobrevive en tres lugares**: `validacion.js:122` y `:133`, y una instancia nueva en `renders/requerimiento.js:115`, donde si falta `anexo-eett.js` el documento imprime el texto completo en vez de la referencia al anexo. Hoy ninguna se dispara, porque los dos puntos de entrada garantizan el orden de carga. Pero **nada avisaría si ese orden se rompiera mañana**.
+
+**Decisión.** En este proyecto, un módulo que necesita a otro **exige** que esté cargado. Si no está, lanza.
+
+1. **Prohibido el `if (SGC.core.X)` que saltea una regla.** Si `X` es necesario para validar, componer o decidir, su ausencia es un error de programa, no un caso a contemplar.
+2. **La forma correcta ya existe en el repositorio**, en `repo.memoria.js`: exigir la dependencia y lanzar con un mensaje que diga qué falta y quién lo pedía. Ese es el patrón; se copia, no se inventa otro.
+3. **El punto de entrada declara sus dependencias.** `server/servidor.js` y `app/index.html` cargan el núcleo en un orden que no puede quedar implícito: se declara en una lista con un comentario que diga por qué ese orden, y **hay un test que arranca el servidor y verifica que todos los módulos del núcleo estén presentes**.
+4. **Si un test necesita el módulo ausente, el test carga el módulo.** La conveniencia del test nunca se paga con un agujero en producción. Un test que no puede cargar una dependencia real está describiendo mal lo que prueba.
+5. **Excepción única y explícita: la degradación deliberada.** Si algún día se decide que una funcionalidad debe degradarse en vez de fallar —por ejemplo, seguir sirviendo la aplicación sin el catálogo—, se escribe **como decisión, con su ADR, su mensaje visible al operador y su registro de evento**. Una degradación que nadie ve no es una degradación: es un defecto con buena presentación.
+
+**Fundamento.** *Una regla que puede desaparecer sin que nadie se entere no es una regla.* A esta escala el costo de fallar ruidosamente es nulo: el sistema arranca o no arranca, y si no arranca se ve en el primer segundo. El costo de fallar en silencio ya lo pagamos: dos ciclos con el servidor sin gobierno sobre el requerimiento, y una auditoría entera para encontrarlo.
+
+**Alternativas consideradas.** *(a)* Dejar las guardias y confiar en el orden de carga: descartada, es exactamente el estado que produjo H-02, y "hoy funciona" no es una propiedad que se pueda verificar en el futuro. *(b)* Registrar una advertencia en vez de lanzar: descartada, en esta aplicación no hay nadie mirando un log — una advertencia que nadie lee es silencio con más pasos.
+
+**Consecuencias.** Hay que corregir las tres instancias vivas y agregar el test de dependencias del punto 3. Un error de orden de carga pasa de ser una regla apagada a ser una aplicación que no levanta, que es lo que corresponde. Queda pendiente de validar que ningún test dependa hoy de la conveniencia que se elimina.
 
 ---
 

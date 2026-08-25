@@ -1,0 +1,66 @@
+# ============================================================
+# DATOS DEL EXPEDIENTE — CDI26-0374 INSUMOS MÉDICOS
+# Caso de ejemplo para validación de TEMPLATE_ANEXO_I.md
+# ============================================================
+
+# --- TIPO Y VERSIÓN DEL DOCUMENTO ---
+# tipo_documento: "proyecto"  → PROYECTO DE PLIEGO DE BASES Y CONDICIONES PARTICULARES
+# tipo_documento: "pliego"    → PLIEGO DE BASES Y CONDICIONES PARTICULARES
+tipo_documento: "proyecto"
+
+# tipo_contrato: "bienes" (default) | "servicios"
+tipo_contrato: "bienes"
+
+# version: opcional. Default "1.0". Usar "1.1", "1.2"... para circulares modificatorias.
+version: "1.0"
+
+# --- CARÁTULA ---
+tipo_procedimiento: "CONTRATACIÓN DIRECTA"
+nro_procedimiento: "40/23-0374-CDI26"
+ejercicio: "2026"
+clase_modalidad: "De etapa Única - Modalidad: Nacional"
+tipo_oc: "Orden de Compra Abierta."
+nro_expediente_gde: "EX-2026-45662628-APN-VBAM#FAA"
+rubros: '"PROD. MÉDICO, FARMACÉUTICOS, LABORATORIO, QUÍMICOS"'
+nombre_proceso: "INSUMOS MÉDICOS"
+objeto: "Adquirir insumos médicos para el Escuadrón Sanidad de la VII Brigada Aérea."
+
+# --- ORGANISMOS REQUIRENTES (1 a 3) ---
+# Cada organismo lleva sus propios datos de contacto,
+# frecuencia de provisión y plazo de entrega.
+organismos_requirentes:
+  - nombre: "VII BRIGADA AÉREA -- Grupo Base 7 -- Escuadrón Abastecimiento"
+    domicilio: "Av. Derqui 4010 (Fray Antonio Marchena) Moreno - Provincia de Buenos Aires"
+    telefono: "4317-6000 int. 27-240 / 27-340"
+    correo: "abastecimientoviiba@faa.mil.ar"
+    horario: "lunes a viernes (hábiles y administrativos) de 09:00 a 13:00 horas, caso contrario coordinar con el Organismo"
+    frecuencia_provision: "TREINTA (30) DÍAS"
+    plazo_entrega: "CINCO (05) DÍAS HÁBILES"
+
+# Ejemplo con dos organismos (descomentar para probar):
+#   - nombre: "VII BRIGADA AÉREA -- Escuadrón Sanidad"
+#     domicilio: "Av. Derqui 4010 (Fray Antonio Marchena) Moreno - Provincia de Buenos Aires"
+#     telefono: "4317-6000 int. 27-310"
+#     correo: "sanidadviiba@faa.mil.ar"
+#     horario: "lunes a viernes (hábiles y administrativos) de 09:00 a 13:00 horas"
+#     frecuencia_provision: "VEINTE (20) DÍAS"
+#     plazo_entrega: "DIEZ (10) DÍAS HÁBILES"
+
+# --- CLÁUSULAS VARIABLES ---
+ofertas_parciales: "Se aceptan PYMES hasta un 20 %."
+ofertas_alternativas: "Se aceptan."
+duracion_contrato: "SEIS (6) MESES"
+
+# --- APÉNDICES OPCIONALES (se numeran automáticamente desde el 2) ---
+# Apéndice 1 (EETT) siempre existe — no se lista aquí.
+# Agregar aquí solo los apéndices opcionales del caso.
+apendice_eett: "EETT_CDI26-0374.pdf"
+
+apendices_opcionales:
+  - nombre: "Declaración Jurada de Habilidad Para Contratar Con La Administración Pública Nacional"
+    clave: "djhab"
+    archivo: "DJHAB.pdf"
+  - nombre: "Declaración Jurada De Elegibilidad"
+    clave: "djeleg"
+    archivo: "DJELEG.pdf"
+

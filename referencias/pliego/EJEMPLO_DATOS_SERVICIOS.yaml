@@ -1,0 +1,77 @@
+# ============================================================
+# DATOS DEL EXPEDIENTE — CDI26-0138 MANTENIMIENTO Y REPARACIÓN DE VEHÍCULOS
+# Caso de ejemplo para TEMPLATE_ANEXO_I_SERVICIOS.md
+# ============================================================
+
+# --- TIPO Y VERSIÓN DEL DOCUMENTO ---
+tipo_documento: "pliego"
+tipo_contrato: "servicios"
+version: "1.0"
+
+# --- CARÁTULA ---
+tipo_procedimiento: "CONTRATACION DIRECTA"
+nro_procedimiento: "40/23-0138-CDI26"
+ejercicio: "2026"
+clase_modalidad: "De Etapa Única — Nacional / Orden de Compra Abierta"
+tipo_oc: "Modalidad: Orden de Compra Abierta"
+nro_expediente_gde: "EX-2026-21758827- -APN-VBAM#FAA"
+rubros: '"SERVICIO PROFESIONAL Y COMERCIAL"'
+nombre_proceso: '"MANTENIMIENTO Y REPARACION DE VEHICULOS"'
+objeto: "EFECTUAR EL MANTENIMIENTO DE LOS VEHICULOS DE LA UNIDAD PARA GARANTIZAR EL NORMAL FUNCIONAMIENTO DE LOS MISMOS."
+
+# --- ORGANISMOS REQUIRENTES ---
+# Para servicios: plazo_entrega por organismo NO es necesario.
+# El plazo de entrega se define en el campo plazo_entrega_servicio (texto libre).
+organismos_requirentes:
+  - nombre: "VII BRIGADA AÉREA — Grupo Base 7 — Escuadrón Abastecimiento"
+    domicilio: "Av. Derqui 4010 (Fray Antonio Marchena) Moreno - Provincia de Buenos Aires"
+    telefono: "4317-6000 int. 27-240 / 27-340"
+    correo: "abastecimientoviiba@faa.mil.ar"
+    horario: "lunes a viernes (hábiles y administrativos) de 09:00 a 13:00 horas, caso contrario coordinar con el Organismo"
+    frecuencia_provision: "CUARENTA Y CINCO (45) DÍAS CORRIDOS"
+
+# --- CLÁUSULAS VARIABLES ---
+ofertas_parciales: "Las Micro, Pequeñas y Medianas Empresas y formas asociativas, comprendidas en el artículo 1° de la Ley N° 25.300, **NO** podrán efectuar cotizaciones por volúmenes parciales, ya que por las características específicas del proceso se requiere que sea suministrado por un único proveedor; resultando operativamente inconveniente la adjudicación por volúmenes parciales a distintos proveedores."
+ofertas_alternativas: "Indicar cuál es la oferta base y cuales las alternativas. En todos los casos deberá existir una oferta base."
+duracion_contrato: "NUEVE (9) MESES"
+
+# --- CAMPOS EXCLUSIVOS DE SERVICIOS ---
+
+# visita_previa: true activa el bloque completo del artículo g) de 7.3.2.
+# false (o ausente) deja el ítem vacío.
+visita_previa: true
+
+# Plazo de entrega como texto libre (puede incluir múltiples plazos por renglón).
+plazo_entrega_servicio: |
+  **PARA LOS RENGLONES N° 1 AL 9:** DOS (2) DÍAS HÁBILES a partir del día siguiente inmediato de la notificación de la Solicitud de Provisión.
+
+  **PARA LOS RENGLONES N° 10 AL 18:** CINCO (5) DÍAS HÁBILES a partir del día siguiente inmediato de la notificación de la Solicitud de Provisión.
+
+  **PARA EL RENGLÓN N° 19:** DIEZ (10) DÍAS HÁBILES a partir del día siguiente inmediato de la notificación de la Solicitud de Provisión.
+
+# Garantía del servicio como texto libre.
+garantia_servicio: |
+  Para observar el comportamiento de las reparaciones ejecutadas, se fija la garantía en:
+
+  **PARA LOS RENGLONES N° 1 AL 18:** SEIS (6) MESES a partir de la fecha de la Recepción Provisional de los mismos.
+
+  **PARA EL RENGLÓN N° 19:** DOCE (12) MESES a partir de la fecha de la Recepción Provisional de los mismos.
+
+  El plazo para realizar nuevamente la reparación de los vehículos que no cumplan con la garantía por materiales defectuosos o con vicio de fabricación será el mismo que el plazo de entrega, contado a partir del día siguiente inmediato de su notificación.
+
+# --- APÉNDICES ---
+# Apéndice 1 (EETT) es siempre el primero.
+# Los apéndices opcionales se numeran automáticamente desde el 2.
+# La clave genera el placeholder {{APENDICE_NUM_CLAVE}} en el texto del pliego.
+apendice_eett: "EETT_CDI26-0138.pdf"
+
+apendices_opcionales:
+  - nombre: "Declaración Jurada de Sistema de Protección Integral de los Discapacitados"
+    clave: "djdisc"
+    archivo: "DJDISC.pdf"
+  - nombre: "Declaración Jurada de Habilidad Para Contratar Con La Administración Pública Nacional"
+    clave: "djhab"
+    archivo: "DJHAB.pdf"
+  - nombre: "Declaración Jurada De Elegibilidad"
+    clave: "djeleg"
+    archivo: "DJELEG.pdf"

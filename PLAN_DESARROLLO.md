@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-21** · ciclo 10 no cerrado (trabajo hecho, sin publicar) · incorporado H18 (credenciales) y la sección de candidatos a V2
+Última actualización: **2026-08-21** · ciclo 10 cerrado en segunda pasada · **H11 y H12 terminados** · incorporada ADR-029
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -22,9 +22,9 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H7 | Entregables y exportación AI-ready | ✅ **Terminado** — ciclos 7 y 8 | H5 |
 | H8 | KPIs y Archivo Histórico | 🟡 **40%** — archivo histórico hecho (ciclo 8); faltan los KPIs | H6 |
 | H9 | **Testing integral en local (UAT)** | 🟡 **40%** — auditoría independiente activa y prueba manual hecha; falta UAT con operadores | H6, H7 |
-| H11 | Requerimiento completo y presupuestos | 🟡 **70%** — ciclo 9: modelo, cálculo, servidor y plantilla listos; **falta la pantalla de carga** | H7 |
-| H12 | EETT con regla de desborde | ⬜ Pendiente — ciclo 10 | H11 |
-| H13 | ANEXO 1 y salida hacia el pliego | ⬜ Pendiente — ciclo 11 | H11, H12 |
+| H11 | Requerimiento completo y presupuestos | ✅ **Terminado** — ciclos 9 y 10 (pantalla de carga) | H7 |
+| H12 | EETT con regla de desborde | ✅ **Terminado** — ciclo 10 | H11 |
+| H13 | ANEXO 1 y salida hacia el pliego | 🟡 **En curso** — ciclo 11 | H11, H12 |
 | H14 | Expediente adjudicado como base de uno nuevo | ⬜ Pendiente — **nuevo, 2026-08-20** | H8 |
 | H15 | Observabilidad y tableros de indicadores por rol | ⬜ Pendiente — **nuevo** · **antes del UAT** | H8 |
 | H16 | Sistema de estilos aplicado a toda la app | ⬜ Pendiente — **nuevo** · final del roadmap | H13 |
@@ -316,7 +316,7 @@ Dos hallazgos que abaratan todo esto:
 - [ ] H11-11 · **Pantalla de carga del requerimiento** (pendiente del ciclo 9, declarado por el desarrollador): formulario de los 16 campos del encabezado, subida de presupuestos y edición de los valores de referencia por renglón. Hoy sólo se pueden cargar por API — **es la pieza que falta para que el usuario final use H11**
 - [ ] H11-12 · El presupuesto se elige de una lista, no se escribe el identificador a mano (cierra R-09-1: hoy un `presupuestoId` inexistente pasa la validación de forma)
 
-**Estado al 2026-08-20 (ciclo 9): 70%.** H11-1 a H11-10 terminados y auditados; el cálculo del preventivo verificado con cinco casos manuales por el auditor y otro por el revisor. Faltan H11-11 y H11-12, que van en el ciclo 10.
+**Estado al 2026-08-21 (ciclo 10, segunda pasada): terminado.** H11-1 a H11-12 auditados. El preventivo verificado con cinco casos manuales; la pantalla de carga entregada y partida en seis módulos; el presupuesto se elige de una lista y el servidor rechaza un `presupuestoId` fantasma con 400 (R-09-1 **cerrado por los dos lados**).
 
 **Criterio de aceptación:** un requerimiento con tres renglones, dos presupuestos y bases mixtas produce el preventivo correcto, verificable a mano, **cargado desde la pantalla**.
 
@@ -329,6 +329,10 @@ Dos hallazgos que abaratan todo esto:
 - [ ] H12-5 · Si ningún renglón desborda y no hay condiciones particulares, **el anexo no se genera**
 - [ ] H12-6 · Ficha por renglón: `Renglón N° | Código SIByS | Descripción ONC | Especificaciones Técnicas`
 
+**Estado al 2026-08-21 (ciclo 10): terminado.** 255 y 256 se imprimen completos; 257 desborda al anexo con la referencia `"según anexo alfa"`. Techo duro de entrada **2000, aplicado también en el servidor** (2001 devuelve 400). El criterio de conteo es **puntos de código**, con **una sola definición** en `utils.contarCaracteres`, usada por los cinco lugares que antes contaban cada uno por su cuenta.
+
+- [ ] H12-7 · **Pendiente**: cuando un renglón desborda, el anexo pasa a ser **entregable obligatorio**. Hoy se puede avanzar de estado sin generarlo, y el requerimiento impreso queda citando un anexo que nunca existió
+
 **Criterio de aceptación:** un renglón de 250 caracteres queda en el requerimiento; uno de 300 dispara el anexo y deja la referencia correcta.
 
 ### H13 — ANEXO 1 y salida hacia el pliego
@@ -339,6 +343,11 @@ Dos hallazgos que abaratan todo esto:
 - [ ] H13-4 · El campo de precio de referencia se deriva de los presupuestos que cargó el usuario
 - [ ] H13-5 · Planilla de OCA cuando la modalidad lo pide, con las cantidades del requerimiento
 - [ ] H13-6 · **Exportación del YAML** que consume el generador de pliegos existente
+
+- [ ] H13-7 · **ADR-029 · las guardias silenciosas** de `validacion.js:122`, `:133` y `renders/requerimiento.js:115` pasan al patrón de lanzamiento de `repo.memoria.js`, más un test que arranque el servidor y verifique que el núcleo esté completo
+- [ ] H13-8 · La **causal normativa de OCA** como ayuda contextual **en la pantalla**, no sólo en el documento impreso
+- [ ] H13-9 · Cota propia para los catorce campos del encabezado que hoy sólo acota el límite de 4 MB del cuerpo
+- [ ] H13-10 · Comentario vencido en `fasttrack.js:9` ("más de 200 caracteres se rechazan")
 
 **Criterio de aceptación:** el YAML emitido produce un pliego con el generador actual, sin edición manual.
 
@@ -500,3 +509,6 @@ El paso previo real que hoy no existe en ningún sistema: cada área carga sus n
 | R23 | **Trabajo hecho que no se publica** (ciclo 10: ronda completa sin commit, sin push y sin informe) | Alto — se quema una auditoría entera y el avance no cuenta | **Control de entrega** antes de largar al auditor: `git log --oneline -1`, `git status --short` y existencia del informe. Si algo falla, el auditor no arranca. **Cuidado**: `git status` sobre el montaje puede cortarse por tiempo y devolver vacío — mirar el código de salida |
 | R24 | Sin HTTPS, la clave del operador viaja en claro por la intranet | Medio, aceptado por el Jefe de Contrataciones — red cerrada, sin datos personales | ADR-027: **estas claves no pueden ser la misma que la de ningún otro sistema del organismo**. Si H0-4 confirma HTTPS, el riesgo desaparece |
 | R25 | El Jefe de Contrataciones es el único administrador del padrón, sin autoservicio de reposición | Bajo hoy, **alto si entra V2-1** — decenas de usuarios pidiendo claves | ADR-027 §6: correcto a esta escala. Se revisa el día que ADR-028 pase a Aceptada |
+| R26 | **Una regla se apaga en silencio porque falta un módulo** (causa de H-02: dos ciclos con el servidor sin gobierno sobre el requerimiento) | Alto y silencioso — es inmune a los tests, porque la guardia existe para que los tests no rompan | **ADR-029**: la dependencia faltante lanza. Tres instancias vivas a corregir en H13-7, más un test de integridad del núcleo |
+| R27 | Se imprime y se firma un requerimiento que cita un anexo que nunca se generó | Bajo — el dato no se pierde y el anexo es regenerable, pero el papel queda mal | H12-7: el anexo pasa a obligatorio cuando hay referencias pendientes |
+| R28 | `MAX_JUSTIFICACION = 20000` es un número elegido por analogía, no del dominio | Bajo — si el sistema oficial tiene otro tope, hay divergencia | Confirmarlo con el Jefe de Contrataciones. Vive en un solo lugar (`config.js`), cambiarlo es una línea |
