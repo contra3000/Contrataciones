@@ -194,6 +194,52 @@
         </section>
       </div>
 
+      <!-- Leyendas obligatorias (ORDEN-RONDA-10-CIERRE §1.1): las dos comparten
+           los tres lugares — pie de cada entregable generado, resumen.md del
+           export y esta pantalla. El texto es el textual de las decisiones:
+           ADR-016 (BITACORA_DECISIONES.md) y ADR-023 §5. -->
+      <p id="sgc-leyenda-adr016" class="leyenda-adicion">
+        Documento generado por SGC, sin firmas digitales (ADR-016). Los
+        instrumentos firmados residen fuera de este sistema, en el circuito de
+        firmas vigente.
+      </p>
+      <p id="sgc-leyenda-adicion" class="leyenda-adicion">
+        Este sistema genera documentos, registra tiempos y sigue el estado del trámite.
+        No autoriza, no imputa y no adjudica: esos actos se perfeccionan con la firma de
+        la autoridad competente, fuera de este sistema.
+      </p>
+
+      <!-- Carga del requerimiento (ORDEN-RONDA-10 §3.1, H11): sólo visible en
+           ESPECIFICACIONES_TECNICAS. El bloque de imputación está deshabilitado
+           en esta fase: lo completa Contaduría en la Afectación (ADR-022 §4). -->
+      <section class="expediente-seccion" id="sgc-requerimiento-seccion"
+               aria-labelledby="sgc-requerimiento-titulo" hidden>
+        <h3 id="sgc-requerimiento-titulo">Carga del requerimiento (Solicitud de Gastos)</h3>
+        <div id="sgc-req-encabezado" class="req-encabezado"></div>
+        <h4>Presupuestos</h4>
+        <p class="req-ayuda">PDF, PNG o JPG de hasta 2 MB por archivo. El nombre original se
+          conserva y el servidor asigna el id con el que después se cita cada presupuesto.</p>
+        <input id="sgc-req-presupuesto-archivo" type="file" multiple
+               accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+               aria-label="Agregar presupuestos">
+        <ul id="sgc-req-presupuestos-lista" class="req-presupuestos"></ul>
+        <h4>Valores de referencia</h4>
+        <div id="sgc-req-valores" class="req-valores"></div>
+        <p id="sgc-req-total" class="req-total"></p>
+        <h4>Condiciones particulares comunes (opcional)</h4>
+        <textarea id="sgc-req-condiciones" rows="3"
+                  aria-label="Condiciones particulares comunes a todos los renglones"></textarea>
+        <p class="req-ayuda">Si algún renglón desborda el límite impreso o hay condiciones
+          particulares, se genera el anexo de Especificaciones Técnicas; si no, no se genera.</p>
+        <button id="sgc-generar-anexos" type="button">Generar anexo(s) de EETT</button>
+        <div id="sgc-req-imputacion-nota" class="req-imputacion">
+          <strong>Imputación presupuestaria:</strong> la completa Contaduría en la Afectación.
+          En esta fase queda a la vista pero deshabilitada (ADR-022 §4).
+        </div>
+        <button id="sgc-requerimiento-guardar" type="button" class="primario">Guardar requerimiento</button>
+        <p id="sgc-requerimiento-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
+      </section>
+
       <section class="expediente-seccion" id="sgc-expediente-documento-seccion" aria-labelledby="sgc-expediente-documento-titulo">
         <h3 id="sgc-expediente-documento-titulo">Documento del estado</h3>
         <div class="documento-acciones" aria-label="Acciones del documento">
@@ -265,10 +311,12 @@
   <script src="js/core/migraciones.js"></script>
   <script src="js/core/validacion.js"></script>
   <script src="js/core/requerimiento.js"></script>
+  <script src="js/core/anexo-eett.js"></script>
   <script src="js/core/estados.js"></script>
   <script src="js/renders/documento.js"></script>
   <script src="js/renders/especificacion-tecnica.js"></script>
   <script src="js/renders/requerimiento.js"></script>
+  <script src="js/renders/anexo-eett.js"></script>
   <script src="js/renders/solicitud-contratacion.js"></script>
   <script src="js/renders/pliego-bases-condiciones.js"></script>
   <script src="js/renders/disposicion-adjudicacion.js"></script>
@@ -287,6 +335,12 @@
   <script src="js/views/expediente-dialogo.js"></script>
   <script src="js/views/expediente.js"></script>
   <script src="js/views/exportar.js"></script>
+  <script src="js/views/requerimiento-valores.js"></script>
+  <script src="js/views/requerimiento-oca.js"></script>
+  <script src="js/views/requerimiento-encabezado.js"></script>
+  <script src="js/views/requerimiento-presupuestos.js"></script>
+  <script src="js/views/requerimiento-borrador.js"></script>
+  <script src="js/views/requerimiento-formulario.js"></script>
   <script src="js/views/archivo.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.http.js"></script>

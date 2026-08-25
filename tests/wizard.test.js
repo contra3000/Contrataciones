@@ -247,10 +247,10 @@ test('Fast-Track rechaza códigos inexistentes y aclaraciones largas; el <script
   assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /no existen en el catálogo/);
   assert.equal(w.nodos['sgc-titulo'].value, '', 'no se toca el formulario');
 
-  archivoCon(Object.assign({}, validoBase, { titulo: 'T', renglones: [{ codigo: CODIGO_REAL, cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(201) }] }));
+  archivoCon(Object.assign({}, validoBase, { titulo: 'T', renglones: [{ codigo: CODIGO_REAL, cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(2001) }] }));
   await nuevaVuelta();
   assert.equal(w.nodos['sgc-fasttrack-msj'].hidden, false);
-  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /200 caracteres/);
+  assert.match(w.nodos['sgc-fasttrack-msj'].textContent, /2000 caracteres/);
 
   archivoCon(Object.assign({}, validoBase, { titulo: '<script>alert(1)</script>' }));
   await nuevaVuelta();

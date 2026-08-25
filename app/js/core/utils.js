@@ -23,7 +23,21 @@
     return null;
   }
 
+  // Conteo de caracteres en PUNTOS DE CÓDIGO, no unidades UTF-16
+  // (ORDEN-RONDA-10-CIERRE §2: un solo criterio para el validador, el contador
+  // visible y la regla de desborde del anexo). `String.length` cuenta
+  // unidades UTF-16: para acentos y eñes coincide con lo que ve el usuario,
+  // para emojis no ('🛩'.length === 2 pero el usuario ve un carácter). Acá el
+  // emoji cuenta 1, igual que cualquier otro carácter visible.
+  function contarCaracteres(texto) {
+    if (typeof texto !== 'string') {
+      return 0;
+    }
+    return Array.from(texto).length;
+  }
+
   SGC.core.utils = {
-    idEstado: idEstado
+    idEstado: idEstado,
+    contarCaracteres: contarCaracteres
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -112,16 +112,41 @@ test('7. validarRenglon rechaza unidad faltante', () => {
   assert.ok(r.errores.some((e) => e.indexOf('unidad') !== -1));
 });
 
-test('8. validarRenglon limita la aclaración a 200 caracteres', () => {
-  const ok = validacion.validarRenglon({ codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(200) });
-  assert.equal(ok.valido, true);
-  const mal = validacion.validarRenglon({ codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(201) });
+test('8. la aclaración que desborda se acepta (va al anexo); el tope duro es 2000', () => {
+  // ORDEN-RONDA-10 §2.1: superar los 256 no es error de forma; ese texto
+  // desborda al anexo de EETT (core/anexo-eett.js). El rechazo empieza en
+  // MAX_ACLARACION_TOTAL (config.js, hoy 2000).
+  const impresa = validacion.validarRenglon({ codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(256) });
+  assert.equal(impresa.valido, true);
+  const desbordada = validacion.validarRenglon({ codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(257) });
+  assert.equal(desbordada.valido, true, 'lo que supera los 256 va al anexo, no se rechaza');
+  const alTope = validacion.validarRenglon({ codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(2000) });
+  assert.equal(alTope.valido, true);
+  const mal = validacion.validarRenglon({ codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: 'x'.repeat(2001) });
   assert.equal(mal.valido, false);
-  assert.ok(mal.errores.some((e) => e.indexOf('200') !== -1));
+  assert.ok(mal.errores.some((e) => e.indexOf('2000') !== -1));
 });
 
 test('9. validarRenglon rechaza un renglón nulo', () => {
   const r = validacion.validarRenglon(null);
   assert.equal(r.valido, false);
   assert.ok(r.errores.length > 0);
+});
+
+test('10. el conteo de la aclaración es en puntos de código, igual en todo el sistema', () => {
+  // ORDEN-RONDA-10-CIERRE §2: un solo criterio (utils.contarCaracteres) para
+  // el validador, el contador visible y la regla de desborde. '🛩'.length es 2
+  // en unidades UTF-16 pero el usuario ve un carácter: cuenta 1.
+  const emoji = '\u{1F6E9}';
+  assert.equal(emoji.length, 2, 'sanity UTF-16');
+  const conEmojisAlTope = validacion.validarRenglon({
+    codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: emoji.repeat(2000)
+  });
+  assert.equal(conEmojisAlTope.valido, true,
+    '2000 puntos de código entran aunque .length sea 4000');
+  const unMas = validacion.validarRenglon({
+    codigo: '102030', cantidad: 1, unidad: 'UN', aclaracion: emoji.repeat(2001)
+  });
+  assert.equal(unMas.valido, false,
+    '2001 puntos de código no entran aunque .length sea 4002');
 });

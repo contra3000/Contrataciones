@@ -15,6 +15,10 @@
  * - Total general en números y en letras ("LA SUMA DE: PESOS ... CON 00/100.-").
  * - Bloque de imputación presupuestaria, vacío o completo según el estado.
  * - Justificación de OCA y planilla de máximos, cuando la modalidad lo activa.
+ * - Regla de desborde de la aclaración (ORDEN-RONDA-10 §3.2, H12): lo que
+ *   supera MAX_ACLARACION no se imprime acá; la celda dice "según anexo X" y
+ *   el texto completo va al anexo de EETT (core/anexo-eett.js +
+ *   renders/anexo-eett.js).
  *
  * Dos salidas desde un único `modelo`: `componer` (HTML para el archivo que
  * se guarda) y `montar` (nodos DOM con textContent, nunca innerHTML, ADR-011).
@@ -64,7 +68,12 @@
       requerimiento: info.requerimiento,
       imputacion: info.imputacion,
       presupuestos: info.presupuestos,
-      renglones: info.renglones.length > 0 ? info.renglones : base.renglones
+      renglones: info.renglones.length > 0 ? info.renglones : base.renglones,
+      // Nombres de anexo por posición de renglón (H12). Si core/anexo-eett.js
+      // no está cargado, no hay referencias y la celda imprime el texto.
+      referencias: SGC.core.anexoEett
+        ? SGC.core.anexoEett.planificar(expediente).referencias
+        : {}
     };
   }
 
@@ -99,9 +108,13 @@
     return pares;
   }
 
-  function celdasDeRenglon(r, i) {
+  function celdasDeRenglon(r, i, referencias) {
     var descomp = req.descomponerCodigo(r.codigo);
     var prev = req.preventivoRenglon(r);
+    var aclaracion = r.aclaracion || '';
+    if (SGC.core.anexoEett && SGC.core.anexoEett.desborda(r.aclaracion)) {
+      aclaracion = SGC.core.anexoEett.aclaracionImpresa(r, referencias ? referencias[i] : null);
+    }
     return [
       String(i + 1),
       r.codigo,
@@ -113,7 +126,7 @@
       r.cantidad === undefined || r.cantidad === null ? '' : String(r.cantidad),
       prev.promedio === null ? '—' : formatearMonto(prev.promedio),
       prev.preventivo === null ? '—' : formatearMonto(prev.preventivo),
-      r.aclaracion || ''
+      aclaracion
     ];
   }
 
@@ -168,7 +181,8 @@
     partes.push('</dl>');
 
     partes.push('<h2>Renglones</h2>');
-    partes.push(tablaHtml(ENCABEZADOS_RENGLONES, m.renglones.map(celdasDeRenglon)));
+    partes.push(tablaHtml(ENCABEZADOS_RENGLONES,
+      m.renglones.map(function (r, i) { return celdasDeRenglon(r, i, m.referencias); })));
 
     partes.push('<h2>Valor preventivo</h2>');
     var total = req.preventivoContratacion(m.renglones);
@@ -248,7 +262,8 @@
     d.dlDom(contenedor, paresEncabezado(m));
 
     d.h2Dom(contenedor, 'Renglones');
-    tablaDom(contenedor, ENCABEZADOS_RENGLONES, m.renglones.map(celdasDeRenglon));
+    tablaDom(contenedor, ENCABEZADOS_RENGLONES,
+      m.renglones.map(function (r, i) { return celdasDeRenglon(r, i, m.referencias); }));
 
     d.h2Dom(contenedor, 'Valor preventivo');
     var total = req.preventivoContratacion(m.renglones);

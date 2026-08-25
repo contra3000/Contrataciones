@@ -259,6 +259,30 @@
   var ESTADO_FINAL = 'PERFECCIONADA';
 
   // ---------------------------------------------------------------------------
+  // Límite de la aclaración (ORDEN-RONDA-10 §2.1, enmienda 2026-08-19 de
+  // ADR-014). Definición ÚNICA: los demás módulos la importan de acá.
+  //  - MAX_ACLARACION (256): lo que se imprime en el requerimiento; es también
+  //    el umbral de desborde hacia el anexo de EETT (ADR-022/H12). Coincide con
+  //    el límite del sistema oficial.
+  //  - MAX_ACLARACION_TOTAL (2000): tope duro de entrada. El texto que supera
+  //    los 256 no se rechaza: va completo al anexo; a partir de este tope sí se
+  //    rechaza, porque nadie transcribe más que eso y el campo no es un cajón
+  //    de sastre (enmienda ADR-014, riesgo del piloto).
+  // ---------------------------------------------------------------------------
+  var MAX_ACLARACION = 256;
+  var MAX_ACLARACION_TOTAL = 2000;
+
+  // Tope duro de la justificación (ORDEN-RONDA-10-CIERRE §1.3, auditoría
+  // §2.4: "¿qué pasa si el usuario pega un texto de 50.000 caracteres en la
+  // justificación?"). Definición ÚNICA, misma lógica que MAX_ACLARACION_TOTAL:
+  // es un campo de formulario con destino al documento impreso, no un
+  // repositorio. Veinte mil caracteres son ~10 páginas; nadie justifica una
+  // necesidad con más que eso. Aplica a `fundamentacion.justificacion` y a
+  // `requerimiento.justificacionNecesidad`, y lo valida el servidor por su
+  // cuenta (server/expedientes.js) además de la pantalla.
+  var MAX_JUSTIFICACION = 20000;
+
+  // ---------------------------------------------------------------------------
   // Entregables del circuito (ORDEN-RONDA-08 §2.1). Cada documento que una fase
   // produce queda registrado con un id estable: el mismo id es el que
   // `validacion.validarParaAvanzar` exige en `entregablesObligatorios`, el que
@@ -273,6 +297,18 @@
       fase: 1,
       archivo: 'especificacion-tecnica.html',
       titulo: 'Especificación Técnica'
+    },
+    {
+      // Anexo de Especificaciones Técnicas (ORDEN-RONDA-10 §3.2, H12). No es
+      // obligatorio en ningún estado: sólo se genera cuando algún renglón
+      // desborda o hay condiciones particulares. `entregableDelEstado` devuelve
+      // el primer match, así que la plantilla del requerimiento sigue siendo la
+      // del estado; este id existe para que `guardarEntregable` lo acepte.
+      id: 'anexo-eett',
+      estado: 'ESPECIFICACIONES_TECNICAS',
+      fase: 1,
+      archivo: 'anexo-eett.html',
+      titulo: 'Anexo de Especificaciones Técnicas'
     },
     {
       id: 'solicitud-contratacion',
@@ -341,6 +377,9 @@
     FASES: FASES,
     ESTADO_INICIAL: ESTADO_INICIAL,
     ESTADO_FINAL: ESTADO_FINAL,
+    MAX_ACLARACION: MAX_ACLARACION,
+    MAX_ACLARACION_TOTAL: MAX_ACLARACION_TOTAL,
+    MAX_JUSTIFICACION: MAX_JUSTIFICACION,
     entregableDelEstado: entregableDelEstado
   };
 })(typeof window !== 'undefined' ? window : globalThis);

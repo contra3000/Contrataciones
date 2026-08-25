@@ -281,6 +281,12 @@
     if (SGC.views.exportar && typeof SGC.views.exportar.actualizar === 'function') {
       SGC.views.exportar.actualizar();
     }
+    // Pantalla de carga del requerimiento (ORDEN-RONDA-10 §3.1): se muestra
+    // sólo en ESPECIFICACIONES_TECNICAS. En las monturas puede no estar.
+    if (SGC.views.requerimientoFormulario &&
+        typeof SGC.views.requerimientoFormulario.actualizar === 'function') {
+      SGC.views.requerimientoFormulario.actualizar();
+    }
   }
 
   function avisar(mensaje, esError) {

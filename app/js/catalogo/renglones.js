@@ -24,7 +24,14 @@
     throw new Error('renglones.js requiere que namespaces.js se cargue primero');
   }
 
-  var MAX_ACLARACION = 200;
+  // Definición única en config.js (ORDEN-RONDA-10 §2.1). Se lee perezosamente
+  // para no depender del orden de carga.
+  function limitesAclaracion() {
+    return {
+      total: SGC.core.config.MAX_ACLARACION_TOTAL,
+      impreso: SGC.core.config.MAX_ACLARACION
+    };
+  }
 
   var estado = {
     renglones: [],
@@ -91,14 +98,15 @@
     var lblAclaracion = document.createElement('label');
     lblAclaracion.className = 'aclaracion';
     lblAclaracion.textContent = 'Aclaración';
+    var limites = limitesAclaracion();
     var aclaracion = document.createElement('textarea');
-    aclaracion.maxLength = MAX_ACLARACION;
+    aclaracion.maxLength = limites.total;
     aclaracion.rows = 2;
     aclaracion.value = renglon.aclaracion !== undefined && renglon.aclaracion !== null ? String(renglon.aclaracion) : '';
     aclaracion.setAttribute('aria-label', 'Aclaración opcional');
     var contador = document.createElement('span');
     contador.className = 'contador';
-    contador.textContent = '0/' + MAX_ACLARACION;
+    contador.textContent = '0/' + limites.total;
     lblAclaracion.appendChild(aclaracion);
     lblAclaracion.appendChild(contador);
     editor.appendChild(lblAclaracion);
@@ -121,7 +129,12 @@
       renglon.cantidad = cantidad.value === '' ? NaN : Number(cantidad.value);
       renglon.unidad = unidad.value;
       renglon.aclaracion = aclaracion.value;
-      contador.textContent = aclaracion.value.length + '/' + MAX_ACLARACION;
+      var limites = limitesAclaracion();
+      // El conteo del contador es el mismo criterio de todo el sistema:
+      // puntos de código (utils.contarCaracteres, ORDEN-RONDA-10-CIERRE §2).
+      var contados = SGC.core.utils.contarCaracteres(aclaracion.value);
+      contador.textContent = contados + '/' + limites.total +
+        (contados > limites.impreso ? ' · supera ' + limites.impreso + ': va al anexo de EETT' : '');
       var errores = erroresDeRenglon(renglon);
       if (errores.length > 0) {
         error.textContent = errores.join(' · ');
@@ -226,7 +239,7 @@
   }
 
   SGC.catalogo.renglones = {
-    MAX_ACLARACION: MAX_ACLARACION,
+    MAX_ACLARACION: SGC.core.config.MAX_ACLARACION,
     montar: montar,
     agregar: agregar,
     obtener: obtener,

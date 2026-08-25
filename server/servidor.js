@@ -51,6 +51,7 @@ const PUERTO_DEFECTO = 8123;
 const ayudantes = require('./ayudantes.js');
 const manejadores = require('./manejadores.js');
 const expedientes = require('./expedientes.js');
+const presupuestos = require('./presupuestos.js');
 const archivo = require('./archivo.js');
 
 const APP_CORE = [
@@ -60,6 +61,10 @@ const APP_CORE = [
   'auditoria.js',
   'migraciones.js',
   'utils.js',
+  // ORDEN-RONDA-10 §3.1 (auditoría §2.1): el PUT valida los renglones con las
+  // mismas reglas que la pantalla; requerimiento.js es el dueño de las reglas
+  // de valores de referencia y cantidades.
+  'requerimiento.js',
   'validacion.js',
   'estados.js'
 ];
@@ -102,7 +107,8 @@ function crearServidor(datosDir) {
   archivo.recuperarArchivados(datosDir);
   const api = Object.assign(
     manejadores.crearManejadores(entorno),
-    expedientes.crearManejadoresExpedientes(entorno)
+    expedientes.crearManejadoresExpedientes(entorno),
+    presupuestos.crearManejadoresPresupuestos(entorno)
   );
   const {
     apiSalud,
@@ -158,7 +164,7 @@ function crearServidor(datosDir) {
             ayudantes.registrarOrigen(datosDir, origen, peticion, null, contexto);
             return apiCrear(req, res, texto);
           }).catch((e) => {
-            return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+            return ayudantes.responderErrorPeticion(res, e);
           });
         }
 
@@ -213,7 +219,7 @@ function crearServidor(datosDir) {
               ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
               return apiGuardar(req, res, id, texto);
             }).catch((e) => {
-              return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+              return ayudantes.responderErrorPeticion(res, e);
             });
           }
           if (req.method === 'POST' && (accion === 'avanzar' || accion === 'devolver')) {
@@ -231,7 +237,7 @@ function crearServidor(datosDir) {
               }
               return apiDevolver(req, res, id, texto, origen);
             }).catch((e) => {
-              return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+              return ayudantes.responderErrorPeticion(res, e);
             });
           }
           if (req.method === 'POST' && accion === 'entregables') {
@@ -246,7 +252,7 @@ function crearServidor(datosDir) {
               ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
               return apiGuardarEntregable(req, res, id, texto);
             }).catch((e) => {
-              return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+              return ayudantes.responderErrorPeticion(res, e);
             });
           }
           // Presupuestos adjuntos (ORDEN-RONDA-09 §3.2).
@@ -262,7 +268,7 @@ function crearServidor(datosDir) {
               ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
               return apiGuardarPresupuesto(req, res, id, texto);
             }).catch((e) => {
-              return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+              return ayudantes.responderErrorPeticion(res, e);
             });
           }
         }
@@ -279,7 +285,7 @@ function crearServidor(datosDir) {
             ayudantes.registrarOrigen(datosDir, origen, peticion, null, contexto);
             return apiValidarCodigos(req, res, texto);
           }).catch((e) => {
-            return ayudantes.responderJson(res, 400, { error: 'no se pudo procesar la petición: ' + e.message });
+            return ayudantes.responderErrorPeticion(res, e);
           });
         }
 

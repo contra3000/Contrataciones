@@ -6,8 +6,8 @@
  * (§3.1):
  *
  *  - El documento compuesto contiene todos los renglones y las aclaraciones
- *    aparecen (probado con uno solo, con veinte y con una aclaración de
- *    exactamente 200 caracteres).
+ *    aparecen (probado con uno solo, con veinte y con una aclaración impresa
+ *    hasta el límite de 256 caracteres, ORDEN-RONDA-10 §2.1).
  *  - montar() produce la misma información como nodos DOM, sin asignar
  *    innerHTML (la app no inyecta HTML).
  *  - Títulos y aclaraciones con <script>/<img onerror> llegan escapados al
@@ -61,7 +61,7 @@ function expedienteConRenglones(cantidad, conAclaracionLarga) {
       rubro: '4210'
     };
     if (conAclaracionLarga && i === cantidad) {
-      r.aclaracion = 'x'.repeat(200);
+      r.aclaracion = 'x'.repeat(256);
     } else if (i % 3 === 0) {
       r.aclaracion = 'Aclaración del renglón ' + i;
     } else {
@@ -122,7 +122,7 @@ test('§3.5.7 documento con veinte renglones: todos aparecen y las aclaraciones 
     assert.ok(html.includes('>' + i + '<'), 'falta la cantidad del renglón ' + i);
   }
   assert.ok(html.includes('Aclaración del renglón 3'), 'falta la aclaración del renglón 3');
-  assert.ok(html.includes('x'.repeat(200)), 'falta la aclaración de exactamente 200 caracteres');
+  assert.ok(html.includes('x'.repeat(256)), 'falta la aclaración impresa hasta el límite (256)');
   assert.ok(html.includes('Aclaración'), 'el encabezado de la columna Aclaración está');
 });
 

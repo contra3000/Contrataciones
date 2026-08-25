@@ -139,12 +139,19 @@
       '</div>';
   }
 
+  // Leyendas obligatorias del pie (ADR-016 y ADR-023 §5). La segunda va en
+  // el pie de cada entregable generado, en la pantalla del expediente y en el
+  // resumen.md del export; el texto es el textual de la decisión.
+  var LEYENDA_ADR016 = 'Documento generado por SGC, sin firmas digitales (ADR-016).';
+  var LEYENDA_ADR023 = 'Este sistema genera documentos, registra tiempos y sigue el estado del trámite. No autoriza, no imputa y no adjudica: esos actos se perfeccionan con la firma de la autoridad competente, fuera de este sistema.';
+
   // Pie con el origen del documento: de qué expediente es, en qué estado se
   // generó y con qué versión del catálogo (ORDEN-RONDA-08 §2.1).
   function pieHtml(m) {
     return '<p class="doc-pie">Expediente ' + esc(m.id) + ' · Generado en el estado ' +
       esc(m.estadoTitulo) + ' · Catálogo ' + esc(m.catalogoVersion) +
-      ' · Documento generado por SGC, sin firmas digitales (ADR-016).</p>';
+      ' · ' + esc(LEYENDA_ADR016) + '</p>' +
+      '<p class="doc-pie doc-pie-leyenda">' + esc(LEYENDA_ADR023) + '</p>';
   }
 
   // Documento HTML autocontenido: `secciones` es el arreglo de HTML de las
@@ -262,7 +269,8 @@
   function pieDom(contenedor, m) {
     pDom(contenedor, 'doc-pie', 'Expediente ' + m.id + ' · Generado en el estado ' +
       m.estadoTitulo + ' · Catálogo ' + m.catalogoVersion +
-      ' · Documento generado por SGC, sin firmas digitales (ADR-016).');
+      ' · ' + LEYENDA_ADR016);
+    pDom(contenedor, 'doc-pie doc-pie-leyenda', LEYENDA_ADR023);
   }
 
   // ---------------------------------------------------------------------------
@@ -304,6 +312,8 @@
     modelo: modelo,
     campo: campo,
     ESTILOS: ESTILOS,
+    LEYENDA_ADR016: LEYENDA_ADR016,
+    LEYENDA_ADR023: LEYENDA_ADR023,
     encabezadoHtml: encabezadoHtml,
     tablaRenglonesHtml: tablaRenglonesHtml,
     firmaHtml: firmaHtml,
