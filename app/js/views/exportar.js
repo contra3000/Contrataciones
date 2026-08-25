@@ -130,6 +130,22 @@
       'copia queda bajo su responsabilidad. ¿Confirma la descarga?');
   }
 
+  // ORDEN-RONDA-11 §3.3: exportación YAML para el generador de pliegos.
+  function exportarYaml() {
+    var expediente = expedienteActual();
+    if (!expediente) {
+      return;
+    }
+    if (!SGC.views.pliegoYaml || typeof SGC.views.pliegoYaml.generar !== 'function') {
+      avisar('El módulo de exportación YAML no está disponible.', true);
+      return;
+    }
+    var contenido = SGC.views.pliegoYaml.generar(expediente);
+    agendarDescarga('pliego_' + expediente.expedienteId + '.yaml', contenido,
+      'Va a exportar el YAML del pliego del expediente ' + expediente.expedienteId +
+      '. Este archivo alimenta al generador de pliegos. ¿Confirma la descarga?');
+  }
+
   function enlazarDocumento(ruta, plantilla) {
     var expediente = expedienteActual();
     if (!expediente) {
@@ -200,6 +216,7 @@
     qs(raiz, '#sgc-expediente-documento-guardar').addEventListener('click', guardarDocumento);
     qs(raiz, '#sgc-expediente-exportar-json').addEventListener('click', exportarJson);
     qs(raiz, '#sgc-expediente-exportar-resumen').addEventListener('click', exportarResumen);
+    qs(raiz, '#sgc-expediente-exportar-yaml').addEventListener('click', exportarYaml);
     qs(raiz, '#sgc-modal-advertencia-confirmar').addEventListener('click', confirmarModal);
     qs(raiz, '#sgc-modal-advertencia-cancelar').addEventListener('click', cerrarModal);
   }

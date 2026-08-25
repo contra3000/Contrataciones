@@ -16,7 +16,10 @@ const CAT = path.join(RAIZ, 'app', 'catalogo');
 
 require(path.join(RAIZ, 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'config.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'cotas-encabezado.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'requerimiento.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'anexo-eett.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'catalogo', 'indice.js'));
 

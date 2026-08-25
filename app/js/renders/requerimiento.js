@@ -69,11 +69,13 @@
       imputacion: info.imputacion,
       presupuestos: info.presupuestos,
       renglones: info.renglones.length > 0 ? info.renglones : base.renglones,
-      // Nombres de anexo por posición de renglón (H12). Si core/anexo-eett.js
-      // no está cargado, no hay referencias y la celda imprime el texto.
-      referencias: SGC.core.anexoEett
-        ? SGC.core.anexoEett.planificar(expediente).referencias
-        : {}
+      // Nombres de anexo por posición de renglón (H12, ADR-029: exigir).
+      referencias: (() => {
+        if (!SGC.core.anexoEett) {
+          throw new Error('renders/requerimiento.js (modelo) requiere que core/anexo-eett.js se cargue primero');
+        }
+        return SGC.core.anexoEett.planificar(expediente).referencias;
+      })()
     };
   }
 
@@ -112,7 +114,11 @@
     var descomp = req.descomponerCodigo(r.codigo);
     var prev = req.preventivoRenglon(r);
     var aclaracion = r.aclaracion || '';
-    if (SGC.core.anexoEett && SGC.core.anexoEett.desborda(r.aclaracion)) {
+    // ADR-029: exigir, no saltear.
+    if (!SGC.core.anexoEett) {
+      throw new Error('renders/requerimiento.js (celdasDeRenglon) requiere que core/anexo-eett.js se cargue primero');
+    }
+    if (SGC.core.anexoEett.desborda(r.aclaracion)) {
       aclaracion = SGC.core.anexoEett.aclaracionImpresa(r, referencias ? referencias[i] : null);
     }
     return [

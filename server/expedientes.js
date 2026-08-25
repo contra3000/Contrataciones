@@ -78,6 +78,10 @@ function crearManejadoresExpedientes(entorno) {
     if (erroresTextos.length > 0) {
       return responderJson(res, 400, { error: erroresTextos.join(' · ') });
     }
+    const erroresEncabezado = SGC.core.validacion.validarEncabezado(datosIniciales);
+    if (erroresEncabezado.length > 0) {
+      return responderJson(res, 400, { error: erroresEncabezado.join(' · ') });
+    }
     const contexto = cuerpo.contexto || {};
     const anio = repo.anioDe(datosIniciales, contexto) ||
       String(new Date().getFullYear());
@@ -308,6 +312,10 @@ function crearManejadoresExpedientes(entorno) {
     const erroresTextos = SGC.core.validacion.validarJustificaciones(expedienteNuevo);
     if (erroresTextos.length > 0) {
       return responderJson(res, 400, { error: erroresTextos.join(' · ') });
+    }
+    const erroresEncabezado = SGC.core.validacion.validarEncabezado(expedienteNuevo);
+    if (erroresEncabezado.length > 0) {
+      return responderJson(res, 400, { error: erroresEncabezado.join(' · ') });
     }
     // ORDEN-RONDA-09 §3.1 (ADR-022 §4): la imputación presupuestaria la
     // completa Contaduría en la Afectación. La restricción vive acá, con la

@@ -16,11 +16,13 @@ const { nodo } = require('./wizard-montura.js');
 
 require(path.join(RAIZ, 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'config.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'cotas-encabezado.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'auditoria.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'migraciones.js'));
-require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'requerimiento.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'anexo-eett.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
@@ -30,6 +32,7 @@ require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-1.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'expediente-dialogo.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'expediente.js'));
 

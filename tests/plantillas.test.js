@@ -21,11 +21,14 @@ const { nodo } = require('./helpers/wizard-montura.js');
 
 require(path.join(RAIZ, 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'config.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'cotas-encabezado.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'autorizacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'auditoria.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'migraciones.js'));
-require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'requerimiento.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'anexo-eett.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
@@ -35,6 +38,7 @@ require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-1.js'));
 
 const SGC = globalThis.SGC;
 const config = SGC.core.config;
@@ -100,6 +104,12 @@ const ESTADOS_CON_DOCUMENTO = [
   'GENERACION_ORDEN_COMPRA'
 ];
 
+// Estados con entregable registrado pero no obligatorio para avanzar
+// (ORDEN-RONDA-11 §3.1: ANEXO 1 en ANALISIS_SCo se guarda sin bloquear).
+const ESTADOS_CON_ENTREGABLE_OPCIONAL = [
+  'ANALISIS_SCo'
+];
+
 test('cada estado que produce documento tiene entregable registrado y plantilla; el resto no', () => {
   for (const estado of config.ESTADOS) {
     const entregable = config.entregableDelEstado(estado.id);
@@ -111,6 +121,11 @@ test('cada estado que produce documento tiene entregable registrado y plantilla;
       assert.ok(plantilla, 'falta la plantilla de ' + estado.id);
       assert.equal(plantilla.id, entregable.id,
         'el id de la plantilla coincide con el del entregable');
+      assert.equal(typeof plantilla.componer, 'function', 'componer');
+      assert.equal(typeof plantilla.montar, 'function', 'montar');
+    } else if (ESTADOS_CON_ENTREGABLE_OPCIONAL.indexOf(estado.id) !== -1) {
+      assert.ok(entregable, 'falta el entregable opcional de ' + estado.id);
+      assert.ok(plantilla, 'falta la plantilla del entregable opcional de ' + estado.id);
       assert.equal(typeof plantilla.componer, 'function', 'componer');
       assert.equal(typeof plantilla.montar, 'function', 'montar');
     } else {

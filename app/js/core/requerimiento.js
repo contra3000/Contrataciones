@@ -219,6 +219,17 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Causal OCA (ORDEN-RONDA-11 §2.3): texto canónico compartido por pantalla
+  // y(print). Explica que OCA requiere ajuste al importe si los consumos
+  // superan el contratado.
+  // ---------------------------------------------------------------------------
+  var CAUSAL_OCA =
+    'La modalidad de contratación es Orden de Compra Abierta (OCA). ' +
+    'Los consumos acumulados que superen el importe total contratado ' +
+    'requerirán un ajuste formal (modificación o nueva contratación). ' +
+    'Verificar la previsión de alcanzar el monto total del contrato.';
+
+  // ---------------------------------------------------------------------------
   // Total en letras (ORDEN-RONDA-09 §3.5): "LA SUMA DE: PESOS ... CON 00/100.-"
   // ---------------------------------------------------------------------------
   var UNIDADES = [
@@ -331,6 +342,7 @@
   SGC.core.requerimiento = {
     CAMPOS_ENCABEZADO: CAMPOS_ENCABEZADO,
     IMPUTACION_CAMPOS: IMPUTACION_CAMPOS,
+    CAUSAL_OCA: CAUSAL_OCA,
     descomponerCodigo: descomponerCodigo,
     validarValoresReferencia: validarValoresReferencia,
     validarCantidades: validarCantidades,
