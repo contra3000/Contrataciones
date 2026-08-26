@@ -56,7 +56,9 @@
       domicilio: str(a1.unidadDireccion || ''),
       telefono: str(a1.unidadTelefono || ''),
       correo: str(a1.unidadCorreo || ''),
-      horario: ''
+      horario: str(a1.horarioAtencion || ''),
+      frecuencia_provision: str(a1.frecuenciaProvision || ''),
+      plazo_entrega: str(a1.plazoEntrega || '')
     };
     var organismos = [];
     if (organismo.nombre || organismo.domicilio) {
@@ -72,7 +74,7 @@
       ejercicio: str(campos.anio || ''),
       clase_modalidad: str(rq.claseModalidad || campos.claseModalidad || ''),
       tipo_oc: str(a1.tipoOc || ''),
-      nro_expediente_gde: str(a1.nroExpedienteGde || ''),
+      nro_expediente_gde: str(a1.nroExpedienteGde || '') || yaml.MARCA_FALTA,
       rubros: rubros,
       nombre_proceso: str(rq.nombreProceso || campos.nombreProceso || ''),
       objeto: str(rq.objeto || campos.titulo || expediente && expediente.titulo || '')

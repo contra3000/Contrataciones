@@ -20,7 +20,8 @@ function crearManejadoresExpedientes(entorno) {
     datosDir,
     repo,
     PADRON,
-    ayudantes
+    ayudantes,
+    eventos
   } = entorno;
   const {
     escribirAtomico,
@@ -93,6 +94,10 @@ function crearManejadoresExpedientes(entorno) {
     escribirAtomico(exp.datos, JSON.stringify(expediente, null, 2));
     const entrada = repo.entradaIndice(id, expediente, contexto);
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true }); escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
+    // ORDEN-RONDA-12 §3.1: registro de eventos (ADR-024).
+    if (eventos && typeof eventos.registrarTransicion === 'function') {
+      eventos.registrarTransicion(datosDir, id, null, 'ESPECIFICACIONES_TECNICAS', contexto);
+    }
     return responderJson(res, 201, { id, version: expediente.version, expediente });
   }
 
@@ -157,6 +162,18 @@ function crearManejadoresExpedientes(entorno) {
     // mismo ciclo (copia al Archivo, entrada `archivar`, purga del índice); la versión no sube.
     let respondido = nuevo;
     if (nuevo.estado && nuevo.estado.id === SGC.core.config.ESTADO_FINAL) { respondido = archivo.archivarExpediente(datosDir, id, contexto); }
+    // ORDEN-RONDA-12 §3.1: registro de eventos (ADR-024). Se registra después
+    // de escribir para no perder la línea si la escritura falla.
+    if (eventos && typeof eventos.registrarTransicion === 'function') {
+      if (accion === 'devolver') {
+        eventos.registrarDevolucion(datosDir, id, actual.estado ? actual.estado.id : null,
+          nuevo.estado ? nuevo.estado.id : null, cuerpo.idMotivo,
+          cuerpo.observacion === undefined ? null : cuerpo.observacion, contexto);
+      } else {
+        eventos.registrarTransicion(datosDir, id, actual.estado ? actual.estado.id : null,
+          nuevo.estado ? nuevo.estado.id : null, contexto);
+      }
+    }
     return responderJson(res, 200, { version: nuevaVersion, expediente: respondido });
   }
 
@@ -353,6 +370,10 @@ function crearManejadoresExpedientes(entorno) {
     escribirAtomico(exp.datos, JSON.stringify(actualizado, null, 2));
     const entrada = repo.entradaIndice(id, actualizado, contexto);
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true }); escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
+    // ORDEN-RONDA-12 §3.1: registro de eventos (ADR-024). Detecta qué cambió.
+    if (eventos && typeof eventos.registrarGuardado === 'function') {
+      eventos.registrarGuardado(datosDir, id, actual, expedienteNuevo, nuevaVersion, contexto);
+    }
     return responderJson(res, 200, { version: nuevaVersion });
   }
 

@@ -98,11 +98,11 @@
   }
 
   // Nota visible en pantalla con la causal normativa de OCA (ORDEN-RONDA-11 §2.3).
-  // La referencia canónica vive en core/requerimiento.js (CAUSAL_OCA); acá se
+  // La referencia canónica vive en core/requerimiento.js (NOTA_OCA); acá se
   // muestra como p párrafo informativo dentro del bloque de OCA.
   function notaCausal(doc) {
     var req = (SGC.core && SGC.core.requerimiento) || {};
-    var texto = req.CAUSAL_OCA || '';
+    var texto = req.NOTA_OCA || '';
     if (!texto) {
       return null;
     }

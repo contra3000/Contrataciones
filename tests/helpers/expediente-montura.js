@@ -29,7 +29,7 @@ require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
-require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'vista-previa-pliego.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-1.js'));
