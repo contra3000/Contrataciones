@@ -36,6 +36,8 @@ Plantilla al final del archivo.
 | 027 | Credenciales artesanales: una clave por operador, definida por el Jefe | Aceptada | 2026-08-21 |
 | 028 | Consolidación de pedidos por área, como paso previo al requerimiento | Propuesta (V2) | 2026-08-21 |
 | 029 | Una dependencia que falta falla ruidosamente; nunca apaga una regla en silencio | Aceptada | 2026-08-21 |
+| 030 | Hay un solo pliego, y no lo produce esta aplicación | Aceptada | 2026-08-25 |
+| 031 | El emisor de YAML entrecomilla por defecto | Aceptada | 2026-08-25 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -882,6 +884,79 @@ Tras la corrección, el auditor verificó que **el patrón sobrevive en tres lug
 **Alternativas consideradas.** *(a)* Dejar las guardias y confiar en el orden de carga: descartada, es exactamente el estado que produjo H-02, y "hoy funciona" no es una propiedad que se pueda verificar en el futuro. *(b)* Registrar una advertencia en vez de lanzar: descartada, en esta aplicación no hay nadie mirando un log — una advertencia que nadie lee es silencio con más pasos.
 
 **Consecuencias.** Hay que corregir las tres instancias vivas y agregar el test de dependencias del punto 3. Un error de orden de carga pasa de ser una regla apagada a ser una aplicación que no levanta, que es lo que corresponde. Queda pendiente de validar que ningún test dependa hoy de la conveniencia que se elimina.
+
+---
+
+## ADR-030 — Hay un solo pliego, y no lo produce esta aplicación
+
+**Estado:** Aceptada · 2026-08-25
+
+**Contexto.** Al cerrar la ronda 11 quedaron **dos documentos distintos llamados "pliego"**, y nadie había decidido cuál vale:
+
+1. `app/js/renders/pliego-bases-condiciones.js` — plantilla propia, escrita en el ciclo 7 como una de las cinco plantillas genéricas de H7. Está declarada como **entregable obligatorio** de un estado (`config.js:138`), así que hoy el sistema **exige generarla para poder avanzar**. Imprime objeto, dependencia, finalidad, lugar, vigencia y una tabla genérica de renglones. **No menciona la modalidad de Orden de Compra Abierta en ninguna parte.**
+2. El **generador de pliegos de la UOC** (`EjemplosProcesoActual/DocUOC/Generador de Pliegos/`), que ya funciona, produce el documento real y desde la ronda 11 se alimenta con el YAML que emite esta aplicación.
+
+La confusión no fue de nadie en particular: el auditor leyó la plantilla propia como el documento legal y calificó su falta de OCA como hallazgo crítico; el desarrollador leyó el generador externo como el documento real y dio R17 por controlado. **Los dos razonaron bien sobre objetos distintos.**
+
+**Decisión.** El pliego es **uno solo y lo produce el generador de la UOC**. Esta aplicación no lo genera: le entrega los datos.
+
+1. **`pliego-bases-condiciones` deja de ser un entregable.** Se retira de `ENTREGABLES` y de los `entregablesObligatorios` del estado que hoy lo exige. Un documento que se imprime, se puede firmar y no es el pliego, es un pasivo: alguien lo va a presentar creyendo que lo es.
+2. **En su lugar, el entregable de ese estado es el YAML** (más el ANEXO 1 y el anexo de EETT, que ya existen). Lo que el sistema produce en esa fase es el **insumo verificable** del pliego, no una imitación del pliego.
+3. **La plantilla no se borra: se convierte en `vista-previa-pliego`**, sin estado asignado, claramente rotulada *"Vista previa — no es el Pliego de Bases y Condiciones"*, y sin pie de firma. Sirve para que la UOC vea qué va a salir antes de correr el generador. Si al construirla se comprueba que no la usa nadie, se elimina.
+4. **La leyenda de ADR-023 y el pie de firma no van en un documento que no se firma.** Un documento sin destino de firma no lleva pie de firma.
+
+**Fundamento.** El análisis de los entregables reales ya había decidido esto —*"la aplicación no rehace el generador de pliegos; emite el YAML que ese generador ya consume"*— pero la plantilla del ciclo 7 quedó viva y nadie la retiró. **Dos documentos con el mismo nombre y distinto contenido es una trampa de expediente**, y la mitad de los desacuerdos de la auditoría del ciclo 11 salen de ahí.
+
+**Sobre R17, que es la razón por la que esto importa.** La `cantidadMaxima` por renglón —el número que, mal rotulado, obliga al proveedor a menos de lo necesario— hoy aparece correctamente rotulada *"Cantidad máxima (por Solicitud de Provisión)"* en la pantalla y en el requerimiento impreso. Al pliego real llega la **modalidad** (`tipo_oc` viaja en el YAML), pero **las cantidades máximas por renglón no viajan**: llegarían sólo por el apéndice de EETT, que hoy no las contiene. Eso queda como tarea explícita de la ronda 12 y **es una pregunta de dominio antes que de código**: hay que confirmar con la UOC en qué documento del pliego debe figurar la planilla de máximos.
+
+**Alternativas consideradas.** *(a)* Completar la plantilla propia con la sección de OCA: descartada, arregla el síntoma y deja los dos pliegos en pie. *(b)* Borrarla sin más: descartada, la vista previa tiene valor real y borrarla pierde trabajo hecho.
+
+**Consecuencias.** Cambia un `entregablesObligatorios` en `config.js` y varios tests que lo dan por sentado. El sistema deja de producir un documento firmable que no es el que dice ser. Queda pendiente de confirmar con la UOC dónde va la planilla de máximos dentro del pliego.
+
+---
+
+## ADR-031 — El emisor de YAML entrecomilla por defecto
+
+**Estado:** Aceptada · 2026-08-25
+
+**Contexto.** La ronda 11 entregó un emisor de YAML sin dependencias (ADR-003) que decide **cuándo entrecomillar** con una lista de patrones: dos puntos seguidos de espacio, número al inicio, guión al inicio, ciertos símbolos, palabras reservadas. Todo lo que no coincide con ningún patrón sale **sin comillas**.
+
+El auditor encontró dos agujeros en esa lista. Al reproducirlo contra el parser real —el de Python, que es el que usa el generador— aparecieron **siete**, de veinte casos probados:
+
+| Texto cargado | Llega al pliego | Qué pasa |
+|---|---|---|
+| `comment #10 is here` | `comment` | Se trunca en silencio |
+| `#comentario` | *(nada)* | Se pierde entero |
+| `   ` (sólo espacios) | *(nada)* | Se pierde entero |
+| ` hola` | `hola` | Pierde el espacio inicial |
+| `hola ` | `hola` | Pierde el espacio final |
+| `Nota:` | — | **Rompe el archivo entero: el pliego no se genera** |
+| un tabulador en el texto | — | **Rompe el archivo entero** |
+
+Los dos últimos son peores que los otros cinco: no corrompen un dato, **impiden que el pliego exista**.
+
+Y el patrón de fondo importa más que los siete casos: **la lista de "cuándo entrecomillar" nunca va a estar completa.** Cada vez que aparezca un texto nuevo que rompa, se va a agregar un patrón más, y la lista va a seguir estando incompleta. Es una lista de peligros conocidos frente a un universo de textos que escriben personas.
+
+**Decisión.** Se invierte la regla: **todo escalar de tipo cadena se emite entre comillas dobles, siempre.**
+
+```
+clave: "valor, siempre entre comillas"
+```
+
+Con dos consecuencias:
+
+1. **El escapado se vuelve el único punto delicado**, y es corto y verificable: barra invertida, comilla doble, salto de línea, tabulador, retorno de carro. Cinco reemplazos en un orden fijo, con la barra invertida primero.
+2. **Desaparece la lista de patrones.** `necesitaEscapar` se elimina; no se corrige.
+
+Un YAML con todo entrecomillado es YAML válido, lo lee cualquier parser, y es exactamente igual de legible para una persona.
+
+**Verificación exigida.** La prueba no es un test unitario del emisor: es **ida y vuelta contra un parser de verdad**. Se emite, se parsea, y el valor que vuelve tiene que ser idéntico —carácter por carácter, espacios incluidos— al que se cargó. Los veinte casos de arriba entran a la batería, y cualquier caso nuevo se agrega ahí.
+
+**Fundamento.** *Cuando un formato tiene reglas de escape complejas, la única política segura es la más conservadora aplicada siempre.* El costo es cosmético; el beneficio es que se elimina la clase entera de defecto, en vez de sus instancias conocidas. Es la misma lección de ADR-029 con otro disfraz: **lo que falla en silencio hay que hacerlo imposible, no infrecuente.**
+
+**Alternativas consideradas.** *(a)* Corregir los siete casos: descartada, deja la lista incompleta y el próximo texto raro vuelve a romper. *(b)* Usar una librería de YAML: descartada, contradice ADR-003 y para esta forma de datos no hace falta.
+
+**Consecuencias.** El YAML emitido queda más verboso. Los tests que comparaban salida literal sin comillas hay que actualizarlos. Las claves siguen sin entrecomillar: las controlamos nosotros y son identificadores simples.
 
 ---
 

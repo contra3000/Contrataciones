@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-21** · ciclo 10 cerrado en segunda pasada · **H11 y H12 terminados** · incorporada ADR-029
+Última actualización: **2026-08-25** · ciclo 11 auditado · **H13 al 75%** · incorporadas ADR-030 y ADR-031
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -24,7 +24,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H9 | **Testing integral en local (UAT)** | 🟡 **40%** — auditoría independiente activa y prueba manual hecha; falta UAT con operadores | H6, H7 |
 | H11 | Requerimiento completo y presupuestos | ✅ **Terminado** — ciclos 9 y 10 (pantalla de carga) | H7 |
 | H12 | EETT con regla de desborde | ✅ **Terminado** — ciclo 10 | H11 |
-| H13 | ANEXO 1 y salida hacia el pliego | 🟡 **En curso** — ciclo 11 | H11, H12 |
+| H13 | ANEXO 1 y salida hacia el pliego | 🟡 **75%** — el pliego sale del generador real; faltan el emisor confiable y la decisión del pliego | H11, H12 |
 | H14 | Expediente adjudicado como base de uno nuevo | ⬜ Pendiente — **nuevo, 2026-08-20** | H8 |
 | H15 | Observabilidad y tableros de indicadores por rol | ⬜ Pendiente — **nuevo** · **antes del UAT** | H8 |
 | H16 | Sistema de estilos aplicado a toda la app | ⬜ Pendiente — **nuevo** · final del roadmap | H13 |
@@ -349,6 +349,17 @@ Dos hallazgos que abaratan todo esto:
 - [ ] H13-9 · Cota propia para los catorce campos del encabezado que hoy sólo acota el límite de 4 MB del cuerpo
 - [ ] H13-10 · Comentario vencido en `fasttrack.js:9` ("más de 200 caracteres se rechazan")
 
+**Estado al 2026-08-25 (ciclo 11): 75%.** El ANEXO 1 con sus catorce secciones y los bloques condicionales está; **el generador real produce el pliego con nuestro YAML, sin edición manual** (331 líneas). Pendientes de la ronda 12:
+
+- [ ] H13-11 · **ADR-031** · el emisor de YAML entrecomilla siempre; se elimina `necesitaEscapar`. Verificación de ida y vuelta contra un parser real, no tabla a mano. Siete de veinte casos rompen hoy, y dos impiden que el archivo parsee
+- [ ] H13-12 · **ADR-030** · `pliego-bases-condiciones` deja de ser entregable obligatorio y pasa a `vista-previa-pliego`, rotulada y sin pie de firma. El entregable de ese estado pasa a ser el YAML
+- [ ] H13-13 · El **precio de referencia** del ANEXO 1 §2 se deriva de los presupuestos (preventivo ya calculado), no se retipea
+- [ ] H13-14 · **Trazabilidad de la precarga**: toda edición de un campo precargado desde el requerimiento queda registrada
+- [ ] H13-15 · El **test de integridad del núcleo falla** si se quita un módulo de la lista (hoy sólo verifica que los archivos existan en disco)
+- [ ] H13-16 · `CAUSAL_OCA`: dos textos distintos con **dos nombres distintos**, en un solo lugar
+- [ ] H13-17 · Mapear `frecuencia_provision`, `plazo_entrega` y `horario` al YAML. Hoy salen vacíos y **el pliego sale con cláusulas en blanco**, que es peor que no salir
+- [ ] H13-18 · **Pendiente del Jefe de Contrataciones**: dónde va la planilla de cantidades máximas dentro del pliego (último tramo de R17)
+
 **Criterio de aceptación:** el YAML emitido produce un pliego con el generador actual, sin edición manual.
 
 ### Pendiente de definir
@@ -512,3 +523,6 @@ El paso previo real que hoy no existe en ningún sistema: cada área carga sus n
 | R26 | **Una regla se apaga en silencio porque falta un módulo** (causa de H-02: dos ciclos con el servidor sin gobierno sobre el requerimiento) | Alto y silencioso — es inmune a los tests, porque la guardia existe para que los tests no rompan | **ADR-029**: la dependencia faltante lanza. Tres instancias vivas a corregir en H13-7, más un test de integridad del núcleo |
 | R27 | Se imprime y se firma un requerimiento que cita un anexo que nunca se generó | Bajo — el dato no se pierde y el anexo es regenerable, pero el papel queda mal | H12-7: el anexo pasa a obligatorio cuando hay referencias pendientes |
 | R28 | `MAX_JUSTIFICACION = 20000` es un número elegido por analogía, no del dominio | Bajo — si el sistema oficial tiene otro tope, hay divergencia | Confirmarlo con el Jefe de Contrataciones. Vive en un solo lugar (`config.js`), cambiarlo es una línea |
+| R29 | **Un texto de operador rompe el YAML y el pliego no se genera** — o peor, se genera con un dato truncado en silencio | Alto — siete de veinte textos probados fallan; dos impiden que el archivo parsee | **ADR-031**: entrecomillar siempre, y verificación de ida y vuelta contra un parser real en la batería |
+| R30 | **El sistema produce un documento llamado "pliego" que no es el pliego** y hoy es entregable obligatorio | Alto y documental — alguien lo va a presentar creyendo que lo es | **ADR-030**: deja de ser entregable y pasa a vista previa rotulada. El pliego lo produce la UOC |
+| R31 | El pliego sale **con cláusulas en blanco** porque tres campos no se mapean | Medio — un pliego incompleto parece completo | H13-17. Y los campos sin dato tienen que verse como faltantes, no como vacíos legítimos |
