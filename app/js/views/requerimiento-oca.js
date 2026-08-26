@@ -97,6 +97,21 @@
     return div;
   }
 
+  // Nota visible en pantalla con la causal normativa de OCA (ORDEN-RONDA-11 §2.3).
+  // La referencia canónica vive en core/requerimiento.js (CAUSAL_OCA); acá se
+  // muestra como p párrafo informativo dentro del bloque de OCA.
+  function notaCausal(doc) {
+    var req = (SGC.core && SGC.core.requerimiento) || {};
+    var texto = req.CAUSAL_OCA || '';
+    if (!texto) {
+      return null;
+    }
+    var p = doc.createElement('p');
+    p.className = 'req-oca-nota';
+    p.textContent = texto;
+    return p;
+  }
+
   // Manejo delegado desde el formulario: si el objetivo es un campo de la
   // OCA, actualiza el estado y avisa que lo consumió.
   function alCambiar(objetivo) {
@@ -120,6 +135,7 @@
     valoresNumericos: valoresNumericos,
     leer: leer,
     bloque: bloque,
+    notaCausal: notaCausal,
     alCambiar: alCambiar
   };
 })(typeof window !== 'undefined' ? window : globalThis);

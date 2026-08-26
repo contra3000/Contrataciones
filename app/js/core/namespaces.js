@@ -13,7 +13,5 @@
   SGC.catalogo = {};
   SGC.views = {};
   SGC.renders = {};
-  // Se usa notación por corchetes para no emitir el token "export" en el código,
-  // que el guardián de compatibilidad interpretaría como un módulo ES.
-  SGC['export'] = {};
+  SGC.descargas = {};
 })(typeof window !== 'undefined' ? window : globalThis);

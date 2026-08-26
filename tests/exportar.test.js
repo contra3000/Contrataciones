@@ -27,11 +27,14 @@ const { nodo, nuevaVuelta } = require('./helpers/wizard-montura.js');
 
 require(path.join(RAIZ, 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'config.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'cotas-encabezado.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'autorizacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'auditoria.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'migraciones.js'));
-require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'requerimiento.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'anexo-eett.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'validacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
@@ -70,6 +73,7 @@ function armarMontaje() {
   sec.appendChild(enlace);
   sec.appendChild(nodo('button', 'sgc-expediente-exportar-json'));
   sec.appendChild(nodo('button', 'sgc-expediente-exportar-resumen'));
+  sec.appendChild(nodo('button', 'sgc-expediente-exportar-yaml'));
   sec.appendChild(nodo('p', 'sgc-expediente-documento-msj'));
   app.appendChild(sec);
 

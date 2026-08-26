@@ -86,6 +86,15 @@
         faltantes.entregables.push(obligatorios[j]);
       }
     }
+    // ORDEN-RONDA-11 §2.2: anexo EETT obligatorio cuando hay referencias
+    // pendientes (ADR-029: exigir, no saltear).
+    if (!SGC.core.anexoEett) {
+      throw new Error('validacion.js (validarParaAvanzar) requiere que core/anexo-eett.js se cargue primero');
+    }
+    if (SGC.core.anexoEett.tieneContenido(expediente) &&
+        !entregablePresente(expediente, 'anexo-eett')) {
+      faltantes.entregables.push('anexo-eett');
+    }
     return {
       valido: faltantes.campos.length === 0 && faltantes.entregables.length === 0,
       faltantes: faltantes
@@ -117,23 +126,25 @@
       errores.push('La aclaración no puede superar los ' + maxAclaracionTotal() + ' caracteres');
     }
     // ORDEN-RONDA-09 §3.3/§3.4 (ADR-022): valores de referencia y cantidades
-    // máximas/mínimas. Requerimiento.js es el dueño de esas reglas; si el
-    // módulo no está cargado (tests de configuración), no se agregan errores.
-    if (SGC.core.requerimiento) {
-      errores = errores.concat(SGC.core.requerimiento.validarValoresReferencia(renglon));
-      errores = errores.concat(SGC.core.requerimiento.validarCantidades(renglon));
+    // máximas/mínimas. Requerimiento.js es el dueño de esas reglas.
+    // ADR-029: exigir, no saltear.
+    if (!SGC.core.requerimiento) {
+      throw new Error('validacion.js (validarRenglon) requiere que core/requerimiento.js se cargue primero');
     }
+    errores = errores.concat(SGC.core.requerimiento.validarValoresReferencia(renglon));
+    errores = errores.concat(SGC.core.requerimiento.validarCantidades(renglon));
     return { valido: errores.length === 0, errores: errores };
   }
 
   // Validación agregada del requerimiento (ORDEN-RONDA-09 §3.6): valores de
   // referencia de todos los renglones y cantidades máximas/mínimas. Sin
   // estado: valida el expediente completo, no una transición.
+  // ADR-029: exigir, no saltear.
   function validarRequerimiento(expediente) {
-    if (SGC.core.requerimiento) {
-      return SGC.core.requerimiento.validarRequerimiento(expediente);
+    if (!SGC.core.requerimiento) {
+      throw new Error('validacion.js (validarRequerimiento) requiere que core/requerimiento.js se cargue primero');
     }
-    return { valido: true, errores: [] };
+    return SGC.core.requerimiento.validarRequerimiento(expediente);
   }
 
   // Validación del paso Identificación del wizard (ORDEN-RONDA-05 §3.1): el
@@ -207,12 +218,43 @@
     return errores;
   }
 
+  // ---------------------------------------------------------------------------
+  // Validación del encabezado del requerimiento (ORDEN-RONDA-11 §2.3):
+  // cada campo requerido debe estar presente y no vacío; los textuales deben
+  // respetar la cota de longitud definida en CAMPOS_ENCABEZADO_COTAS (config.js
+  // + cotas-encabezado.js). Se ejecuta en el servidor (PUT) y antes de avanzar.
+  // ---------------------------------------------------------------------------
+  function validarEncabezado(expediente) {
+    var errores = [];
+    var cfg = SGC.core.config;
+    var cotas = cfg && cfg.CAMPOS_ENCABEZADO_COTAS;
+    var encabezado = (expediente.requerimiento || {}).encabezado;
+    if (!cotas || !encabezado || typeof encabezado !== 'object' ||
+        Object.keys(encabezado).length === 0) {
+      return errores;
+    }
+    var keys = Object.keys(cotas);
+    for (var i = 0; i < keys.length; i++) {
+      var campo = keys[i];
+      var valor = encabezado[campo];
+      if (valor === undefined || valor === null || (typeof valor === 'string' && valor.trim() === '')) {
+        errores.push('El campo del encabezado ' + campo + ' es obligatorio');
+        continue;
+      }
+      if (cotas[campo] !== Infinity && typeof valor === 'string' && valor.length > cotas[campo]) {
+        errores.push(campo + ' no puede superar los ' + cotas[campo] + ' caracteres');
+      }
+    }
+    return errores;
+  }
+
   SGC.core.validacion = {
     validarParaAvanzar: validarParaAvanzar,
     validarRenglon: validarRenglon,
     validarIdentificacion: validarIdentificacion,
     validarFundamentacion: validarFundamentacion,
     validarJustificaciones: validarJustificaciones,
-    validarRequerimiento: validarRequerimiento
+    validarRequerimiento: validarRequerimiento,
+    validarEncabezado: validarEncabezado
   };
 })(typeof window !== 'undefined' ? window : globalThis);

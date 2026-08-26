@@ -240,6 +240,87 @@
         <p id="sgc-requerimiento-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
       </section>
 
+      <section class="expediente-seccion" id="sgc-anexo1-seccion"
+               aria-labelledby="sgc-anexo1-titulo" hidden>
+        <h3 id="sgc-anexo1-titulo">ANEXO 1 — Análisis de Abastecimiento</h3>
+        <p class="req-ayuda">Se precarga desde el requerimiento. Los campos con asterisco son
+          editables; los demás se completan según corresponda.</p>
+
+        <h4>§1 Objeto y justificación</h4>
+        <label>Objeto <input id="sgc-anexo1-objeto" type="text" size="80" aria-label="Objeto"></label>
+        <label>Justificación <textarea id="sgc-anexo1-justificacion" rows="3"
+          aria-label="Justificación de la necesidad"></textarea></label>
+
+        <h4>§2 Precio de referencia</h4>
+        <label>Empresas consultadas <input id="sgc-anexo1-empresas" type="text" size="80"
+          aria-label="Empresas consultadas (separadas por punto y coma)" placeholder="Empresa A; Empresa B; ..."></label>
+        <label>Valor preventivo <input id="sgc-anexo1-precio-ref" type="text" size="30"
+          aria-label="Precio de referencia / valor preventivo"></label>
+        <label>§2.1 Justificación de moneda extranjera
+          <textarea id="sgc-anexo1-moneda-ext" rows="2"
+            aria-label="Justificación de moneda extranjera (si aplica)"></textarea></label>
+
+        <h4>§3 Plan Anual de Contrataciones (PAC)</h4>
+        <label><input id="sgc-anexo1-pac-previsto" type="checkbox"> Previsionado en el PAC</label>
+        <label>N° de orden <input id="sgc-anexo1-pac-orden" type="text" size="20"
+          aria-label="Número de orden del PAC"></label>
+        <label>Trimestre de ejecución
+          <select id="sgc-anexo1-pac-trimestre" aria-label="Trimestre de ejecución"></select></label>
+
+        <h4>§4 Unidad requirente</h4>
+        <label>Responsable <input id="sgc-anexo1-unidad-resp" type="text" size="50"
+          aria-label="Responsable de la unidad requirente"></label>
+        <label>Usuario GDE <input id="sgc-anexo1-usuario-gde" type="text" size="30"
+          aria-label="Usuario GDE"></label>
+        <label>Dirección <input id="sgc-anexo1-unidad-dir" type="text" size="60"
+          aria-label="Dirección de la unidad"></label>
+        <label>Teléfono <input id="sgc-anexo1-unidad-tel" type="text" size="20"
+          aria-label="Teléfono de la unidad"></label>
+        <label>Correo <input id="sgc-anexo1-unidad-correo" type="text" size="40"
+          aria-label="Correo de la unidad"></label>
+        <label>Lugar de entrega <input id="sgc-anexo1-lugar-entrega" type="text" size="60"
+          aria-label="Lugar de entrega"></label>
+        <label>Lugar de facturación <input id="sgc-anexo1-lugar-fact" type="text" size="60"
+          aria-label="Lugar de facturación"></label>
+
+        <h4>§5 Comisión de recepción</h4>
+        <textarea id="sgc-anexo1-comision" rows="3"
+          aria-label="Comisión de recepción: 3 titulares y 3 suplentes"></textarea>
+
+        <h4>§6 Personal técnico que analiza ofertas</h4>
+        <textarea id="sgc-anexo1-personal" rows="2"
+          aria-label="Personal técnico (hasta 2): nombre, usuario GDE, correo"></textarea>
+
+        <h4>§7 Requisitos mínimos</h4>
+        <textarea id="sgc-anexo1-requisitos" rows="5"
+          aria-label="Requisitos mínimos (alimenta el pliego)"></textarea>
+
+        <h4>§8 Visita o muestra patrón</h4>
+        <textarea id="sgc-anexo1-visita" rows="2"
+          aria-label="Visita o muestra patrón (si aplica)"></textarea>
+
+        <h4>Casos especiales (completar solo si corresponde)</h4>
+        <label>§9 Caso interadministrativo
+          <textarea id="sgc-anexo1-interadmin" rows="2"></textarea></label>
+        <label>§10 Bienes de uso (BIM/BAPIN/PIDEF)
+          <textarea id="sgc-anexo1-bienes-uso" rows="2"></textarea></label>
+        <label>§11 Hardware / Software (ONTI/ETAP)
+          <textarea id="sgc-anexo1-hw-sw" rows="2"></textarea></label>
+        <label>§12 Reparaciones de infraestructura
+          <textarea id="sgc-anexo1-reparaciones" rows="2"></textarea></label>
+
+        <h4>§13 Documentación obligatoria del oferente</h4>
+        <textarea id="sgc-anexo1-doc-obligatoria" rows="3"
+          aria-label="Documentación obligatoria del oferente"></textarea>
+
+        <h4>§14 Criterio de evaluación / fórmula polinómica</h4>
+        <textarea id="sgc-anexo1-criterio" rows="3"
+          aria-label="Criterio de evaluación o fórmula polinómica"></textarea>
+
+        <button id="sgc-anexo1-guardar" type="button" class="primario">Guardar ANEXO 1</button>
+        <p id="sgc-anexo1-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
+      </section>
+
       <section class="expediente-seccion" id="sgc-expediente-documento-seccion" aria-labelledby="sgc-expediente-documento-titulo">
         <h3 id="sgc-expediente-documento-titulo">Documento del estado</h3>
         <div class="documento-acciones" aria-label="Acciones del documento">
@@ -248,6 +329,7 @@
           <a id="sgc-expediente-documento-enlace" class="documento-enlace" href="#" hidden>Abrir documento guardado</a>
           <button id="sgc-expediente-exportar-json" type="button">Exportar JSON</button>
           <button id="sgc-expediente-exportar-resumen" type="button">Exportar resumen.md</button>
+          <button id="sgc-expediente-exportar-yaml" type="button">Exportar YAML del pliego</button>
         </div>
         <p id="sgc-expediente-documento-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
         <div id="sgc-expediente-documento" class="documento-impresion" aria-label="Documento imprimible"></div>
@@ -304,8 +386,11 @@
     </div>
   </main>
 
+  <!-- El orden de carga importa: cada módulo puede exigir que el anterior ya
+       esté en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029). -->
   <script src="js/core/namespaces.js"></script>
   <script src="js/core/config.js"></script>
+  <script src="js/core/cotas-encabezado.js"></script>
   <script src="js/core/utils.js"></script>
   <script src="js/core/auditoria.js"></script>
   <script src="js/core/migraciones.js"></script>
@@ -321,6 +406,7 @@
   <script src="js/renders/pliego-bases-condiciones.js"></script>
   <script src="js/renders/disposicion-adjudicacion.js"></script>
   <script src="js/renders/orden-compra.js"></script>
+  <script src="js/renders/anexo-1.js"></script>
   <script src="js/renders/resumen.js"></script>
   <script src="js/catalogo/indice.js"></script>
   <script src="js/catalogo/carga.js"></script>
@@ -335,12 +421,15 @@
   <script src="js/views/expediente-dialogo.js"></script>
   <script src="js/views/expediente.js"></script>
   <script src="js/views/exportar.js"></script>
+  <script src="js/export/pliego-yaml.js"></script>
+  <script src="js/views/pliego-yaml.js"></script>
   <script src="js/views/requerimiento-valores.js"></script>
   <script src="js/views/requerimiento-oca.js"></script>
   <script src="js/views/requerimiento-encabezado.js"></script>
   <script src="js/views/requerimiento-presupuestos.js"></script>
   <script src="js/views/requerimiento-borrador.js"></script>
   <script src="js/views/requerimiento-formulario.js"></script>
+  <script src="js/views/anexo-uno.js"></script>
   <script src="js/views/archivo.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.http.js"></script>

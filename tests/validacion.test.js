@@ -6,7 +6,10 @@ const path = require('node:path');
 
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'config.js'));
+require(path.join(__dirname, '..', 'app', 'js', 'core', 'cotas-encabezado.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'utils.js'));
+require(path.join(__dirname, '..', 'app', 'js', 'core', 'requerimiento.js'));
+require(path.join(__dirname, '..', 'app', 'js', 'core', 'anexo-eett.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'validacion.js'));
 
 const config = globalThis.SGC.core.config;

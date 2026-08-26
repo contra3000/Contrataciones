@@ -292,6 +292,17 @@
   // ---------------------------------------------------------------------------
   var ENTREGABLES = [
     {
+      // ANEXO 1 (ORDEN-RONDA-11 §3.1, H13): lo que Abastecimiento eleva a la
+      // UOC, con las catorce secciones del análisis.
+      id: 'anexo-1',
+      estado: 'ANALISIS_SCo',
+      fase: 2,
+      archivo: 'anexo-1.html',
+      titulo: 'ANEXO 1'
+    },
+    {
+      // Especificación Técnica (ORDEN-RONDA-10 §3.2). El documento de cada
+      // estado de Fase 1; se guarda como entregable y se exige para avanzar.
       id: 'especificacion-tecnica',
       estado: 'ESPECIFICACIONES_TECNICAS',
       fase: 1,

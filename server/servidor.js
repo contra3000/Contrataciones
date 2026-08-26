@@ -54,17 +54,18 @@ const expedientes = require('./expedientes.js');
 const presupuestos = require('./presupuestos.js');
 const archivo = require('./archivo.js');
 
+// El orden de carga importa: cada módulo puede exigir que el anterior ya esté
+// registrado en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029).
 const APP_CORE = [
   'namespaces.js',
   'config.js',
+  'cotas-encabezado.js',
   'autorizacion.js',
   'auditoria.js',
   'migraciones.js',
   'utils.js',
-  // ORDEN-RONDA-10 §3.1 (auditoría §2.1): el PUT valida los renglones con las
-  // mismas reglas que la pantalla; requerimiento.js es el dueño de las reglas
-  // de valores de referencia y cantidades.
   'requerimiento.js',
+  'anexo-eett.js',
   'validacion.js',
   'estados.js'
 ];
@@ -370,4 +371,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = Object.assign({ VERSION, crearServidor }, ayudantes);
+module.exports = Object.assign({ VERSION, crearServidor, APP_CORE }, ayudantes);

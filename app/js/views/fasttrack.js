@@ -6,7 +6,8 @@
  *
  * El archivo se trata como entrada no confiable: estructura y tipos campo por
  * campo, cada código de renglón debe existir en el catálogo vigente, las
- * aclaraciones de más de 200 caracteres se rechazan, y ningún valor llega como
+ * aclaraciones de más de 2000 caracteres se rechazan (MAX_ACLARACION_TOTAL,
+ * config.js), y ningún valor llega como
  * HTML (la vista usa textContent). Un error produce un listado legible, nunca
  * una excepción ni un formulario a medio llenar.
  *

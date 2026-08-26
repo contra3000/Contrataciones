@@ -47,6 +47,7 @@
     SGC.views.expediente.seleccionarOperador(operador);
     SGC.views.exportar.seleccionarOperador(operador);
     SGC.views.requerimientoFormulario.seleccionarOperador(operador);
+    if (SGC.views.anexoUno) { SGC.views.anexoUno.seleccionarOperador(operador); }
     document.getElementById('sgc-tablero-nav').hidden = false;
   }
 
@@ -112,6 +113,10 @@
     // le avisa en cada render (requerimientoFormulario.actualizar()).
     SGC.views.requerimientoFormulario.montar(contenedor);
     SGC.views.requerimientoFormulario.fijarRepo(repo);
+
+    // ANEXO 1 (ORDEN-RONDA-11 §3.1): formulario para abastecimiento en ANALISIS_SCo.
+    SGC.views.anexoUno.montar(contenedor);
+    SGC.views.anexoUno.fijarRepo(repo);
 
     // El buscador del paso 2 inicia la carga del catálogo y actualiza su
     // propio estado. Después se le avisa al asistente para guardar borradores
