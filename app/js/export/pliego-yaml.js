@@ -1,14 +1,17 @@
 /*
  * pliego-yaml.js
- * ORDEN-RONDA-11 §3.3. Emisor YAML de cero dependencias (ADR-003) para el
- * formato que consume el generador de pliegos existente.
+ * ORDEN-RONDA-12 §2.1 (ADR-031). Emisor YAML de cero dependencias (ADR-003)
+ * para el formato que consume el generador de pliegos existente.
  *
- * Emite exactamente la forma de EJEMPLO_DATOS.yaml: escalares, listas de
- * mapas, dos niveles. Cuidado con el escapado: dos puntos sin entrecomillar
- * rompen el YAML en silencio.
+ * ADR-031: todo escalar de tipo cadena se emite entre comillas dobles, siempre.
+ * La lista de "cuándo entrecomillar" se invirtió: en vez de detectar peligros,
+ * se entrecomilla todo. El escapado es el único punto delicado: barra invertida,
+ * comilla doble, salto de línea, tabulador, retorno de carro. La barra invertida
+ * primero para no escapar las escapadas.
  *
- * Verificación: el generador (tools/recorrido-completo.js o
- * tools/generar_pliego.py) debe procesar el YAML sin edición manual.
+ * Las claves siguen sin comillas: las controlamos nosotros.
+ *
+ * Verificación: ida y vuelta contra un parser de verdad (tests/ronda-12.test.js).
  */
 (function (root) {
   'use strict';
@@ -18,38 +21,13 @@
     throw new Error('pliego-yaml.js requiere que namespaces.js se cargue primero');
   }
 
-  // Patrones que fuerzan entrecomillado doble en YAML.
-  var RE_DOS_PUNTOS = /:\s/;
-  var RE_NUMERO = /^\d/;
-  var RE_HASH = /#\s/;
-  var RE_GUION = /^-/;
-  var RE_GUION_BAJO = /^_/;
-  var RE_SIMBOLOS = /[{}[\],&*?|>!%@`]/;
-
-  function necesitaEscapar(valor) {
-    if (typeof valor !== 'string') return false;
-    if (valor === '') return true;
-    if (RE_DOS_PUNTOS.test(valor)) return true;
-    if (RE_NUMERO.test(valor)) return true;
-    if (RE_HASH.test(valor)) return true;
-    if (RE_GUION.test(valor)) return true;
-    if (RE_GUION_BAJO.test(valor)) return true;
-    if (RE_SIMBOLOS.test(valor)) return true;
-    if (/^["']/.test(valor)) return true;
-    if (/\n/.test(valor)) return true;
-    if (valor === 'true' || valor === 'false' || valor === 'null' ||
-        valor === 'yes' || valor === 'no' || valor === 'on' || valor === 'off') {
-      return true;
-    }
-    return false;
-  }
-
   function escapeDouble(valor) {
     return valor
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"')
       .replace(/\n/g, '\\n')
-      .replace(/\t/g, '\\t');
+      .replace(/\t/g, '\\t')
+      .replace(/\r/g, '\\r');
   }
 
   function escalar(valor) {
@@ -57,12 +35,14 @@
     if (typeof valor === 'boolean') return valor ? 'true' : 'false';
     if (typeof valor === 'number') return String(valor);
     var s = String(valor);
-    if (s === '') return '""';
-    if (necesitaEscapar(s)) {
-      return '"' + escapeDouble(s) + '"';
-    }
-    return s;
+    return '"' + escapeDouble(s) + '"';
   }
+
+  // Valores especiales para campos que genuinamente no tenemos (§2.7).
+  // Un campo FALTA se emite con un valor que el parser de Python parsea
+  // como texto normal, pero que la persona que lee el YAML identifica
+  // como dato faltante.
+  var MARCA_FALTA = '_FALTA_';
 
   function emitirValor(valor, indent) {
     if (Array.isArray(valor)) {
@@ -82,16 +62,16 @@
       var valor = mapa[clave];
       if (valor === null || valor === undefined ||
           (typeof valor === 'string' && valor === '')) {
-        lineas.push(prefijo + escalar(clave) + ': ' + escalar(valor));
+        lineas.push(prefijo + clave + ': ' + escalar(valor));
       } else if (Array.isArray(valor)) {
-        lineas.push(prefijo + escalar(clave) + ':');
+        lineas.push(prefijo + clave + ':');
         var bloques = emitirLista(valor, prefijo + '  ');
         lineas.push(bloques);
       } else if (typeof valor === 'object') {
-        lineas.push(prefijo + escalar(clave) + ':');
+        lineas.push(prefijo + clave + ':');
         lineas.push(emitirMapa(valor, prefijo + '  '));
       } else {
-        lineas.push(prefijo + escalar(clave) + ': ' + escalar(valor));
+        lineas.push(prefijo + clave + ': ' + escalar(valor));
       }
     }
     return lineas.join('\n');
@@ -121,6 +101,6 @@
   SGC.descargas.pliegoYaml = {
     escalar: escalar,
     emitir: emitir,
-    necesitaEscapar: necesitaEscapar
+    MARCA_FALTA: MARCA_FALTA
   };
 })(typeof window !== 'undefined' ? window : globalThis);

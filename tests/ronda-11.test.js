@@ -159,29 +159,29 @@ test('ADR-029: renders/requerimiento.js modelo() lanza cuando anexo-eett.js no e
 });
 
 // ---------------------------------------------------------------------------
-// 4. Integridad: verificar que los archivos del MANIFEST existen en disco
+// 4. Integridad: verificarModulos falla al quitar un módulo de SGC
 // ---------------------------------------------------------------------------
-test('integridad: cada archivo del MANIFEST existe en el directorio core/', () => {
-  const MANIFEST_ARCHIVOS = [
-    'namespaces.js',
-    'config.js',
-    'cotas-encabezado.js',
-    'autorizacion.js',
-    'auditoria.js',
-    'migraciones.js',
-    'utils.js',
-    'requerimiento.js',
-    'anexo-eett.js',
-    'validacion.js',
-    'estados.js'
+test('integridad: verificarModulos lanza cuando un módulo no está en SGC', () => {
+  const { verificarModulos } = require(path.join(RAIZ, 'server', 'integridad.js'));
+  const listaCompleta = [
+    'namespaces.js', 'config.js', 'cotas-encabezado.js', 'autorizacion.js',
+    'auditoria.js', 'migraciones.js', 'utils.js', 'requerimiento.js',
+    'anexo-eett.js', 'validacion.js', 'estados.js'
   ];
-  const CORE_DIR = path.join(RAIZ, 'app', 'js', 'core');
-  for (const archivo of MANIFEST_ARCHIVOS) {
-    const ruta = path.join(CORE_DIR, archivo);
-    assert.ok(
-      fs.existsSync(ruta),
-      'el archivo del MANIFEST debe existir en disco: ' + archivo
+  // Sin quitar nada: pasa
+  assert.ok(verificarModulos(listaCompleta) > 0, 'pasa con la lista completa');
+
+  // Sacamos un módulo de SGC.core y verificamos que lanza
+  const original = SGC.core.config;
+  try {
+    SGC.core.config = undefined;
+    assert.throws(
+      () => verificarModulos(listaCompleta),
+      /faltan los módulos/,
+      'lanza cuando un módulo no está registrado en SGC'
     );
+  } finally {
+    SGC.core.config = original;
   }
 });
 
@@ -297,11 +297,13 @@ test('YAML: escalar envuelve en comillas dobles cuando contiene dos puntos con e
   assert.equal(yaml.escalar('a: b: c'), '"a: b: c"', 'múltiples dos puntos');
 });
 
-test('YAML: escalar devuelve "simple" sin comillas y "" para la cadena vacía', () => {
-  assert.equal(yaml.escalar('simple'), 'simple', 'palabra simple sin comillas');
+test('YAML: escalar siempre entrecomilla cadenas (ADR-031)', () => {
+  assert.equal(yaml.escalar('simple'), '"simple"', 'palabra simple entrecomillada');
   assert.equal(yaml.escalar(''), '""', 'cadena vacía → comillas dobles vacías');
   assert.equal(yaml.escalar(null), '""', 'null → comillas dobles vacías');
   assert.equal(yaml.escalar(undefined), '""', 'undefined → comillas dobles vacías');
+  assert.equal(yaml.escalar(42), '42', 'número sin comillas');
+  assert.equal(yaml.escalar(true), 'true', 'booleano JS sin comillas');
 });
 
 test('YAML: escalar envuelve en comillas dobles para #, -, booleanos YAML, números', () => {
@@ -316,7 +318,7 @@ test('YAML: escalar envuelve en comillas dobles para #, -, booleanos YAML, núme
 test('YAML: emitir produce pares clave-valor y listas de mapas', () => {
   const simple = yaml.emitir({ objeto: 'Compra de resmas', anio: '2026' });
   assert.ok(simple.includes('objeto:'), 'clave simple');
-  assert.ok(simple.includes('Compra de resmas'), 'valor simple');
+  assert.ok(simple.includes('"Compra de resmas"'), 'valor entrecomillado');
   assert.ok(simple.includes('anio:'), 'segunda clave');
   assert.ok(simple.endsWith('\n'), 'termina con newline');
 
@@ -328,15 +330,15 @@ test('YAML: emitir produce pares clave-valor y listas de mapas', () => {
   });
   assert.ok(conLista.includes('organismos_requirentes:'), 'lista tiene clave');
   assert.ok(conLista.includes('- nombre:'), 'elemento de lista');
-  assert.ok(conLista.includes('FAA'), 'primer elemento');
-  assert.ok(conLista.includes('DGCyC'), 'segundo elemento');
+  assert.ok(conLista.includes('"FAA"'), 'primer elemento');
+  assert.ok(conLista.includes('"DGCyC"'), 'segundo elemento');
 
   const conEspeciales = yaml.emitir({
     objeto: 'Artículo con ñ y á',
     nota: '# Etiqueta importante',
     estado: 'activo'
   });
-  assert.ok(conEspeciales.includes('Artículo con ñ y á'), 'acentos y ñ');
+  assert.ok(conEspeciales.includes('"Artículo con ñ y á"'), 'acentos y ñ entrecomillados');
   assert.ok(conEspeciales.includes('"# Etiqueta importante"'), 'hash con espacio escapado en comillas');
-  assert.ok(conEspeciales.includes('activo'), 'valor simple');
+  assert.ok(conEspeciales.includes('"activo"'), 'valor simple entrecomillado');
 });

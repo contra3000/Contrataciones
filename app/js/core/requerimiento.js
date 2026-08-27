@@ -223,7 +223,7 @@
   // y(print). Explica que OCA requiere ajuste al importe si los consumos
   // superan el contratado.
   // ---------------------------------------------------------------------------
-  var CAUSAL_OCA =
+  var NOTA_OCA =
     'La modalidad de contratación es Orden de Compra Abierta (OCA). ' +
     'Los consumos acumulados que superen el importe total contratado ' +
     'requerirán un ajuste formal (modificación o nueva contratación). ' +
@@ -342,7 +342,7 @@
   SGC.core.requerimiento = {
     CAMPOS_ENCABEZADO: CAMPOS_ENCABEZADO,
     IMPUTACION_CAMPOS: IMPUTACION_CAMPOS,
-    CAUSAL_OCA: CAUSAL_OCA,
+    NOTA_OCA: NOTA_OCA,
     descomponerCodigo: descomponerCodigo,
     validarValoresReferencia: validarValoresReferencia,
     validarCantidades: validarCantidades,

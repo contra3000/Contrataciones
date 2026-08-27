@@ -135,7 +135,7 @@
       estadosSiguientes: ['PUBLICACION'],
       estadosDevolucion: ['DILIGENCIA'],
       camposRequeridos: [],
-      entregablesObligatorios: ['pliego-bases-condiciones']
+      entregablesObligatorios: []
     },
     {
       id: 'PUBLICACION',
@@ -329,11 +329,11 @@
       titulo: 'Solicitud de Contratación (SCo)'
     },
     {
-      id: 'pliego-bases-condiciones',
+      id: 'yaml-pliego',
       estado: 'FIRMAS_PLIEGO_DISPOSICION',
       fase: 5,
-      archivo: 'pliego-bases-condiciones.html',
-      titulo: 'Pliego de Bases y Condiciones'
+      archivo: 'datos_pliego.yaml',
+      titulo: 'Datos del Pliego (YAML)'
     },
     {
       id: 'disposicion-adjudicacion',

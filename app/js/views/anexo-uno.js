@@ -102,6 +102,35 @@
     return lineas.join('\n');
   }
 
+  // Precio de referencia derivado de preventivoContratacion (§2.3).
+  function precioDerivado(expediente) {
+    var datos = datosDe(expediente);
+    var renglones = Array.isArray(datos.renglones) ? datos.renglones : [];
+    if (renglones.length === 0) return { total: null, valido: false, empresas: [] };
+    var req = SGC.core.requerimiento;
+    var prev = req.preventivoContratacion(renglones);
+    var empresas = [];
+    for (var i = 0; i < renglones.length; i++) {
+      var r = renglones[i];
+      var vals = Array.isArray(r.valoresReferencia) ? r.valoresReferencia : [];
+      for (var j = 0; j < vals.length; j++) {
+        var v = vals[j];
+        if (v && v.empresa && empresas.indexOf(v.empresa) === -1) {
+          empresas.push(v.empresa);
+        }
+      }
+    }
+    return { total: prev.total, valido: prev.valido, empresas: empresas };
+  }
+
+  // Formatea un monto numérico como "$ 1.234.567,89"
+  function formatearMonto(n) {
+    if (typeof n !== 'number' || !isFinite(n)) return '';
+    var texto = n.toFixed(2);
+    var partes = texto.split('.');
+    return '$ ' + partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + partes[1];
+  }
+
   // ---------------------------------------------------------------------------
   // Precarga desde el requerimiento (SGC.core.requerimiento.requerimientoDe)
   // ---------------------------------------------------------------------------
@@ -114,6 +143,8 @@
     var objeto = rq.objeto || str(expediente.titulo) || str(datos.titulo) || '';
     var justificacion = rq.justificacionNecesidad || str(datos.fundamentacion && datos.fundamentacion.justificacion) || '';
     var unidad = rq.unidadSolicitante || str(solicitante.unidad || solicitante.dependencia) || '';
+
+    var prev = precioDerivado(expediente);
 
     return {
       objeto: objeto,
@@ -128,7 +159,9 @@
       correo: str(solicitante.correo || rq.correo || ''),
       entrega: str(solicitante.lugarEntrega || rq.lugarEntrega || ''),
       facturacion: str(solicitante.lugarFacturacion || rq.lugarFacturacion || ''),
-      renglones: resumenRenglones(expediente)
+      renglones: resumenRenglones(expediente),
+      precioReferenciaCalculado: prev.valido && prev.total !== null ? formatearMonto(prev.total) : '',
+      empresasCalculadas: prev.empresas
     };
   }
 
@@ -216,8 +249,23 @@
     fijarValor(raiz, '#sgc-anexo1-facturacion', guard.lugarFacturacion || pre.facturacion);
     fijarValor(raiz, '#sgc-anexo1-requisitos', guard.requisitosMinimos || pre.renglones);
 
-    fijarEmpresas(raiz, guard.empresasConsultadas || []);
-    fijarValor(raiz, '#sgc-anexo1-precio', guard.precioReferencia || '');
+    // §2.3: empresas y precio derivados de los presupuestos/renglones.
+    // Si el guardado tiene valores manuales, se usan esos; si no, los calculados.
+    fijarEmpresas(raiz, guard.empresasConsultadas && guard.empresasConsultadas.length > 0
+      ? guard.empresasConsultadas : pre.empresasCalculadas);
+    var precioCalculado = pre.precioReferenciaCalculado;
+    fijarValor(raiz, '#sgc-anexo1-precio', guard.precioReferencia || precioCalculado);
+    // Mostrar el valor calculado como referencia si hay edit manual
+    var elPrecio = qs(raiz, '#sgc-anexo1-precio-ref');
+    if (elPrecio) {
+      if (guard.precioReferencia && guard.precioReferencia !== precioCalculado && precioCalculado) {
+        elPrecio.textContent = '(calculado: ' + precioCalculado + ')';
+        elPrecio.hidden = false;
+      } else {
+        elPrecio.textContent = '';
+        elPrecio.hidden = true;
+      }
+    }
     fijarValor(raiz, '#sgc-anexo1-moneda-ext', guard.monedaExtranjera || '');
 
     var chkPac = qs(raiz, '#sgc-anexo1-pac');

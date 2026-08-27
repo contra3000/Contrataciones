@@ -35,7 +35,7 @@ require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
-require(path.join(RAIZ, 'app', 'js', 'renders', 'pliego-bases-condiciones.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'vista-previa-pliego.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-1.js'));
@@ -99,7 +99,6 @@ function textoDelContenedor(contenedor) {
 const ESTADOS_CON_DOCUMENTO = [
   'ESPECIFICACIONES_TECNICAS',
   'SOLICITUD_CONTRATACION',
-  'FIRMAS_PLIEGO_DISPOSICION',
   'FIRMA_DISPOSICION',
   'GENERACION_ORDEN_COMPRA'
 ];
@@ -108,6 +107,12 @@ const ESTADOS_CON_DOCUMENTO = [
 // (ORDEN-RONDA-11 §3.1: ANEXO 1 en ANALISIS_SCo se guarda sin bloquear).
 const ESTADOS_CON_ENTREGABLE_OPCIONAL = [
   'ANALISIS_SCo'
+];
+
+// Estado con entregable que no es plantilla HTML (ADR-030: el entregable de
+// FIRMAS_PLIEGO_DISPOSICION es YAML, no un documento imprimible).
+const ESTADOS_CON_ENTREGABLE_NO_HTML = [
+  'FIRMAS_PLIEGO_DISPOSICION'
 ];
 
 test('cada estado que produce documento tiene entregable registrado y plantilla; el resto no', () => {
@@ -128,6 +133,9 @@ test('cada estado que produce documento tiene entregable registrado y plantilla;
       assert.ok(plantilla, 'falta la plantilla del entregable opcional de ' + estado.id);
       assert.equal(typeof plantilla.componer, 'function', 'componer');
       assert.equal(typeof plantilla.montar, 'function', 'montar');
+    } else if (ESTADOS_CON_ENTREGABLE_NO_HTML.indexOf(estado.id) !== -1) {
+      assert.ok(entregable, 'falta el entregable no-HTML de ' + estado.id);
+      assert.equal(plantilla, null, estado.id + ' no tiene plantilla HTML');
     } else {
       assert.equal(entregable, null, estado.id + ' no produce documento');
       assert.equal(plantilla, null, estado.id + ' no tiene plantilla');
@@ -135,7 +143,7 @@ test('cada estado que produce documento tiene entregable registrado y plantilla;
   }
 });
 
-test('las cinco plantillas componen con renglones y aclaraciones y montan DOM sin innerHTML', () => {
+test('las cuatro plantillas componen con renglones y aclaraciones y montan DOM sin innerHTML', () => {
   for (const estadoId of ESTADOS_CON_DOCUMENTO) {
     const plantilla = documentoRender.paraEstado(estadoId);
     const expediente = expedienteEn(estadoId, dosRenglones());
@@ -163,7 +171,6 @@ test('la superficie de inyección queda escapada en las cuatro plantillas nuevas
   ];
   const nuevas = [
     'SOLICITUD_CONTRATACION',
-    'FIRMAS_PLIEGO_DISPOSICION',
     'FIRMA_DISPOSICION',
     'GENERACION_ORDEN_COMPRA'
   ];
@@ -286,4 +293,35 @@ test('la cantidad mínima se imprime sólo si tiene valor y la imputación compl
   assert.ok(conValor.includes('Ejerc'), 'la tabla de imputación imprime sus encabezados');
   assert.ok(conValor.includes('>2026<'), 'la fila de imputación se imprime');
   assert.ok(!conValor.includes('Sin imputación'), 'con imputación no dice que falta');
+});
+
+test('vista-previa-pliego: no tiene estado, no lleva firma ni pie de ADR-023, lleva banner', () => {
+  const vp = SGC.renders.vistaPreviaPliego;
+  assert.ok(vp, 'vista-previa-pliego está registrado');
+  assert.equal(vp.estado, undefined, 'no tiene estado asignado (ADR-030)');
+  assert.equal(typeof vp.componer, 'function', 'componer existe');
+  assert.equal(typeof vp.montar, 'function', 'montar existe');
+
+  const exp = expedienteEn('FIRMAS_PLIEGO_DISPOSICION', dosRenglones());
+  const html = vp.componer(exp);
+  assert.ok(html.includes('Vista previa'), 'el banner de vista previa está en HTML');
+  assert.ok(html.includes('no es el Pliego'), 'el texto del banner es claro');
+  assert.ok(!html.includes('doc-pie-leyenda'), 'no lleva leyenda de ADR-023');
+  assert.ok(!html.includes('Firma'), 'no lleva pie de firma');
+
+  globalThis.document = documento;
+  const contenedor = nodo('div', 'sgc-vp-test');
+  vp.montar(contenedor, exp);
+  const texto = textoDelContenedor(contenedor);
+  assert.ok(texto.includes('Vista previa'), 'banner visible en DOM');
+  assert.ok(!texto.includes('Firma'), 'sin firma en DOM');
+});
+
+test('FIRMAS_PLIEGO_DISPOSICION: entregable es yaml-pliego y no tiene plantilla HTML', () => {
+  const entregable = config.entregableDelEstado('FIRMAS_PLIEGO_DISPOSICION');
+  assert.ok(entregable, 'el estado tiene entregable');
+  assert.equal(entregable.id, 'yaml-pliego', 'el entregable es yaml-pliego');
+  assert.equal(entregable.archivo, 'datos_pliego.yaml', 'es un archivo YAML');
+  const plantilla = documentoRender.paraEstado('FIRMAS_PLIEGO_DISPOSICION');
+  assert.equal(plantilla, null, 'no hay plantilla HTML para este estado');
 });

@@ -53,6 +53,7 @@ const manejadores = require('./manejadores.js');
 const expedientes = require('./expedientes.js');
 const presupuestos = require('./presupuestos.js');
 const archivo = require('./archivo.js');
+const eventos = require('./eventos.js');
 
 // El orden de carga importa: cada módulo puede exigir que el anterior ya esté
 // registrado en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029).
@@ -100,7 +101,8 @@ function crearServidor(datosDir) {
     VERSION,
     DIR_APP,
     DIR_CONFIG,
-    ayudantes
+    ayudantes,
+    eventos
   };
   // ORDEN-RONDA-08 §2.2: recuperación del arranque. Cierra cualquier archivo
   // interrumpido de rondas anteriores (staging abandonado, original sin marca,

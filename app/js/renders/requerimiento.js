@@ -46,7 +46,7 @@
     'Cantidad máxima (por Solicitud de Provisión)', 'Cantidad mínima (opcional)'
   ];
 
-  var CAUSAL_OCA =
+  var CAUSAL_OCA_NORMATIVA =
     'La causal de la OCA está en el Art. 25 inc. c) del Decreto 1023/01 y en el ' +
     'Art. 111 del Decreto 1030/16: cuando no se pudiere prefijar con suficiente ' +
     'precisión la cantidad de unidades o las fechas o plazos de entrega.';
@@ -217,7 +217,7 @@
       }
       partes.push(tablaHtml(ENCABEZADOS_OCA, m.renglones.map(celdasDeOca)));
       partes.push('<p class="doc-nota">La cantidad máxima es el tope que se le puede requerir al proveedor en una sola Solicitud de Provisión (uso de la División, ADR-022 §3).</p>');
-      partes.push('<p class="doc-nota">' + d.esc(CAUSAL_OCA) + '</p>');
+      partes.push('<p class="doc-nota">' + d.esc(CAUSAL_OCA_NORMATIVA) + '</p>');
     }
 
     return partes;
@@ -300,7 +300,7 @@
       tablaDom(contenedor, ENCABEZADOS_OCA, m.renglones.map(celdasDeOca));
       d.pDom(contenedor, 'doc-nota',
         'La cantidad máxima es el tope que se le puede requerir al proveedor en una sola Solicitud de Provisión (uso de la División, ADR-022 §3).');
-      d.pDom(contenedor, 'doc-nota', CAUSAL_OCA);
+      d.pDom(contenedor, 'doc-nota', CAUSAL_OCA_NORMATIVA);
     }
 
     d.firmaDom(contenedor, m.base);
