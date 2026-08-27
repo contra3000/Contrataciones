@@ -43,12 +43,43 @@
     descargar('eventos.json', contenido, 'application/json');
   }
 
-  function exportarCSV() {
-    if (estado.filtrados.length === 0) return;
+  // §2.1 ORDEN-RONDA-13: neutralización de fórmulas (ADR-031, misma forma que
+  // el YAML: neutralizar siempre, no detectar). Todo texto que empiece con =,
+  // +, -, @ o tabulador lleva un apóstrofo delante, sin excepción: así un
+  // campo no se ejecuta al abrir el CSV en una planilla. Se aplica ANTES del
+  // escapado de coma/comilla, y el apóstrofo conserva el dato (la planilla lo
+  // muestra sin el prefijo).
+  function neutralizarFormulas(texto) {
+    var primero = texto.charAt(0);
+    if (primero === '=' || primero === '+' || primero === '-' ||
+        primero === '@' || primero === '\t') {
+      return "'" + texto;
+    }
+    return texto;
+  }
+
+  function valorCSV(valor) {
+    var str = valor === null || valor === undefined ? '' : String(valor);
+    str = neutralizarFormulas(str);
+    if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) {
+      str = '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  }
+
+  // Líneas de un CSV (con cabecera), puras y exportadas para poder testearlas
+  // byte a byte sin pasar por el navegador.
+  function lineasCSV(registros) {
+    if (!Array.isArray(registros) || registros.length === 0) {
+      return [];
+    }
     var columnas = [];
     var mapaCols = {};
-    for (var i = 0; i < estado.filtrados.length; i++) {
-      var e = estado.filtrados[i];
+    for (var i = 0; i < registros.length; i++) {
+      var e = registros[i];
+      if (!e || typeof e !== 'object') {
+        continue;
+      }
       var claves = Object.keys(e);
       for (var j = 0; j < claves.length; j++) {
         if (!mapaCols[claves[j]]) {
@@ -58,18 +89,20 @@
       }
     }
     var lineas = [columnas.join(',')];
-    for (var k = 0; k < estado.filtrados.length; k++) {
+    for (var k = 0; k < registros.length; k++) {
       var fila = [];
       for (var c = 0; c < columnas.length; c++) {
-        var val = estado.filtrados[k][columnas[c]];
-        var str = val === null || val === undefined ? '' : String(val);
-        if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) {
-          str = '"' + str.replace(/"/g, '""') + '"';
-        }
-        fila.push(str);
+        var val = registros[k] ? registros[k][columnas[c]] : undefined;
+        fila.push(valorCSV(val));
       }
       lineas.push(fila.join(','));
     }
+    return lineas;
+  }
+
+  function exportarCSV() {
+    if (estado.filtrados.length === 0) return;
+    var lineas = lineasCSV(estado.filtrados);
     descargar('eventos.csv', lineas.join('\n'), 'text/csv');
   }
 
@@ -118,7 +151,8 @@
     selTipo.appendChild(optTodas);
     var tipos = ['transicion', 'devolucion', 'edicion', 'conflicto', 'rechazo',
       'entregable', 'exportacion', 'renglon', 'aclaracion', 'busqueda_catalogo',
-      'permanencia', 'area_solicitante', 'precarga_editada', 'valor_referencia'];
+      'permanencia', 'area_solicitante', 'precarga_editada', 'valor_referencia',
+      'reuso_base'];
     for (var t = 0; t < tipos.length; t++) {
       var opt = document.createElement('option');
       opt.value = tipos[t];
@@ -229,6 +263,8 @@
 
   SGC.views.exploracion = {
     montar: montar,
-    estado: estado
+    estado: estado,
+    neutralizarFormulas: neutralizarFormulas,
+    lineasCSV: lineasCSV
   };
 })(typeof window !== 'undefined' ? window : globalThis);

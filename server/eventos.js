@@ -194,6 +194,17 @@ function registrarValorReferencia(datosDir, id, indice, valores, preventivo, con
   });
 }
 
+function registrarReuso(datosDir, id, origenId, contexto) {
+  escribirEvento(datosDir, id, {
+    tipo: 'reuso_base',
+    timestamp: new Date().toISOString(),
+    origen: origenId,
+    rol: contexto && contexto.rol || null,
+    email: contexto && contexto.email || null,
+    equipo: contexto && contexto.equipo || null
+  });
+}
+
 // Helper para apiGuardar: detecta ediciones de grupo y precarga del ANEXO 1.
 const PRECAMPOS_PRECARGA = ['objeto', 'justificacion', 'empresasConsultadas',
   'precioReferencia', 'monedaExtranjera', 'unidadResponsable', 'usuarioGde',
@@ -249,6 +260,7 @@ module.exports = {
   registrarAreaSolicitante,
   registrarPrecargaEditada,
   registrarValorReferencia,
+  registrarReuso,
   registrarGuardado,
   leerEventos
 };

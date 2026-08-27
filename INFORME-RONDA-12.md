@@ -70,4 +70,70 @@ El emisor de YAML siempre escribe strings entre comillas dobles. Se eliminó `ne
 | Tests fail | 0 |
 | Archivos inspeccionados (check-compat) | 55 |
 | Violaciones (check-compat) | 0 |
-| Commit | pendiente |
+| Commit | `3bdae8a` |
+
+## 7. Contradicciones e información faltante (sección §4 del informe estándar)
+
+- **Al cierre de la ronda 12, `renders/pliego-bases-condiciones.js` quedó como
+  código muerto** —la línea 25 del §2 lo registra: "ya no se carga desde
+  index.html"—, pero el archivo seguía en el árbol. La orden 13 (§2.2) lo hizo
+  desaparecer; el dato faltante en mi cierre era que el archivo no se
+  mantenía por sí mismo: quedó de más y sólo la orden lo barrió. No hubo
+  nada que romperlo: ningún estado lo exige y el entregable real de esa fase
+  es `yaml-pliego` (sin firma).
+- **El export CSV de la exploración (H15) salía sin neutralizar fórmulas.** No
+  era un riesgo declarado en el cierre: la orden 13 (§2.1) lo detectó y lo
+  corrigió con el apóstrofo preventivo. Contradicción con la palabra
+  "exportación" del §5: exportar datos crudos que abren fórmulas no era
+  exportar, era vulnerar al que abre el archivo.
+- **La tabla de métricas del §6 quedó a medio escribir**: "Commit | pendiente".
+  El informe se escribió antes de publicar; el commit que cerró la ronda 12
+  es `3bdae8a` ("Ronda 12 - H13 cierre + H15 observabilidad y dashboards por
+  rol").
+- **No encontré dato oficial sobre qué pasa con los eventos después del cierre
+  del expediente**: la observabilidad (ADR-024) los mantiene en
+  `datosDir/eventos/<id>.jsonl` junto al expediente, y el histórico se copia
+  con la carpeta al archivar; la conservación a largo plazo quedó como
+  decisión mía (conservar todo, no purgar).
+
+## 8. Qué NO hice (sección §5 del informe estándar)
+
+- **No toqué la documentación de sólo lectura**: ADR-021 a ADR-031 y las
+  órdenes. Sólo leí.
+- **No restringí por rol el acceso a los eventos crudos**: `GET /api/eventos`
+  sirve el registro completo a quien lo pida; la advertencia de datos
+  sensibles es de la vista, no del servidor (ADR-024 §3.7). Quedó anotado
+  como riesgo para un ciclo futuro; el consejo de la vista es la única
+  frontera hoy.
+- **No corrí contra datos de producción ni contra la red**: carpetas
+  temporales en `os.tmpdir()` y `127.0.0.1` con puerto 0, como siempre.
+- **No agarré el indicador si a la vista de exploración le faltan nodos del
+  DOM**: `montar` guarda existencia (da igual si la sección no está en el
+  HTML); sólo el servidor verifica coherencia de dependencias.
+
+## 9. Riesgos que veo (sección §6 del informe estándar)
+
+- **El CSV era inyectable y nadie lo sabía** (hasta la orden 13). No entra en
+  el resumen de lo hecho porque fue la orden la que lo vio; con su corrección
+  hoy la celda no ejecuta fórmulas. Riesgo modelo de lo que no se ve hasta
+  que otro lo lee.
+- **Los eventos contienen emails, pasos y fechas** y la exploración los
+  muestra enteros; el acceso al servidor no distingue Jefe de operador. Si
+  un rol ajeno abre la URL, ve el registro completo (ADR-024 lo advierte en
+  pantalla, nada más).
+- **La suite pesa ~3 minutos** porque levanta servidores reales; seguirá
+  creciendo con cada ronda. Hoy corre en una sola pasada verde (315/0), pero
+  el costo de cada agregado es alto.
+- **La vista previa del pliego puede dar falsa confianza**: dice "vista
+  previa — no es el Pliego de Bases y Condiciones" y no lleva firmas, pero el
+  operador puede usarla como borrador del real. El deslinde es de la etiqueta.
+
+## 10. Accesos fuera del repositorio (sección §8 del informe estándar)
+
+- `os.tmpdir()` para las carpetas de datos de los tests (creadas y eliminadas
+  por corrida).
+- `127.0.0.1` con puerto 0 (asignado por el sistema) para los servidores de
+  prueba.
+- `yaml_roundtrip.py` (tests/helpers) invoca el `python` del sistema con
+  PyYAML para el ida y vuelta del emisor YAML (ADR-031); no instala nada.
+- Nada más: cero dependencias de npm, cero redes externas.

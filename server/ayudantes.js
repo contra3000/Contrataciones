@@ -201,6 +201,39 @@ function entregableDeRuta(req) {
   return { id, nombre: partes[4] };
 }
 
+// Id del expediente de base para reuso (H14, ORDEN-RONDA-13 §4):
+//   /api/archivo/<id>/base
+// Devuelve el id o null si la ruta no encaja exactamente.
+function archivoBaseDeRuta(req) {
+  const ruta = (req.url || '').split('?')[0];
+  const partes = ruta.split('/').filter((p) => p.length > 0);
+  if (partes.length !== 4 || partes[0] !== 'api' || partes[1] !== 'archivo' ||
+      partes[3] !== 'base') {
+    return null;
+  }
+  const id = partes[2];
+  if (!/^\d{4}-\d{3,}$/.test(id)) {
+    return null;
+  }
+  return id;
+}
+
+// Id y acción de las rutas de sugerencias (H19): el único POST adicional es
+//   /api/sugerencias/<id>/atender
+function sugerenciaDeRuta(req) {
+  const ruta = (req.url || '').split('?')[0];
+  const partes = ruta.split('/').filter((p) => p.length > 0);
+  if (partes.length !== 4 || partes[0] !== 'api' || partes[1] !== 'sugerencias' ||
+      partes[3] !== 'atender') {
+    return null;
+  }
+  const id = partes[2];
+  if (!/^[\w-]+$/.test(id)) {
+    return null;
+  }
+  return { id, accion: 'atender' };
+}
+
 function rutaExpediente(datosDir, id) {
   const anio = id.slice(0, 4);
   const numero = id.slice(5);
@@ -292,6 +325,8 @@ module.exports = {
   idDeRuta,
   accionDeRuta,
   entregableDeRuta,
+  archivoBaseDeRuta,
+  sugerenciaDeRuta,
   rutaExpediente,
   leerCuerpo,
   parsearCuerpo,

@@ -25,6 +25,7 @@
     return valor
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"')
+      .replace(/\x00/g, '\\u0000')
       .replace(/\n/g, '\\n')
       .replace(/\t/g, '\\t')
       .replace(/\r/g, '\\r');
