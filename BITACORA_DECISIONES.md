@@ -38,6 +38,7 @@ Plantilla al final del archivo.
 | 029 | Una dependencia que falta falla ruidosamente; nunca apaga una regla en silencio | Aceptada | 2026-08-21 |
 | 030 | Hay un solo pliego, y no lo produce esta aplicación | Aceptada | 2026-08-25 |
 | 031 | El emisor de YAML entrecomilla por defecto | Aceptada | 2026-08-25 |
+| 032 | Las plantillas del pliego viven en la aplicación, versionadas, con selección declarativa | Aceptada | 2026-08-26 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -520,6 +521,13 @@ POST /api/expedientes/:id/devolver
 
 ## ADR-022 — Modelo de datos del requerimiento real (Solicitud de Gastos)
 
+> **Enmienda del 2026-08-26 — R17 cerrado.** El Jefe de Contrataciones aclaró cómo funciona el circuito real, y con eso el riesgo desaparece: **las especificaciones técnicas no llevan cantidades.** El anexo de EETT sólo describe qué es cada renglón; las cantidades —ciertas, o máximas cuando no se conocen con precisión— **se cargan en el sistema COMPRAR**, no en un documento que produzca esta aplicación.
+>
+> En consecuencia: la `cantidadMaxima` de §3 es un dato **interno** del requerimiento y del ANEXO 1, y **nunca llega a un documento que obligue al proveedor por vía de este sistema**. La divergencia con el Art. 112 del Decreto 1030/16 se mantiene registrada como diferencia de vocabulario dentro de la División, pero **deja de ser un riesgo legal**: R17 se cierra.
+>
+> Queda una invariante que hay que sostener con un test: **el anexo de EETT no imprime cantidades, ni solicitadas ni máximas ni mínimas.** Si algún día las imprimiera, R17 vuelve a abrirse.
+
+
 **Estado:** Aceptada · 2026-08-19
 
 **Contexto.** Se incorporaron al proyecto los entregables reales del circuito actual (`EjemplosProcesoActual/`): el requerimiento (`MODELO REQ..xlsx`, una *Solicitud de Gastos*), el anexo de especificaciones técnicas, y el ANEXO 1 que Abastecimiento eleva a la UOC. Su análisis está en `ANALISIS_ENTREGABLES_REALES.md`.
@@ -957,6 +965,76 @@ Un YAML con todo entrecomillado es YAML válido, lo lee cualquier parser, y es e
 **Alternativas consideradas.** *(a)* Corregir los siete casos: descartada, deja la lista incompleta y el próximo texto raro vuelve a romper. *(b)* Usar una librería de YAML: descartada, contradice ADR-003 y para esta forma de datos no hace falta.
 
 **Consecuencias.** El YAML emitido queda más verboso. Los tests que comparaban salida literal sin comillas hay que actualizarlos. Las claves siguen sin entrecomillar: las controlamos nosotros y son identificadores simples.
+
+---
+
+## ADR-032 — Las plantillas del pliego viven en la aplicación, versionadas, con selección declarativa
+
+**Estado:** Aceptada · 2026-08-26 · *Amplía a ADR-030*
+
+**Contexto.** ADR-030 resolvió que el pliego lo produce el generador de la UOC y que esta aplicación le entrega los datos. Faltaba la otra mitad: **las plantillas**.
+
+El generador tiene hoy dos (`TEMPLATE_ANEXO_I_BIENES.md` y `TEMPLATE_ANEXO_I_SERVICIOS.md`) y elige entre ellas con el campo `tipo_contrato`. Nuestra aplicación **no elige nada**: emite `tipo_contrato: 'bienes'` y `tipo_documento: 'proyecto'` fijos, así que hoy sólo puede producir pliegos de bienes y siempre como proyecto.
+
+El Jefe de Contrataciones definió el alcance real: **hacen falta varias plantillas según bienes o servicios, la modalidad de contratación y el procedimiento de selección** —y el conjunto de criterios *"iremos testeando y afinando"*—, y **tienen que poder modificarlas el Jefe de Contrataciones o el Asesor Jurídico**, cualquiera de los dos, directamente.
+
+**Decisión.** La aplicación **custodia las plantillas** y las entrega junto con el YAML. Pasa a ser la fuente de verdad.
+
+### 1. La plantilla es un dato versionado, no un archivo suelto
+
+```
+{ id, nombre, contenido, criterios: {...}, version, autor, fecha, vigente, notaDeCambio }
+```
+
+- **El contenido se guarda íntegro en cada versión.** No hay diffs, no hay "la última pisa a la anterior": una versión nueva es un registro nuevo. Un pliego producido hace un año tiene que poder reproducirse igual.
+- **La versión vigente es una marca, no la última fila.** Se puede volver a una anterior sin borrar nada.
+
+### 2. El expediente estampa qué plantilla lo produjo
+
+Al exportar, el expediente registra **id y versión** de la plantilla usada, y queda en el registro de eventos. Sin esto, dentro de dos años nadie puede explicar por qué dos pliegos del mismo tipo salieron distintos.
+
+### 3. La selección es una tabla de reglas, no una cadena de condiciones
+
+Los criterios van a cambiar —el Jefe de Contrataciones lo dijo con todas las letras—, así que **agregar un criterio no puede requerir tocar código**:
+
+```
+criterios: { tipoContrato: 'servicios', modalidad: 'OCA', procedimiento: '*' }
+```
+
+- Se evalúa contra los atributos del expediente. `'*'` es comodín.
+- **Precedencia explícita:** gana la regla más específica —la que tiene menos comodines—; ante empate, la de mayor prioridad declarada. Nunca "la primera que aparezca en el archivo".
+- **Siempre hay una plantilla por defecto.** Un expediente que no encaja en ninguna regla **no puede quedar sin plantilla en silencio**: usa la de defecto y **lo dice en pantalla**.
+- La tabla de reglas se edita con los mismos permisos que las plantillas.
+
+### 4. Una plantilla no pasa a vigente sin validarse
+
+Es la regla que hace que todo esto sea seguro, y no se negocia:
+
+- **Se extraen los marcadores** que la plantilla usa y **se contrastan contra los campos que la aplicación sabe emitir**. Un marcador desconocido **impide publicar la versión**, con el nombre del marcador en el mensaje.
+- **Se avisa —sin impedir— de los campos que la aplicación emite y la plantilla no usa.** Puede ser deliberado; puede ser un olvido que deja una cláusula afuera.
+- **Se genera un pliego de prueba** con un expediente de ejemplo antes de publicar. Si no sale, no se publica.
+
+Sin esto, una plantilla con un marcador mal escrito produce pliegos defectuosos **para todos los expedientes siguientes**, y nadie lo nota hasta que un proveedor lo lee.
+
+### 5. Quién puede
+
+`contrataciones_supervisor` (Jefe de Contrataciones) y `juridica` (Asesor Jurídico). **Cualquiera de los dos, sin aprobación del otro**, por decisión del Jefe de Contrataciones. Verificado **en el servidor**, con la matriz de ADR-021, y registrado como evento: quién, cuándo, qué versión y la nota de cambio, que es obligatoria.
+
+Todos los demás roles **ven** las plantillas y su historial. Que sea auditable importa más que que sea restringido.
+
+### 6. Cómo llega al generador
+
+Al exportar, la aplicación entrega **el YAML y el archivo de la plantilla vigente**. El generador usa esa, no la de su carpeta. Las de su carpeta quedan como respaldo histórico.
+
+### 7. Lo que falta para que "servicios" funcione de verdad
+
+El generador **exige dos campos más cuando `tipo_contrato` es `servicios`**: `plazo_entrega_servicio` y `garantia_servicio`. La aplicación no los emite. Mientras no los emita, **un pliego de servicios no se puede generar**, y hoy eso está tapado porque `tipo_contrato` está fijo en `bienes`.
+
+**Fundamento.** Custodiar las plantillas es más caro que sólo elegirlas, y es lo correcto por tres razones que el modo actual no da: **historial** —quién cambió qué y cuándo, en un documento que después se firma—, **reproducibilidad** —un pliego viejo se puede volver a generar— y **control de rol**, que hoy es el permiso de escritura de una carpeta compartida.
+
+**Alternativas consideradas.** *(a)* Que la app sólo emita `tipo_contrato` y las plantillas se editen con un editor de texto en la carpeta del generador: descartada por el Jefe de Contrataciones; es gratis pero no deja rastro de quién cambió un documento legal. *(b)* Que un rol proponga y el otro apruebe: descartada por el Jefe de Contrataciones — a esta escala el ida y vuelta cuesta más de lo que protege.
+
+**Consecuencias.** Entra un tipo de dato nuevo que **no es un expediente** y necesita su propio almacenamiento, su respaldo y su restauración. La validación de marcadores acopla la aplicación al formato del generador: si el generador cambia de sintaxis, hay que actualizarla — se documenta y se acepta. Y aparece una responsabilidad nueva y real: **el que edita una plantilla afecta todos los pliegos siguientes**, así que la pantalla tiene que decírselo antes de publicar.
 
 ---
 

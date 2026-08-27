@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-25** · ciclo 11 auditado · **H13 al 75%** · incorporadas ADR-030 y ADR-031
+Última actualización: **2026-08-26** · ciclo 12 auditado · **H8 terminado** · incorporados H19 y H20, y ADR-032
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -20,16 +20,18 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H5 | Vertical Fase 1 — Wizard del Usuario | ✅ **Terminado** — ciclo 5 | H2, H3, H4 |
 | H6 | Tablero Kanban, roles y transiciones | ✅ **Terminado** — ciclos 6 y 7 (autorización) | H5 |
 | H7 | Entregables y exportación AI-ready | ✅ **Terminado** — ciclos 7 y 8 | H5 |
-| H8 | KPIs y Archivo Histórico | 🟡 **40%** — archivo histórico hecho (ciclo 8); faltan los KPIs | H6 |
+| H8 | KPIs y Archivo Histórico | ✅ **Terminado** — archivo histórico (ciclo 8) y KPIs (ciclo 12, vía H15) | H6 |
 | H9 | **Testing integral en local (UAT)** | 🟡 **40%** — auditoría independiente activa y prueba manual hecha; falta UAT con operadores | H6, H7 |
 | H11 | Requerimiento completo y presupuestos | ✅ **Terminado** — ciclos 9 y 10 (pantalla de carga) | H7 |
 | H12 | EETT con regla de desborde | ✅ **Terminado** — ciclo 10 | H11 |
-| H13 | ANEXO 1 y salida hacia el pliego | 🟡 **75%** — el pliego sale del generador real; faltan el emisor confiable y la decisión del pliego | H11, H12 |
+| H13 | ANEXO 1 y salida hacia el pliego | 🟡 **90%** — falta el tipo de contrato real y limpiar el código muerto | H11, H12 |
 | H14 | Expediente adjudicado como base de uno nuevo | ⬜ Pendiente — **nuevo, 2026-08-20** | H8 |
-| H15 | Observabilidad y tableros de indicadores por rol | ⬜ Pendiente — **nuevo** · **antes del UAT** | H8 |
 | H16 | Sistema de estilos aplicado a toda la app | ⬜ Pendiente — **nuevo** · final del roadmap | H13 |
 | H17 | Identidad de la app y documentación IA-friendly | ⬜ Pendiente — **nuevo** · lo último | H16 |
-| H18 | Credenciales y administración del padrón | ⬜ Pendiente — **nuevo, 2026-08-21** · **antes del UAT** | H5 |
+| H15 | Observabilidad y tableros de indicadores por rol | 🟡 **95%** — entregado en el ciclo 12; falta blindar la exportación CSV | H8 |
+| H19 | Diálogo de sugerencias del piloto | ⬜ Pendiente — **nuevo, 2026-08-26** · **ronda 13** | H6 |
+| H18 | Credenciales y administración del padrón | ⬜ Pendiente — **antes del UAT** | H5 |
+| H20 | Plantillas del pliego, versionadas y editables | ⬜ Pendiente — **nuevo, 2026-08-26** | H13 |
 | H10 | Despliegue a intranet y piloto | ⬜ Pendiente | H0, H9 |
 
 > ### ⚠️ Sigue pendiente
@@ -490,6 +492,45 @@ El paso previo real que hoy no existe en ningún sistema: cada área carga sus n
 - Aviso por dispersión alta entre presupuestos de un mismo renglón (R-09-3), si el indicador de H15 muestra que pasa seguido
 
 
+### H19 — Diálogo de sugerencias del piloto
+
+*(Pedido del Jefe de Contrataciones, 2026-08-26. **Ronda 13**, porque hace falta ahora: la evaluación ya empezó.)*
+
+Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en texto libre, lo que ve. Un *"chat con nadie"*: nadie contesta, nadie recibe notificación, todo queda anotado.
+
+- [ ] H19-1 · Botón flotante **siempre visible**, en cualquier pantalla, que abre un panel. No hace falta tener un expediente abierto
+- [ ] H19-2 · **Guarda el contexto solo**: operador, fecha y hora, pantalla en la que estaba, expediente y paso si había uno, versión de la aplicación y del catálogo, navegador. *Una sugerencia que dice "esto es confuso" sin decir dónde no sirve dentro de dos semanas*
+- [ ] H19-3 · Almacenamiento **append-only y global** (`sugerencias.jsonl` en la carpeta de datos), no por expediente. Nunca se edita ni se borra: se marca como atendida
+- [ ] H19-4 · Se activa con una marca de configuración **`MODO_PILOTO`**: fuera del piloto el botón no existe. La marca no se cambia desde la interfaz
+- [ ] H19-5 · Vista de lectura para el Jefe de Contrataciones: lista, filtro por pantalla y por persona, marca de atendida, y **exportación a Markdown** para trabajarla con IA
+- [ ] H19-6 · Cero fricción de escritura: se abre, se escribe, se guarda. Sin categorías obligatorias, sin severidad, sin formulario
+- [ ] H19-7 · Entra en el respaldo (H3-8) y en la advertencia de datos sensibles: son opiniones de personas identificadas
+
+**Criterio de aceptación:** alguien que nunca vio el sistema anota tres observaciones en su primera sesión sin preguntarle a nadie cómo se hace, y cada una llega con el lugar exacto donde ocurrió.
+
+### H20 — Plantillas del pliego, versionadas y editables
+
+*(ADR-032. Amplía a ADR-030.)*
+
+- [ ] H20-1 · Modelo de plantilla versionada: `{id, nombre, contenido, criterios, version, autor, fecha, vigente, notaDeCambio}`. **Contenido íntegro por versión**, nunca diffs: un pliego de hace un año tiene que poder reproducirse
+- [ ] H20-2 · La versión vigente es **una marca, no la última fila**: se puede volver a una anterior sin borrar nada
+- [ ] H20-3 · **Tabla de reglas de selección declarativa** (`tipoContrato` × `modalidad` × `procedimiento`, con comodín `*`). Agregar un criterio **no puede requerir tocar código** — los criterios se van a seguir afinando
+- [ ] H20-4 · Precedencia explícita: gana la regla más específica; ante empate, la de mayor prioridad declarada. **Nunca "la primera del archivo"**
+- [ ] H20-5 · **Siempre hay plantilla por defecto**, y cuando se usa por falta de coincidencia **se dice en pantalla**. Ningún expediente queda sin plantilla en silencio
+- [ ] H20-6 · **Validación antes de publicar**: se extraen los marcadores de la plantilla y se contrastan contra los campos que la aplicación emite. Un marcador desconocido **impide publicar**, con su nombre en el mensaje
+- [ ] H20-7 · Aviso —sin impedir— de los campos que la aplicación emite y la plantilla no usa
+- [ ] H20-8 · **Pliego de prueba antes de publicar**: si no sale con un expediente de ejemplo, la versión no se publica
+- [ ] H20-9 · Edición por `contrataciones_supervisor` o `juridica`, **cualquiera de los dos, directo**, verificado en el servidor. **Nota de cambio obligatoria.** Los demás roles ven plantillas e historial
+- [ ] H20-10 · El expediente **estampa id y versión** de la plantilla que lo produjo, y queda en el registro de eventos
+- [ ] H20-11 · Al exportar, la aplicación entrega **el YAML y el archivo de la plantilla vigente**
+- [ ] H20-12 · `tipo_contrato` y `tipo_documento` **dejan de estar fijos**: se derivan del expediente
+- [ ] H20-13 · **Campos de servicios**: `plazo_entrega_servicio` y `garantia_servicio`. El generador los exige cuando `tipo_contrato` es `servicios`, y hoy no los emitimos — **un pliego de servicios no se puede generar**
+- [ ] H20-14 · Las plantillas entran en el respaldo y en la restauración: son un tipo de dato nuevo que no es un expediente
+- [ ] H20-15 · La pantalla de edición avisa, antes de publicar, que **el cambio afecta todos los pliegos siguientes**
+
+**Criterio de aceptación:** se publica una plantilla de servicios, un expediente de servicios la selecciona solo, y el generador produce el pliego sin edición manual. Y una plantilla con un marcador mal escrito **no se puede publicar**.
+
+
 ## Riesgos abiertos
 
 | # | Riesgo | Impacto | Mitigación |
@@ -507,7 +548,7 @@ El paso previo real que hoy no existe en ningún sistema: cada área carga sus n
 | R13 | **Pérdida del script de scraping** (vive en un historial de chat) | Alto e inmediato — 2 horas de corrida más el conocimiento de cómo navegar el sitio | ADR-018: rescatarlo y versionarlo esta semana, fuera de la secuencia de hitos |
 | R14 | El campo de aclaración se convierte en cajón de sastre | Medio — reintroduce el *garbage in* por la puerta de atrás | Límite de 200 caracteres ya definido; medir el porcentaje de renglones con aclaración en el UAT (H8-6). Si es alto, el problema es el catálogo, no el campo |
 | R11 | Se confunde la carpeta del expediente con el archivo legal | Medio — riesgo de auditoría, no técnico | ADR-016 + H7-8: leyenda explícita en UI y en el export |
-| R17 | La `cantidadMaxima` alimenta el pliego con una semántica distinta a la del Art. 112 | Alto y legal — el pliego obligaría al proveedor a menos de lo necesario | ADR-022 §3: la plantilla del pliego rotula el campo con el significado real, o deriva el máximo contractual. Revisar en H13 |
+| ~~R17~~ | ~~La `cantidadMaxima` alimenta el pliego con otra semántica~~ | **Cerrado — 2026-08-26** | Las especificaciones técnicas **no llevan cantidades**: van en COMPRAR. El dato nunca llega a un documento que obligue al proveedor por vía nuestra (enmienda a ADR-022 §3). **Queda una invariante con test: el anexo de EETT no imprime cantidades** |
 | R16 | El promedio de valores de referencia mezcla bases unitarias y totales | Alto y silencioso — produce un preventivo plausible pero sin significado | ADR-022 §2: normalizar a unitario antes de promediar; test con bases mixtas verificable a mano |
 | R5 | El catálogo se desactualiza y nadie lo regenera | Medio | H0-8 define responsable y frecuencia; el build es un solo comando |
 | R6 | El proyecto queda sin mantenedor | Alto | Cero dependencias, código comentado en español, H10-9 |
@@ -522,7 +563,11 @@ El paso previo real que hoy no existe en ningún sistema: cada área carga sus n
 | R25 | El Jefe de Contrataciones es el único administrador del padrón, sin autoservicio de reposición | Bajo hoy, **alto si entra V2-1** — decenas de usuarios pidiendo claves | ADR-027 §6: correcto a esta escala. Se revisa el día que ADR-028 pase a Aceptada |
 | R26 | **Una regla se apaga en silencio porque falta un módulo** (causa de H-02: dos ciclos con el servidor sin gobierno sobre el requerimiento) | Alto y silencioso — es inmune a los tests, porque la guardia existe para que los tests no rompan | **ADR-029**: la dependencia faltante lanza. Tres instancias vivas a corregir en H13-7, más un test de integridad del núcleo |
 | R27 | Se imprime y se firma un requerimiento que cita un anexo que nunca se generó | Bajo — el dato no se pierde y el anexo es regenerable, pero el papel queda mal | H12-7: el anexo pasa a obligatorio cuando hay referencias pendientes |
-| R28 | `MAX_JUSTIFICACION = 20000` es un número elegido por analogía, no del dominio | Bajo — si el sistema oficial tiene otro tope, hay divergencia | Confirmarlo con el Jefe de Contrataciones. Vive en un solo lugar (`config.js`), cambiarlo es una línea |
+| ~~R28~~ | ~~`MAX_JUSTIFICACION` sin confirmar~~ | **Cerrado — 2026-08-26** | El sistema oficial no tiene tope propio: sólo recibe un documento nuestro ya firmado. Se mantiene en 20.000 para casos complejos |
 | R29 | **Un texto de operador rompe el YAML y el pliego no se genera** — o peor, se genera con un dato truncado en silencio | Alto — siete de veinte textos probados fallan; dos impiden que el archivo parsee | **ADR-031**: entrecomillar siempre, y verificación de ida y vuelta contra un parser real en la batería |
 | R30 | **El sistema produce un documento llamado "pliego" que no es el pliego** y hoy es entregable obligatorio | Alto y documental — alguien lo va a presentar creyendo que lo es | **ADR-030**: deja de ser entregable y pasa a vista previa rotulada. El pliego lo produce la UOC |
-| R31 | El pliego sale **con cláusulas en blanco** porque tres campos no se mapean | Medio — un pliego incompleto parece completo | H13-17. Y los campos sin dato tienen que verse como faltantes, no como vacíos legítimos |
+| ~~R31~~ | ~~El pliego sale con cláusulas en blanco~~ | **Cerrado — ciclo 12** | Los tres campos se mapean y los que faltan salen con `_FALTA_` visible |
+| R32 | **Un campo de texto libre se ejecuta como fórmula** al abrir el CSV exportado en una planilla | Alto — el registro de eventos está lleno de texto escrito por operadores | Neutralizar **siempre** todo campo que empiece con `=`, `+`, `-`, `@` o tabulador. Misma forma que ADR-031: no detectar casos, neutralizar todo |
+| R33 | **Un pliego de servicios no se puede generar**: `tipo_contrato` está fijo en `bienes` y faltan dos campos que el generador exige | Medio — tapado hasta que alguien intente uno | H20-12 y H20-13 |
+| R34 | Una plantilla con un marcador mal escrito produce **pliegos defectuosos para todos los expedientes siguientes** | Alto y silencioso — nadie lo nota hasta que lo lee un proveedor | ADR-032 §4: no se publica una versión sin validar marcadores y sin generar un pliego de prueba |
+| R35 | El informe del desarrollador pierde las secciones que lo hacen verificable | Medio — es el mecanismo por el que el revisor se entera de lo que **no** salió | Criterio de aceptación explícito en cada orden, y las cuatro secciones nombradas una por una |
