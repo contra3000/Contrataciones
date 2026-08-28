@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-26** · ciclo 12 auditado · **H8 terminado** · incorporados H19 y H20, y ADR-032
+Última actualización: **2026-08-28** · ciclo 13 aprobado · **H0-4 y H0-16 respondidas** · incorporadas ADR-033 y ADR-034
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -24,13 +24,13 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H9 | **Testing integral en local (UAT)** | 🟡 **40%** — auditoría independiente activa y prueba manual hecha; falta UAT con operadores | H6, H7 |
 | H11 | Requerimiento completo y presupuestos | ✅ **Terminado** — ciclos 9 y 10 (pantalla de carga) | H7 |
 | H12 | EETT con regla de desborde | ✅ **Terminado** — ciclo 10 | H11 |
-| H13 | ANEXO 1 y salida hacia el pliego | 🟡 **90%** — falta el tipo de contrato real y limpiar el código muerto | H11, H12 |
-| H14 | Expediente adjudicado como base de uno nuevo | ⬜ Pendiente — **nuevo, 2026-08-20** | H8 |
+| H13 | ANEXO 1 y salida hacia el pliego | ✅ **Terminado** — ciclos 11 a 13; el tipo de contrato real pasa a H20 | H11, H12 |
+| H14 | Expediente adjudicado como base de uno nuevo | ✅ **Terminado** — ciclo 13 | H8 |
 | H16 | Sistema de estilos aplicado a toda la app | ⬜ Pendiente — **nuevo** · final del roadmap | H13 |
 | H17 | Identidad de la app y documentación IA-friendly | ⬜ Pendiente — **nuevo** · lo último | H16 |
-| H15 | Observabilidad y tableros de indicadores por rol | 🟡 **95%** — entregado en el ciclo 12; falta blindar la exportación CSV | H8 |
-| H19 | Diálogo de sugerencias del piloto | ⬜ Pendiente — **nuevo, 2026-08-26** · **ronda 13** | H6 |
-| H18 | Credenciales y administración del padrón | ⬜ Pendiente — **antes del UAT** | H5 |
+| H15 | Observabilidad y tableros de indicadores por rol | ✅ **Terminado** — ciclos 12 y 13 | H8 |
+| H19 | Diálogo de sugerencias del piloto | ✅ **Terminado** — ciclo 13 | H6 |
+| H18 | Credenciales y administración del padrón | 🟡 **En curso** — ronda 14 · **antes del UAT** | H5 |
 | H20 | Plantillas del pliego, versionadas y editables | ⬜ Pendiente — **nuevo, 2026-08-26** | H13 |
 | H10 | Despliegue a intranet y piloto | ⬜ Pendiente | H0, H9 |
 
@@ -48,7 +48,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 - [ ] H0-1 · Identificar qué servidor sirve `septibri.faa.mil.ar` (IIS / Apache / nginx) y su versión — *elevado a Informática*
 - [ ] H0-2 · Confirmar si hay motor server-side disponible (ASP.NET, PHP) o si es solo estáticos — *elevado*
 - [ ] H0-3 · Averiguar si se autoriza correr un proceso propio (Node.js como servicio) y en qué equipo — *elevado* · **es la decisión de mayor impacto pendiente**
-- [ ] H0-4 · Confirmar si existe HTTPS para el host donde iría la app — *elevado*
+- [x] H0-4 · HTTPS: **NO. Sólo HTTP.** ⇒ sin contexto seguro **no existe el adaptador de archivos del navegador**: el servidor propio pasa de preferido a **único camino posible**. R1 y R2 se fusionan; H0-3 deja de ser una decisión de conveniencia. Y la clave viaja en claro (R24, aceptado): **no puede ser la misma de ningún otro sistema** ⇒ enmienda de ADR-027
 - [x] H0-5 · Versión exacta de Edge/Chrome en las PCs de los operadores → **109.0.5414.120, cohort Windows 7** ⇒ ADR-011
 - [ ] H0-6 · Permisos NTFS: administrador identificado y trámite ágil ✅ · **falta la ruta UNC real de `Y:`** y definir la carpeta de datos nueva ⇒ ADR-015
 - [x] H0-7 · Backup: hoy no existe, se puede establecer ⇒ pasa a ser requisito del proyecto (H3-8, H10-4)
@@ -59,7 +59,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 - [x] H0-12 · Excepción de catálogo: **ítem más similar + aclaración de hasta 200 caracteres** ⇒ enmienda de ADR-014
 - [x] H0-14 · Cuentas de Windows: **compartidas y sin contraseña** ⇒ ADR-017
 - [x] H0-15 · Cuentas de Windows: **una por PC**. La identidad del operador se basa en el **correo institucional**, no en Windows ⇒ ADR-017 Aceptada
-- [ ] H0-16 · ¿Las PCs tienen IP fija o reserva DHCP? (condiciona la restricción de rol por máquina, ADR-017 medida 4) — *elevar*
+- [x] H0-16 · **IP fija**, pero **no hay una PC por persona**: la restricción de rol por máquina **se descarta** (ADR-017 medida 4). La identidad se resuelve sólo con el ingreso por clave ⇒ **H3-12 se retira**
 - [x] H0-17 · El scraper corre **fuera de la intranet**; el archivo se traslada a mano. **La app no emite peticiones al exterior** ⇒ ADR-018
 - [ ] H0-18 · **Nueva** · ¿Cuál es el procedimiento admitido para trasladar un archivo desde una PC externa a la red interna? — *elevar*
 - [x] H0-13 · Validación de los 18 pasos: **cada sector confirmó su fase** ⇒ riesgo R4 baja de Alto a Bajo
@@ -147,7 +147,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 - [ ] H3-8 · Script de backup de la carpeta de datos (copia diaria con retención)
 - [ ] H3-9 · `repo.http.js` en el cliente, con manejo de conflicto
 - [ ] H3-11 · El servidor registra **IP y nombre de equipo** de cada petición en la auditoría, junto al rol declarado (ADR-017, medida 3). Es el único dato de identidad que el operador no elige
-- [ ] H3-12 · Restricción opcional de rol por máquina: sólo se aceptan acciones de un rol desde las PCs de ese sector (ADR-017, medida 4) — *depende de H0-16*
+- [~] H3-12 · ~~Restricción de rol por máquina~~ · **Retirada el 2026-08-28**: no hay una PC por persona, atar el rol a la máquina daría por buena una atribución falsa. Se mantiene el registro de IP y equipo como dato (H3-11), no como control
 - [ ] H3-13 · Edición del padrón de operadores restringida a la máquina del Jefe de Contrataciones, verificado del lado del servidor (ADR-017, medida 5)
 - [ ] H3-10 · **Test de concurrencia automatizado**: 20 escrituras simultáneas sobre el mismo expediente ⇒ exactamente 1 gana, 19 reciben conflicto, el archivo nunca queda corrupto ni truncado
 
@@ -457,12 +457,20 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 - [ ] H18-2 · Verificación en tiempo constante (`timingSafeEqual`). **Ninguna clave en texto plano, en ningún lado, nunca**
 - [ ] H18-3 · **El padrón con credenciales no se sirve por HTTP.** Vive fuera de toda carpeta servida como estática, y **hay un test que lo verifica** — no una revisión visual
 - [ ] H18-4 · Entrada con correo institucional + clave; sesión del lado del servidor con cookie `HttpOnly`, `SameSite=Strict`, identificador de `crypto.randomBytes`
-- [ ] H18-5 · **El rol se deriva de la sesión, no del cuerpo de la petición.** El cliente deja de declarar `contexto.rol`. Si el operador tiene varios roles, elige entre los suyos
+- [ ] H18-5 · **El rol se deriva de la sesión, no del cuerpo de la petición.** El cliente deja de declarar `contexto.rol`. **Un operador tiene un solo rol** (ADR-033): no hay nada que elegir
 - [ ] H18-6 · La auditoría y el registro de eventos pasan a anotar el operador **verificado**, no el declarado (cierra R12)
 - [ ] H18-7 · Cierre por inactividad a los 15 minutos (H5-1) y cierre explícito con botón visible
 - [ ] H18-8 · Demora fija de 1 segundo en cada intento fallido; bloqueo tras diez fallos seguidos, que sólo levanta el Jefe de Contrataciones
 - [ ] H18-9 · `tools/padron.js`: alta, cambio de clave, desactivación. **Imprime el hash y no guarda la clave en ningún lado**
-- [ ] H18-10 · Cambio de clave por el propio operador (opcional, recomendado: después del cambio ni el Jefe conoce la clave)
+- [ ] H18-10 · **ADR-033 · jerarquía de roles**: el padrón pasa de `roles: []` a `rol: ''`; `rolesEfectivos(rol)` devuelve el propio más los heredados, declarado como dato en `config.js`. **La matriz 18 × 7 no se duplica**: cambia cómo se pregunta
+- [ ] H18-11 · La auditoría y los eventos registran el **rol efectivo**: `contrataciones_supervisor actuando como contrataciones`
+- [ ] H18-12 · Indicador: **la misma persona ejecutó un paso y su supervisión**. No bloquea; se ve
+- [ ] H18-13 · **ADR-034 · la clave se genera como cuatro palabras en castellano** (`silla-mapa-trueno-verde`), para que se pueda transcribir a mano sin error. Se muestra **una sola vez** y se guarda sólo el hash
+- [ ] H18-14 · **ADR-034 · la credencial nace `provisoria: true`** y el primer ingreso **obliga a cambiarla**: con esa marca el operador entra pero no puede hacer otra cosa. Es lo que hace que el registro distinga al operador del Jefe
+- [ ] H18-15 · **ADR-034 · la reposición la hace el Jefe y queda como evento**: *"clave repuesta por X para Y"*. Es lo que sostiene la honestidad del sistema: no se puede reponer sin dejar rastro
+- [ ] H18-16 · La baja pone `activo: false`, **nunca borra**: el nombre sigue apareciendo en los expedientes que tramitó (R15)
+- [ ] H18-17 · La pantalla de cambio de clave advierte que **esta clave no puede ser la misma de ningún otro sistema** (R24: sin HTTPS viaja en claro)
+- [ ] H18-18 · **Cerrar `GET /api/eventos` por rol** (declarado por el desarrollador en el ciclo 13): hoy cualquiera lee el registro crudo. El compendio completo de eventos y de sugerencias, con su contexto, es del **Jefe de Contrataciones**
 - [ ] H18-11 · El padrón real vive en la carpeta de datos y entra en el respaldo (H3-8). En el repositorio queda sólo `usuarios.ejemplo.json`, **sin credenciales**
 - [ ] H18-12 · Migración: los expedientes existentes conservan el operador que tengan registrado; no se reescribe historia
 
@@ -518,6 +526,7 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 - [ ] H20-4 · Precedencia explícita: gana la regla más específica; ante empate, la de mayor prioridad declarada. **Nunca "la primera del archivo"**
 - [ ] H20-5 · **Siempre hay plantilla por defecto**, y cuando se usa por falta de coincidencia **se dice en pantalla**. Ningún expediente queda sin plantilla en silencio
 - [ ] H20-6 · **Validación antes de publicar**: se extraen los marcadores de la plantilla y se contrastan contra los campos que la aplicación emite. Un marcador desconocido **impide publicar**, con su nombre en el mensaje
+- [ ] H20-6b · **Botón "Probar ahora" en la misma pantalla de edición**: lo corre el que está editando, sin salir. Recién con la prueba en verde se habilita publicar (enmienda de ADR-032)
 - [ ] H20-7 · Aviso —sin impedir— de los campos que la aplicación emite y la plantilla no usa
 - [ ] H20-8 · **Pliego de prueba antes de publicar**: si no sale con un expediente de ejemplo, la versión no se publica
 - [ ] H20-9 · Edición por `contrataciones_supervisor` o `juridica`, **cualquiera de los dos, directo**, verificado en el servidor. **Nota de cambio obligatoria.** Los demás roles ven plantillas e historial
@@ -528,6 +537,10 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 - [ ] H20-14 · Las plantillas entran en el respaldo y en la restauración: son un tipo de dato nuevo que no es un expediente
 - [ ] H20-15 · La pantalla de edición avisa, antes de publicar, que **el cambio afecta todos los pliegos siguientes**
 
+- [ ] H20-16 · **La v1 de cada plantilla incorpora las trece correcciones normativas** del `LOG_ERRORES_COMUNES.md` (N01, N03–N11, N13, M01, M02). Es el contenido, no una tarea: ver `ANALISIS_ERRORES_PLIEGOS.md`
+- [ ] H20-17 · **La plantilla numera sola** cláusulas e incisos, en vez de traer los números escritos a mano: hace imposibles E01, E02 y E05 del log
+- [ ] H20-18 · Muestra curada en `referencias/pliegos-ejemplo/`: 0374 (control), **0390 servicios**, 0578 (el que más errores acumuló), 0432 (desierto/fracasado), y el log completo. **No la carpeta entera**
+
 **Criterio de aceptación:** se publica una plantilla de servicios, un expediente de servicios la selecciona solo, y el generador produce el pliego sin edición manual. Y una plantilla con un marcador mal escrito **no se puede publicar**.
 
 
@@ -536,7 +549,7 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 | # | Riesgo | Impacto | Mitigación |
 |---|--------|---------|-----------|
 | R1 | Informática no autoriza correr un proceso propio | **Crítico** — con Chrome 109 el adaptador FSA no tiene permisos persistentes ni escritura atómica (ADR-011): cada operador tendría que volver a elegir la carpeta de red en cada sesión. Deja de ser una contingencia aceptable | ADR-002 aísla el impacto en un archivo; **ADR-015 es el argumento a presentar: un servidor propio es la opción más segura, porque permite que ningún operador tenga permiso de escritura sobre los datos** |
-| R2 | No hay HTTPS y tampoco backend | **Crítico** — sin *secure context* no hay File System Access y la app queda de solo lectura. No hay plan C | Detectar en H0-4. Alternativas: publicar la app en un host con HTTPS, alojarla en una PC custodiada actuando como servidor, o pedir la directiva empresarial que marca el origen como confiable |
+| R2 | ~~No hay HTTPS~~ · **Confirmado el 2026-08-28: no hay HTTPS.** El riesgo dejó de ser hipotético | **Crítico y cierto** — sin contexto seguro **no existe** el adaptador de archivos del navegador. Ya no hay dos caminos | **El servidor propio es el único camino.** R1 y R2 se fusionan: todo depende de H0-3. Si la respuesta es NO, no hay plan B ni C, hay que conseguir un equipo donde sí se pueda |
 | R8 | El sistema de firmas rechaza el PDF generado | Medio — obliga a la v2 de ADR-012 (librería PDF vendida) | Probar el circuito completo en H5-6, con un solo documento, antes de construir el resto de las plantillas |
 | R9 | Un ítem necesario no está en el catálogo del mes | Medio — con catálogo cerrado, bloquea el trámite | H0-12 define el procedimiento de excepción antes de H4 |
 | R10 | El parque de PCs (Windows 7) se renueva y cambia el navegador | Bajo, y sería una mejora | ADR-011 fija un piso, no un techo de funcionamiento: el código que corre en 109 corre en versiones posteriores |
@@ -559,7 +572,10 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 | R21 | Un precio del año anterior se hereda como valor de referencia sin que nadie lo note | Alto y silencioso — es R16 por la puerta de atrás | ADR-025 regla 3: el expediente creado "como base" nace **sin presupuestos y sin valores de referencia**; copia por lista blanca, nunca por lista negra |
 | R22 | La aplicación se copia y no hay forma de reconocerla | Bajo, pero irreversible si no se prepara antes | ADR-026 y H17: sello de compilación impreso en cada entregable, huella estructural del registro de auditoría, etiqueta firmada con GPG y hash publicado de la v1 |
 | R23 | **Trabajo hecho que no se publica** (ciclo 10: ronda completa sin commit, sin push y sin informe) | Alto — se quema una auditoría entera y el avance no cuenta | **Control de entrega** antes de largar al auditor: `git log --oneline -1`, `git status --short` y existencia del informe. Si algo falla, el auditor no arranca. **Cuidado**: `git status` sobre el montaje puede cortarse por tiempo y devolver vacío — mirar el código de salida |
-| R24 | Sin HTTPS, la clave del operador viaja en claro por la intranet | Medio, aceptado por el Jefe de Contrataciones — red cerrada, sin datos personales | ADR-027: **estas claves no pueden ser la misma que la de ningún otro sistema del organismo**. Si H0-4 confirma HTTPS, el riesgo desaparece |
+| R24 | Sin HTTPS, la clave del operador viaja en claro por la intranet | Medio, **y ya no es condicional**: H0-4 confirmó que sólo hay HTTP | ADR-027 enmendada: **estas claves no pueden ser la misma que la de ningún otro sistema del organismo**, y la pantalla de cambio de clave lo dice (H18-17) |
+| R36 | El supervisor ejecuta un paso y después supervisa ese mismo paso | Bajo hoy — con catorce personas va a pasar, y bloquearlo detendría expedientes | ADR-033 §4: **no se bloquea, se hace visible**. Indicador de "misma persona en el paso y su supervisión". Se decide con datos después del UAT |
+| R37 | **Mientras el Jefe conozca la clave, el registro no distingue al operador del Jefe** | Alto para la atribución, que es el propósito del sistema | ADR-034 §3: la clave entregada es provisoria y **el primer ingreso obliga a cambiarla**. Y toda reposición queda como evento (§4): no se puede reponer sin dejar rastro |
+| R38 | El registro crudo de eventos y las sugerencias los puede leer cualquier rol | Medio — contienen texto libre y desempeño de personas identificadas | H18-18: se cierra por rol junto con las credenciales. Declarado por el desarrollador en su informe del ciclo 13 |
 | R25 | El Jefe de Contrataciones es el único administrador del padrón, sin autoservicio de reposición | Bajo hoy, **alto si entra V2-1** — decenas de usuarios pidiendo claves | ADR-027 §6: correcto a esta escala. Se revisa el día que ADR-028 pase a Aceptada |
 | R26 | **Una regla se apaga en silencio porque falta un módulo** (causa de H-02: dos ciclos con el servidor sin gobierno sobre el requerimiento) | Alto y silencioso — es inmune a los tests, porque la guardia existe para que los tests no rompan | **ADR-029**: la dependencia faltante lanza. Tres instancias vivas a corregir en H13-7, más un test de integridad del núcleo |
 | R27 | Se imprime y se firma un requerimiento que cita un anexo que nunca se generó | Bajo — el dato no se pierde y el anexo es regenerable, pero el papel queda mal | H12-7: el anexo pasa a obligatorio cuando hay referencias pendientes |

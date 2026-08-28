@@ -39,6 +39,8 @@ Plantilla al final del archivo.
 | 030 | Hay un solo pliego, y no lo produce esta aplicación | Aceptada | 2026-08-25 |
 | 031 | El emisor de YAML entrecomilla por defecto | Aceptada | 2026-08-25 |
 | 032 | Las plantillas del pliego viven en la aplicación, versionadas, con selección declarativa | Aceptada | 2026-08-26 |
+| 033 | Los supervisores heredan lo que pueden hacer sus supervisados | Aceptada | 2026-08-28 |
+| 034 | Entrega, primer ingreso y reposición de claves | Aceptada | 2026-08-28 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -334,6 +336,8 @@ Además, H0-2.5 (cuentas de Windows compartidas y sin contraseña) **refuerza** 
 ## ADR-017 — Identidad basada en el correo institucional, no en Windows
 
 > **Superada parcialmente por ADR-027 (2026-08-21).** Donde esta ADR dice *"sin contraseña ni PIN en la v1"*, ahora hay **una clave por operador** definida a mano por el Jefe de Contrataciones. Todo lo demás —correo institucional como identidad, visible en pantalla, registro de la máquina de origen— se mantiene. La atribución pasa de *declarada y corroborada* a **verificada**.
+>
+> **Enmienda del 2026-08-28.** La **medida 4 —restringir el rol por máquina— se descarta.** Las PCs tienen IP fija, pero el Jefe de Contrataciones confirmó que **no hay una PC por persona**: atar el rol a la máquina daría por buena una atribución falsa. La identidad se resuelve **sólo con el ingreso por clave** (ADR-027 y ADR-034). H0-16 queda cerrado y H3-12 se retira del plan. Se mantiene la medida 3: el servidor sigue registrando IP y nombre de equipo de cada petición, como dato, no como control.
 
 **Estado:** Aceptada · 2026-08-13
 
@@ -768,6 +772,10 @@ Lo que sobrevive a la copia y a la evolución no es una firma: son **rasgos idio
 
 **Estado:** Aceptada · 2026-08-21 · *Supera parcialmente a ADR-017 ("sin contraseña ni PIN en la v1")*
 
+> **Enmienda del 2026-08-28 — no hay HTTPS.** H0-4 quedó respondido: **el host sirve sólo HTTP.** Con eso, lo que en esta ADR era un riesgo condicional pasa a ser un hecho: **la clave viaja en claro por la intranet** (R24). El Jefe de Contrataciones lo acepta —red cerrada, sin datos personales— y de ahí se sigue la regla que ya estaba escrita y que ahora **no es negociable**: estas claves **no pueden ser la misma que la de ningún otro sistema del organismo**, y la pantalla de cambio de clave (ADR-034 §3) tiene que decirlo.
+>
+> Hay una segunda consecuencia, y es mayor: **sin HTTPS no hay contexto seguro, y sin contexto seguro no existe el adaptador de archivos del navegador.** El servidor propio deja de ser la opción preferida y pasa a ser **la única**: H0-3 ya no es una decisión de conveniencia, es la condición de existencia del sistema. Ver R1 y R2 en el plan.
+
 **Contexto.** ADR-017 resolvió la identidad con el correo institucional **declarado y corroborado**, sin contraseña: el operador se elige de una lista, el servidor cruza el rol contra el padrón y registra la máquina de origen. Era suficiente para desarrollar, pero deja la atribución en "declarada": cualquiera puede elegir el nombre de cualquiera, y eso contamina la auditoría y los indicadores (R12).
 
 La alternativa habitual —enviar un código de un solo uso al correo del usuario— exige que la aplicación mande correo. **Eso está descartado**: la app no emite peticiones al exterior (ADR-018), no hay servidor de correo disponible desde la intranet y sería una dependencia nueva en un sistema que tiene cero.
@@ -972,6 +980,14 @@ Un YAML con todo entrecomillado es YAML válido, lo lee cualquier parser, y es e
 
 **Estado:** Aceptada · 2026-08-26 · *Amplía a ADR-030*
 
+> **Enmienda del 2026-08-28 — dos precisiones del Jefe de Contrataciones.**
+>
+> **1. La validación es en el momento, y la corre el que edita.** La §4 decía que una versión no pasa a vigente sin validarse; faltaba decir *cuándo*. El que modifica la plantilla —que la mayoría de las veces va a ser el propio Jefe de Contrataciones— tiene un botón **"Probar ahora"** en la misma pantalla: extrae los marcadores, los contrasta, genera el pliego de prueba y muestra el resultado **sin salir de la edición**. Recién con esa prueba en verde se habilita publicar. Nada de un paso aparte ni de esperar a otro.
+>
+> **2. Las plantillas nacen del log de errores comunes, no de cero.** Existe `Revisor de documentación\LOG_ERRORES_COMUNES.md`, con **24 errores tipificados** detectados en procesos reales. **Trece de ellos son citas normativas equivocadas que se arreglan escribiéndolas bien una sola vez en la plantilla** (N01, N03–N11, N13, M01, M02). Ese es el contenido de la v1 de cada plantilla y la razón por la que este hito existe. El análisis completo está en `ANALISIS_ERRORES_PLIEGOS.md`.
+>
+> Y de ahí sale lo que hace obligatoria la nota de cambio: cuando la ONC modifique otro artículo, alguien va a tener que saber **cuándo y por qué** se cambió cada cita.
+
 **Contexto.** ADR-030 resolvió que el pliego lo produce el generador de la UOC y que esta aplicación le entrega los datos. Faltaba la otra mitad: **las plantillas**.
 
 El generador tiene hoy dos (`TEMPLATE_ANEXO_I_BIENES.md` y `TEMPLATE_ANEXO_I_SERVICIOS.md`) y elige entre ellas con el campo `tipo_contrato`. Nuestra aplicación **no elige nada**: emite `tipo_contrato: 'bienes'` y `tipo_documento: 'proyecto'` fijos, así que hoy sólo puede producir pliegos de bienes y siempre como proyecto.
@@ -1035,6 +1051,105 @@ El generador **exige dos campos más cuando `tipo_contrato` es `servicios`**: `p
 **Alternativas consideradas.** *(a)* Que la app sólo emita `tipo_contrato` y las plantillas se editen con un editor de texto en la carpeta del generador: descartada por el Jefe de Contrataciones; es gratis pero no deja rastro de quién cambió un documento legal. *(b)* Que un rol proponga y el otro apruebe: descartada por el Jefe de Contrataciones — a esta escala el ida y vuelta cuesta más de lo que protege.
 
 **Consecuencias.** Entra un tipo de dato nuevo que **no es un expediente** y necesita su propio almacenamiento, su respaldo y su restauración. La validación de marcadores acopla la aplicación al formato del generador: si el generador cambia de sintaxis, hay que actualizarla — se documenta y se acepta. Y aparece una responsabilidad nueva y real: **el que edita una plantilla afecta todos los pliegos siguientes**, así que la pantalla tiene que decírselo antes de publicar.
+
+---
+
+## ADR-033 — Los supervisores heredan lo que pueden hacer sus supervisados
+
+**Estado:** Aceptada · 2026-08-28 · *Modifica la matriz de ADR-021*
+
+**Contexto.** El padrón admite que una persona tenga varios roles (`roles: []`). Al armar el padrón real, el Jefe de Contrataciones lo descartó: *"prefiero que los supervisores simplemente puedan hacer todo lo que pueden hacer sus supervisados en vez de sumarle roles"*.
+
+Tiene razón, y por un motivo que va más allá de la comodidad: **un padrón con roles acumulados miente sobre la organización.** Decir que Marisa Díaz es *"contrataciones y contrataciones_supervisor"* sugiere dos funciones; lo que hay es una sola función que incluye a la otra. Y una lista de roles se desactualiza sola: alguien asciende, se le agrega el rol nuevo, nadie le saca el viejo.
+
+**Decisión.** Cada operador tiene **un solo rol**, y los roles forman una jerarquía.
+
+### 1. La jerarquía
+
+```
+abastecimiento_supervisor  ⊃  abastecimiento
+contrataciones_supervisor  ⊃  contrataciones
+generador                     (sin supervisado)
+juridica                      (sin supervisado)
+contaduria                    (sin supervisado)
+```
+
+Se declara en `config.js` como un dato —`{ rol: 'contrataciones_supervisor', incluye: ['contrataciones'] }`— **no como una cadena de condiciones**. Es transitiva: si mañana hay tres niveles, el de arriba incluye a los dos de abajo sin tocar código.
+
+### 2. Cómo se aplica
+
+`rolesEfectivos(rol)` devuelve el conjunto —el propio más los heredados— y **la matriz de autorización consulta el conjunto**. La matriz de 18 × 7 **no se duplica**: sigue diciendo qué rol ejecuta cada paso, y lo que cambia es cómo se pregunta.
+
+El padrón pasa de `roles: []` a `rol: ''`. Los expedientes ya registrados conservan lo que tengan; no se reescribe historia.
+
+### 3. La auditoría registra el rol efectivo, no sólo el propio
+
+Cuando un supervisor ejecuta un paso que le corresponde a su supervisado, el registro dice **`contrataciones_supervisor actuando como contrataciones`**. No alcanza con anotar el rol de la persona: lo que hay que poder reconstruir es **con qué facultad se hizo cada cosa**.
+
+### 4. Lo que esto debilita, y por qué se acepta igual
+
+Un supervisor puede ahora **ejecutar un paso y después supervisar ese mismo paso**. En una división de catorce personas eso va a pasar, y bloquearlo tendría un costo peor: un expediente detenido porque el único que estaba era el supervisor.
+
+Así que **no se bloquea, se hace visible**:
+
+- La máquina de estados **no se toca**: los pasos siguen siendo distintos y en orden. Lo que cambia es quién puede ejecutarlos, no que se fusionen.
+- Cuando **la misma persona** ejecuta un paso y su supervisión, queda **marcado en el registro de eventos** y aparece como indicador (ADR-024). No es una alarma: es un número que el Jefe de Contrataciones puede mirar de vez en cuando.
+
+Si con el uso real ese número resulta alto, se decide entonces con datos y no ahora con suposiciones.
+
+**Fundamento.** *La jerarquía es un dato de la organización, no una lista que alguien mantiene.* Modelarla explícitamente evita que el padrón se desactualice y hace que la auditoría diga con qué facultad se actuó, que es más informativo que decir quién actuó.
+
+**Alternativas consideradas.** *(a)* Roles acumulados en una lista: descartada por el Jefe de Contrataciones; se desactualiza sola. *(b)* Duplicar filas en la matriz de autorización: descartada, la matriz pasaría de 18 × 7 a un enredo que hay que mantener a mano.
+
+**Consecuencias.** Cambia el esquema del padrón y la forma de consultar la matriz, no la matriz. Aparece un indicador nuevo. Y aparece una pregunta que hoy no tiene respuesta y que el UAT va a contestar: **cuán seguido el supervisor termina haciendo el trabajo del supervisado.**
+
+---
+
+## ADR-034 — Entrega, primer ingreso y reposición de claves
+
+**Estado:** Aceptada · 2026-08-28 · *Completa a ADR-027*
+
+**Contexto.** ADR-027 resolvió que hay una clave por operador, generada por el Jefe de Contrataciones, guardada como hash con `scrypt`. Quedaron sin resolver las tres preguntas que hizo el Jefe de Contrataciones: **cómo se las entrega, si el operador la obtiene en el primer ingreso, y cuál es el sistema de recuperación.**
+
+No es un detalle: de esto depende que la atribución del registro signifique algo.
+
+**Decisión.**
+
+### 1. La entrega es en mano, y no por correo
+
+La herramienta `tools/padron.js` genera la clave, la **muestra una sola vez en pantalla** y guarda únicamente el hash. El Jefe de Contrataciones la entrega **en persona o por nota interna**.
+
+Nunca por correo electrónico. La aplicación no manda correo (ADR-018) y, sobre todo, **el correo institucional es el nombre de usuario**: mandar la clave por ahí es dejar las dos mitades en el mismo lugar. Con catorce personas en la misma unidad, la entrega en mano es el canal natural y el más seguro.
+
+### 2. La clave generada se puede transcribir a mano
+
+Se genera como **cuatro palabras en castellano separadas por guiones** —`silla-mapa-trueno-verde`— y no como una cadena de símbolos.
+
+No es una concesión: una clave que se entrega en un papel y se tipea a mano **tiene que poder copiarse sin error**. Cuatro palabras de un diccionario de dos mil son más difíciles de adivinar que `X7#kq2` y muchísimo más fáciles de transcribir. Que no haya que dictar *"equis mayúscula, siete, numeral"* es lo que evita la llamada telefónica y el papel pegado al monitor.
+
+### 3. La clave entregada es provisoria y **el primer ingreso obliga a cambiarla**
+
+La credencial nace con `provisoria: true`. Con esa marca, el operador entra pero **la aplicación no lo deja hacer nada más que cambiar su clave**.
+
+Es el punto que hace que todo esto valga: **mientras la clave la conozca el Jefe de Contrataciones, el registro no puede distinguir entre el operador y él.** Después del cambio, sólo la conoce el operador, y recién ahí *"lo hizo Fulano"* significa algo.
+
+### 4. Reposición: la repone el Jefe, y queda registrada
+
+No hay autoservicio: no hay correo por donde mandar un enlace. Si alguien pierde la clave, el Jefe de Contrataciones genera otra provisoria y la entrega de nuevo. El ciclo vuelve a empezar por el punto 3.
+
+**Y la reposición se registra como evento**: *"clave repuesta por &lt;jefe&gt; para &lt;operador&gt;, tal fecha y hora"*.
+
+Ese registro es lo que sostiene la honestidad del sistema. **Es cierto que quien administra siempre puede reponer una clave y entrar como otro** —es inevitable cuando administra una sola persona— pero si una clave se repuso a las 10:04 y el expediente avanzó a las 10:06, la traza lo muestra. **La defensa no es impedirlo: es que no se pueda hacer sin dejar rastro.**
+
+### 5. Bajas
+
+Dar de baja a un operador **no borra nada**: pone `activo: false`. La persona deja de poder entrar; su nombre sigue apareciendo en los expedientes que tramitó. Un padrón que borra gente rompe la auditoría hacia atrás (R15).
+
+**Fundamento.** A esta escala, la administración manual por una sola persona es la respuesta correcta: cero infraestructura, cero correo, cero superficie. Lo que la vuelve aceptable no es que sea segura frente a un atacante —no lo es, ni pretende serlo— sino que **cada acto de administración deja rastro**, y que después del primer ingreso la clave la conoce sólo el operador.
+
+**Alternativas consideradas.** *(a)* Enviar la clave por correo institucional: descartada, deja usuario y clave en el mismo canal y exige que la app mande correo. *(b)* Preguntas de recuperación: descartada, es más superficie para peor seguridad. *(c)* Que la clave del Jefe no sea provisoria: descartada, el Jefe también cambia la suya en el primer ingreso.
+
+**Consecuencias.** El Jefe de Contrataciones es el punto único de administración —correcto con catorce personas, insostenible si entra ADR-028 y el padrón crece a decenas—. Hay que construir la pantalla de cambio de clave obligatorio, que es la única pantalla del sistema que un operador ve antes de estar autenticado del todo. Y queda pendiente de validar en el UAT algo que no se puede saber antes: **cuántas reposiciones hacen falta el primer mes.** Si son muchas, el problema no es la clave: es el papel.
 
 ---
 
