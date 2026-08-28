@@ -33,10 +33,21 @@ const CAMPOS_SUGERENCIA = [
 ];
 
 function crearManejadoresSugerencias(entorno) {
-  const { datosDir, ayudantes: extra } = entorno;
+  const { datosDir, PADRON, ayudantes: extra } = entorno;
   const { responderJson, parsearCuerpo } = extra;
+  const SGC = globalThis.SGC;
 
   const archivo = path.join(datosDir, 'sugerencias.jsonl');
+
+  // ORDEN-RONDA-14 §2.2: la lista y el "atender" son del Jefe de
+  // Contrataciones, verificado contra el padrón en el servidor (el rol no lo
+  // elige el cliente). Crear una sugerencia sigue abierto a cualquier operador
+  // autenticado en el padrón.
+  function esJefe(contexto) {
+    const cx = contexto || {};
+    const v = SGC.core.autorizacion.verificar(PADRON, cx);
+    return v.ok && cx.rol === 'contrataciones_supervisor';
+  }
 
   function idNuevo() {
     return 's-' + Date.now().toString(36) + '-' + crypto.randomBytes(6).toString('hex');
@@ -99,7 +110,11 @@ function crearManejadoresSugerencias(entorno) {
     return sugerencias;
   }
 
-  function apiListarSugerencias(req, res) {
+  function apiListarSugerencias(req, res, textoCuerpo) {
+    const cuerpo = parsearCuerpo(textoCuerpo) || {};
+    if (!esJefe(cuerpo.contexto)) {
+      return responderJson(res, 403, { error: 'solo el Jefe de Contrataciones puede consultar las sugerencias del piloto' });
+    }
     return responderJson(res, 200, {
       sugerencias: leer(),
       sucesos: contarSucesos(),
@@ -160,9 +175,11 @@ function crearManejadoresSugerencias(entorno) {
   function apiAtenderSugerencia(req, res, id, textoCuerpo) {
     const cuerpo = parsearCuerpo(textoCuerpo);
     const cx = cuerpo && cuerpo.contexto || {};
-    const email = cx.email;
-    if (!esTexto(email)) {
-      return responderJson(res, 400, { error: 'email del Jefe es obligatorio para atender' });
+    if (!esJefe(cx)) {
+      if (!cx.email) {
+        return responderJson(res, 400, { error: 'el Jefe debe ir identificado (correo del padrón)' });
+      }
+      return responderJson(res, 403, { error: 'solo el Jefe de Contrataciones puede atender sugerencias' });
     }
     const sugerencias = leer();
     const existe = sugerencias.some(function (s) {
@@ -175,7 +192,7 @@ function crearManejadoresSugerencias(entorno) {
       tipo: 'atendida',
       sugerenciaId: id,
       timestamp: new Date().toISOString(),
-      email: email
+      email: cx.email
     };
     fs.appendFileSync(archivo, JSON.stringify(atendida) + '\n', 'utf8');
     return responderJson(res, 200, { ok: true, sugerenciaId: id });

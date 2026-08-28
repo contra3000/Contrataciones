@@ -13,13 +13,58 @@
       <h1>SGC — Circuito de contrataciones</h1>
       <p class="subtitulo">Alta de la Especificación Técnica y tablero de expedientes.</p>
       <p id="sgc-app-error" class="error-global" role="alert" hidden></p>
+      <!-- ORDEN-RONDA-14 §3.6: el operador activo, su rol y su correo siguen a
+           la vista (ADR-017) y la salida es explícita. -->
+      <div id="sgc-sesion-barra" class="sesion-barra" aria-label="Sesión" hidden>
+        <span id="sgc-sesion-quien"></span>
+        <button id="sgc-sesion-salir" type="button">Salir</button>
+      </div>
     </header>
 
     <section id="sgc-seleccion-operador" class="seccion-operador" aria-label="Selección de operador">
       <h2>Seleccione su operador</h2>
       <p class="subtitulo">Identidad declarada (ADR-017). El correo queda registrado en la auditoría del expediente.</p>
       <ul id="sgc-lista-operadores" class="lista-operadores"></ul>
+
+      <!-- ORDEN-RONDA-14 §3.4 (ADR-033): en modo autenticado esta pantalla
+           reemplaza la lista declarada por el ingreso con clave del padrón
+           real. El rol no se elige: sale de la sesión. -->
+      <form id="sgc-ingreso" class="ingreso" aria-label="Ingreso al SGC" hidden>
+        <p class="subtitulo">Identidad verificada contra el padrón. El rol lo decide el servidor.</p>
+        <div class="campo">
+          <label for="sgc-ingreso-email">Correo</label>
+          <input id="sgc-ingreso-email" type="email" autocomplete="username" required>
+        </div>
+        <div class="campo">
+          <label for="sgc-ingreso-clave">Clave</label>
+          <input id="sgc-ingreso-clave" type="password" autocomplete="current-password" required>
+        </div>
+        <p id="sgc-ingreso-error" class="error-global" role="alert" hidden></p>
+        <button id="sgc-ingreso-enviar" type="submit" class="primario">Ingresar</button>
+      </form>
     </section>
+
+    <form id="sgc-cambio-clave-forma" class="cambio-clave" aria-label="Cambio de clave provisoria" hidden>
+      <h2>Clave provisoria</h2>
+      <p class="subtitulo">
+        La primera vez que se ingresa la clave provisoria hay que cambiarla:
+        mientras sea provisoria no se puede operar el SGC.
+      </p>
+      <div class="campo">
+        <label for="sgc-cambio-clave-vieja">Clave actual</label>
+        <input id="sgc-cambio-clave-vieja" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="campo">
+        <label for="sgc-cambio-clave-nueva">Clave nueva</label>
+        <input id="sgc-cambio-clave-nueva" type="password" autocomplete="new-password" required>
+        <p class="aviso-clave" id="sgc-cambio-clave-aviso">
+          La clave sale del mismo diccionario de palabras del padrón y esta clave
+          no puede ser la misma que usás en ningún otro sistema.
+        </p>
+      </div>
+      <p id="sgc-cambio-clave-error" class="error-global" role="alert" hidden></p>
+      <button id="sgc-cambio-clave-enviar" type="submit" class="primario">Cambiar clave</button>
+      </form>
 
     <section id="sgc-app" class="wizard" aria-label="Asistente de la Especificación Técnica" hidden>
       <p class="operador-actual">Operador: <span id="sgc-operador-actual"></span></p>
@@ -440,6 +485,7 @@
        esté en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029). -->
   <script src="js/core/namespaces.js"></script>
   <script src="js/core/config.js"></script>
+  <script src="js/core/roles.js"></script>
   <script src="js/core/cotas-encabezado.js"></script>
   <script src="js/core/utils.js"></script>
   <script src="js/core/auditoria.js"></script>
@@ -487,8 +533,11 @@
   <script src="js/views/usar-base.js"></script>
   <script src="js/views/sugerencias.js"></script>
   <script src="js/views/sugerencias-jefe.js"></script>
+  <script src="js/views/ingreso.js"></script>
+  <script src="js/views/cambio-clave.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.http.js"></script>
+  <script src="js/adapters/repo.sesion.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

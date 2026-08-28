@@ -5,7 +5,7 @@
       "nombre": "María",
       "apellido": "González",
       "email": "maria.gonzalez@faa.mil.ar",
-      "roles": ["generador"],
+      "rol": "generador",
       "sector": "usuario",
       "activo": true
     },
@@ -13,7 +13,7 @@
       "nombre": "Juan",
       "apellido": "Pérez",
       "email": "juan.perez@faa.mil.ar",
-      "roles": ["abastecimiento"],
+      "rol": "abastecimiento",
       "sector": "abastecimiento",
       "activo": true
     },
@@ -21,7 +21,7 @@
       "nombre": "Laura",
       "apellido": "Fernández",
       "email": "laura.fernandez@faa.mil.ar",
-      "roles": ["abastecimiento_supervisor"],
+      "rol": "abastecimiento_supervisor",
       "sector": "abastecimiento",
       "activo": true
     },
@@ -29,7 +29,7 @@
       "nombre": "Carlos",
       "apellido": "Ramírez",
       "email": "carlos.ramirez@faa.mil.ar",
-      "roles": ["contrataciones", "contrataciones_supervisor"],
+      "rol": "contrataciones_supervisor",
       "sector": "contrataciones",
       "activo": true
     },
@@ -37,7 +37,7 @@
       "nombre": "Ana",
       "apellido": "Torres",
       "email": "ana.torres@faa.mil.ar",
-      "roles": ["juridica"],
+      "rol": "juridica",
       "sector": "juridica",
       "activo": true
     },
@@ -45,7 +45,7 @@
       "nombre": "Luis",
       "apellido": "Díaz",
       "email": "luis.diaz@faa.mil.ar",
-      "roles": ["contaduria"],
+      "rol": "contaduria",
       "sector": "contaduria",
       "activo": true
     },
@@ -53,7 +53,7 @@
       "nombre": "Sofía",
       "apellido": "López",
       "email": "sofia.lopez@faa.mil.ar",
-      "roles": ["generador"],
+      "rol": "generador",
       "sector": "usuario",
       "activo": false
     }

@@ -22,6 +22,23 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+// Etiqueta schemaVersion a número (migraciones.js tolera número y "2.0.0".
+// Un documento sin la etiqueta o ilegible devuelve null: NO es el esquema
+// vigente y no puede servir de base).
+function numeroDeVersion(etiqueta) {
+  if (typeof etiqueta === 'number') {
+    return etiqueta;
+  }
+  if (typeof etiqueta === 'string') {
+    const n = parseInt(etiqueta, 10);
+    if (String(n) !== etiqueta && etiqueta.indexOf('.') !== -1) {
+      return parseInt(etiqueta.split('.')[0], 10);
+    }
+    return n;
+  }
+  return null;
+}
+
 function crearManejadoresBase(entorno) {
   const {
     datosDir,
@@ -77,10 +94,20 @@ function crearManejadoresBase(entorno) {
     };
   }
 
-  // Elegibilidad (ADR-025): sólo un expediente perfeccionado y archivado.
+  // Elegibilidad (ADR-025): sólo un expediente perfeccionado y archivado, y
+  // sólo del esquema vigente. ORDEN-RONDA-14 §2.1: un origen viejo (o sin la
+  // etiqueta) se rechaza con la explicación; migrarlo primero es trabajo del
+  // que lo custodia, no del reuso.
   function origenError(expediente) {
     if (!expediente) {
       return 'expediente no encontrado';
+    }
+    const version = numeroDeVersion(expediente.schemaVersion);
+    const actual = SGC.core.migraciones && SGC.core.migraciones.VERSION_ACTUAL;
+    if (Number.isFinite(actual) && version !== actual) {
+      return 'el expediente origen está en el esquema ' +
+        (version === null ? 'sin declarar' : version) + ' y el servidor solo usa base con schemaVersion ' +
+        actual + ': migre el documento antes de reusarlo';
     }
     if (!(expediente.estado && expediente.estado.id === SGC.core.config.ESTADO_FINAL)) {
       return 'solo un expediente perfeccionado puede usarse como base (estado: ' +

@@ -152,6 +152,13 @@ function crearManejadoresExpedientes(entorno) {
       return responderJson(res, 403, { error: resultado.error });
     }
     const nuevo = resultado.expediente;
+    // ADR-033 (§3.5): el motor dejó rolEfectivo cuando un rol heredado ejecutó
+    // el paso; se propaga al contexto para que el evento de ADR-024 lo copie.
+    const entradas = Array.isArray(nuevo.auditoria) ? nuevo.auditoria : [];
+    const ultimaEntrada = entradas.length > 0 ? entradas[entradas.length - 1] : null;
+    if (ultimaEntrada && typeof ultimaEntrada.rolEfectivo === 'string') {
+      contexto.rolEfectivo = ultimaEntrada.rolEfectivo;
+    }
     const nuevaVersion = actual.version + 1;
     fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
     escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'), JSON.stringify(actual, null, 2));

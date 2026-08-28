@@ -7,6 +7,7 @@ const fs = require('node:fs');
 
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'config.js'));
+require(path.join(__dirname, '..', 'app', 'js', 'core', 'roles.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'migraciones.js'));
 
 const migraciones = globalThis.SGC.core.migraciones;

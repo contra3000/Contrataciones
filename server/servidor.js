@@ -60,12 +60,13 @@ const archivo = require('./archivo.js');
 const eventos = require('./eventos.js');
 const base = require('./base.js');
 const sugerencias = require('./sugerencias.js');
-
+const sesion = require('./sesion.js');
 // El orden de carga importa: cada módulo puede exigir que el anterior ya esté
 // registrado en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029).
 const APP_CORE = [
   'namespaces.js',
   'config.js',
+  'roles.js',
   'cotas-encabezado.js',
   'autorizacion.js',
   'auditoria.js',
@@ -100,15 +101,23 @@ try {
 // Creación del servidor: el router, los manejadores y la infraestructura
 // ---------------------------------------------------------------------------
 function crearServidor(datosDir) {
+  // Capa de sesión (ORDEN-RONDA-14 §3.4): el modo depende de que exista un
+  // padrón con credenciales; con padrón real, la verificación usa ESE padrón.
+  const capaSesion = sesion.crearCapaSesion(datosDir, ayudantes);
+  const padronReal = capaSesion.leerPadron();
+  const padronEfectivo = padronReal && Array.isArray(padronReal.usuarios)
+    ? padronReal.usuarios
+    : PADRON;
   const entorno = {
     datosDir,
     repo,
-    PADRON,
+    PADRON: padronEfectivo,
     VERSION,
     DIR_APP,
     DIR_CONFIG,
     ayudantes,
-    eventos
+    eventos,
+    capaSesion
   };
   // ORDEN-RONDA-08 §2.2: recuperación del arranque. Cierra cualquier archivo
   // interrumpido de rondas anteriores (staging abandonado, original sin marca,
@@ -116,12 +125,14 @@ function crearServidor(datosDir) {
   archivo.recuperarArchivados(datosDir);
   const manejadoresApi = manejadores.crearManejadores(entorno);
   entorno.cargarCatalogo = manejadoresApi.cargarCatalogo;
+  const eventosApi = eventos.crearManejadoresEventos(entorno);
   const api = Object.assign(
     manejadoresApi,
     expedientes.crearManejadoresExpedientes(entorno),
     presupuestos.crearManejadoresPresupuestos(entorno),
     base.crearManejadoresBase(entorno),
-    sugerencias.crearManejadoresSugerencias(entorno)
+    sugerencias.crearManejadoresSugerencias(entorno),
+    { apiEventos: eventosApi.apiEventos }
   );
   const {
     apiSalud,
@@ -140,13 +151,13 @@ function crearServidor(datosDir) {
     apiListarSugerencias,
     apiCrearSugerencia,
     apiAtenderSugerencia,
+    apiEventos,
     servirConfig,
     servirEstatico
   } = api;
 
-  // Leer un cuerpo, extraer su `contexto` si trae (para el log de origen) y
-  // despachar. Se define dentro del handler porque cierra sobre req, res y el
-  // origen resuelto de la petición. Un cuerpo inválido lo reporta el manejador.
+  // Despachar con cuerpo. En modo autenticado el contexto del cuerpo se
+  // reemplaza por el de la sesión (el rol no lo elige el cliente, ADR-033).
   return http.createServer((req, res) => {
     const ruta = (req.url || '').split('?')[0];
     const peticion = { metodo: req.method, ruta };
@@ -154,22 +165,23 @@ function crearServidor(datosDir) {
       ruta === '/api/expedientes' || ruta.startsWith('/api/');
 
     ayudantes.resolverOrigen(req).then((origen) => {
+      // ORDEN-RONDA-14 §3.4: en modo autenticado toda la API exige sesión; una
+      // sesión provisoria sólo cambia la clave, sale y se ve.
+      const acceso = capaSesion.protegerRuta(ruta, req.method, req);
+      if (!acceso.permitido) {
+        ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
+        return ayudantes.responderJson(res, acceso.estado, { error: acceso.error });
+      }
+      const sesionDePeticion = acceso.sesion;
       try {
         function conCuerpo(fn, contratoId) {
-          const contexto = (texto) => {
-            try {
-              const cuerpo = ayudantes.parsearCuerpo(texto);
-              if (cuerpo && cuerpo.contexto) {
-                return cuerpo.contexto;
-              }
-            } catch (e) {
-              // el cuerpo inválido lo reporta el manejador
-            }
-            return null;
-          };
           return ayudantes.leerCuerpo(req).then((texto) => {
-            ayudantes.registrarOrigen(datosDir, origen, peticion, contratoId || null, contexto(texto));
-            return fn(req, res, texto);
+            const textoFinal = sesionDePeticion
+              ? capaSesion.inyectarContextoEn(texto, sesionDePeticion)
+              : texto;
+            ayudantes.registrarOrigen(datosDir, origen, peticion, contratoId || null,
+              capaSesion.contextoDelCuerpo(textoFinal));
+            return fn(req, res, textoFinal);
           }).catch((e) => {
             return ayudantes.responderErrorPeticion(res, e);
           });
@@ -183,6 +195,15 @@ function crearServidor(datosDir) {
         if (req.method === 'GET' && ruta === '/api/indice') {
           ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
           return apiIndice(req, res);
+        }
+
+        // Sesión (ORDEN-RONDA-14 §3.4) y compendio del Jefe (§2.2).
+        const atendida = capaSesion.enrutarSesion(req, res, ruta, sesionDePeticion, conCuerpo, origen, peticion);
+        if (atendida !== null) {
+          return atendida;
+        }
+        if (req.method === 'GET' && ruta === '/api/eventos') {
+          return conCuerpo((r, s, texto) => apiEventos(r, s, texto));
         }
 
         // Archivo Histórico (ORDEN-RONDA-08 §2.2): lista el directorio, no el
@@ -280,11 +301,10 @@ function crearServidor(datosDir) {
           return conCuerpo((r, s, texto) => apiValidarCodigos(r, s, texto));
         }
 
-        // Sugerencias del piloto (H19): GET lista, POST crea, POST /atender
-        // marca como atendida. Todas con cuerpo para el log de origen.
+        // Sugerencias del piloto (H19): GET lista (del Jefe, con cuerpo para el
+        // contexto), POST crea, POST /atender marca como atendida.
         if (req.method === 'GET' && ruta === '/api/sugerencias') {
-          ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
-          return apiListarSugerencias(req, res);
+          return conCuerpo((r, s, texto) => apiListarSugerencias(r, s, texto));
         }
         if (req.method === 'POST' && ruta === '/api/sugerencias') {
           return conCuerpo((r, s, texto) => apiCrearSugerencia(r, s, texto));

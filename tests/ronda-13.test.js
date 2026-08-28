@@ -373,7 +373,7 @@ test('H19: POST /api/sugerencias valida email y contenido (hasta 4000)', async (
     assert.equal(r.status, 201, 'la sugerencia válida se acepta');
     assert.ok(r.body.id.startsWith('s-'), 'id con prefijo s-');
 
-    const lista = await pedir(ent.base, 'GET', '/api/sugerencias');
+    const lista = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
     assert.equal(lista.status, 200);
     assert.strictEqual(lista.body.sucesos, 1);
     assert.strictEqual(lista.body.completo, true);
@@ -408,7 +408,7 @@ test('H19: el JSONL es append-only y marcar no toca las líneas anteriores', asy
       .split(/\r?\n/).filter((l) => l.trim() !== '');
     assert.strictEqual(lineas.length, 20, '20 líneas exactas, sin pérdidas');
 
-    const lista = await pedir(ent.base, 'GET', '/api/sugerencias');
+    const lista = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
     assert.strictEqual(lista.body.sucesos, 20);
     const primera = lista.body.sugerencias.find((s) => s.contenido === 'reporte 0');
     assert.ok(primera, 'la primera sugerencia está entre las leídas');
@@ -425,7 +425,7 @@ test('H19: el JSONL es append-only y marcar no toca las líneas anteriores', asy
     assert.strictEqual(despues.length, 21, 'marcar agrega exactamente una línea');
     assert.ok(despues.includes(lineaOriginal), 'la línea original queda intacta');
 
-    const lista2 = await pedir(ent.base, 'GET', '/api/sugerencias');
+    const lista2 = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
     const marcada = lista2.body.sugerencias.find((s) => s.id === primera.id);
     assert.strictEqual(marcada.atendido, true, 'se cruza el estado');
     assert.strictEqual(marcada.atendidaPor, ti.EMAIL_POR_ROL.contrataciones_supervisor);
@@ -464,7 +464,7 @@ test('H19: con 4000 sucesos la sugerencia 4001 se rechaza con 400', async () => 
     fs.writeFileSync(path.join(ent.datosDir, 'sugerencias.jsonl'),
       lineas.join('\n') + '\n', 'utf8');
 
-    const lista = await pedir(ent.base, 'GET', '/api/sugerencias');
+    const lista = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
     assert.strictEqual(lista.body.sucesos, 4000);
     assert.strictEqual(lista.body.completo, true,
       'a 4000 sucesos exactos el diálogo está en el límite y aún avisa completo');
@@ -478,7 +478,7 @@ test('H19: con 4000 sucesos la sugerencia 4001 se rechaza con 400', async () => 
     // Defensa del flag: una línea más escrita fuera del API apaga `completo`.
     fs.appendFileSync(path.join(ent.datosDir, 'sugerencias.jsonl'),
       JSON.stringify({ tipo: 'sugerencia', id: 's-linea-4001' }) + '\n', 'utf8');
-    const sobrepasado = await pedir(ent.base, 'GET', '/api/sugerencias');
+    const sobrepasado = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
     assert.strictEqual(sobrepasado.body.sucesos, 4001);
     assert.strictEqual(sobrepasado.body.completo, false,
       'al superar el tope el diálogo deja de avisar que está completo');

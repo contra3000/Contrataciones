@@ -86,7 +86,7 @@ function detenerServidor(ctx) {
   });
 }
 
-function pedirConPath(baseUrl, metodo, rutaCruda, cuerpo) {
+function pedirConPath(baseUrl, metodo, rutaCruda, cuerpo, encabezados) {
   return new Promise((resolve, reject) => {
     const base = new URL(baseUrl);
     const opciones = {
@@ -94,10 +94,14 @@ function pedirConPath(baseUrl, metodo, rutaCruda, cuerpo) {
       port: base.port,
       path: rutaCruda,
       method: metodo,
-      headers: {}
+      headers: Object.assign({}, encabezados || {})
     };
     if (cuerpo !== undefined) {
+      // Los métodos sin cuerpo (GET, DELETE...) no reciben framing automático
+      // del cliente node:http; el Content-Length explícito evita el 400 vacío
+      // del lado del servidor.
       opciones.headers['Content-Type'] = 'application/json';
+      opciones.headers['Content-Length'] = String(Buffer.byteLength(JSON.stringify(cuerpo)));
     }
     const req = http.request(opciones, (res) => {
       let datos = '';
@@ -111,7 +115,7 @@ function pedirConPath(baseUrl, metodo, rutaCruda, cuerpo) {
         } catch (e) {
           // no era JSON
         }
-        resolve({ status: res.statusCode, body: json, raw: datos });
+        resolve({ status: res.statusCode, body: json, raw: datos, encabezados: res.headers });
       });
     });
     req.on('error', reject);
@@ -122,8 +126,8 @@ function pedirConPath(baseUrl, metodo, rutaCruda, cuerpo) {
   });
 }
 
-function pedir(baseUrl, metodo, ruta, cuerpo) {
-  return pedirConPath(baseUrl, metodo, ruta, cuerpo);
+function pedir(baseUrl, metodo, ruta, cuerpo, encabezados) {
+  return pedirConPath(baseUrl, metodo, ruta, cuerpo, encabezados);
 }
 
 function ejecutarYEsperar(args, timeoutMs) {

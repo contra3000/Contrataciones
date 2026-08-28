@@ -93,6 +93,9 @@ function crearManejadores(entorno) {
     responderJson(res, 200, {
       ok: true,
       version: VERSION,
+      // ORDEN-RONDA-14 §3.4: el cliente decide la pantalla de ingreso desde
+      // aquí — el modo autenticado es del servidor, no de la config.
+      autenticado: !!(entorno.capaSesion && entorno.capaSesion.esModoAutenticado()),
       datos: datosAccesibles() ? 'accesible' : 'inaccesible'
     });
   }

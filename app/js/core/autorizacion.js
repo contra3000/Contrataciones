@@ -19,9 +19,9 @@
   }
 
   // Verifica que el contexto declare un correo del padrón activo y que el rol
-  // declarado esté entre los roles de ese correo. Devuelve {ok:true} o
-  // {ok:false, error} con el motivo en español. Un padrón vacío o ausente
-  // rechaza todo (fail closed).
+  // declarado esté entre los efectos del rol de ese correo (el propio más los
+  // heredados, ADR-033). Devuelve {ok:true} o {ok:false, error} con el motivo
+  // en español. Un padrón vacío o ausente rechaza todo (fail closed).
   function verificar(usuarios, contexto) {
     var ctx = contexto || {};
     var email = typeof ctx.email === 'string' ? ctx.email.trim() : '';
@@ -40,9 +40,14 @@
     if (!usuario) {
       return { ok: false, error: 'el correo "' + email + '" no está en el padrón de usuarios' };
     }
-    var roles = Array.isArray(usuario.roles) ? usuario.roles : [];
-    for (var j = 0; j < roles.length; j++) {
-      if (roles[j] === rol) {
+    // ADR-033: un solo rol por persona. Se admite `roles` por compatibilidad
+    // con los padrones viejos; el primero en un orden estable.
+    var propio = typeof usuario.rol === 'string' && usuario.rol !== ''
+      ? usuario.rol
+      : (Array.isArray(usuario.roles) && usuario.roles.length > 0 ? usuario.roles[0] : '');
+    var efectivos = SGC.core.config.rolesEfectivos(propio);
+    for (var j = 0; j < efectivos.length; j++) {
+      if (efectivos[j] === rol) {
         return { ok: true };
       }
     }
