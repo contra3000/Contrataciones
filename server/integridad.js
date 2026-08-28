@@ -20,6 +20,7 @@ const { APP_CORE } = require('./servidor.js');
 const MANIFEST = {
   'namespaces.js':        (s) => !!(s && s.core),
   'config.js':            (s) => !!(s && s.core && s.core.config),
+  'roles.js':             (s) => !!(s && s.core && s.core.roles),
   'cotas-encabezado.js':  (s) => !!(s && s.core && s.core.config && s.core.config.CAMPOS_ENCABEZADO_COTAS),
   'autorizacion.js':      (s) => !!(s && s.core && s.core.autorizacion),
   'auditoria.js':     (s) => !!(s && s.core && s.core.auditoria),

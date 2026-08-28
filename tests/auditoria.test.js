@@ -6,6 +6,7 @@ const path = require('node:path');
 
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'config.js'));
+require(path.join(__dirname, '..', 'app', 'js', 'core', 'roles.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'auditoria.js'));
 
 const auditoria = globalThis.SGC.core.auditoria;

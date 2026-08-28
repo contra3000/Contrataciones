@@ -31,7 +31,7 @@ function escribirEvento(datosDir, id, evento) {
 }
 
 function registrarTransicion(datosDir, id, origen, destino, contexto) {
-  escribirEvento(datosDir, id, {
+  escribirEvento(datosDir, id, rolEfectivoCondicional({
     tipo: 'transicion',
     timestamp: new Date().toISOString(),
     origen: origen,
@@ -39,11 +39,11 @@ function registrarTransicion(datosDir, id, origen, destino, contexto) {
     rol: contexto && contexto.rol || null,
     email: contexto && contexto.email || null,
     equipo: contexto && contexto.equipo || null
-  });
+  }, contexto));
 }
 
 function registrarDevolucion(datosDir, id, origen, destino, motivo, observacion, contexto) {
-  escribirEvento(datosDir, id, {
+  escribirEvento(datosDir, id, rolEfectivoCondicional({
     tipo: 'devolucion',
     timestamp: new Date().toISOString(),
     origen: origen,
@@ -53,7 +53,19 @@ function registrarDevolucion(datosDir, id, origen, destino, motivo, observacion,
     rol: contexto && contexto.rol || null,
     email: contexto && contexto.email || null,
     equipo: contexto && contexto.equipo || null
-  });
+  }, contexto));
+}
+
+// ADR-033 (ORDEN-RONDA-14 §3.5): cuando el paso lo ejecutó un rol distinto del
+// propio —un supervisor actuando como su supervisado— el registro dice
+// "rol_efectivo". El contexto lo enriquece el servidor recién cuando el motor
+// confirmó la transición; los registros planos no llevan el campo.
+function rolEfectivoCondicional(objeto, contexto) {
+  const cx = contexto || {};
+  if (typeof cx.rolEfectivo === 'string' && cx.rolEfectivo !== (cx.rol || null)) {
+    objeto.rolEfectivo = cx.rolEfectivo;
+  }
+  return objeto;
 }
 
 function registrarEdicion(datosDir, id, grupoCampos, versionAnterior, versionNueva, contexto) {
@@ -243,6 +255,79 @@ function leerEventos(datosDir, id) {
     .map(function (l) { return JSON.parse(l); });
 }
 
+// ---------------------------------------------------------------------------
+// Compendio del Jefe de Contrataciones (ORDEN-RONDA-14 §2.2)
+// ---------------------------------------------------------------------------
+
+function crearManejadoresEventos(entorno) {
+  const { datosDir, PADRON, ayudantes } = entorno;
+  const { responderJson, parsearCuerpo } = ayudantes;
+  const SGC = globalThis.SGC;
+
+  // Guardia común con sugerencias: el compendio es sólo del Jefe de
+  // Contrataciones, verificado contra el padrón en el servidor.
+  function esJefe(contexto) {
+    const cx = contexto || {};
+    const v = SGC.core.autorizacion.verificar(PADRON, cx);
+    return v.ok && cx.rol === 'contrataciones_supervisor';
+  }
+
+  // Recorre la carpeta de datos (años → expedientes) y agrupa las líneas de
+  // eventos que cada expediente haya registrado. Líneas ilegibles de un
+  // expediente no tumban el compendio: se sigue con los demás.
+  function compendio() {
+    const resultado = [];
+    if (!fs.existsSync(datosDir)) {
+      return resultado;
+    }
+    const anios = fs.readdirSync(datosDir).filter(function (n) {
+      return /^\d{4}$/.test(n);
+    });
+    for (const anio of anios) {
+      const dirAnio = path.join(datosDir, anio);
+      const carpetas = fs.existsSync(dirAnio) ? fs.readdirSync(dirAnio) : [];
+      for (const carpeta of carpetas) {
+        if (!carpeta.endsWith('_Expediente')) {
+          continue;
+        }
+        const id = carpeta.slice(0, -'_Expediente'.length);
+        try {
+          const eventos = leerEventos(datosDir, id);
+          if (eventos.length > 0) {
+            resultado.push({ id, eventos });
+          }
+        } catch (e) {
+          // expediente con eventos ilegibles: se saltea
+        }
+      }
+    }
+    return resultado;
+  }
+
+  // GET /api/eventos: el compendio de eventos y sugerencias del Jefe.
+  function apiEventos(req, res, textoCuerpo) {
+    const cuerpo = parsearCuerpo(textoCuerpo) || {};
+    if (!esJefe(cuerpo.contexto)) {
+      return responderJson(res, 403, { error: 'solo el Jefe de Contrataciones puede consultar el compendio de eventos' });
+    }
+    const eventos = compendio();
+    let sucesos = 0;
+    for (const grupo of eventos) {
+      sucesos += grupo.eventos.length;
+    }
+    return responderJson(res, 200, {
+      expedientes: eventos.length,
+      sucesos,
+      eventos
+    });
+  }
+
+  return {
+    esJefe,
+    apiEventos
+  };
+}
+
 module.exports = {
   rutaEventos,
   escribirEvento,
@@ -262,5 +347,6 @@ module.exports = {
   registrarValorReferencia,
   registrarReuso,
   registrarGuardado,
-  leerEventos
+  leerEventos,
+  crearManejadoresEventos
 };

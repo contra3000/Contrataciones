@@ -38,8 +38,13 @@
   }
 
   function rolEsEjecutor(estado, rolOperador) {
-    return estado !== null && typeof rolOperador === 'string' &&
-      estado.rolEjecutor === rolOperador;
+    if (estado === null || typeof rolOperador !== 'string') {
+      return false;
+    }
+    // ADR-033 (ORDEN-RONDA-14 §3.1): se pregunta contra el conjunto efectivo
+    // —el rol propio más los heredados—, no contra el rol solo.
+    var efectivos = config.rolesEfectivos(rolOperador);
+    return efectivos.indexOf(estado.rolEjecutor) !== -1;
   }
 
   function motivoRolIncorrecto(estado, rolOperador) {
@@ -90,11 +95,11 @@
     return valor;
   }
 
-  function crearEntradaAuditoria(expediente, accion, de, a, motivo, observacion, contexto, rolOperador) {
+  function crearEntradaAuditoria(expediente, accion, de, a, motivo, observacion, contexto, rolOperador, rolEfectivo) {
     var lista = Array.isArray(expediente.auditoria) ? expediente.auditoria
       : (Array.isArray(expediente.auditLog) ? expediente.auditLog : []);
     var previa = lista.length > 0 ? lista[lista.length - 1] : null;
-    return auditoria.crearEntrada(previa, {
+    var entrada = auditoria.crearEntrada(previa, {
       timestamp: contexto.timestamp,
       email: contexto.email,
       rol: contexto.rol || rolOperador,
@@ -106,6 +111,16 @@
       motivo: motivo,
       observacion: observacion
     });
+    // ADR-033 §3 (ORDEN-RONDA-14 §3.5): el rol efectivo con el que se actuó.
+    // Cuando un supervisor ejecuta un paso de su supervisado, el registro dice
+    // "contrataciones_supervisor actuando como contrataciones". Va FUERA de la
+    // cadena de hash (auditoria.js serializa un conjunto fijo de campos), así
+    // que las entradas viejas mantienen su cadena íntegra.
+    if (typeof rolEfectivo === 'string' &&
+        rolEfectivo !== (contexto.rol || rolOperador)) {
+      entrada.rolEfectivo = rolEfectivo;
+    }
+    return entrada;
   }
 
   function agregarAuditoria(expedienteNuevo, entrada) {
@@ -188,7 +203,7 @@
     var nuevo = clonar(expediente);
     aplicarDestino(nuevo, idDestino, estadoDestino, contexto);
     actualizarMarcas(expediente, nuevo, contexto);
-    var entrada = crearEntradaAuditoria(expediente, 'avanzar', idActual, idDestino, null, null, contexto, rolOperador);
+    var entrada = crearEntradaAuditoria(expediente, 'avanzar', idActual, idDestino, null, null, contexto, rolOperador, estadoDef.rolEjecutor);
     agregarAuditoria(nuevo, entrada);
     return { ok: true, expediente: nuevo, error: null };
   }
@@ -235,7 +250,7 @@
     var nuevo = clonar(expediente);
     aplicarDestino(nuevo, idDestino, estadoDestino, contexto);
     actualizarMarcas(expediente, nuevo, contexto);
-    var entrada = crearEntradaAuditoria(expediente, 'devolver', idActual, idDestino, idMotivo, observacion === undefined ? null : observacion, contexto, rolOperador);
+    var entrada = crearEntradaAuditoria(expediente, 'devolver', idActual, idDestino, idMotivo, observacion === undefined ? null : observacion, contexto, rolOperador, estadoDef.rolEjecutor);
     agregarAuditoria(nuevo, entrada);
     return { ok: true, expediente: nuevo, error: null };
   }

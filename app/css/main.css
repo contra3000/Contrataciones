@@ -309,6 +309,35 @@ mark {
   margin-top: 12px;
 }
 
+/* Ingreso y cambio de clave (ORDEN-RONDA-14 §3.4-§3.6) */
+.ingreso {
+  max-width: 420px;
+  margin-top: 16px;
+}
+
+.cambio-clave {
+  max-width: 420px;
+}
+
+.aviso-clave {
+  color: var(--color-texto-suave, inherit);
+  font-size: 0.9em;
+  margin-top: 6px;
+}
+
+.sesion-barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+  font-size: 0.92em;
+}
+
+.sesion-barra button {
+  padding: 4px 10px;
+}
+
 .lista-operadores button {
   width: 100%;
   text-align: left;

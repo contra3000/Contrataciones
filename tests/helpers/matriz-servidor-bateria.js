@@ -50,7 +50,11 @@ function correrMatriz(estados) {
         const destino = (estadoDef.estadosSiguientes || [])[0] || 'PERFECCIONADA';
 
         for (const rol of ROLES) {
-          if (rol === estadoDef.rolEjecutor) {
+          // ADR-033 (ORDEN-RONDA-14 §3.1): la jerarquía vuelve permitido al
+          // conjunto efectivo del rol (el propio más los heredados). Un
+          // supervisor puede ejecutar el paso de su supervisado, así que aquí
+          // solo se exige 403 para quienes no lo incluyen.
+          if (config.rolesEfectivos(rol).indexOf(estadoDef.rolEjecutor) !== -1) {
             continue;
           }
           const r = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {

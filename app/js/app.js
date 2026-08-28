@@ -93,6 +93,47 @@
     document.getElementById('sgc-tablero-nav').hidden = false;
   }
 
+  // ORDEN-RONDA-14 §3.1/§3.5 (ADR-033): el padrón declara UN rol; las vistas
+  // viejas consumen `roles`. Con el conjunto efectivo, un supervisor ve los
+  // pasos de su supervisado como hoy (matriz de la batería).
+  function rolesDe(rol) {
+    return SGC.core.config.rolesEfectivos(rol);
+  }
+
+  // Operador derivado de una sesión autenticada del servidor.
+  function operadorDeSesion(sesion) {
+    var partes = (sesion.nombre || '').split(' ');
+    return {
+      email: sesion.email,
+      rol: sesion.rol,
+      sector: sesion.equipo || null,
+      nombre: partes[0] || sesion.email,
+      apellido: partes.slice(1).join(' '),
+      roles: rolesDe(sesion.rol)
+    };
+  }
+
+  // Entrar (modo autenticado): oculta la pantalla de ingreso/cambio de clave,
+  // activa las vistas y muestra la barra de sesión con el operador a la vista.
+  function entrar(operador) {
+    var seleccion = document.getElementById('sgc-seleccion-operador');
+    if (seleccion) {
+      seleccion.hidden = true;
+    }
+    var cambio = document.getElementById('sgc-cambio-clave-forma');
+    if (cambio) {
+      cambio.hidden = true;
+    }
+    var barra = document.getElementById('sgc-sesion-barra');
+    if (barra) {
+      barra.hidden = false;
+      var quien = document.getElementById('sgc-sesion-quien');
+      quien.textContent = operador.nombre + ' ' + operador.apellido +
+        ' — ' + rolesDe(operador.rol).join(', ') + ' — ' + operador.email;
+    }
+    operadorSeleccionado(operador);
+  }
+
   function iniciar() {
     var contenedor = document.getElementById('app');
     if (!contenedor) {
@@ -201,28 +242,111 @@
       mostrarError('No se pudo cargar la configuración: ' + err.message);
     });
 
-    // Padrón de operadores (ADR-017): se sirve desde config/.
-    fetch('config/usuarios.ejemplo.json').then(function (res) {
-      if (!res.ok) {
-        throw new Error('el servidor respondió estado ' + res.status);
-      }
-      return res.json();
-    }).then(function (padron) {
-      SGC.views.wizard.renderOperadores(padron);
-      var lista = document.getElementById('sgc-lista-operadores');
-      var usuarios = (padron.usuarios || []).filter(function (u) {
-        return u.activo;
+    // Padrón de operadores (ADR-017): se sirve desde config/. En modo
+    // declarado (sin padrón con credenciales) se arma la lista de botones.
+    // ORDEN-RONDA-14 §3.1: el padrón declara un solo rol; las vistas viejas
+    // consumen `roles`, así que se normaliza con el conjunto efectivo.
+    function cargarPadronDeclarado() {
+      fetch('config/usuarios.ejemplo.json').then(function (res) {
+        if (!res.ok) {
+          throw new Error('el servidor respondió estado ' + res.status);
+        }
+        return res.json();
+      }).then(function (padron) {
+        var usuarios = (padron.usuarios || []).filter(function (u) {
+          return u.activo;
+        });
+        for (var i = 0; i < usuarios.length; i++) {
+          usuarios[i].roles = rolesDe(usuarios[i].rol);
+          usuarios[i].sector = usuarios[i].sector || null;
+        }
+        SGC.views.wizard.renderOperadores({ usuarios: usuarios });
+        var lista = document.getElementById('sgc-lista-operadores');
+        for (var j = 0; j < usuarios.length; j++) {
+          (function (operador, indice) {
+            var boton = lista.children[indice].querySelector('button');
+            boton.addEventListener('click', function () {
+              operadorSeleccionado(operador);
+            });
+          })(usuarios[j], j);
+        }
+      }).catch(function (err) {
+        mostrarError('No se pudo cargar el padrón de operadores: ' + err.message);
       });
-      for (var i = 0; i < usuarios.length; i++) {
-        (function (operador) {
-          var boton = lista.children[i].querySelector('button');
-          boton.addEventListener('click', function () {
-            operadorSeleccionado(operador);
-          });
-        })(usuarios[i]);
+    }
+
+    // -----------------------------------------------------------------------
+    // Sesión del operador (ORDEN-RONDA-14 §3.4-§3.6, ADR-033)
+    // -----------------------------------------------------------------------
+    SGC.views.ingreso.montar(contenedor);
+    SGC.views.cambioClave.montar(contenedor);
+
+    document.getElementById('sgc-ingreso').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      SGC.views.ingreso.enviar().then(function (resultado) {
+        if (resultado.estado !== 200) {
+          SGC.views.ingreso.mostrarError(resultado.datos && resultado.datos.error);
+          return;
+        }
+        if (resultado.datos.provisoria) {
+          // La clave provisoria no opera: sólo cambiar la clave, salir y ver.
+          SGC.views.ingreso.mostrar(false);
+          SGC.views.cambioClave.mostrar(true);
+          return;
+        }
+        entrar(operadorDeSesion(resultado.datos));
+      }).catch(function () {
+        // mostrarError ya avisó al operador
+      });
+    });
+
+    document.getElementById('sgc-cambio-clave-forma').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      SGC.views.cambioClave.enviar().then(function (resultado) {
+        if (resultado.estado !== 200) {
+          SGC.views.cambioClave.mostrarError(resultado.datos && resultado.datos.error);
+          return;
+        }
+        SGC.adapters.sesion.actualDeSesion().then(function (r) {
+          if (r.estado === 200 && r.datos && r.datos.autenticado) {
+            entrar(operadorDeSesion(r.datos));
+          } else {
+            SGC.views.cambioClave.mostrarError('la sesión no quedó activa; vuelva a ingresar');
+          }
+        }).catch(function () {
+          SGC.views.cambioClave.mostrarError('no se pudo confirmar la sesión');
+        });
+      }).catch(function () {
+        // mostrarError ya avisó al operador
+      });
+    });
+
+    document.getElementById('sgc-sesion-salir').addEventListener('click', function () {
+      SGC.adapters.sesion.salir().then(function () {
+        location.reload();
+      }).catch(function () {
+        location.reload();
+      });
+    });
+
+    // El servidor decide si hay padrón con credenciales (/api/salud). Con él,
+    // la pantalla de ingreso reemplaza la lista y la cookie reanuda sesión.
+    SGC.adapters.sesion.detectarModo().then(function (autenticado) {
+      if (!autenticado) {
+        cargarPadronDeclarado();
+        return;
       }
+      SGC.views.ingreso.mostrar(true);
+      SGC.adapters.sesion.actualDeSesion().then(function (r) {
+        if (r.estado === 200 && r.datos && r.datos.autenticado) {
+          entrar(operadorDeSesion(r.datos));
+        }
+      }).catch(function () {
+        // sin sesión: la pantalla de ingreso queda esperando
+      });
     }).catch(function (err) {
-      mostrarError('No se pudo cargar el padrón de operadores: ' + err.message);
+      mostrarError('No se pudo consultar el estado del servidor: ' + err.message);
+      cargarPadronDeclarado();
     });
   }
 

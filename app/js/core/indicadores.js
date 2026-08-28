@@ -105,6 +105,18 @@
       agregacion: 'conteo',
       campo: 'entregableId',
       formato: 'texto'
+    },
+    {
+      // ORDEN-RONDA-14 §3.5 (ADR-033): la misma persona ejecuta un paso y su
+      // supervisión — un transición con rolEfectivo (supervisor actuando como
+      // supervisado) y otra del mismo correo con su rol propio. No bloquea
+      // nada: sólo se ve en el tablero del Jefe de Contrataciones.
+      id: 'misma_persona',
+      nombre: 'Misma persona (paso y supervisión)',
+      evento: 'transicion',
+      agregacion: 'misma_persona',
+      campo: null,
+      formato: 'numero'
     }
   ];
 
@@ -114,7 +126,7 @@
     abastecimiento: ['tiempo_por_fase', 'dispersion_presupuestos', 'busquedas_sin_resultado'],
     abastecimiento_supervisor: ['tiempo_por_fase', 'tasa_devolucion_motivo', 'entregables_generados'],
     contrataciones: ['tiempo_por_fase', 'tasa_devolucion_sector', 'ediciones_por_grupo'],
-    contrataciones_supervisor: ['tiempo_total', 'tasa_devolucion_motivo', 'tasa_devolucion_sector'],
+    contrataciones_supervisor: ['tiempo_total', 'tasa_devolucion_motivo', 'tasa_devolucion_sector', 'misma_persona'],
     juridica: ['tiempo_por_fase', 'ediciones_por_grupo'],
     contaduria: ['tiempo_por_fase', 'dispersion_presupuestos']
   };
@@ -174,6 +186,28 @@
           grupos[clave] = (grupos[clave] || 0) + 1;
         }
         return { valor: Object.keys(grupos).length, detalle: grupos };
+
+      // ORDEN-RONDA-14 §3.5: correos con un transición como supervisión
+      // (rolEfectivo presente, siempre distinto del rol propio) y otra como
+      // rol propio. Contar es lo que hace visible algo que no queremos bloquear.
+      case 'misma_persona':
+        var conSupervision = {};
+        var conPropio = {};
+        for (var mp = 0; mp < filtrados.length; mp++) {
+          var ev = filtrados[mp];
+          if (ev.rolEfectivo) {
+            conSupervision[ev.email] = true;
+          } else {
+            conPropio[ev.email] = true;
+          }
+        }
+        var personas = [];
+        for (var correo in conSupervision) {
+          if (conPropio[correo]) {
+            personas.push(correo);
+          }
+        }
+        return { valor: personas.length, detalle: personas };
 
       default:
         return { valor: 0, detalle: null };

@@ -6,6 +6,7 @@ const path = require('node:path');
 
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'config.js'));
+require(path.join(__dirname, '..', 'app', 'js', 'core', 'roles.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'cotas-encabezado.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'utils.js'));
 require(path.join(__dirname, '..', 'app', 'js', 'core', 'auditoria.js'));
@@ -48,13 +49,14 @@ function contextoPara(rol, ts) {
   };
 }
 
-test('1. matriz estado x rol: el rol correcto avanza y los demás no', () => {
+test('1. matriz estado x rol: el rol correcto (o su supervisor, ADR-033) avanza y los demás no', () => {
   const roles = config.ROLES.map((r) => r.id);
   for (const estado of ESTADOS) {
     const ex = expedienteEn(estado.id);
     for (const rol of roles) {
       const r = estados.puedeAvanzar(ex, rol);
-      if (rol === estado.rolEjecutor) {
+      const permitido = config.rolesEfectivos(rol).indexOf(estado.rolEjecutor) !== -1;
+      if (permitido) {
         assert.equal(r.permitido, true, estado.id + ' con rol ' + rol);
         assert.equal(r.motivo, null, estado.id + ' con rol ' + rol);
       } else {
@@ -96,7 +98,7 @@ test('4. devolver sin motivo o con motivo fuera del catálogo falla', () => {
   assert.ok(motivoInvalido.error.indexOf('catálogo') !== -1);
 });
 
-test('4b. puedeDevolver: rol correcto puede devolver; el estado final no admite', () => {
+test('4b. puedeDevolver: el rol correcto (y su supervisor) puede devolver; el estado final no admite', () => {
   const roles = config.ROLES.map((r) => r.id);
   const ex = expedienteEn('REVISION_SCo');
   for (const rol of roles) {
@@ -105,7 +107,8 @@ test('4b. puedeDevolver: rol correcto puede devolver; el estado final no admite'
       assert.equal(r.permitido, true);
       assert.deepEqual(r.destinos, ['AUTORIZACION_SCo']);
     } else {
-      assert.equal(r.permitido, false);
+      assert.equal(r.permitido, config.rolesEfectivos(rol).indexOf('contrataciones') !== -1,
+        'rol ' + rol);
     }
   }
   const final = expedienteEn(config.ESTADO_FINAL);

@@ -33,7 +33,10 @@
     { id: 'juridica', nombre: 'Asesoría Jurídica', sector: 'juridica', esComun: true },
     { id: 'contaduria', nombre: 'Contaduría', sector: 'contaduria', esComun: true }
   ];
-
+  // Jerarquía de roles (ADR-033): el dato y la transitiva viven en roles.js.
+  function rolesEfectivos(rol) {
+    return SGC.core.roles.rolesEfectivos(rol);
+  }
   // ---------------------------------------------------------------------------
   // Estados (18 pasos del FSD §4)
   // ---------------------------------------------------------------------------
@@ -391,6 +394,7 @@
     MAX_ACLARACION: MAX_ACLARACION,
     MAX_ACLARACION_TOTAL: MAX_ACLARACION_TOTAL,
     MAX_JUSTIFICACION: MAX_JUSTIFICACION,
-    entregableDelEstado: entregableDelEstado
+    entregableDelEstado: entregableDelEstado,
+    rolesEfectivos: rolesEfectivos
   };
 })(typeof window !== 'undefined' ? window : globalThis);
