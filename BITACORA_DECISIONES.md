@@ -9,7 +9,7 @@ Plantilla al final del archivo.
 |-----|--------|--------|-------|
 | 001 | Rechazo del supuesto `file://` | Aceptada | 2026-08-13 |
 | 002 | Núcleo agnóstico + adaptador de persistencia intercambiable | Aceptada | 2026-08-13 |
-| 003 | Servidor mínimo en Node.js sin dependencias | Propuesta | 2026-08-13 |
+| 003 | Servidor mínimo en Node.js sin dependencias | **Aceptada** (por ADR-035) | 2026-08-13 |
 | 004 | Catálogo servido en shards jerárquicos, no seed de 40 MB | Aceptada | 2026-08-13 |
 | 005 | Índice fragmentado en lugar de `master_index.json` | Aceptada | 2026-08-13 |
 | 006 | Auditoría con hash encadenado declarado como anti-manipulación casual | Aceptada | 2026-08-13 |
@@ -21,7 +21,7 @@ Plantilla al final del archivo.
 | 012 | Entregables en PDF para el sistema de firmas | Aceptada (verificada) | 2026-08-13 |
 | 013 | SLA fuera del alcance de la v1 | Aceptada | 2026-08-13 |
 | 014 | Catálogo cerrado; se descarta el campo `estado` | Aceptada | 2026-08-13 |
-| 015 | Ningún operador escribe sobre la carpeta de datos | Propuesta | 2026-08-13 |
+| 015 | Ningún operador escribe sobre la carpeta de datos | **Aceptada** (por ADR-035) | 2026-08-13 |
 | 016 | La app no custodia documentos firmados | Aceptada | 2026-08-13 |
 | 017 | Identidad basada en el correo institucional, no en Windows | Aceptada | 2026-08-13 |
 | 018 | El scraper del catálogo es infraestructura del proyecto | Aceptada | 2026-08-13 |
@@ -41,6 +41,7 @@ Plantilla al final del archivo.
 | 032 | Las plantillas del pliego viven en la aplicación, versionadas, con selección declarativa | Aceptada | 2026-08-26 |
 | 033 | Los supervisores heredan lo que pueden hacer sus supervisados | Aceptada | 2026-08-28 |
 | 034 | Entrega, primer ingreso y reposición de claves | Aceptada | 2026-08-28 |
+| 035 | Destino de despliegue: máquina virtual Debian con el proceso propio y los datos en su disco | Aceptada | 2026-08-29 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -99,6 +100,8 @@ Adaptadores previstos:
 ## ADR-003 — Servidor mínimo en Node.js sin dependencias
 
 **Estado:** Propuesta (se confirma al cerrar H0) · 2026-08-13
+
+> **Aceptada el 2026-08-29 por ADR-035.** Informática autorizó una **máquina virtual Debian 12** sobre el Proxmox de la unidad. El servidor propio deja de ser una propuesta: es el destino de despliegue confirmado.
 
 **Contexto.** Se necesita algo que corra idéntico en la PC de desarrollo y en el servidor de intranet, y que sea el único punto capaz de garantizar atomicidad y serialización.
 
@@ -315,6 +318,8 @@ Alcance del cambio: `validarRenglon`, sus tests, el contador visible del wizard,
 ## ADR-015 — Ningún operador escribe sobre la carpeta de datos
 
 **Estado:** Propuesta (depende de H0-1.5 y H0-3.9) · 2026-08-13
+
+> **Aceptada el 2026-08-29 por ADR-035, y mejor de lo previsto.** Con el proceso corriendo en su propia máquina virtual, **la carpeta de datos vive en el disco de esa máquina**: el único que escribe es el servidor, y eso se cumple por construcción y no por una configuración de permisos NTFS que alguien podría aflojar. La carpeta de red `Y:` pasa a ser **destino del respaldo**, que es donde sirve de verdad.
 
 **Contexto.** H0-3.1: hoy el único lugar escribible es `Y:\UOC`, y sólo por el Jefe de Contrataciones desde su oficina. H0-3.3: se pueden otorgar permisos por grupo. H0-3.2: el trámite con Informática es ágil.
 
@@ -1150,6 +1155,69 @@ Dar de baja a un operador **no borra nada**: pone `activo: false`. La persona de
 **Alternativas consideradas.** *(a)* Enviar la clave por correo institucional: descartada, deja usuario y clave en el mismo canal y exige que la app mande correo. *(b)* Preguntas de recuperación: descartada, es más superficie para peor seguridad. *(c)* Que la clave del Jefe no sea provisoria: descartada, el Jefe también cambia la suya en el primer ingreso.
 
 **Consecuencias.** El Jefe de Contrataciones es el punto único de administración —correcto con catorce personas, insostenible si entra ADR-028 y el padrón crece a decenas—. Hay que construir la pantalla de cambio de clave obligatorio, que es la única pantalla del sistema que un operador ve antes de estar autenticado del todo. Y queda pendiente de validar en el UAT algo que no se puede saber antes: **cuántas reposiciones hacen falta el primer mes.** Si son muchas, el problema no es la clave: es el papel.
+
+---
+
+## ADR-035 — Destino de despliegue: una máquina virtual Debian con el proceso propio y los datos en su disco
+
+**Estado:** Aceptada · 2026-08-29 · *Cierra H0-3, H0-9 y H0-18. Convierte a ADR-003 y ADR-015 en Aceptadas. Cierra R1, R2 y R3.*
+
+**Contexto.** Durante quince ciclos, la pregunta más importante del proyecto estuvo sin respuesta: **si se autorizaba correr un proceso propio, y en qué equipo.** Todo el diseño se construyó alrededor de esa incógnita —el adaptador de persistencia intercambiable de ADR-002 existe por eso— y la respuesta de H0-4 (no hay HTTPS) había dejado un solo camino posible, sin plan B.
+
+Informática respondió, y la respuesta es mejor que el mejor escenario que habíamos previsto:
+
+- El servidor de intranet corre **Proxmox** como virtualizador y **puede provisionar una máquina virtual de cualquier sistema operativo**.
+- El equipo es un **Ryzen 5** con **16 GB de RAM**, de los cuales quedan **unos 8 GB libres** con lo que corre hoy.
+- Las virtualizaciones actuales usan **Debian 12**, y prefieren mantenerse en Linux.
+- **La intranet funciona como una única LAN**, así que el proceso puede correr en cualquier máquina de la red para empezar.
+- **No hay problema en subir archivos al servidor ni en actualizar la versión de la aplicación** cuando haga falta.
+
+**Decisión.** La aplicación se despliega en una **máquina virtual Debian 12** sobre el Proxmox de la unidad, corriendo el servidor de Node como servicio del sistema, con **la carpeta de datos en el disco de esa máquina**.
+
+### 1. El proceso propio deja de ser una hipótesis
+
+**ADR-003** (servidor mínimo en Node sin dependencias) pasa de `Propuesta` a **Aceptada**. Era la premisa de todo lo construido desde la ronda 3 y ahora tiene respaldo.
+
+### 2. Los datos viven en el disco de la máquina virtual, no en la carpeta de red
+
+Esto es lo que más cambia, y para mejor.
+
+Todo el diseño asumía que los datos irían a `Y:`, una carpeta compartida por SMB, con la latencia, los bloqueos y los permisos que eso arrastra. **Ya no hace falta**: la carpeta de datos es local al proceso que la escribe.
+
+- **El único que escribe es el servidor.** **ADR-015** —*"ningún operador escribe sobre la carpeta de datos"*— pasa de `Propuesta` a **Aceptada**, y se cumple por construcción, no por una configuración de permisos que alguien podría aflojar.
+- La escritura atómica (`tmp` + `rename`) y el bloqueo de numeración **funcionan como fueron diseñados**: sobre un sistema de archivos local, que es donde esas primitivas son fiables. Sobre SMB nunca lo habrían sido del todo.
+- **R3 (latencia y cortes de la carpeta de red) se cierra.** Deja de existir el problema.
+- **H9-2** —la prueba contra una carpeta SMB real— **deja de tener sentido** y se reemplaza por la prueba contra la máquina virtual definitiva.
+
+La carpeta de red `Y:` sigue siendo útil, pero para otra cosa: **destino del respaldo diario**. Que la copia viva en un disco distinto del original es exactamente lo que hace que un respaldo sirva.
+
+### 3. La versión de Node
+
+Debian 12 trae **Node 18** en sus repositorios. La aplicación no usa nada que lo exceda —cero dependencias, sólo `node:http`, `node:fs` y `node:crypto`— así que **funciona con el Node del sistema**, y ésa es la opción por defecto: menos piezas, actualizaciones por el mismo canal que el resto del sistema.
+
+Si Informática admite instalar **Node 20 LTS** desde el repositorio oficial, mejor —soporte más largo—, pero **no es un requisito**. El paquete de despliegue declara la versión mínima y el arranque la verifica.
+
+**El techo de Chrome 109 (ADR-011) no tiene nada que ver con esto.** Es una restricción del navegador de los operadores, no del servidor. El código de `server/` puede usar lo que el Node instalado soporte; el de `app/` no.
+
+### 4. Arranca solo
+
+El servidor corre como **servicio de systemd**: levanta al iniciar la máquina, se reinicia si se cae, y escribe su salida al registro del sistema. Un proceso que hay que arrancar a mano es un proceso que un lunes a la mañana no está corriendo.
+
+### 5. Se puede empezar hoy, en cualquier máquina
+
+Como la intranet es una sola LAN, **el proceso puede correr en cualquier equipo de la red** mientras se provisiona la máquina virtual. Eso adelanta la prueba con operadores reales: ya no hay que esperar a nada de Informática para empezar a usarlo.
+
+Es un arranque, no el despliegue: los datos de esa etapa son de prueba y se descartan al pasar a la máquina definitiva.
+
+### 6. Actualizar la aplicación es un procedimiento, no un trámite
+
+Informática confirmó que subir archivos y actualizar la versión no es problema. **H0-18 queda cerrado**, y con él la rutina mensual del catálogo (H4-13): el archivo se genera fuera de la intranet, se traslada, y se publica en la máquina virtual.
+
+**Fundamento.** Un proceso propio sobre un sistema de archivos local es el escenario para el que este sistema fue diseñado desde ADR-002, y el único en el que sus garantías —escritura atómica, numeración serializada, bloqueo optimista, índice fragmentado— son ciertas y no aproximadas. La alternativa que quedaba viva hasta la respuesta de H0-4 no era peor: **no existía**.
+
+**Alternativas consideradas.** *(a)* Datos en la carpeta de red `Y:` con el proceso en la VM: descartada, agrega la latencia y los bloqueos de SMB a cambio de nada — el respaldo cubre el motivo por el que se quería. *(b)* Una máquina virtual Windows: descartada; Informática prefiere Linux, la aplicación es indiferente, y mantenerse en línea con lo que ya administran reduce el riesgo de que nadie sepa mantenerla.
+
+**Consecuencias.** El proyecto deja de estar bloqueado por infraestructura: **R1 y R2 se cierran**. Aparece una dependencia operativa nueva y real: **alguien de la unidad tiene que poder administrar esa máquina virtual** —arrancarla, actualizarla, verificar el respaldo—, y eso es H10-9. Y quedan seis detalles de provisión sin definir —nombre o IP, puerto, arranque automático, recursos, cómo se suben los archivos, destino del respaldo— que no bloquean el desarrollo pero sí el despliegue.
 
 ---
 

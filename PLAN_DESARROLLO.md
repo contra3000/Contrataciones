@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-28** · ciclo 13 aprobado · **H0-4 y H0-16 respondidas** · incorporadas ADR-033 y ADR-034
+Última actualización: **2026-08-29** · ciclo 14 aprobado · **H0 cerrado: hay máquina virtual** · incorporada ADR-035
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -12,7 +12,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 
 | Hito | Nombre | Estado | Depende de |
 |------|--------|--------|-----------|
-| H0 | Relevamiento de entorno | 🟡 **Casi cerrado** — sólo resta lo elevado a Informática (servidor, red, antivirus) | — |
+| H0 | Relevamiento de entorno | ✅ **Cerrado** — Informática autorizó una VM Debian 12 sobre Proxmox ⇒ ADR-035. Restan seis detalles de provisión, que no bloquean | — |
 | H1 | Fundaciones del repositorio | ✅ **Terminado** — ciclo 1 | — |
 | H2 | Núcleo de dominio (sin UI) | ✅ **Terminado** — ciclo 2 | H1 |
 | H3 | Persistencia + servidor local | ✅ **Terminado** — ciclos 3 y 8 (respaldo) | H1, H2 |
@@ -30,9 +30,9 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H17 | Identidad de la app y documentación IA-friendly | ⬜ Pendiente — **nuevo** · lo último | H16 |
 | H15 | Observabilidad y tableros de indicadores por rol | ✅ **Terminado** — ciclos 12 y 13 | H8 |
 | H19 | Diálogo de sugerencias del piloto | ✅ **Terminado** — ciclo 13 | H6 |
-| H18 | Credenciales y administración del padrón | 🟡 **En curso** — ronda 14 · **antes del UAT** | H5 |
+| H18 | Credenciales y administración del padrón | ✅ **Terminado** — ciclo 14 | H5 |
 | H20 | Plantillas del pliego, versionadas y editables | ⬜ Pendiente — **nuevo, 2026-08-26** | H13 |
-| H10 | Despliegue a intranet y piloto | ⬜ Pendiente | H0, H9 |
+| H10 | Despliegue a intranet y piloto | 🟡 **Desbloqueado** — el paquete y el servicio van en la ronda 15 | H0, H9 |
 
 > ### ⚠️ Sigue pendiente
 > **Rescate del scraper del catálogo** (ADR-018). Al 2026-08-20 se conserva **sólo un fragmento**: el bloque `page.evaluate()` de un script Puppeteer/Playwright, ya versionado en `Contrataciones/tools/scraper-catalogo/`. **Falta** la URL de origen, el arranque del navegador, el bucle de paginación y la escritura de salida. Ver el README de esa carpeta.
@@ -45,15 +45,15 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 
 **Objetivo:** eliminar las incógnitas de infraestructura que condicionan el despliegue. **No bloquea H1–H9**, gracias al adaptador de persistencia (ADR-002), pero **sí bloquea H10**.
 
-- [ ] H0-1 · Identificar qué servidor sirve `septibri.faa.mil.ar` (IIS / Apache / nginx) y su versión — *elevado a Informática*
-- [ ] H0-2 · Confirmar si hay motor server-side disponible (ASP.NET, PHP) o si es solo estáticos — *elevado*
-- [ ] H0-3 · Averiguar si se autoriza correr un proceso propio (Node.js como servicio) y en qué equipo — *elevado* · **es la decisión de mayor impacto pendiente**
+- [x] H0-1 · ~~Qué servidor sirve el portal~~ · **Irrelevante desde ADR-035**: la aplicación no se hospeda en ese servidor, corre en su propia máquina virtual. Del portal sólo se necesita un enlace
+- [x] H0-2 · ~~Motor server-side del portal~~ · **Irrelevante desde ADR-035**
+- [x] H0-3 · **SÍ.** Informática provisiona una **máquina virtual** sobre **Proxmox** (Ryzen 5, 16 GB de RAM con ~8 GB libres). Prefieren **Linux**; las virtualizaciones actuales usan **Debian 12** ⇒ **ADR-035**. *Era la decisión de mayor impacto del proyecto y salió bien*
 - [x] H0-4 · HTTPS: **NO. Sólo HTTP.** ⇒ sin contexto seguro **no existe el adaptador de archivos del navegador**: el servidor propio pasa de preferido a **único camino posible**. R1 y R2 se fusionan; H0-3 deja de ser una decisión de conveniencia. Y la clave viaja en claro (R24, aceptado): **no puede ser la misma de ningún otro sistema** ⇒ enmienda de ADR-027
 - [x] H0-5 · Versión exacta de Edge/Chrome en las PCs de los operadores → **109.0.5414.120, cohort Windows 7** ⇒ ADR-011
-- [ ] H0-6 · Permisos NTFS: administrador identificado y trámite ágil ✅ · **falta la ruta UNC real de `Y:`** y definir la carpeta de datos nueva ⇒ ADR-015
+- [x] H0-6 · **Reformulado por ADR-035.** La carpeta de datos ya no va en `Y:`: **vive en el disco de la máquina virtual**, y el único que escribe es el servidor. La ruta UNC de `Y:` sigue haciendo falta, pero **como destino del respaldo**, no como almacenamiento primario
 - [x] H0-7 · Backup: hoy no existe, se puede establecer ⇒ pasa a ser requisito del proyecto (H3-8, H10-4)
 - [x] H0-8 · Catálogo: scraping propio del sitio estatal, actualización mensual manual ⇒ ADR-014
-- [ ] H0-9 · **Nueva** · Sistema operativo del servidor de intranet (condiciona la versión de Node) — *elevar*
+- [x] H0-9 · **Debian 12.** Trae **Node 18**, que alcanza (cero dependencias: `node:http`, `node:fs`, `node:crypto`). Node 20 LTS desde el repositorio oficial sería mejor pero **no es requisito**. *El techo de Chrome 109 es del navegador, no del servidor*
 - [x] H0-10 · Sistema de firmas: **carga manual, sin retorno del firmado** ⇒ ADR-012 y ADR-016. Queda una sola verificación: probar que acepta un PDF de "Microsoft Print to PDF"
 - [x] H0-11 · Script de scraping: **conservado sólo en un historial de chat** ⇒ ADR-018, rescate urgente (H4-8)
 - [x] H0-12 · Excepción de catálogo: **ítem más similar + aclaración de hasta 200 caracteres** ⇒ enmienda de ADR-014
@@ -61,11 +61,22 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 - [x] H0-15 · Cuentas de Windows: **una por PC**. La identidad del operador se basa en el **correo institucional**, no en Windows ⇒ ADR-017 Aceptada
 - [x] H0-16 · **IP fija**, pero **no hay una PC por persona**: la restricción de rol por máquina **se descarta** (ADR-017 medida 4). La identidad se resuelve sólo con el ingreso por clave ⇒ **H3-12 se retira**
 - [x] H0-17 · El scraper corre **fuera de la intranet**; el archivo se traslada a mano. **La app no emite peticiones al exterior** ⇒ ADR-018
-- [ ] H0-18 · **Nueva** · ¿Cuál es el procedimiento admitido para trasladar un archivo desde una PC externa a la red interna? — *elevar*
+- [x] H0-18 · **Sin problema**: se pueden subir archivos al servidor y actualizar la versión de la aplicación cuando haga falta. Habilita la rutina mensual del catálogo (H4-13)
 - [x] H0-13 · Validación de los 18 pasos: **cada sector confirmó su fase** ⇒ riesgo R4 baja de Alto a Bajo
 
 **Entregable:** `RELEVAMIENTO_ENTORNO.md` completado.
-**Criterio de aceptación:** ADR-003, ADR-012 y ADR-015 pasan de `Propuesta` a `Aceptada`, o son reemplazadas por la alternativa que corresponda.
+**Criterio de aceptación:** ✅ **Cumplido el 2026-08-29.** ADR-003, ADR-012 y ADR-015 están las tres en `Aceptada`.
+
+### Lo único que falta de Informática, y no bloquea el desarrollo
+
+Seis detalles de provisión de la máquina virtual. Bloquean el **despliegue**, no el trabajo:
+
+- [ ] H0-19 · **Nombre o IP fija** de la máquina virtual, para que los operadores lo escriban en el navegador. Un nombre es mucho mejor que una IP: si algún día la máquina cambia, no hay que avisarle a catorce personas
+- [ ] H0-20 · **Puerto.** El 80 en Linux exige privilegio o `setcap`; con 8080 u 8123 alcanza y evita el trámite. Definir cuál
+- [ ] H0-21 · **Arranque automático como servicio de systemd**, para que levante sola al reiniciar la máquina
+- [ ] H0-22 · **Recursos de la VM**: 1 vCPU y 2 GB de RAM sobran (menos de diez usuarios, menos de cien expedientes al año — ADR-008). Confirmar
+- [ ] H0-23 · **Cómo se suben los archivos** a la máquina virtual: SSH/SFTP, carpeta compartida, o los sube Informática
+- [ ] H0-24 · **Respaldo**: ¿la VM entra en el respaldo de Proxmox? ¿Y podemos escribir el respaldo diario de la aplicación a `Y:` o a otra ruta de red?
 
 ---
 
@@ -254,7 +265,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 ### Tareas
 
 - [ ] H9-1 · Generador de datos de prueba: 100 expedientes distribuidos en los 18 estados, con historial verosímil
-- [ ] H9-2 · Simulacro de carpeta de red en `datos-prueba/`, y prueba adicional **contra una carpeta compartida SMB real** (una segunda PC o una unidad mapeada). *El comportamiento de SMB no se puede simular con una carpeta local: latencia, bloqueos y permisos son distintos.*
+- [~] H9-2 · ~~Prueba contra una carpeta SMB real~~ · **Retirada el 2026-08-29 (ADR-035)**: los datos viven en el disco de la máquina virtual, no en la carpeta de red. **Se reemplaza por**: prueba contra la máquina virtual definitiva, con los operadores conectándose por la LAN
 - [ ] H9-3 · Prueba multiusuario: dos perfiles de navegador abiertos simultáneamente actuando como roles distintos sobre el mismo expediente
 - [ ] H9-4 · Suite E2E de los recorridos críticos: alta completa, avance de 18 pasos, devolución y recuperación, conflicto de concurrencia, archivado
 - [ ] H9-5 · Pruebas de degradación: red caída a mitad de un guardado, archivo corrupto, JSON de Fast-Track malformado, catálogo faltante, navegador viejo
@@ -276,7 +287,11 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 ## H10 — Despliegue a intranet y piloto
 
 - [ ] H10-1 · Cerrar H0 y confirmar el adaptador definitivo
-- [ ] H10-2 · Preparar el paquete de despliegue (solo `app/` + `server/` si corresponde) y el instructivo para Informática
+- [ ] H10-2 · **Paquete de despliegue** para Debian 12: `app/`, `server/`, `tools/`, `config/`, el catálogo, y un `instalar.sh` que crea el usuario del servicio, la carpeta de datos y los permisos
+- [ ] H10-2b · **Servicio de systemd**: arranca al iniciar la máquina, se reinicia si se cae, escribe al registro del sistema. *Un proceso que hay que arrancar a mano es un proceso que un lunes a la mañana no está corriendo*
+- [ ] H10-2c · **Verificación de arranque**: el servidor comprueba al levantar que el padrón existe, que la carpeta de datos es escribible y que la versión de Node alcanza; si algo falta, **no arranca y dice qué falta**
+- [ ] H10-2d · **Instructivo de una página para Informática**: qué instalar, qué puerto abrir, cómo se actualiza, cómo se reinicia
+- [ ] H10-2e · **Procedimiento de actualización de versión**: subir, parar el servicio, reemplazar, arrancar, verificar. Con vuelta atrás en un comando
 - [ ] H10-3 · Configurar permisos NTFS de la carpeta de datos y del Archivo Histórico
 - [ ] H10-4 · Backup automatizado en producción, con restauración probada en producción
 - [ ] H10-5 · Despliegue y enlace desde el portal de intranet existente
@@ -548,12 +563,12 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 
 | # | Riesgo | Impacto | Mitigación |
 |---|--------|---------|-----------|
-| R1 | Informática no autoriza correr un proceso propio | **Crítico** — con Chrome 109 el adaptador FSA no tiene permisos persistentes ni escritura atómica (ADR-011): cada operador tendría que volver a elegir la carpeta de red en cada sesión. Deja de ser una contingencia aceptable | ADR-002 aísla el impacto en un archivo; **ADR-015 es el argumento a presentar: un servidor propio es la opción más segura, porque permite que ningún operador tenga permiso de escritura sobre los datos** |
-| R2 | ~~No hay HTTPS~~ · **Confirmado el 2026-08-28: no hay HTTPS.** El riesgo dejó de ser hipotético | **Crítico y cierto** — sin contexto seguro **no existe** el adaptador de archivos del navegador. Ya no hay dos caminos | **El servidor propio es el único camino.** R1 y R2 se fusionan: todo depende de H0-3. Si la respuesta es NO, no hay plan B ni C, hay que conseguir un equipo donde sí se pueda |
+| ~~R1~~ | ~~Informática no autoriza correr un proceso propio~~ | **Cerrado — 2026-08-29** | Lo autorizó: máquina virtual Debian 12 sobre Proxmox ⇒ **ADR-035**. Era el riesgo crítico del proyecto |
+| ~~R2~~ | ~~Sin HTTPS no hay adaptador de archivos del navegador~~ | **Cerrado — 2026-08-29** | Era crítico mientras el único camino restante dependiera de H0-3. H0-3 salió que sí: el servidor propio existe y el adaptador del navegador ya no hace falta |
 | R8 | El sistema de firmas rechaza el PDF generado | Medio — obliga a la v2 de ADR-012 (librería PDF vendida) | Probar el circuito completo en H5-6, con un solo documento, antes de construir el resto de las plantillas |
 | R9 | Un ítem necesario no está en el catálogo del mes | Medio — con catálogo cerrado, bloquea el trámite | H0-12 define el procedimiento de excepción antes de H4 |
 | R10 | El parque de PCs (Windows 7) se renueva y cambia el navegador | Bajo, y sería una mejora | ADR-011 fija un piso, no un techo de funcionamiento: el código que corre en 109 corre en versiones posteriores |
-| R3 | La carpeta de red tiene latencia alta o cortes frecuentes | Medio | H9-2 y H9-5 lo miden antes del despliegue; borrador local como red de contención |
+| ~~R3~~ | ~~Latencia y cortes de la carpeta de red~~ | **Cerrado — 2026-08-29** | Los datos ya no viven en la carpeta de red: **están en el disco de la máquina virtual** (ADR-035 §2). La escritura atómica y el bloqueo de numeración funcionan sobre un sistema de archivos local, que es donde son fiables. **H9-2 deja de tener sentido** |
 | R4 | ~~Los 18 estados no reflejan el circuito real~~ | **Bajo** — cada sector confirmó su fase (ronda 2, 2026-08-13) | Se mantiene la verificación de H9-8 como control final, ya no como mitigación de un riesgo alto |
 | ~~R8~~ | ~~El sistema de firmas rechaza el PDF~~ | **Cerrado** — verificado el 2026-08-13: es la mecánica diaria actual | — |
 | R12 | **Atribución equivocada por sesiones compartidas sin contraseña** | Medio — contamina la auditoría y los KPIs por sector. El caso frecuente no es la suplantación deliberada sino el descuido | ADR-017: identidad por correo institucional visible en pantalla, cierre por inactividad, registro de la máquina del lado del servidor, restricción de rol por máquina. La identidad queda **declarada y corroborada**, no verificada, y así se enuncia en la UI |
