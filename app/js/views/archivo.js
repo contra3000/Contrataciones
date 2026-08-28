@@ -17,8 +17,11 @@
   var estado = {
     repo: null,
     onAbrir: null,
+    onUsarBase: null,
     dom: {}
   };
+
+  var ESTADO_FINAL = SGC.core.config.ESTADO_FINAL;
 
   function qs(raiz, selector) {
     return raiz.querySelector(selector);
@@ -69,6 +72,22 @@
           });
         })(entrada.id);
         li.appendChild(boton);
+        // Reuso de base (ADR-025, ORDEN-RONDA-13 §4): un expediente
+        // perfeccionado puede convertirse en la plantilla de uno nuevo.
+        if (entrada.estado === ESTADO_FINAL) {
+          var botonBase = document.createElement('button');
+          botonBase.type = 'button';
+          botonBase.className = 'archivo-base';
+          botonBase.textContent = 'Usar como base';
+          (function (id) {
+            botonBase.addEventListener('click', function () {
+              if (typeof estado.onUsarBase === 'function') {
+                estado.onUsarBase(id);
+              }
+            });
+          })(entrada.id);
+          li.appendChild(botonBase);
+        }
         var detalle = document.createElement('p');
         detalle.className = 'archivo-detalle';
         detalle.textContent = 'Archivado: ' + formatearFecha(entrada.archivadoEn) +
@@ -96,6 +115,9 @@
     },
     onAbrir: function (fn) {
       estado.onAbrir = fn;
+    },
+    onUsarBase: function (fn) {
+      estado.onUsarBase = fn;
     },
     refrescar: refrescar
   };

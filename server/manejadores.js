@@ -184,7 +184,8 @@ function crearManejadores(entorno) {
     servirConfig,
     apiSalud,
     apiIndice,
-    apiValidarCodigos
+    apiValidarCodigos,
+    cargarCatalogo
   };
 }
 

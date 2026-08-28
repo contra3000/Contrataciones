@@ -47,6 +47,16 @@
     return e;
   }
 
+  // Como errorDeRespuesta pero incluye el motivo en español que el servidor
+  // adjuntó: el tope del diálogo de sugerencias o el código dado de baja de
+  // la base, por ejemplo, deben llegar al usuario, no perderse.
+  function errorDelServidor(respuesta, contexto) {
+    var motivo = respuesta.cuerpo && respuesta.cuerpo.error ? ': ' + respuesta.cuerpo.error : '';
+    var e = new Error('repo.http: ' + contexto + ' (el servidor respondió estado ' + respuesta.status + motivo + ')');
+    e.codigo = 'HTTP_' + respuesta.status;
+    return e;
+  }
+
   function crearRepoHttp(baseUrl) {
     if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
       throw new Error('repo.http: crear() requiere la base del servidor (la dirección de la PC donde corre server/servidor.js)');
@@ -299,6 +309,83 @@
             throw errorNoEncontrado(id);
           }
           throw errorDeRespuesta(respuesta, 'no se pudo guardar el presupuesto del expediente ' + id);
+        });
+      },
+
+      // Base de un expediente del archivo (ADR-025, ORDEN-RONDA-13 §4): lee
+      // la lista blanca de campos reutilizables de un perfeccionado archivado
+      // y los códigos que quedaron dados de baja en el catálogo vigente.
+      baseDe: function (id) {
+        return pedirConErrorRed('GET', ruta(['archivo', id, 'base'])).then(function (respuesta) {
+          if (respuesta.status === 404) {
+            throw errorNoEncontrado(id);
+          }
+          if (respuesta.status !== 200) {
+            throw errorDelServidor(respuesta, 'no se pudo leer la base del expediente ' + id);
+          }
+          return respuesta.cuerpo;
+        });
+      },
+
+      // Crea un expediente nuevo a partir de la base (ADR-025, ORDEN-RONDA-13
+      // §4): el servidor copia la lista blanca de los renglones seleccionados
+      // por índice, marca `basadoEn` y registra el evento reuso_base.
+      crearDesdeBase: function (origenId, indices, contexto) {
+        return pedirConErrorRed('POST', ruta(['expedientes', 'base']), {
+          origenId: origenId,
+          indices: indices,
+          contexto: contexto
+        }).then(function (respuesta) {
+          if (respuesta.status === 201) {
+            return respuesta.cuerpo;
+          }
+          if (respuesta.status === 404) {
+            throw errorNoEncontrado(origenId);
+          }
+          throw errorDelServidor(respuesta, 'no se pudo crear el expediente base');
+        });
+      },
+
+      // Sugerencias del piloto (H19, ORDEN-RONDA-13 §6). GET lista los
+      // sucesos; POST crea; POST /atender marca como atendida agregando una
+      // línea, sin editar ni borrar ninguna del JSONL.
+      listarSugerencias: function () {
+        return pedirConErrorRed('GET', ruta(['sugerencias'])).then(function (respuesta) {
+          if (respuesta.status !== 200) {
+            throw errorDeRespuesta(respuesta, 'no se pudieron listar las sugerencias');
+          }
+          return respuesta.cuerpo;
+        });
+      },
+
+      enviarSugerencia: function (datos, contexto) {
+        var cuerpo = { contexto: contexto, contenido: datos.contenido };
+        var campos = ['pantalla', 'expediente', 'paso', 'appVersion', 'catalogoVersion', 'navegador'];
+        for (var i = 0; i < campos.length; i++) {
+          var valor = datos[campos[i]];
+          if (typeof valor === 'string' && valor !== '') {
+            cuerpo[campos[i]] = valor;
+          }
+        }
+        return pedirConErrorRed('POST', ruta(['sugerencias']), cuerpo).then(function (respuesta) {
+          if (respuesta.status === 201) {
+            return respuesta.cuerpo;
+          }
+          throw errorDelServidor(respuesta, 'no se pudo enviar la sugerencia');
+        });
+      },
+
+      marcarSugerenciaAtendida: function (id, contexto) {
+        return pedirConErrorRed('POST', ruta(['sugerencias', id, 'atender']), {
+          contexto: contexto
+        }).then(function (respuesta) {
+          if (respuesta.status === 200) {
+            return respuesta.cuerpo;
+          }
+          if (respuesta.status === 404) {
+            throw new Error('repo.http: sugerencia no encontrada: ' + id);
+          }
+          throw errorDelServidor(respuesta, 'no se pudo marcar la sugerencia como atendida');
         });
       }
     };

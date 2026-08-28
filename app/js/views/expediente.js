@@ -168,6 +168,7 @@
     if (datos.prioridad) { agregarCampo(dl, 'Prioridad', datos.prioridad); }
     if (datos.rubro) { agregarCampo(dl, 'Rubro', datos.rubro); }
     if (datos.tipo) { agregarCampo(dl, 'Tipo', datos.tipo); }
+    if (expediente.basadoEn) { agregarCampo(dl, 'Basado en el expediente', expediente.basadoEn); }
   }
 
   function renderRenglones(ul, expediente) {

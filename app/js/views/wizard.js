@@ -365,6 +365,9 @@
         resumen: qs(estado.dom.raiz, '#sgc-resumen'),
         onCambio: guardarBorrador
       });
+    },
+    pasoActual: function () {
+      return estado.paso;
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

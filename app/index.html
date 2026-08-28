@@ -135,6 +135,7 @@
       <button id="sgc-nav-alta" type="button" class="primario">Alta de Especificación</button>
       <button id="sgc-nav-tablero" type="button">Tablero</button>
       <button id="sgc-nav-archivo" type="button">Archivo Histórico</button>
+      <button id="sgc-nav-sugerencias" type="button" hidden>Sugerencias</button>
     </nav>
 
     <section id="sgc-kanban" class="kanban" aria-label="Tablero de expedientes" hidden>
@@ -166,6 +167,55 @@
         <p id="sgc-archivo-error" class="error-global" role="alert" hidden></p>
       </header>
       <ul id="sgc-archivo-lista" class="lista-archivo"></ul>
+    </section>
+
+    <section id="sgc-base-revision" class="base-revision" aria-label="Revisión de la base" hidden>
+      <header class="base-cabecera">
+        <button id="sgc-base-volver" type="button">Volver al archivo</button>
+        <h2 id="sgc-base-titulo"></h2>
+        <p id="sgc-base-resumen" class="detalle"></p>
+      </header>
+      <p id="sgc-base-error" class="error-global" role="alert" hidden></p>
+      <section class="base-seccion" aria-labelledby="sgc-base-campos-titulo">
+        <h3 id="sgc-base-campos-titulo">Campos que se copian</h3>
+        <dl id="sgc-base-campos" class="revision-filas"></dl>
+      </section>
+      <section class="base-seccion" aria-labelledby="sgc-base-renglones-titulo">
+        <h3 id="sgc-base-renglones-titulo">Seleccionar renglones</h3>
+        <p class="subtitulo">Los códigos dados de baja en el catálogo vigente se marcan y no se pueden copiar.</p>
+        <ul id="sgc-base-lista" class="lista-base"></ul>
+      </section>
+      <footer class="base-pie">
+        <p id="sgc-base-mensaje" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
+        <button id="sgc-base-crear" type="button" class="primario">Crear expediente</button>
+        <button id="sgc-base-cancelar" type="button">Cancelar</button>
+      </footer>
+    </section>
+
+    <section id="sgc-sugerencias-jefe" class="sugerencias-jefe" aria-label="Sugerencias del piloto" hidden>
+      <header class="sugerencias-cabecera">
+        <button id="sgc-sugerencias-volver" type="button">Volver al tablero</button>
+        <h2>Sugerencias del piloto</h2>
+        <p class="subtitulo">Reportes del operador durante el piloto. Contienen fragmentos de los expedientes en uso: son datos sensibles.</p>
+        <div class="sugerencias-filtros">
+          <label for="sgc-sugerencias-filtro">Mostrar</label>
+          <select id="sgc-sugerencias-filtro">
+            <option value="activas">Activas</option>
+            <option value="atendidas">Atendidas</option>
+            <option value="todas">Todas</option>
+          </select>
+          <button id="sgc-sugerencias-refrescar" type="button">Refrescar</button>
+          <button id="sgc-exportar-sugerencias" type="button">Exportar Markdown</button>
+        </div>
+        <p id="sgc-sugerencias-conteo" class="conteo" role="status" aria-live="polite"></p>
+        <p id="sgc-sugerencias-error" class="error-global" role="alert" hidden></p>
+      </header>
+      <ul id="sgc-sugerencias-lista" class="lista-sugerencias"></ul>
+      <dialog id="sgc-sugerencias-advertencia" class="advertencia">
+        <p>El archivo exportado contiene sugerencias con fragmentos de los expedientes en uso. No lo distribuya sin revisar.</p>
+        <button id="sgc-sugerencias-advertencia-aceptar" type="button">Entiendo, exportar</button>
+        <button id="sgc-sugerencias-advertencia-cancelar" type="button">Cancelar</button>
+      </dialog>
     </section>
 
     <section id="sgc-expediente" class="expediente" aria-label="Expediente" hidden>
@@ -434,6 +484,9 @@
   <script src="js/views/tablero.js"></script>
   <script src="js/views/exploracion.js"></script>
   <script src="js/views/archivo.js"></script>
+  <script src="js/views/usar-base.js"></script>
+  <script src="js/views/sugerencias.js"></script>
+  <script src="js/views/sugerencias-jefe.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.http.js"></script>
   <script src="js/app.js"></script>

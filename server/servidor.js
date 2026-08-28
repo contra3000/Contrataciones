@@ -35,6 +35,10 @@
  *   estado (409) y la auditoría la escribe el servidor.
  *  10. POST /api/expedientes/:id/entregables guarda el entregable generado
  *   (ADR-016) y GET /entregables/<nombre> lo enlaza (ORDEN-RONDA-07 §3.3).
+ *  11. Reuso de base (ADR-025): GET /api/archivo/<id>/base lee la lista
+ *   blanca de un perfeccionado y POST /api/expedientes/base crea el nuevo.
+ *  12. Sugerencias del piloto (H19): JSONL append-only con tope de 4000
+ *   sucesos; atender agrega una línea, nunca edita ni borra.
  */
 'use strict';
 
@@ -54,6 +58,8 @@ const expedientes = require('./expedientes.js');
 const presupuestos = require('./presupuestos.js');
 const archivo = require('./archivo.js');
 const eventos = require('./eventos.js');
+const base = require('./base.js');
+const sugerencias = require('./sugerencias.js');
 
 // El orden de carga importa: cada módulo puede exigir que el anterior ya esté
 // registrado en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029).
@@ -108,16 +114,22 @@ function crearServidor(datosDir) {
   // interrumpido de rondas anteriores (staging abandonado, original sin marca,
   // índice huérfano) antes de servir.
   archivo.recuperarArchivados(datosDir);
+  const manejadoresApi = manejadores.crearManejadores(entorno);
+  entorno.cargarCatalogo = manejadoresApi.cargarCatalogo;
   const api = Object.assign(
-    manejadores.crearManejadores(entorno),
+    manejadoresApi,
     expedientes.crearManejadoresExpedientes(entorno),
-    presupuestos.crearManejadoresPresupuestos(entorno)
+    presupuestos.crearManejadoresPresupuestos(entorno),
+    base.crearManejadoresBase(entorno),
+    sugerencias.crearManejadoresSugerencias(entorno)
   );
   const {
     apiSalud,
     apiIndice,
     apiCrear,
+    apiCrearBase,
     apiLeer,
+    apiLeerBase,
     apiGuardar,
     apiAvanzar,
     apiDevolver,
@@ -125,10 +137,16 @@ function crearServidor(datosDir) {
     apiLeerEntregable,
     apiGuardarPresupuesto,
     apiValidarCodigos,
+    apiListarSugerencias,
+    apiCrearSugerencia,
+    apiAtenderSugerencia,
     servirConfig,
     servirEstatico
   } = api;
 
+  // Leer un cuerpo, extraer su `contexto` si trae (para el log de origen) y
+  // despachar. Se define dentro del handler porque cierra sobre req, res y el
+  // origen resuelto de la petición. Un cuerpo inválido lo reporta el manejador.
   return http.createServer((req, res) => {
     const ruta = (req.url || '').split('?')[0];
     const peticion = { metodo: req.method, ruta };
@@ -137,6 +155,26 @@ function crearServidor(datosDir) {
 
     ayudantes.resolverOrigen(req).then((origen) => {
       try {
+        function conCuerpo(fn, contratoId) {
+          const contexto = (texto) => {
+            try {
+              const cuerpo = ayudantes.parsearCuerpo(texto);
+              if (cuerpo && cuerpo.contexto) {
+                return cuerpo.contexto;
+              }
+            } catch (e) {
+              // el cuerpo inválido lo reporta el manejador
+            }
+            return null;
+          };
+          return ayudantes.leerCuerpo(req).then((texto) => {
+            ayudantes.registrarOrigen(datosDir, origen, peticion, contratoId || null, contexto(texto));
+            return fn(req, res, texto);
+          }).catch((e) => {
+            return ayudantes.responderErrorPeticion(res, e);
+          });
+        }
+
         // Salud e índice: sin cuerpo.
         if (req.method === 'GET' && ruta === '/api/salud') {
           ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
@@ -156,19 +194,27 @@ function crearServidor(datosDir) {
 
         // Creación: se lee el cuerpo para registrar el contexto recibido.
         if (ruta === '/api/expedientes' && req.method === 'POST') {
-          return ayudantes.leerCuerpo(req).then((texto) => {
-            let contexto = null;
-            try {
-              const cuerpo = ayudantes.parsearCuerpo(texto);
-              contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
-            } catch (e) {
-              // el cuerpo inválido lo reporta apiCrear
-            }
-            ayudantes.registrarOrigen(datosDir, origen, peticion, null, contexto);
-            return apiCrear(req, res, texto);
-          }).catch((e) => {
-            return ayudantes.responderErrorPeticion(res, e);
-          });
+          return conCuerpo((r, s, texto) => apiCrear(r, s, texto));
+        }
+
+        // Base de un expediente del archivo (ADR-025): crear un expediente
+        // nuevo a partir de uno perfeccionado. Antes que el bloque genérico
+        // /api/expedientes/<id> para que "base" no se tome como id.
+        if (ruta === '/api/expedientes/base' && req.method === 'POST') {
+          return conCuerpo((r, s, texto) => apiCrearBase(r, s, texto));
+        }
+
+        // Base de un expediente del archivo (ADR-025): leer la propuesta de
+        // campos reutilizables. GET /api/archivo/<id>/base.
+        if (req.method === 'GET' && ruta.startsWith('/api/archivo/')) {
+          const baseId = ayudantes.archivoBaseDeRuta(req);
+          if (baseId === null ||
+              !ayudantes.estaDentro(ayudantes.rutaExpediente(datosDir, baseId).dir, datosDir)) {
+            ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
+            return ayudantes.responderJson(res, 400, { error: 'id de expediente inválido (recorrido de rutas no permitido)' });
+          }
+          ayudantes.registrarOrigen(datosDir, origen, peticion, baseId, null);
+          return apiLeerBase(req, res, baseId);
         }
 
         // Expediente por id. Un :id que no es anio-numero (por ejemplo con
@@ -211,85 +257,43 @@ function crearServidor(datosDir) {
             return apiLeer(req, res, id);
           }
           if (req.method === 'PUT') {
-            return ayudantes.leerCuerpo(req).then((texto) => {
-              let contexto = null;
-              try {
-                const cuerpo = ayudantes.parsearCuerpo(texto);
-                contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
-              } catch (e) {
-                // el cuerpo inválido lo reporta apiGuardar
-              }
-              ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
-              return apiGuardar(req, res, id, texto);
-            }).catch((e) => {
-              return ayudantes.responderErrorPeticion(res, e);
-            });
+            return conCuerpo((r, s, texto) => apiGuardar(r, s, id, texto), id);
           }
           if (req.method === 'POST' && (accion === 'avanzar' || accion === 'devolver')) {
-            return ayudantes.leerCuerpo(req).then((texto) => {
-              let contexto = null;
-              try {
-                const cuerpo = ayudantes.parsearCuerpo(texto);
-                contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
-              } catch (e) {
-                // el cuerpo inválido lo reporta el manejador
-              }
-              ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
+            return conCuerpo((r, s, texto) => {
               if (accion === 'avanzar') {
-                return apiAvanzar(req, res, id, texto, origen);
+                return apiAvanzar(r, s, id, texto, origen);
               }
-              return apiDevolver(req, res, id, texto, origen);
-            }).catch((e) => {
-              return ayudantes.responderErrorPeticion(res, e);
-            });
+              return apiDevolver(r, s, id, texto, origen);
+            }, id);
           }
           if (req.method === 'POST' && accion === 'entregables') {
-            return ayudantes.leerCuerpo(req).then((texto) => {
-              let contexto = null;
-              try {
-                const cuerpo = ayudantes.parsearCuerpo(texto);
-                contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
-              } catch (e) {
-                // el cuerpo inválido lo reporta apiGuardarEntregable
-              }
-              ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
-              return apiGuardarEntregable(req, res, id, texto);
-            }).catch((e) => {
-              return ayudantes.responderErrorPeticion(res, e);
-            });
+            return conCuerpo((r, s, texto) => apiGuardarEntregable(r, s, id, texto), id);
           }
           // Presupuestos adjuntos (ORDEN-RONDA-09 §3.2).
           if (req.method === 'POST' && accion === 'presupuestos') {
-            return ayudantes.leerCuerpo(req).then((texto) => {
-              let contexto = null;
-              try {
-                const cuerpo = ayudantes.parsearCuerpo(texto);
-                contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
-              } catch (e) {
-                // el cuerpo inválido lo reporta apiGuardarPresupuesto
-              }
-              ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
-              return apiGuardarPresupuesto(req, res, id, texto);
-            }).catch((e) => {
-              return ayudantes.responderErrorPeticion(res, e);
-            });
+            return conCuerpo((r, s, texto) => apiGuardarPresupuesto(r, s, id, texto), id);
           }
         }
 
         if (ruta === '/api/catalogo/validar-codigos' && req.method === 'POST') {
-          return ayudantes.leerCuerpo(req).then((texto) => {
-            let contexto = null;
-            try {
-              const cuerpo = ayudantes.parsearCuerpo(texto);
-              contexto = cuerpo && cuerpo.contexto ? cuerpo.contexto : null;
-            } catch (e) {
-              // el cuerpo inválido lo reporta apiValidarCodigos
-            }
-            ayudantes.registrarOrigen(datosDir, origen, peticion, null, contexto);
-            return apiValidarCodigos(req, res, texto);
-          }).catch((e) => {
-            return ayudantes.responderErrorPeticion(res, e);
-          });
+          return conCuerpo((r, s, texto) => apiValidarCodigos(r, s, texto));
+        }
+
+        // Sugerencias del piloto (H19): GET lista, POST crea, POST /atender
+        // marca como atendida. Todas con cuerpo para el log de origen.
+        if (req.method === 'GET' && ruta === '/api/sugerencias') {
+          ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
+          return apiListarSugerencias(req, res);
+        }
+        if (req.method === 'POST' && ruta === '/api/sugerencias') {
+          return conCuerpo((r, s, texto) => apiCrearSugerencia(r, s, texto));
+        }
+        if (ruta.startsWith('/api/sugerencias/') && req.method === 'POST') {
+          const desglose = ayudantes.sugerenciaDeRuta(req);
+          if (desglose !== null) {
+            return conCuerpo((r, s, texto) => apiAtenderSugerencia(r, s, desglose.id, texto), desglose.id);
+          }
         }
 
         if (esRutaApi) {
