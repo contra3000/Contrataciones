@@ -42,6 +42,7 @@ Plantilla al final del archivo.
 | 033 | Los supervisores heredan lo que pueden hacer sus supervisados | Aceptada | 2026-08-28 |
 | 034 | Entrega, primer ingreso y reposición de claves | Aceptada | 2026-08-28 |
 | 035 | Destino de despliegue: máquina virtual Debian con el proceso propio y los datos en su disco | Aceptada | 2026-08-29 |
+| 036 | Nada se decide en el arranque: lo que se puede resolver al usarlo, se resuelve al usarlo | Aceptada | 2026-08-31 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -1218,6 +1219,55 @@ Informática confirmó que subir archivos y actualizar la versión no es problem
 **Alternativas consideradas.** *(a)* Datos en la carpeta de red `Y:` con el proceso en la VM: descartada, agrega la latencia y los bloqueos de SMB a cambio de nada — el respaldo cubre el motivo por el que se quería. *(b)* Una máquina virtual Windows: descartada; Informática prefiere Linux, la aplicación es indiferente, y mantenerse en línea con lo que ya administran reduce el riesgo de que nadie sepa mantenerla.
 
 **Consecuencias.** El proyecto deja de estar bloqueado por infraestructura: **R1 y R2 se cierran**. Aparece una dependencia operativa nueva y real: **alguien de la unidad tiene que poder administrar esa máquina virtual** —arrancarla, actualizarla, verificar el respaldo—, y eso es H10-9. Y quedan seis detalles de provisión sin definir —nombre o IP, puerto, arranque automático, recursos, cómo se suben los archivos, destino del respaldo— que no bloquean el desarrollo pero sí el despliegue.
+
+---
+
+## ADR-036 — Nada se decide en el arranque: lo que se puede resolver al usarlo, se resuelve al usarlo
+
+**Estado:** Aceptada · 2026-08-31 · *Amplía a ADR-029*
+
+**Contexto.** Es la **tercera vez** que el mismo defecto aparece con otra ropa, y ya no se puede tratar como una coincidencia:
+
+| Ciclo | Cómo apareció | Qué pasaba |
+|---|---|---|
+| 12 | `if (SGC.core.requerimiento)` | Una guardia defensiva **apagaba una validación en silencio** ⇒ ADR-029 |
+| 14 | El padrón leído una vez al arrancar | Una **baja no cortaba** una sesión ya abierta |
+| 15 | La elección de padrón hecha una vez al arrancar | Si el padrón se crea **después** del arranque, el proceso **nunca lo ve**: todo da 403 sin un solo mensaje |
+
+En el ciclo 15 el desarrollador corrigió la parte difícil —la sesión se revalida contra el padrón vivo en cada operación, y la baja, el bloqueo, la degradación y la elevación se reflejan al instante sin reingresar— pero quedó una línea antes:
+
+```js
+function crearServidor(datosDir) {
+  const tienePadronReal = padronVivoReal.existe();   // ← se decide UNA vez
+  if (tienePadronReal) { padronVivo = padronVivoReal; }
+  else { padronVivo = crearPadronVivo(usuariosEjemplo); }
+}
+```
+
+Ese `existe()` corre al crear el servidor. Si el padrón real aparece un minuto después, **el proceso sigue atado al padrón de ejemplo hasta que alguien lo reinicie** — y nadie va a saber que hay que reiniciarlo, porque no hay ningún error: los operadores ingresan, y cada transición devuelve 403.
+
+**Y es alcanzable el día de la instalación**, porque el instructivo instala y arranca el servicio antes de sembrar el padrón.
+
+**Decisión.** **Ninguna decisión que dependa del estado del disco se toma en el arranque.** Se toma en el momento en que se usa.
+
+1. **La elección del padrón se resuelve en cada uso**, no al crear el servidor. El módulo de padrón vivo ya cachea por fecha de modificación: la elección de *cuál archivo* tiene que estar del mismo lado de esa caché.
+2. **La regla general**, que es lo que esta ADR agrega a ADR-029: si un dato puede cambiar mientras el proceso corre —un archivo, un permiso, una carpeta— **no se retrata al arrancar y se consulta del retrato**. Se lee cuando hace falta, con la caché que convenga.
+3. **Lo que sí se comprueba al arrancar, se comprueba para negarse a arrancar**, no para elegir un camino. La verificación de arranque de la ronda 15 —carpeta de datos escribible, catálogo presente, puerto libre, versión de Node— es correcta justamente porque **su única salida es no arrancar**.
+4. **Un modo degradado no se elige solo.** Si el sistema puede funcionar de dos maneras y una es peor, la peor **no puede activarse por omisión y en silencio**. O se pide explícitamente —una opción en la línea de comandos, un valor en la configuración— o no existe. En este caso: **sin padrón real, el servidor no arranca**; el modo declarado sólo se activa pidiéndolo, y es para desarrollo y tests.
+
+### Cómo reconocer la forma
+
+Las tres instancias comparten una firma que conviene tener a mano al leer código:
+
+> **Algo se evalúa una vez, el resultado se guarda, y después todo el mundo consulta el resultado en vez de la fuente.**
+
+No importa si es un `if` que apaga una regla, un retrato de un archivo, o la elección de una ruta. **El síntoma siempre es el mismo: el sistema funciona, nadie ve un error, y el comportamiento es el equivocado.**
+
+**Fundamento.** *Un modo degradado que se elige solo y no avisa es indistinguible de un defecto.* Y a esta escala no hay ninguna ganancia en decidir temprano: leer un archivo cuando hace falta cuesta microsegundos y elimina una clase entera de problema que ya nos costó tres ciclos encontrarla.
+
+**Alternativas consideradas.** *(a)* Documentar que hay que reiniciar el servicio después de crear el padrón: descartada — es exactamente la clase de instrucción que alguien no lee, y el precio de no leerla es una tarde entera. *(b)* Que el servidor detecte el padrón nuevo y se reinicie solo: descartada, un proceso que se reinicia solo por un archivo que apareció es más difícil de razonar que uno que lee cuando necesita.
+
+**Consecuencias.** El modo declarado deja de activarse por omisión, así que **hay que pedirlo explícitamente en los tests y en el desarrollo**. Es un cambio de superficie amplia pero mecánico. Y aparece un requisito de orden en la instalación que ahora el sistema hace cumplir en vez de pedirlo por escrito: **primero el padrón, después el servicio.**
 
 ---
 

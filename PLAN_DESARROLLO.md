@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-29** · ciclo 14 aprobado · **H0 cerrado: hay máquina virtual** · incorporada ADR-035
+Última actualización: **2026-08-31** · ciclo 15 aprobado · **paquete de despliegue listo, la instalación espera un ciclo** · incorporada ADR-036
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -32,7 +32,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H19 | Diálogo de sugerencias del piloto | ✅ **Terminado** — ciclo 13 | H6 |
 | H18 | Credenciales y administración del padrón | ✅ **Terminado** — ciclo 14 | H5 |
 | H20 | Plantillas del pliego, versionadas y editables | ⬜ Pendiente — **nuevo, 2026-08-26** | H13 |
-| H10 | Despliegue a intranet y piloto | 🟡 **Desbloqueado** — el paquete y el servicio van en la ronda 15 | H0, H9 |
+| H10 | Despliegue a intranet y piloto | 🟡 **50%** — paquete, servicio, respaldo e instructivo hechos; **tres correcciones antes de instalar** | H0, H9 |
 
 > ### ⚠️ Sigue pendiente
 > **Rescate del scraper del catálogo** (ADR-018). Al 2026-08-20 se conserva **sólo un fragmento**: el bloque `page.evaluate()` de un script Puppeteer/Playwright, ya versionado en `Contrataciones/tools/scraper-catalogo/`. **Falta** la URL de origen, el arranque del navegador, el bucle de paginación y la escritura de salida. Ver el README de esa carpeta.
@@ -292,6 +292,13 @@ Seis detalles de provisión de la máquina virtual. Bloquean el **despliegue**, 
 - [ ] H10-2c · **Verificación de arranque**: el servidor comprueba al levantar que el padrón existe, que la carpeta de datos es escribible y que la versión de Node alcanza; si algo falta, **no arranca y dice qué falta**
 - [ ] H10-2d · **Instructivo de una página para Informática**: qué instalar, qué puerto abrir, cómo se actualiza, cómo se reinicia
 - [ ] H10-2e · **Procedimiento de actualización de versión**: subir, parar el servicio, reemplazar, arrancar, verificar. Con vuelta atrás en un comando
+
+**Estado al 2026-08-31 (ciclo 15): 50%.** El paquete, el servicio de systemd, la verificación de arranque, el respaldo con destino y el instructivo están entregados y auditados. **La instalación espera** por tres correcciones:
+
+- [ ] H10-2f · **ADR-036 · la elección de padrón se resuelve al usarlo, no al arrancar.** Hoy `crearServidor` decide una sola vez: si el padrón aparece después, el proceso nunca lo ve y **todo da 403 en silencio**. Y **sin padrón real el servidor no arranca**: el modo declarado sólo se activa pidiéndolo
+- [ ] H10-2g · El comando de siembra del padrón del `INSTRUCTIVO.md` **está roto**: apunta `--archivo` a un JSON que la carga masiva no sabe leer. Falla en todas las líneas. Es el comando del día uno
+- [ ] H10-2h · El mensaje de arranque con el padrón ilegible **filtra el error de V8 en inglés**. Único mensaje que rompe la regla del castellano
+- [ ] H10-2i · El instructivo ordena **primero el padrón, después el servicio**, y lo dice donde se lee
 - [ ] H10-3 · Configurar permisos NTFS de la carpeta de datos y del Archivo Histórico
 - [ ] H10-4 · Backup automatizado en producción, con restauración probada en producción
 - [ ] H10-5 · Despliegue y enlace desde el portal de intranet existente
@@ -569,6 +576,7 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 | R9 | Un ítem necesario no está en el catálogo del mes | Medio — con catálogo cerrado, bloquea el trámite | H0-12 define el procedimiento de excepción antes de H4 |
 | R10 | El parque de PCs (Windows 7) se renueva y cambia el navegador | Bajo, y sería una mejora | ADR-011 fija un piso, no un techo de funcionamiento: el código que corre en 109 corre en versiones posteriores |
 | ~~R3~~ | ~~Latencia y cortes de la carpeta de red~~ | **Cerrado — 2026-08-29** | Los datos ya no viven en la carpeta de red: **están en el disco de la máquina virtual** (ADR-035 §2). La escritura atómica y el bloqueo de numeración funcionan sobre un sistema de archivos local, que es donde son fiables. **H9-2 deja de tener sentido** |
+| R39 | **Un modo degradado se elige solo y en silencio** — tercera aparición de la misma forma (ADR-029, ciclo 14, ciclo 15) | **Alto por consecuencia**: está garantizado que se dispare el día de la instalación, y el síntoma es "todo funciona pero todo da 403" | **ADR-036**: nada que dependa del disco se decide al arrancar; lo que se comprueba al arrancar sirve **sólo para negarse a arrancar**. Sin padrón real, el servidor no arranca |
 | R4 | ~~Los 18 estados no reflejan el circuito real~~ | **Bajo** — cada sector confirmó su fase (ronda 2, 2026-08-13) | Se mantiene la verificación de H9-8 como control final, ya no como mitigación de un riesgo alto |
 | ~~R8~~ | ~~El sistema de firmas rechaza el PDF~~ | **Cerrado** — verificado el 2026-08-13: es la mecánica diaria actual | — |
 | R12 | **Atribución equivocada por sesiones compartidas sin contraseña** | Medio — contamina la auditoría y los KPIs por sector. El caso frecuente no es la suplantación deliberada sino el descuido | ADR-017: identidad por correo institucional visible en pantalla, cierre por inactividad, registro de la máquina del lado del servidor, restricción de rol por máquina. La identidad queda **declarada y corroborada**, no verificada, y así se enuncia en la UI |
