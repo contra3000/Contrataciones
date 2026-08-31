@@ -1,0 +1,19 @@
+[Unit]
+Description=SGC — Sistema de Gestión de Contrataciones
+After=network.target
+
+[Service]
+Type=simple
+User=sgc
+Group=sgc
+ExecStart=/usr/bin/node /opt/sgc/server/servidor.js --config /etc/sgc/servidor.json
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sgc
+Environment=NODE_ENV=production
+WorkingDirectory=/opt/sgc
+
+[Install]
+WantedBy=multi-user.target

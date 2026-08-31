@@ -19,7 +19,6 @@ function crearManejadoresExpedientes(entorno) {
   const {
     datosDir,
     repo,
-    PADRON,
     ayudantes,
     eventos
   } = entorno;
@@ -136,7 +135,7 @@ function crearManejadoresExpedientes(entorno) {
     // ADR-021: la autorización no depende del rol que el cliente elige. Antes
     // del motor, el servidor cruza el contexto contra el padrón: correo fuera
     // del padrón o rol que no le corresponde → 403, sin tocar el disco.
-    const autorizacion = SGC.core.autorizacion.verificar(PADRON, cuerpo.contexto);
+    const autorizacion = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), cuerpo.contexto);
     if (!autorizacion.ok) {
       return responderJson(res, 403, { error: autorizacion.error });
     }
@@ -350,7 +349,7 @@ function crearManejadoresExpedientes(entorno) {
     const cambiaImputacion = JSON.stringify(imputacionActual) !== JSON.stringify(imputacionRecibida);
     let autorizadoImputacion = true;
     if (cambiaImputacion && imputacionRecibida.length > 0) {
-      const autorizacion = SGC.core.autorizacion.verificar(PADRON, contexto);
+      const autorizacion = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), contexto);
       if (!autorizacion.ok) { return responderJson(res, 403, { error: autorizacion.error }); }
       if (contexto.rol !== 'contaduria') {
         return responderJson(res, 403, { error: 'la imputación presupuestaria sólo la edita el rol "contaduria" (ADR-022)' });

@@ -33,7 +33,7 @@ const CAMPOS_SUGERENCIA = [
 ];
 
 function crearManejadoresSugerencias(entorno) {
-  const { datosDir, PADRON, ayudantes: extra } = entorno;
+  const { datosDir, ayudantes: extra } = entorno;
   const { responderJson, parsearCuerpo } = extra;
   const SGC = globalThis.SGC;
 
@@ -45,7 +45,7 @@ function crearManejadoresSugerencias(entorno) {
   // autenticado en el padrón.
   function esJefe(contexto) {
     const cx = contexto || {};
-    const v = SGC.core.autorizacion.verificar(PADRON, cx);
+    const v = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), cx);
     return v.ok && cx.rol === 'contrataciones_supervisor';
   }
 

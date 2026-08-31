@@ -260,7 +260,7 @@ function leerEventos(datosDir, id) {
 // ---------------------------------------------------------------------------
 
 function crearManejadoresEventos(entorno) {
-  const { datosDir, PADRON, ayudantes } = entorno;
+  const { datosDir, ayudantes } = entorno;
   const { responderJson, parsearCuerpo } = ayudantes;
   const SGC = globalThis.SGC;
 
@@ -268,7 +268,7 @@ function crearManejadoresEventos(entorno) {
   // Contrataciones, verificado contra el padrón en el servidor.
   function esJefe(contexto) {
     const cx = contexto || {};
-    const v = SGC.core.autorizacion.verificar(PADRON, cx);
+    const v = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), cx);
     return v.ok && cx.rol === 'contrataciones_supervisor';
   }
 
