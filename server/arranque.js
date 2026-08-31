@@ -8,7 +8,7 @@ const RAIZ = path.resolve(__dirname, '..');
 const DIR_APP = path.join(RAIZ, 'app');
 
 function leerArgumentos(argv) {
-  const opciones = { datos: null, puerto: 8123, config: null };
+  const opciones = { datos: null, puerto: 8123, config: null, declarado: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--datos' && i + 1 < argv.length) {
       opciones.datos = argv[i + 1];
@@ -19,6 +19,8 @@ function leerArgumentos(argv) {
     } else if (argv[i] === '--config' && i + 1 < argv.length) {
       opciones.config = argv[i + 1];
       i++;
+    } else if (argv[i] === '--declarado') {
+      opciones.declarado = true;
     }
   }
   return opciones;
@@ -36,8 +38,11 @@ function cargarConfig(opciones) {
     if (opciones.puerto === 8123 && typeof cfg.puerto === 'number') {
       opciones.puerto = cfg.puerto;
     }
+    if (cfg.declarado === true) {
+      opciones.declarado = true;
+    }
   } catch (e) {
-    throw new Error('no se pudo leer el archivo de configuración "' + opciones.config + '": ' + e.message);
+    throw new Error('el archivo de configuración "' + opciones.config + '" no se pudo leer: revise que exista y sea JSON válido');
   }
 }
 
@@ -64,20 +69,24 @@ function verificarArranque(opciones, nodeMinVersion, ayudantes) {
     throw new Error('se necesita Node ' + nodeMinVersion + ' o superior (versión actual: ' + process.version + ')');
   }
   var rutaPadron = path.join(opciones.datos, 'padron.json');
-  if (fs.existsSync(rutaPadron)) {
-    try {
-      var padron = JSON.parse(fs.readFileSync(rutaPadron, 'utf8'));
-      var usuarios = Array.isArray(padron.usuarios) ? padron.usuarios : [];
-      var conCredencial = usuarios.some(function (u) { return u && u.credenciales && typeof u.credenciales.hash === 'string'; });
-      if (!conCredencial) {
-        throw new Error('el padrón en "' + rutaPadron + '" no tiene ningún operador con credencial: cargue al menos uno con tools/padron.js antes de arrancar');
-      }
-    } catch (e) {
-      if (/el padrón/.test(e.message)) {
-        throw e;
-      }
-      throw new Error('el padrón en "' + rutaPadron + '" no se pudo leer: ' + e.message);
+  // ADR-036 (§2.1): sin padrón real, el servidor no arranca. El modo declarado
+  // (desarrollo y tests) sólo se activa pidiéndolo con --declarado.
+  if (!fs.existsSync(rutaPadron)) {
+    if (opciones.declarado) {
+      return;
     }
+    throw new Error('falta el padrón de usuarios: no existe "' + rutaPadron + '". Siembrelo con tools/padron.js antes de arrancar (ver INSTRUCTIVO.md)');
+  }
+  var padron = null;
+  try {
+    padron = JSON.parse(fs.readFileSync(rutaPadron, 'utf8'));
+  } catch (e) {
+    throw new Error('el padrón no es JSON válido: revise el contenido de "' + rutaPadron + '"');
+  }
+  var usuarios = Array.isArray(padron.usuarios) ? padron.usuarios : [];
+  var conCredencial = usuarios.some(function (u) { return u && u.credenciales && typeof u.credenciales.hash === 'string'; });
+  if (!conCredencial) {
+    throw new Error('el padrón en "' + rutaPadron + '" no tiene ningún operador con credencial: cargue al menos uno con tools/padron.js antes de arrancar');
   }
   var rutaManifiesto = path.join(DIR_APP, 'catalogo', 'manifiesto.json');
   if (!fs.existsSync(rutaManifiesto)) {

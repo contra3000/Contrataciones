@@ -117,6 +117,14 @@ test('§4.3 no arranca sin catálogo', () => {
   try {
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true });
     fs.writeFileSync(path.join(datosDir, 'contador.json'), '{"contador":{}}');
+    const padron = {
+      version: 1,
+      usuarios: [
+        { email: 'x@test.mil.ar', nombre: 'X', apellido: 'Y', rol: 'generador',
+          credenciales: { hash: 'x', algoritmo: 'scrypt', salt: 'x', version: 1 } }
+      ]
+    };
+    fs.writeFileSync(path.join(datosDir, 'padron.json'), JSON.stringify(padron));
     const rutaManifiesto = path.join(RAIZ, 'app', 'catalogo', 'manifiesto.json');
     const backup = rutaManifiesto + '.test-backup';
     try {
@@ -140,6 +148,14 @@ test('§4.3 no arranca con versión de Node insuficiente', () => {
   try {
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true });
     fs.writeFileSync(path.join(datosDir, 'contador.json'), '{"contador":{}}');
+    const padron = {
+      version: 1,
+      usuarios: [
+        { email: 'x@test.mil.ar', nombre: 'X', apellido: 'Y', rol: 'generador',
+          credenciales: { hash: 'x', algoritmo: 'scrypt', salt: 'x', version: 1 } }
+      ]
+    };
+    fs.writeFileSync(path.join(datosDir, 'padron.json'), JSON.stringify(padron));
     assert.throws(
       () => verificarArranque({ datos: datosDir, puerto: 0 }, 999, ayudantes),
       /se necesita Node 999/
@@ -157,6 +173,14 @@ test('§4.4 arranca cuando todo está en su lugar', () => {
   try {
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true });
     fs.writeFileSync(path.join(datosDir, 'contador.json'), '{"contador":{}}');
+    const padron = {
+      version: 1,
+      usuarios: [
+        { email: 'x@test.mil.ar', nombre: 'X', apellido: 'Y', rol: 'generador',
+          credenciales: { hash: 'x', algoritmo: 'scrypt', salt: 'x', version: 1 } }
+      ]
+    };
+    fs.writeFileSync(path.join(datosDir, 'padron.json'), JSON.stringify(padron));
     assert.doesNotThrow(
       () => verificarArranque({ datos: datosDir, puerto: 0 }, 18, ayudantes),
       'arranca sin errores cuando todo está'

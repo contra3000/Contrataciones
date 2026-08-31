@@ -10,17 +10,11 @@
  * - --datos es obligatorio. Si la ruta no existe o no es escribible, el
  *   servidor no arranca e imprime un mensaje claro en español explicando qué
  *   falta. Acepta una ruta local y una UNC (\\servidor\recurso\...).
- * - --puerto por defecto 8123. Con 0, el sistema asigna un puerto libre y el
- *   servidor imprime el elegido en la línea "SGC-SERVIDOR-PUERTO <n>".
- *
+ * - --puerto por defecto 8123. Con 0, asigna un puerto libre e imprime el
+ *   elegido en la línea "SGC-SERVIDOR-PUERTO <n>".
  * Estructura del directorio de datos:
- *   <datos>/
- *   ├── contador.json              (numeración, protegida por lock)
- *   ├── origen.log                 (origen de cada petición, JSONL)
- *   ├── idx/<id>.json              (índice fragmentado)
- *   └── <anio>/<numero>_Expediente/
- *       ├── datos.json
- *       └── hist/v<N>.json         (snapshot de la versión previa)
+ *   <datos>/contador.json, origen.log, idx/<id>.json, <anio>/<numero>_Expediente/
+ *   (datos.json + hist/v<N>.json) y plantillas/plantillas.json.
  *
  * Las garantías 1 a 8 se resumen en ayudantes.js y manejadores.js:
  *   1. Escritura atómica. 2. Verificación de versión aquí (fs síncrono).
@@ -35,8 +29,8 @@
  *   estado (409) y la auditoría la escribe el servidor.
  *  10. POST /api/expedientes/:id/entregables guarda el entregable generado
  *   (ADR-016) y GET /entregables/<nombre> lo enlaza (ORDEN-RONDA-07 §3.3).
- *  11. Reuso de base (ADR-025): GET /api/archivo/<id>/base lee la lista
- *   blanca de un perfeccionado y POST /api/expedientes/base crea el nuevo.
+ *  11. Reuso de base (ADR-025): GET /api/archivo/<id>/base lee la lista blan­
+ *   ca de un perfeccionado y POST /api/expedientes/base crea el nuevo.
  *  12. Sugerencias del piloto (H19): JSONL append-only con tope de 4000
  *   sucesos; atender agrega una línea, nunca edita ni borra.
  */
@@ -57,12 +51,13 @@ const expedientes = require('./expedientes.js');
 const presupuestos = require('./presupuestos.js');
 const archivo = require('./archivo.js');
 const eventos = require('./eventos.js');
+const plantillas = require('./pliego-plantillas.js');
+const plantillasApi = require('./pliego-plantillas-api.js');
 const base = require('./base.js');
 const sugerencias = require('./sugerencias.js');
 const { crearPadronVivo } = require('./padron-vivo.js');
 const sesion = require('./sesion.js');
-// El orden de carga importa: cada módulo puede exigir que el anterior ya esté
-// registrado en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029).
+// El orden de carga importa: los core se registran en globalThis.SGC (ADR-029).
 const APP_CORE = [
   'namespaces.js',
   'config.js',
@@ -88,28 +83,58 @@ const repo = SGC.adapters.repo;
 // ---------------------------------------------------------------------------
 // Creación del servidor: el router, los manejadores y la infraestructura
 // ---------------------------------------------------------------------------
-function crearServidor(datosDir) {
+function crearServidor(datosDir, configuracion) {
   const rutaPadronReal = path.join(datosDir, 'padron.json');
   const padronVivoReal = crearPadronVivo(rutaPadronReal);
-  const tienePadronReal = padronVivoReal.existe();
+  const padronEjemplo = crearPadronVivo(path.join(DIR_CONFIG, 'usuarios.ejemplo.json'));
+  let modoDeclarado = !!(configuracion && configuracion.declarado);
 
-  // Sin padrón real: el padrón de ejemplo es la fuente de verdad (desarrollo y
-  // tests). Con padrón real: ESE es el padrón vivo.
-  let padronVivo;
-  if (tienePadronReal) {
-    padronVivo = padronVivoReal;
-  } else {
-    padronVivo = crearPadronVivo(path.join(DIR_CONFIG, 'usuarios.ejemplo.json'));
+  // ADR-036 (§2.1): la elección de fuente se resuelve EN CADA USO, no al crear
+  // el servidor. Si el padrón real aparece más tarde, el proceso lo toma sin
+  // reiniciar. El modo declarado sólo se activa si se pide explícitamente con
+  // --declarado y no hay padrón real en ese momento.
+  function fuente() {
+    if (padronVivoReal.existe()) {
+      return { real: true, vivo: padronVivoReal };
+    }
+    if (modoDeclarado) {
+      return { real: false, vivo: padronEjemplo };
+    }
+    return { real: false, vivo: null };
   }
 
   // Capa de sesión (ORDEN-RONDA-14 §3.4): el modo depende de que exista un
   // padrón con credenciales; con padrón real, la verificación usa ESE padrón.
-  const capaSesion = sesion.crearCapaSesion(datosDir, ayudantes, padronVivo);
+  const adaptadorPadron = {
+    existe() {
+      if (padronVivoReal.existe()) return true;
+      return modoDeclarado && padronEjemplo.existe();
+    },
+    usuarios() {
+      const f = fuente();
+      return f.vivo ? f.vivo.usuarios() : [];
+    },
+    buscar(email) {
+      const f = fuente();
+      return f.vivo ? f.vivo.buscar(email) : null;
+    },
+    leer() {
+      const f = fuente();
+      return f.vivo ? f.vivo.leer() : null;
+    },
+    guardar(p) {
+      const f = fuente();
+      if (f.vivo) {
+        f.vivo.guardar(p);
+      }
+    }
+  };
+  const capaSesion = sesion.crearCapaSesion(datosDir, ayudantes, adaptadorPadron);
   const entorno = {
     datosDir,
     repo,
-    padronVivo,
-    tienePadronReal,
+    padronVivo: adaptadorPadron,
+    tienePadronReal: () => padronVivoReal.existe(),
     VERSION,
     DIR_APP,
     DIR_CONFIG,
@@ -124,12 +149,14 @@ function crearServidor(datosDir) {
   const manejadoresApi = manejadores.crearManejadores(entorno);
   entorno.cargarCatalogo = manejadoresApi.cargarCatalogo;
   const eventosApi = eventos.crearManejadoresEventos(entorno);
+  const plantillasApiMod = plantillasApi.crearManejadoresPlantillas(entorno);
   const api = Object.assign(
     manejadoresApi,
     expedientes.crearManejadoresExpedientes(entorno),
     presupuestos.crearManejadoresPresupuestos(entorno),
     base.crearManejadoresBase(entorno),
     sugerencias.crearManejadoresSugerencias(entorno),
+    plantillasApiMod,
     { apiEventos: eventosApi.apiEventos }
   );
   const {
@@ -234,6 +261,13 @@ function crearServidor(datosDir) {
           }
           ayudantes.registrarOrigen(datosDir, origen, peticion, baseId, null);
           return apiLeerBase(req, res, baseId);
+        }
+
+        // Plantillas del pliego (ORDEN-RONDA-16 §3) y estampa §3.5, antes del
+        // bloque genérico de expedientes (/api/expedientes/<id>/plantilla).
+        const enrutado = plantillasApiMod.enrutar(req, res, conCuerpo, api);
+        if (enrutado) {
+          return enrutado;
         }
 
         // Expediente por id. Un :id que no es anio-numero (por ejemplo con
@@ -350,7 +384,7 @@ async function main() {
     process.exit(1);
   }
 
-  const servidor = crearServidor(opciones.datos);
+  const servidor = crearServidor(opciones.datos, { declarado: opciones.declarado });
   servidor.listen(opciones.puerto, () => {
     const puertoReal = servidor.address().port;
     console.log('SGC-SERVIDOR-PUERTO ' + puertoReal);

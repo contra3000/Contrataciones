@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "nota": "V1 de las plantillas del pliego (ORDEN-RONDA-16 §3.8). Trece correcciones normativas del LOG_ERRORES_COMUNES (N01, N03..N11, N13, M01, M02) incorporadas en el texto propuesto y citadas por código en cada notaDeCambio. El Jefe de Contrataciones y el Asesor Jurídico revisan el texto; esta carga deja la estructura y la corrección. Las cláusulas e incisos los numera la plantilla sola (imposibilita E01/E02/E05). Tamaño/vigencia por marca, no por orden de fila.",
+  "plantillas": [
+    {
+      "id": "pl-bienes",
+      "nombre": "PBCP – Bienes y servicios de adquisición general",
+      "criterios": { "tipoContrato": "bienes", "modalidad": "*", "procedimiento": "*" },
+      "vigenteVersion": 1,
+      "creada": "2026-08-31T00:00:00.000Z",
+      "versions": [
+        {
+          "version": 1,
+          "autor": "sgc-bootstrap",
+          "fecha": "2026-08-31T00:00:00.000Z",
+          "vigente": true,
+          "notaDeCambio": "V1 inicial. Aplica correcciones N01 (PUBCG: la Com. Gral. ONC 20/2024 actualiza la Disp. ONC 63/16, no la reemplaza, y el marco se cita completo), N03 (VISTO 'y modificatorios'), N05 (Art. 9 inc. a) y b) para la autorización), N06 (agrega Art. 84 comisión de recepción), N09 (PUBCG vigente DI-2024-79130471-APN-ONC#JGM, Disp. ONC 62/24), N10 (desestimación fundada en el art. 31 del PUBCG, no en los Criterios de Evaluación del art. 34), N13 (invitación Art. 44 con difusión Art. 32 Dto. 1023/01) y M01/M02 (preferencia MiPyME: 'Mediana empresa' y reserva separada de la cotización parcial).",
+          "criterios": { "tipoContrato": "bienes", "modalidad": "*", "procedimiento": "*" },
+          "contenido": "VISTO: el Decreto 1030/16 y sus modificatorios y complementarios.\n\nCONSIDERANDO: que corresponde autorizar la contratación conforme el artículo 9, incisos a) y b) del Decreto 1030/16.\n\nOBJETO: {{objeto}}.\n\n1. MARCO NORMATIVO\nEl presente pliego se rige por el Decreto 1030/16 y sus modificatorios, el Pliego Único de Bases y Condiciones Generales aprobado por Disposición ONC 62/24 (Anexo DI-2024-79130471-APN-ONC#JGM) y el Manual de Procedimientos (Disposición ONC 62/16).\n\n2. ORGANISMOS REQUIRENTES: {{organismos_requirentes.nombre}}.\n\n3. PLAZO Y LUGAR DE ENTREGA\nLa entrega se realizará según {{organismos_requirentes.plazo_entrega}} en {{organismos_requirentes.domicilio}}. El plazo se computa desde la notificación de la Orden de Compra.\n\n4. CONSULTAS\nEl plazo para efectuar consultas al presente pliego se fija conforme el artículo 49 del Decreto 1030/16.\n\n5. OFERTAS\n5.1 Se admitirán ofertas parciales de acuerdo con el artículo 20 apartado 4 del PUBCG, fijándose en VEINTE POR CIENTO (20%) del total de cada renglón.\n5.2 Las ofertas se presentarán conforme el artículo 18 del PUBCG.\n\n6. PREFERENCIA MiPyME\nSe aplicará en los términos del artículo 39 de la Ley 25.300. La reserva de la preferencia se evalúa por separado de la cotización parcial del renglón.\n\n7. ELEGIBILIDAD Y HABILIDAD\nLa evaluación de la elegibilidad se realiza conforme el artículo 26 del PUBCG.\n\n8. GARANTÍAS\nLa garantía de mantenimiento de oferta se rige por el artículo 78 del Decreto 1030/16 y el artículo 77 para su integración.\n\n9. FINALIZACIÓN DEL PROCEDIMIENTO\nLa desestimación de ofertas se funda en el artículo 31 'Subsanación de Ofertas' del PUBCG y el artículo 41.\n\n10. NOTIFICACIÓN Y PERFECCIONAMIENTO\nLa notificación de la Orden de Compra se rige por el artículo 75 del Decreto 1030/16.\n\n11. COMISIÓN DE RECEPCIÓN\nSe designa comisión de recepción conforme el artículo 84 del Decreto 1030/16.\n\n12. INVITACIÓN\nSe cursa invitación general al rubro conforme el artículo 44 del Decreto 1030/16 y la difusión general del artículo 32 del Decreto 1023/01.\n\n13. CONTACTO\nLos canales de comunicación e impugnación son los del {{organismos_requirentes.correo}} conforme el Anexo II punto 7 del PUBCG."
+        }
+      ]
+    },
+    {
+      "id": "pl-servicios",
+      "nombre": "PBCP – Servicios",
+      "criterios": { "tipoContrato": "servicios", "modalidad": "*", "procedimiento": "*" },
+      "vigenteVersion": 1,
+      "creada": "2026-08-31T00:00:00.000Z",
+      "versions": [
+        {
+          "version": 1,
+          "autor": "sgc-bootstrap",
+          "fecha": "2026-08-31T00:00:00.000Z",
+          "vigente": true,
+          "notaDeCambio": "V1 inicial de la modalidad servicios. Incorpora N03, N05, N06, N09, N11, N13, M01 y M02 junto con el plazo de entrega y la garantía específicos del servicio (requisito del generador, §3.7).",
+          "criterios": { "tipoContrato": "servicios", "modalidad": "*", "procedimiento": "*" },
+          "contenido": "VISTO: el Decreto 1030/16 y sus modificatorios y complementarios.\n\nOBJETO: {{objeto}} (servicio).\n\n1. MARCO NORMATIVO\nSe rige por el Decreto 1030/16, el PUBCG aprobado por Disposición ONC 62/24 (DI-2024-79130471-APN-ONC#JGM) y el Manual de Procedimientos (Disp. ONC 62/16).\n\n2. ORGANISMOS REQUIRENTES: {{organismos_requirentes.nombre}}.\n\n3. PLAZO DE ENTREGA DEL SERVICIO: {{plazo_entrega_servicio}}.\n\n4. GARANTÍA DEL SERVICIO: {{garantia_servicio}}.\n\n5. OFERTAS\nLa cotización parcial se fija en VEINTE POR CIENTO (20%) conforme el artículo 20 apartado 4 del PUBCG; la reserva MiPyME se evalúa por separado (M01/M02).\n\n6. ELEGIBILIDAD\nSe evalúa conforme el artículo 26 del PUBCG.\n\n7. NOTIFICACIÓN Y PERFECCIONAMIENTO\nLa notificación de la Orden de Compra se rige por el artículo 75 del Decreto 1030/16.\n\n8. DESESTIMACIÓN\nSe funda en el artículo 31 del PUBCG.\n\n9. CONTACTO\nCanal de comunicaciones: {{organismos_requirentes.correo}} (Anexo II punto 7 del PUBCG)."
+        }
+      ]
+    },
+    {
+      "id": "pl-oca",
+      "nombre": "PBCP – Orden de Compra Abierta (OCA)",
+      "criterios": { "tipoContrato": "*", "modalidad": "OCA", "procedimiento": "*" },
+      "vigenteVersion": 1,
+      "creada": "2026-08-31T00:00:00.000Z",
+      "versions": [
+        {
+          "version": 1,
+          "autor": "sgc-bootstrap",
+          "fecha": "2026-08-31T00:00:00.000Z",
+          "vigente": true,
+          "notaDeCambio": "V1 inicial para la modalidad OCA. Incorpora N04 (Art. 111 y arts. 111 a 116 del Manual), N07 (no se confunde la Disp. 62/16 con la 62/24), N08 (régimen específico de garantías de OCA: art. 113 sin garantía de cumplimiento; mantenimiento 5% sobre cantidad ofertada por precio unitario), N05, N06, N09, N11 y N13.",
+          "criterios": { "tipoContrato": "*", "modalidad": "OCA", "procedimiento": "*" },
+          "contenido": "VISTO: el Decreto 1030/16 y sus modificatorios y complementarios.\n\nOBJETO: {{objeto}} (Orden de Compra Abierta).\n\n1. MARCO NORMATIVO\nSe rige por el Decreto 1030/16, el PUBCG de la Disp. ONC 62/24 (DI-2024-79130471-APN-ONC#JGM), el Manual de Procedimientos de la Disp. ONC 62/16 (arts. 111 a 116, modalidad OCA) y la Disp. ONC 62/24.\n\n2. CANTIDADES MÁXIMAS POR RENGLÓN\nPara cada renglón se fija el número máximo de unidades (art. 112 del Manual) presentado en el Apéndice.\n\n3. GARANTÍAS (régimen de OCA)\nNo se exige al cocontratante la garantía de cumplimiento del contrato (art. 113 del Manual). La garantía de mantenimiento se calcula aplicando el 5% sobre el importe que resulte de multiplicar la cantidad ofertada por el precio unitario cotizado.\n\n4. ORGANISMOS REQUIRENTES: {{organismos_requirentes.nombre}}.\n\n5. SOLICITUDES DE PROVISIÓN Y FRECUENCIA: {{organismos_requirentes.frecuencia_provision}}.\n\n6. OFERTAS\nLa cotización parcial se fija en VEINTE POR CIENTO (20%) (art. 20 apartado 4 PUBCG); la reserva MiPyME se evalúa por separado.\n\n7. NOTIFICACIÓN Y PERFECCIONAMIENTO\nLa notificación de la Orden de Compra se rige por el artículo 75 del Decreto 1030/16 (N11).\n\n8. DESESTIMACIÓN\nSe funda en el artículo 31 del PUBCG.\n\n9. CONTACTO\nCanal de comunicaciones: {{organismos_requirentes.correo}} (Anexo II punto 7 del PUBCG)."
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,12 @@ Versión: 1.0.0 | Debian 12 | Node 18+
 
 ## 2. Instalación
 
+**Primero el padrón, después el servicio.** El servidor no arranca sin un padrón
+real con credenciales (ver §7). Instalar primero los archivos y sembrar el
+padrón, y recién después levantar el servicio.
+
+### 2.1 Instalar los archivos
+
 Copiar la carpeta del repositorio a la máquina. Ejecutar desde su raíz:
 
 ```bash
@@ -27,6 +33,18 @@ Esto crea:
 - Tarea de respaldo diario a las 03:00 AM.
 
 **No pisa** la carpeta de datos si ya existe. Ejecutar dos veces es seguro.
+
+### 2.2 Sembrar el padrón
+
+El servidor **no arranca si no hay padrón**. Sembrarlo antes de arrancar el
+servicio (ver §7 con el formato exacto).
+
+### 2.3 Arrancar el servicio
+
+```bash
+systemctl start sgc
+systemctl status sgc
+```
 
 ### Configurar puerto o carpeta de datos
 
@@ -99,20 +117,58 @@ sudo -u sgc node /opt/sgc/tools/restaurar.js --origen /var/backups/sgc/sgc-respa
 
 ## 7. Padrón de usuarios
 
-El padrón vive en `/var/lib/sgc/padron.json`. Se administra con la herramienta:
+El padrón vive en `/var/lib/sgc/padron.json` y **es obligatorio**: el servidor
+no arranca sin él (ver §2.1). Se administra con la herramienta `tools/padron.js`
+usando un archivo de texto con **una línea por operador**, con el formato:
 
-```bash
-sudo -u sgc node /opt/sgc/tools/padron.js --datos /var/lib/sgc --archivo config/usuarios.ejemplo.json --clave SGC-2026
+```
+nombre;apellido;email;rol;[sector];[activo]
 ```
 
-Verificar: `sudo -u sgc node /opt/sgc/tools/padron.js --datos /var/lib/sgc --listar`.
+Los roles válidos son: `contrataciones`, `contrataciones_supervisor`,
+`abastecimiento`, `abastecimiento_supervisor`, `juridica`, `generador`,
+`consultor`.
+
+Ejemplo de archivo de altas (dos renglones):
+
+```
+María;González;maria.gonzalez@faa.mil.ar;contrataciones;Abastecimiento;true
+Carlos;Fernández;carlos.fernandez@faa.mil.ar;contrataciones_supervisor;;true
+```
+
+Sembrar el padrón (el primer alta es bootstrap y no pide `--quien`):
+
+```bash
+sudo -u sgc node /opt/sgc/tools/padron.js alta --datos /var/lib/sgc --archivo /tmp/altas.txt
+```
+
+Si el padrón ya existe, `alta` exige `--quien` y `--clave` del Jefe de
+Contrataciones:
+
+```bash
+sudo -u sgc node /opt/sgc/tools/padron.js alta --datos /var/lib/sgc --archivo /tmp/altas.txt --quien carlos.fernandez@faa.mil.ar --clave LA-CLAVE-DEL-JEFE
+```
+
+Otras operaciones:
+
+```bash
+# Listar operadores
+sudo -u sgc node /opt/sgc/tools/padron.js listar --datos /var/lib/sgc
+# Dar de baja (nunca borra: activo=false)
+sudo -u sgc node /opt/sgc/tools/padron.js baja --datos /var/lib/sgc --quien <jefe> --clave <clave> --para <email>
+# Reponer clave provisoria
+sudo -u sgc node /opt/sgc/tools/padron.js reponer --datos /var/lib/sgc --quien <jefe> --clave <clave> --para <email>
+```
+
+Al cargar, `alta` imprime **una vez** la clave provisoria de cada operador (cuatro
+palabras en castellano); entregarla en papel. En disco sólo queda su hash.
 
 ## 8. Qué mirar cuando no anda
 
 | Síntoma | Causa probable | Qué hacer |
 |---|---|---|
 | `systemctl status sgc` dice `failed` | El servidor no arrancó | `journalctl -u sgc -n 20` — el mensaje dice qué falta |
-| Transiciones dan 403 | El padrón no tiene credenciales | Verificar padron.json con `--listar`; si está vacío, cargar con `padron.js` |
+| El servidor no arranca / transiciones dan 403 | No hay padrón real con credenciales | Sembrar el padrón con `padron.js alta` (ver §7) y reiniciar: `systemctl restart sgc` |
 | El servicio no aparece | No se habilitó | `systemctl enable sgc && systemctl start sgc` |
 | Puerto en uso | Otro proceso usa el puerto | Cambiar puerto en `/etc/sgc/servidor.json` y `systemctl restart sgc` |
 | No responde en el puerto | Firewall o servicio parado | `systemctl status sgc` y `iptables -L -n` |
