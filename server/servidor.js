@@ -43,14 +43,13 @@
 'use strict';
 
 const http = require('node:http');
-const fs = require('node:fs');
 const path = require('node:path');
 
 const RAIZ = path.resolve(__dirname, '..');
 const DIR_APP = path.join(RAIZ, 'app');
 const DIR_CONFIG = path.join(RAIZ, 'config');
 const VERSION = '1.0.0';
-const PUERTO_DEFECTO = 8123;
+const NODE_MIN_VERSION = 18;
 
 const ayudantes = require('./ayudantes.js');
 const manejadores = require('./manejadores.js');
@@ -60,6 +59,7 @@ const archivo = require('./archivo.js');
 const eventos = require('./eventos.js');
 const base = require('./base.js');
 const sugerencias = require('./sugerencias.js');
+const { crearPadronVivo } = require('./padron-vivo.js');
 const sesion = require('./sesion.js');
 // El orden de carga importa: cada módulo puede exigir que el anterior ya esté
 // registrado en globalThis.SGC. No reordenar sin verificar dependencias (ADR-029).
@@ -85,33 +85,31 @@ require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 const SGC = globalThis.SGC;
 const repo = SGC.adapters.repo;
 
-// Padrón de usuarios (ADR-021): el rol que autoriza una transición no es el
-// que elige el cliente, es el que corresponde al correo declarado en
-// config/usuarios.ejemplo.json. Se lee una vez al cargar; se consulta antes
-// de cada transición (fail closed si el archivo no existiera).
-const PADRON = [];
-try {
-  const padron = JSON.parse(fs.readFileSync(path.join(DIR_CONFIG, 'usuarios.ejemplo.json'), 'utf8'));
-  PADRON.push(...(Array.isArray(padron.usuarios) ? padron.usuarios : []));
-} catch (e) {
-  // Padrón vacío: verificar() rechaza todo contexto.
-}
-
 // ---------------------------------------------------------------------------
 // Creación del servidor: el router, los manejadores y la infraestructura
 // ---------------------------------------------------------------------------
 function crearServidor(datosDir) {
+  const rutaPadronReal = path.join(datosDir, 'padron.json');
+  const padronVivoReal = crearPadronVivo(rutaPadronReal);
+  const tienePadronReal = padronVivoReal.existe();
+
+  // Sin padrón real: el padrón de ejemplo es la fuente de verdad (desarrollo y
+  // tests). Con padrón real: ESE es el padrón vivo.
+  let padronVivo;
+  if (tienePadronReal) {
+    padronVivo = padronVivoReal;
+  } else {
+    padronVivo = crearPadronVivo(path.join(DIR_CONFIG, 'usuarios.ejemplo.json'));
+  }
+
   // Capa de sesión (ORDEN-RONDA-14 §3.4): el modo depende de que exista un
   // padrón con credenciales; con padrón real, la verificación usa ESE padrón.
-  const capaSesion = sesion.crearCapaSesion(datosDir, ayudantes);
-  const padronReal = capaSesion.leerPadron();
-  const padronEfectivo = padronReal && Array.isArray(padronReal.usuarios)
-    ? padronReal.usuarios
-    : PADRON;
+  const capaSesion = sesion.crearCapaSesion(datosDir, ayudantes, padronVivo);
   const entorno = {
     datosDir,
     repo,
-    PADRON: padronEfectivo,
+    padronVivo,
+    tienePadronReal,
     VERSION,
     DIR_APP,
     DIR_CONFIG,
@@ -338,46 +336,14 @@ function crearServidor(datosDir) {
 // ---------------------------------------------------------------------------
 // Arranque
 // ---------------------------------------------------------------------------
-function leerArgumentos(argv) {
-  const opciones = { datos: null, puerto: PUERTO_DEFECTO };
-  for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--datos' && i + 1 < argv.length) {
-      opciones.datos = argv[i + 1];
-      i++;
-    } else if (argv[i] === '--puerto' && i + 1 < argv.length) {
-      opciones.puerto = parseInt(argv[i + 1], 10);
-      i++;
-    }
-  }
-  return opciones;
-}
+const { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto } = require('./arranque.js');
 
-function verificarArranque(opciones) {
-  if (!opciones.datos) {
-    throw new Error('falta el argumento obligatorio --datos <ruta>: la carpeta donde el servidor guarda expedientes e índice');
-  }
-  if (!fs.existsSync(opciones.datos)) {
-    throw new Error('la carpeta de datos no existe: "' + opciones.datos + '". Creela o pase otra ruta con --datos');
-  }
-  if (!fs.statSync(opciones.datos).isDirectory()) {
-    throw new Error('--datos debe apuntar a una carpeta, y "' + opciones.datos + '" es un archivo');
-  }
-  if (!Number.isInteger(opciones.puerto) || opciones.puerto < 0 || opciones.puerto > 65535) {
-    throw new Error('--puerto debe ser un número entre 0 y 65535 (recibido: ' + opciones.puerto + ')');
-  }
-  const sonda = path.join(opciones.datos, '.arranque-' + process.pid + '.tmp');
-  try {
-    ayudantes.escribirAtomico(sonda, 'ok');
-    fs.unlinkSync(sonda);
-  } catch (e) {
-    throw new Error('la carpeta de datos no es escribible: "' + opciones.datos + '". Verifique los permisos de la carpeta y su cuenta');
-  }
-}
-
-function main() {
+async function main() {
   const opciones = leerArgumentos(process.argv.slice(2));
   try {
-    verificarArranque(opciones);
+    cargarConfig(opciones);
+    verificarArranque(opciones, NODE_MIN_VERSION, ayudantes);
+    await verificarPuerto(opciones.puerto);
   } catch (e) {
     console.error('servidor: no se pudo arrancar.');
     console.error('servidor: ' + e.message);

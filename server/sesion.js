@@ -3,15 +3,11 @@
  * ORDEN-RONDA-14 §3.4 a §3.6 (ADR-033, ADR-027). Sesión del operador y modo
  * autenticado del servidor.
  *
- * MODO AUTENTICADO: hay un padrón real con credenciales en
- * <datos>/padron.json (lo administra tools/padron.js); sin él, el servidor
- * queda en modo declarado (tests y desarrollo). Con él, TODA /api/* exige una
- * sesión vía cookie `sgc_sesion=<id>` (HttpOnly, SameSite=Strict), de 15
- * minutos de inactividad. La provisoria sólo cambia la clave y sale; el login
- * fallido demora 1 s y diez fallos bloquean (sólo el Jefe lo levanta desde la
- * herramienta, la API no). El contexto de una petición autenticada lo fabrica
- * el servidor desde la sesión: el cliente ya no declara su rol. padron.json
- * vive en la carpeta de datos y la API NO lo sirve.
+ * MODO AUTENTICADO: con un padrón real con credenciales en <datos>/padron.json,
+ * toda /api/* exige sesión vía cookie `sgc_sesion=<id>` (HttpOnly, SameSite=
+ * Strict), de 15 minutos de inactividad. El contexto lo fabrica el servidor
+ * desde la sesión: el cliente no declara su rol. Sin padrón real, el servidor
+ * queda en modo declarado (tests y desarrollo).
  */
 'use strict';
 
@@ -42,7 +38,7 @@ function esDeTransicionProvisoria(ruta) {
     ruta === '/api/sesion/actual';
 }
 
-function crearCapaSesion(datosDir, ayudantes) {
+function crearCapaSesion(datosDir, ayudantes, padronVivo) {
   const { responderJson, escribirAtomico } = ayudantes;
 
   const rutaPadron = path.join(datosDir, RUTA_PADRON);
@@ -51,31 +47,28 @@ function crearCapaSesion(datosDir, ayudantes) {
 
   // -- Padrón real ---------------------------------------------------------
   function esModoAutenticado() {
-    if (!fs.existsSync(rutaPadron)) {
+    if (!padronVivo || !padronVivo.existe()) {
       return false;
     }
     try {
-      const padron = JSON.parse(fs.readFileSync(rutaPadron, 'utf8'));
-      const usuarios = Array.isArray(padron.usuarios) ? padron.usuarios : [];
+      const usuarios = padronVivo.usuarios();
       return usuarios.some((u) => u && u.credenciales && typeof u.credenciales.hash === 'string');
     } catch (e) {
       return false;
     }
   }
 
+  // Lee el padrón completo (para lectura+escritura, ej. login que actualiza fallos).
   function leerPadron() {
-    if (!fs.existsSync(rutaPadron)) {
-      return null;
-    }
-    try {
-      return JSON.parse(fs.readFileSync(rutaPadron, 'utf8'));
-    } catch (e) {
-      return null;
-    }
+    return padronVivo ? padronVivo.leer() : null;
   }
 
   function persistirPadron(padron) {
-    escribirAtomico(rutaPadron, JSON.stringify(padron, null, 2));
+    if (padronVivo) {
+      padronVivo.guardar(padron);
+    } else {
+      escribirAtomico(rutaPadron, JSON.stringify(padron, null, 2));
+    }
   }
 
   function registrarEvento(tipo, quien, para) {
@@ -112,6 +105,25 @@ function crearCapaSesion(datosDir, ayudantes) {
     if (Date.now() - sesion.ultimaActividad > TIEMPO_SESION_MS) {
       sesiones.delete(id);
       return null;
+    }
+    // ORDEN-RONDA-15 §2: revalidar contra el padrón vigente. Si el operador
+    // fue dado de baja, bloqueado o su rol cambió, la sesión lo refleja.
+    if (padronVivo && padronVivo.existe()) {
+      const usuario = padronVivo.buscar(sesion.email);
+      if (!usuario || usuario.activo === false) {
+        sesiones.delete(id);
+        return null;
+      }
+      if (usuario.credenciales && usuario.credenciales.bloqueado) {
+        sesiones.delete(id);
+        return null;
+      }
+      const rolActual = typeof usuario.rol === 'string' && usuario.rol !== ''
+        ? usuario.rol
+        : (Array.isArray(usuario.roles) && usuario.roles.length > 0 ? usuario.roles[0] : '');
+      if (rolActual && rolActual !== sesion.rol) {
+        sesion.rol = rolActual;
+      }
     }
     sesion.ultimaActividad = Date.now();
     return sesion;
@@ -365,24 +377,14 @@ function crearCapaSesion(datosDir, ayudantes) {
 
   return {
     esModoAutenticado,
-    leerPadron,
-    persistirPadron,
     esPublica,
     esDeTransicionProvisoria,
-    conectarSesion,
-    cerrarSesion,
     crearSesion,
-    contextoDeSesion,
+    conectarSesion,
     inyectarContextoEn,
     protegerRuta,
     enrutarSesion,
-    contextoDelCuerpo,
-    apiLogin,
-    apiSalir,
-    apiActual,
-    apiCambioClave,
-    NOMBRE_COOKIE,
-    MAX_FALLOS
+    contextoDelCuerpo
   };
 }
 
