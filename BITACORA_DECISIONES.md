@@ -43,6 +43,7 @@ Plantilla al final del archivo.
 | 034 | Entrega, primer ingreso y reposición de claves | Aceptada | 2026-08-28 |
 | 035 | Destino de despliegue: máquina virtual Debian con el proceso propio y los datos en su disco | Aceptada | 2026-08-29 |
 | 036 | Nada se decide en el arranque: lo que se puede resolver al usarlo, se resuelve al usarlo | Aceptada | 2026-08-31 |
+| 037 | El padrón se administra desde la aplicación; el único usuario previo es el administrador | Aceptada | 2026-09-01 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -778,6 +779,8 @@ Lo que sobrevive a la copia y a la evolución no es una firma: son **rasgos idio
 
 **Estado:** Aceptada · 2026-08-21 · *Supera parcialmente a ADR-017 ("sin contraseña ni PIN en la v1")*
 
+> **Enmendada el 2026-09-01 por ADR-037.** El §6 —*"el Jefe de Contrataciones es el administrador, sin autoservicio"*— sigue en pie, pero **administra desde la aplicación**, no desde la consola. Y la condición de administrador pasa a ser **una marca en el padrón** (`administrador: true`), no el rol `contrataciones_supervisor`: hoy hay dos personas con ese rol y sólo una debe administrar el padrón y leer el compendio de sugerencias.
+
 > **Enmienda del 2026-08-28 — no hay HTTPS.** H0-4 quedó respondido: **el host sirve sólo HTTP.** Con eso, lo que en esta ADR era un riesgo condicional pasa a ser un hecho: **la clave viaja en claro por la intranet** (R24). El Jefe de Contrataciones lo acepta —red cerrada, sin datos personales— y de ahí se sigue la regla que ya estaba escrita y que ahora **no es negociable**: estas claves **no pueden ser la misma que la de ningún otro sistema del organismo**, y la pantalla de cambio de clave (ADR-034 §3) tiene que decirlo.
 >
 > Hay una segunda consecuencia, y es mayor: **sin HTTPS no hay contexto seguro, y sin contexto seguro no existe el adaptador de archivos del navegador.** El servidor propio deja de ser la opción preferida y pasa a ser **la única**: H0-3 ya no es una decisión de conveniencia, es la condición de existencia del sistema. Ver R1 y R2 en el plan.
@@ -1115,6 +1118,8 @@ Si con el uso real ese número resulta alto, se decide entonces con datos y no a
 
 **Estado:** Aceptada · 2026-08-28 · *Completa a ADR-027*
 
+> **Enmendada el 2026-09-01 por ADR-037.** Los §1 y §4 —*la entrega en mano y la reposición por consola*— se mantienen **para la clave del administrador**, que es el único caso que ocurre antes de que alguien pueda entrar. Para **todos los demás operadores**, el alta, la baja, el cambio de rol y la reposición pasan a hacerse **desde la aplicación**, por el administrador. Lo que no cambia: la clave se muestra **una sola vez**, nace **provisoria**, el primer ingreso obliga a cambiarla, la baja **nunca borra**, y **toda reposición deja un evento**.
+
 **Contexto.** ADR-027 resolvió que hay una clave por operador, generada por el Jefe de Contrataciones, guardada como hash con `scrypt`. Quedaron sin resolver las tres preguntas que hizo el Jefe de Contrataciones: **cómo se las entrega, si el operador la obtiene en el primer ingreso, y cuál es el sistema de recuperación.**
 
 No es un detalle: de esto depende que la atribución del registro signifique algo.
@@ -1226,6 +1231,8 @@ Informática confirmó que subir archivos y actualizar la versión no es problem
 
 **Estado:** Aceptada · 2026-08-31 · *Amplía a ADR-029*
 
+> **Precisión del 2026-09-01 (ADR-037).** El §4 decía que sin padrón real el servidor no arranca, para que nunca cayera en el modo declarado por omisión. Con ADR-037 **el servidor crea el padrón** en el primer arranque, con el administrador como único usuario: ya no hay un estado "sin padrón" del que salir. **La regla de fondo se mantiene sin tocar** — un modo degradado no se elige solo, y el modo declarado sólo se activa pidiéndolo explícitamente.
+
 **Contexto.** Es la **tercera vez** que el mismo defecto aparece con otra ropa, y ya no se puede tratar como una coincidencia:
 
 | Ciclo | Cómo apareció | Qué pasaba |
@@ -1268,6 +1275,96 @@ No importa si es un `if` que apaga una regla, un retrato de un archivo, o la ele
 **Alternativas consideradas.** *(a)* Documentar que hay que reiniciar el servicio después de crear el padrón: descartada — es exactamente la clase de instrucción que alguien no lee, y el precio de no leerla es una tarde entera. *(b)* Que el servidor detecte el padrón nuevo y se reinicie solo: descartada, un proceso que se reinicia solo por un archivo que apareció es más difícil de razonar que uno que lee cuando necesita.
 
 **Consecuencias.** El modo declarado deja de activarse por omisión, así que **hay que pedirlo explícitamente en los tests y en el desarrollo**. Es un cambio de superficie amplia pero mecánico. Y aparece un requisito de orden en la instalación que ahora el sistema hace cumplir en vez de pedirlo por escrito: **primero el padrón, después el servicio.**
+
+---
+
+## ADR-037 — El padrón se administra desde la aplicación; el único usuario previo es el administrador
+
+**Estado:** Aceptada · 2026-09-01 · *Supera a ADR-034 §1 y §4 en la parte operativa; corrige la forma de ADR-036 §4*
+
+**Contexto.** ADR-027 y ADR-034 resolvieron bien **qué** es una credencial —hash con `scrypt`, clave provisoria, primer ingreso que obliga a cambiarla, reposición con rastro— pero dejaron la **administración del padrón en una herramienta de línea de comandos**, corriendo en el servidor, antes del primer arranque.
+
+Eso produjo tres ciclos de defectos, todos de la misma raíz:
+
+| Ciclo | Defecto | Raíz |
+|---|---|---|
+| 15 | El servidor arrancaba sin padrón y todo daba 403 en silencio | El padrón tenía que existir **antes** |
+| 15 | El comando del manual apuntaba a un archivo del formato equivocado | Había que **sembrar desde afuera** |
+| 16 | La lista de roles del manual nombraba un rol inexistente ⇒ el alta fallaba entera | Un **dato duplicado** en un manual |
+
+Y el Jefe de Contrataciones lo dijo en términos de diseño, que es la lectura correcta: *"no me sirve que tenga que estar subiendo un padrón"*. **No es un problema de instalación: es que el sistema le pide al administrador que haga fuera de la aplicación algo que la aplicación debería ofrecerle.**
+
+**Decisión.** El padrón se administra **desde adentro**. El único usuario que existe antes de que alguien entre es el **administrador**.
+
+### 1. El padrón siempre existe, porque el servidor lo crea
+
+En el primer arranque, si no hay padrón, **el servidor lo crea con un solo usuario: el administrador.** Su nombre, apellido y correo salen de la configuración del servidor:
+
+```json
+{ "administrador": { "nombre": "...", "apellido": "...", "email": "...@faa.mil.ar" } }
+```
+
+**Esto no contradice a ADR-036 §4 —"un modo degradado no se elige solo"—: lo cumple mejor.** Aquel decía que sin padrón real el servidor no arranca, para que nunca cayera en el modo declarado por omisión. Ahora **no hay padrón faltante que valga**: el servidor garantiza que exista uno real. La regla de fondo se mantiene intacta — **nunca se arranca en modo declarado sin que alguien lo pida** — y desaparece el estado intermedio que causaba el problema.
+
+### 2. La clave del administrador se genera en el primer arranque y se muestra una vez
+
+**Nunca una clave por omisión escrita en el código o en el manual.** Es el defecto clásico y el más caro: una clave conocida que nadie cambia.
+
+- Se genera con el formato de ADR-034 §2 —cuatro palabras en castellano— y **se escribe una sola vez en la salida del servidor**, con un recuadro que no se pueda pasar por alto. En la máquina virtual eso queda en el registro del sistema (`journalctl -u sgc`); corriendo a mano, en la consola.
+- Nace **provisoria**: el primer ingreso obliga a cambiarla (ADR-034 §3).
+- Si se pierde antes del primer ingreso, se repone con la herramienta de línea de comandos, que **sigue existiendo para eso**: es el camino de rescate cuando nadie puede entrar.
+
+### 3. `administrador` es una marca, no un rol nuevo
+
+```
+{ nombre, apellido, email, rol, sector, activo, administrador: true, credencial: {...} }
+```
+
+**No se agrega un octavo rol.** La matriz de 18 × 7 describe quién ejecuta cada paso del circuito, y administrar el padrón no es un paso del circuito. Mezclarlos haría crecer la matriz con una fila que no participa de ningún expediente.
+
+La marca gobierna tres cosas, todas verificadas en el servidor:
+
+- **administrar el padrón** (esta ADR);
+- **ver el compendio crudo de eventos y de sugerencias** con su contexto — que hasta hoy estaba atado a `contrataciones_supervisor`;
+- **reponer claves y levantar bloqueos** (ADR-034 §4).
+
+Y corrige algo que estaba latente: hoy hay **dos** personas con rol `contrataciones_supervisor`, y las dos podrían administrar el padrón y leer las sugerencias de todos. Con la marca, sólo la designada.
+
+**Editar plantillas del pliego no cambia** (ADR-032 §5): sigue siendo de `contrataciones_supervisor` o `juridica`, por decisión del Jefe de Contrataciones.
+
+### 4. Qué puede hacer el administrador desde la aplicación
+
+- **Alta de a uno**, con el formulario mínimo. Al guardar, la clave provisoria **se muestra una vez** para anotarla.
+- **Importar un CSV**, con el mismo formato de la herramienta: `nombre;apellido;email;rol;sector;activo`, con una línea de encabezado que la exportación escribe y la importación tolera. Tolerante al BOM, porque el archivo va a venir de Excel.
+- **Exportar el padrón a CSV**, **sin credenciales**, listo para editar y volver a subir.
+- **Baja** (`activo: false`, nunca borrar), **cambio de rol**, **reposición de clave**, **levantar bloqueos**.
+
+### 5. La importación muestra el efecto antes de aplicarlo
+
+Es la regla que hace que este flujo sea seguro, y no es negociable:
+
+- La importación **primero muestra el diff**: quiénes se crean, quiénes cambian y qué campo, y **quiénes están en el padrón y no en el archivo**.
+- **Sigue siendo todo o nada**: si una línea está mal, no se aplica ninguna, y el mensaje dice cuál y por qué.
+- **La ausencia nunca da de baja por sí sola.** Un archivo al que se le borró una fila sin querer no puede desactivar a nadie en silencio. Los ausentes se listan y **desactivarlos es una opción explícita** que el administrador marca.
+- **Nadie recupera su clave por una importación.** Un correo que ya existe conserva su credencial: la importación toca los datos, no las credenciales.
+
+### 6. El administrador no puede dejarse afuera
+
+Bloqueado en el servidor: **no puede darse de baja a sí mismo, ni quitarse la marca de administrador, ni cambiarse el rol** si es el único administrador activo. Un sistema donde el administrador puede encerrarse afuera con dos clics es un sistema al que hay que entrar por la ventana.
+
+Si hace falta pasar la administración a otra persona, **primero se marca al nuevo y después se desmarca al anterior.**
+
+### 7. La lista de roles deja de estar escrita a mano
+
+Los roles válidos salen de `config.js` **en los tres lugares donde aparecen**: el desplegable del formulario, la validación de la importación y el mensaje de error. **La lista del instructivo se borra** y se reemplaza por una remisión a la pantalla — un manual que enumera un dato que el código ya tiene es un duplicado, y ya sabemos cómo termina.
+
+**Fundamento.** El sistema tenía una regla implícita —*el administrador hace por consola lo que los demás hacen por pantalla*— y de ahí salieron tres ciclos de defectos, todos en el momento de mayor exposición: la instalación. **Administrar el padrón es una función del sistema, no una tarea de instalación.**
+
+Y hay una ganancia que no es de diseño sino de proyecto: **el primer arranque deja de tener requisitos previos.** Se instala, se abre el navegador, se entra, y desde ahí se hace todo lo demás. Eso es lo que permite que el Jefe de Contrataciones pruebe hoy sin depender de nadie.
+
+**Alternativas consideradas.** *(a)* Mantener la carga por consola y arreglar el manual: descartada — es la tercera vez que el manual falla en el mismo punto, y el problema no es el manual. *(b)* Una clave de administrador por omisión: descartada, es el defecto clásico. *(c)* Un asistente de primer arranque que pida los datos del administrador por pantalla: descartada por ahora — obliga a una pantalla accesible sin autenticar, que es superficie nueva; la configuración alcanza.
+
+**Consecuencias.** La herramienta de línea de comandos **no se elimina**: queda como camino de rescate para cuando nadie puede entrar, que es su único uso legítimo. Aparece una pantalla de administración que **no existe hoy**, y con ella una superficie nueva que hay que auditar: importar un archivo es recibir entrada hostil. Y queda pendiente de validar en el uso real algo que no se puede saber antes: **si el diff previo a la importación se lee o se acepta sin mirar.**
 
 ---
 

@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-08-31** · ciclo 15 aprobado · **paquete de despliegue listo, la instalación espera un ciclo** · incorporada ADR-036
+Última actualización: **2026-09-01** · ciclo 16 auditado · **entra H21: el padrón se administra desde la aplicación** · incorporada ADR-037
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -31,7 +31,8 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H15 | Observabilidad y tableros de indicadores por rol | ✅ **Terminado** — ciclos 12 y 13 | H8 |
 | H19 | Diálogo de sugerencias del piloto | ✅ **Terminado** — ciclo 13 | H6 |
 | H18 | Credenciales y administración del padrón | ✅ **Terminado** — ciclo 14 | H5 |
-| H20 | Plantillas del pliego, versionadas y editables | ⬜ Pendiente — **nuevo, 2026-08-26** | H13 |
+| H20 | Plantillas del pliego, versionadas y editables | 🟡 **60%** — modelo, versiones, reglas y las 13 correcciones normativas hechas; falta que la validación no se pueda saltear | H13 |
+| H21 | Administración del padrón desde la aplicación | ⬜ Pendiente — **nuevo, 2026-09-01** · ronda 17 | H18 |
 | H10 | Despliegue a intranet y piloto | 🟡 **50%** — paquete, servicio, respaldo e instructivo hechos; **tres correcciones antes de instalar** | H0, H9 |
 
 > ### ⚠️ Sigue pendiente
@@ -566,6 +567,28 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 **Criterio de aceptación:** se publica una plantilla de servicios, un expediente de servicios la selecciona solo, y el generador produce el pliego sin edición manual. Y una plantilla con un marcador mal escrito **no se puede publicar**.
 
 
+### H21 — Administración del padrón desde la aplicación
+
+*(ADR-037. Nace de un planteo de diseño del Jefe de Contrataciones que explica de una sola vez los tres defectos de los ciclos 15 y 16.)*
+
+- [ ] H21-1 · **El servidor crea el padrón en el primer arranque** con un solo usuario: el administrador, cuyos datos salen de la configuración. Desaparece el estado "sin padrón"
+- [ ] H21-2 · **La clave del administrador se genera y se muestra una sola vez** en la salida del servidor. **Ninguna clave por omisión**, en ningún lado. Nace provisoria
+- [ ] H21-3 · **`administrador` es una marca en el padrón, no un octavo rol.** La matriz 18 × 7 no crece
+- [ ] H21-4 · La marca gobierna: administrar el padrón, ver el compendio crudo de eventos y sugerencias, reponer claves y levantar bloqueos. **Editar plantillas no cambia** (ADR-032 §5)
+- [ ] H21-5 · **Pantalla de administración**: alta de a uno, importar CSV, exportar CSV sin credenciales, baja, cambio de rol, reposición, listado con estado
+- [ ] H21-6 · Los roles del desplegable salen de `config.js`; **la lista del instructivo se borra**
+- [ ] H21-7 · **La importación muestra el diff antes de aplicar**: creados, modificados con qué campo, y ausentes
+- [ ] H21-8 · **Todo o nada**, con el número de línea y el motivo
+- [ ] H21-9 · **La ausencia no da de baja por sí sola**: desactivar a los ausentes es una opción explícita
+- [ ] H21-10 · **La importación no toca credenciales** de correos que ya existen
+- [ ] H21-11 · **El administrador no puede encerrarse afuera**: ni por pantalla, ni por API, ni por importación, mientras sea el único activo
+- [ ] H21-12 · Tolerancia a BOM, `CRLF`, línea vacía final. **Ida y vuelta idéntica**: exportar e importar no cambia nada
+- [ ] H21-13 · Neutralización de fórmulas en el CSV exportado (misma clase del ciclo 13, en la otra dirección)
+- [ ] H21-14 · `tools/padron.js` **se queda como camino de rescate** cuando nadie puede entrar
+
+**Criterio de aceptación:** sobre una carpeta vacía, el Jefe de Contrataciones arranca el servidor, entra con la clave que imprimió, la cambia, e importa las catorce personas **sin tocar la consola una sola vez más**.
+
+
 ## Riesgos abiertos
 
 | # | Riesgo | Impacto | Mitigación |
@@ -576,7 +599,10 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 | R9 | Un ítem necesario no está en el catálogo del mes | Medio — con catálogo cerrado, bloquea el trámite | H0-12 define el procedimiento de excepción antes de H4 |
 | R10 | El parque de PCs (Windows 7) se renueva y cambia el navegador | Bajo, y sería una mejora | ADR-011 fija un piso, no un techo de funcionamiento: el código que corre en 109 corre en versiones posteriores |
 | ~~R3~~ | ~~Latencia y cortes de la carpeta de red~~ | **Cerrado — 2026-08-29** | Los datos ya no viven en la carpeta de red: **están en el disco de la máquina virtual** (ADR-035 §2). La escritura atómica y el bloqueo de numeración funcionan sobre un sistema de archivos local, que es donde son fiables. **H9-2 deja de tener sentido** |
-| R39 | **Un modo degradado se elige solo y en silencio** — tercera aparición de la misma forma (ADR-029, ciclo 14, ciclo 15) | **Alto por consecuencia**: está garantizado que se dispare el día de la instalación, y el síntoma es "todo funciona pero todo da 403" | **ADR-036**: nada que dependa del disco se decide al arrancar; lo que se comprueba al arrancar sirve **sólo para negarse a arrancar**. Sin padrón real, el servidor no arranca |
+| R39 | **Un modo degradado se elige solo y en silencio** — tercera aparición de la misma forma (ADR-029, ciclo 14, ciclo 15) | **Alto por consecuencia** | **ADR-036** + **ADR-037**: el servidor **crea** el padrón en el primer arranque, así que desaparece el estado del que había que salir. El modo declarado sólo se activa pidiéndolo |
+| R40 | **Una validación depende de que el cliente diga la verdad** — cuarta aparición: `pliegoProbado` llega en el cuerpo y se publica una plantilla rota en un solo POST | Alto — las plantillas son el único lugar donde el error de una persona se multiplica por todos los expedientes siguientes | Ronda 17 §2: el servidor **guarda** que la prueba ocurrió, atada al contenido exacto; la bandera del cliente **se ignora** |
+| R41 | **El banco de pruebas prueba una ficción**: el probador fabrica dos campos que la exportación real nunca emite, y por eso el pliego de servicios "pasaba" sin poder generarse | Medio y engañoso — hace que un test pase cuando el sistema no funciona | Ronda 17 §3: el probador arma su expediente **con la función de exportación real** |
+| R42 | **Una importación de padrón mal hecha deja afuera a catorce personas** | Alto — un archivo de Excel al que le borraron una fila sin querer | ADR-037 §5 y §6: diff antes de aplicar, todo o nada, la ausencia **no** desactiva, y el administrador no puede encerrarse afuera |
 | R4 | ~~Los 18 estados no reflejan el circuito real~~ | **Bajo** — cada sector confirmó su fase (ronda 2, 2026-08-13) | Se mantiene la verificación de H9-8 como control final, ya no como mitigación de un riesgo alto |
 | ~~R8~~ | ~~El sistema de firmas rechaza el PDF~~ | **Cerrado** — verificado el 2026-08-13: es la mecánica diaria actual | — |
 | R12 | **Atribución equivocada por sesiones compartidas sin contraseña** | Medio — contamina la auditoría y los KPIs por sector. El caso frecuente no es la suplantación deliberada sino el descuido | ADR-017: identidad por correo institucional visible en pantalla, cierre por inactividad, registro de la máquina del lado del servidor, restricción de rol por máquina. La identidad queda **declarada y corroborada**, no verificada, y así se enuncia en la UI |
