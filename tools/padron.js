@@ -5,7 +5,7 @@
  * usuarios con credenciales:
  *
  *   node tools/padron.js alta         --datos <dir> --archivo <ruta> [--quien <email> --clave <secret>]
- *   node tools/padron.js reponer      --datos <dir> --quien <email> --clave <secret> --para <email>
+ *   node tools/padron.js reponer      --datos <dir> [--quien <email> --clave <secret>] --para <email>
  *   node tools/padron.js baja         --datos <dir> --quien <email> --clave <secret> --para <email>
  *   node tools/padron.js desbloquear  --datos <dir> --quien <email> --clave <secret> --para <email>
  *   node tools/padron.js listar       --datos <dir>
@@ -14,10 +14,10 @@
  *   HTTP. La clave provisoria sale de config/palabras.json (cuatro palabras en
  *   castellano sin tildes, ~44 bits) y se imprime UNA sola vez; en disco sólo
  *   queda su hash scrypt (ADR-034).
- * - Sin padrón, el primer `alta` es bootstrap y no exige --quien (todavía no
- *   hay nadie). Con padrón, toda operación exige --quien + --clave del Jefe de
- *   Contrataciones; la herramienta ignora la regla de bloqueo (así el Jefe
- *   puede desbloquear) y cada operación deja rastro en padron.eventos.jsonl.
+ * - Sin padrón, el primer `alta` es bootstrap sin --quien. Con padrón, toda
+ *   operación exige --quien + --clave del Jefe, salvo `reponer` sin ellos:
+ *   es el rescate (ADR-037, nadie pudo entrar aún). La herramienta ignora
+ *   el bloqueo (el Jefe se desbloquea) y todo deja rastro en padron.eventos.jsonl.
  * - La baja nunca borra: activo:false y el nombre sigue en el padrón.
  */
 'use strict';
@@ -82,9 +82,7 @@ function buscar(padron, email) {
   return null;
 }
 
-// --quien + --clave contra el padrón: Jefe activo con su clave correcta.
-// La herramienta IGNORA la regla de bloqueo (así el Jefe puede desbloquearse a
-// sí mismo y a los demás); está documentado en la cabecera y en el informe.
+// --quien/--clave del Jefe activo; ignora el bloqueo (el Jefe se desbloquea solo).
 function verificarJefe(datos, quien, clave) {
   const padron = leerPadron(datos);
   const usuario = buscar(padron, quien);
@@ -155,9 +153,8 @@ function diccionarioDePalabras() {
   return JSON.parse(fs.readFileSync(ruta, 'utf8'));
 }
 
-// Alta: crea los que no existen y deja intactos a los que ya estaban. Cada
-// recién creado devuelve su clave provisoria: se imprime una vez y no se
-// guarda en ningún archivo.
+// Alta: crea los que no existen y deja intactos a los que estaban; cada
+// recién creado devuelve su clave provisoria (una vez, sin archivo).
 function alta(opciones) {
   const { datos, archivo } = opciones;
   const leidas = leerLineasAlta(archivo);
@@ -210,14 +207,16 @@ function alta(opciones) {
   };
 }
 
-// Reposición: nueva clave provisoria; deja rastro de quién/para/cuándo. El
-// hash anterior deja de servir y el operador vuelve a estar en provisoria.
+// Reposición: nueva clave provisoria; rastro quién/para/cuándo. Sin
+// --quien/--clave actúa de rescate (ADR-037: nadie pudo entrar aún).
 function reponer(opciones) {
-  const check = verificarJefe(opciones.datos, opciones.quien, opciones.clave);
-  if (!check.ok) {
+  const rescate = !opciones.quien || !opciones.clave;
+  const check = rescate ? null : verificarJefe(opciones.datos, opciones.quien, opciones.clave);
+  if (check && !check.ok) {
     return check;
   }
-  const usuario = buscar(check.padron, opciones.para);
+  const padron = check ? check.padron : leerPadron(opciones.datos);
+  const usuario = buscar(padron, opciones.para);
   if (!usuario) {
     return { ok: false, error: 'el correo --para "' + opciones.para + '" no está en el padrón' };
   }
@@ -227,8 +226,8 @@ function reponer(opciones) {
     fallosContinuos: 0,
     bloqueado: false
   });
-  guardarPadron(opciones.datos, check.padron);
-  registrarEvento(opciones.datos, 'clave_reponer', opciones.quien, opciones.para);
+  guardarPadron(opciones.datos, padron);
+  registrarEvento(opciones.datos, 'clave_reponer', rescate ? null : opciones.quien, opciones.para);
   return { ok: true, clave, email: opciones.para };
 }
 

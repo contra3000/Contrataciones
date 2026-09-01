@@ -297,17 +297,18 @@ function responderErrorEsp(codigoEstado, mensaje) {
 // llegue al cliente antes de que se corte la conexión; el resto sigue siendo
 // el 400 genérico de siempre.
 function responderErrorPeticion(res, e) {
+  // RONDA-17 §5: nada del error del sistema llega al usuario; el mensaje
+  // cierra en los nuestros (el detalle queda para el registro del operador).
   const codigoEstado = e && e.codigoEstado ? e.codigoEstado : 400;
-  const detalle = e && e.message ? e.message : 'cuerpo ilegible';
   if (codigoEstado === 413) {
     res.writeHead(codigoEstado, {
       'Content-Type': 'application/json; charset=utf-8',
       'Connection': 'close'
     });
-    res.end(JSON.stringify({ error: detalle }));
+    res.end(JSON.stringify({ error: 'la petición supera el límite de tamaño permitido: achique el contenido' }));
     return;
   }
-  responderJson(res, codigoEstado, { error: 'no se pudo procesar la petición: ' + detalle });
+  responderJson(res, codigoEstado, { error: 'no se pudo procesar la petición' });
 }
 
 module.exports = {

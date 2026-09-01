@@ -181,6 +181,7 @@
       <button id="sgc-nav-tablero" type="button">Tablero</button>
       <button id="sgc-nav-archivo" type="button">Archivo Histórico</button>
       <button id="sgc-nav-sugerencias" type="button" hidden>Sugerencias</button>
+      <button id="sgc-nav-padron" type="button" hidden>Padrón</button>
     </nav>
 
     <section id="sgc-kanban" class="kanban" aria-label="Tablero de expedientes" hidden>
@@ -261,6 +262,23 @@
         <button id="sgc-sugerencias-advertencia-aceptar" type="button">Entiendo, exportar</button>
         <button id="sgc-sugerencias-advertencia-cancelar" type="button">Cancelar</button>
       </dialog>
+    </section>
+
+    <section id="sgc-padron" class="padron" aria-label="Padrón de operadores" hidden>
+      <header class="padron-cabecera">
+        <button id="sgc-padron-volver" type="button">Volver al tablero</button>
+        <h2>Padrón de operadores</h2>
+        <p class="subtitulo">Operadores con acceso al SGC y sus roles. Sólo el administrador del sistema puede administrar el padrón.</p>
+        <div class="padron-filtros">
+          <button id="sgc-padron-refrescar" type="button">Refrescar</button>
+          <button id="sgc-padron-alta" type="button" class="primario">Alta de operador</button>
+          <button id="sgc-padron-exportar" type="button">Exportar CSV</button>
+          <button id="sgc-padron-importar" type="button">Importar CSV</button>
+        </div>
+        <p id="sgc-padron-conteo" class="conteo" role="status" aria-live="polite"></p>
+        <p id="sgc-padron-error" class="error-global" role="alert" hidden></p>
+      </header>
+      <ul id="sgc-padron-lista" class="lista-padron"></ul>
     </section>
 
     <section id="sgc-expediente" class="expediente" aria-label="Expediente" hidden>
@@ -533,6 +551,7 @@
   <script src="js/views/usar-base.js"></script>
   <script src="js/views/sugerencias.js"></script>
   <script src="js/views/sugerencias-jefe.js"></script>
+  <script src="js/views/padron-admin.js"></script>
   <script src="js/views/ingreso.js"></script>
   <script src="js/views/cambio-clave.js"></script>
   <script src="js/adapters/repo.js"></script>

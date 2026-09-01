@@ -18,8 +18,17 @@
  * Tamaño: se mantiene el contenido íntegro por versión; nunca un diff.
  */
 
+// ORDEN-RONDA-17 §2 (H20): la prueba del pliego se ata al CONTENIDO (huella
+// SHA-256), no a un flag que el cliente pueda poner a mano. La marca vive en
+// memoria (como el resto del estado volátil de plantillas): si el proceso se
+// reinicia, publicar vuelve a exigir "Probar ahora". Esto cierra los caminos
+// laterales (volver a una versión vieja, editar y publicar sin probar el
+// resultado final).
+const probadas = new Map();
+
 const fs = require('node:fs');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 
 const MARCADOR_INICIO = '{{';
 const MARCADOR_FIN = '}}';
@@ -259,6 +268,37 @@ function validarParaPublicar(contenido) {
   return { valido: true, sinUsar: m.sinUsar };
 }
 
+// Huella del contenido y marca de "probado". La huella se usa como llave del
+// estado de prueba y también para la reproducibilidad (versión estampada).
+function huellaDe(contenido) {
+  return createHash('sha256').update(String(contenido || '')).digest('hex');
+}
+
+function marcarProbada(contenido) {
+  probadas.set(huellaDe(contenido), true);
+}
+
+function estaProbada(contenido) {
+  return probadas.has(huellaDe(contenido));
+}
+
+// Versión concreta de una plantilla (ORDEN-RONDA-17 §4): si el número no
+// existe, se dice y NO se cae en la vigente (reproducibilidad).
+function versionDe(plantillas, id, numero) {
+  const p = (plantillas || []).find((x) => x.id === id);
+  if (!p) {
+    return { error: 'no existe la plantilla "' + id + '"' };
+  }
+  const v = (p.versions || []).find((x) => x.version === numero);
+  if (!v) {
+    return {
+      error: 'no existe la versión ' + numero + ' de "' + id +
+        '" y no se usa la vigente en su lugar'
+    };
+  }
+  return { plantilla: p, version: v };
+}
+
 module.exports = {
   ROLES_PUBLICAN,
   EMISIBLES,
@@ -267,6 +307,10 @@ module.exports = {
   guardar,
   nuevoId,
   versionVigente,
+  versionDe,
+  huellaDe,
+  marcarProbada,
+  estaProbada,
   resumen,
   extraerMarcadores,
   validarMarcadores,

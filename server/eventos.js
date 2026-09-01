@@ -268,8 +268,17 @@ function crearManejadoresEventos(entorno) {
   // Contrataciones, verificado contra el padrón en el servidor.
   function esJefe(contexto) {
     const cx = contexto || {};
-    const v = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), cx);
-    return v.ok && cx.rol === 'contrataciones_supervisor';
+    const usuarios = entorno.padronVivo.usuarios();
+    const v = SGC.core.autorizacion.verificar(usuarios, cx);
+    if (!v.ok) {
+      return false;
+    }
+    // ORDEN-RONDA-17 §1.3: la marca de administrador también ve el compendio.
+    if (cx.rol === 'contrataciones_supervisor') {
+      return true;
+    }
+    const u = usuarios.find((x) => x && x.email === cx.email);
+    return !!(u && u.administrador === true);
   }
 
   // Recorre la carpeta de datos (años → expedientes) y agrupa las líneas de

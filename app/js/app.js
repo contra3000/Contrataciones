@@ -31,6 +31,7 @@
     document.getElementById('sgc-archivo').hidden = true;
     document.getElementById('sgc-base-revision').hidden = true;
     document.getElementById('sgc-sugerencias-jefe').hidden = true;
+    document.getElementById('sgc-padron').hidden = true;
   }
 
   function alternarAlta() {
@@ -56,6 +57,12 @@
     SGC.views.sugerenciasJefe.refrescar();
   }
 
+  function alternarPadron() {
+    esconderTodas();
+    document.getElementById('sgc-padron').hidden = false;
+    SGC.views.padronAdmin.refrescar();
+  }
+
   // El enlace del Jefe solo vale en modo piloto y con el rol adecuado: el
   // Jefe de Contrataciones es el responsable del diálogo (H19).
   function actualizarNavJefe(operador) {
@@ -66,6 +73,17 @@
     var esJefe = operador && Array.isArray(operador.roles) &&
       operador.roles.indexOf('contrataciones_supervisor') !== -1;
     nav.hidden = !(estadoConfig && estadoConfig.modoPiloto === true && esJefe);
+  }
+
+  // El enlace del Administrador (H21, ORDEN-RONDA-17): solo aparece cuando la
+  // sesión trae la marca de administrador (el servidor la revalida en cada
+  // petición). En modo declarado no hay padrón que administrar.
+  function actualizarNavPadron(operador) {
+    var nav = document.getElementById('sgc-nav-padron');
+    if (!nav) {
+      return;
+    }
+    nav.hidden = !(operador && operador.administrador === true);
   }
 
   function descargadorGenerico(nombre, contenido) {
@@ -89,7 +107,9 @@
     SGC.views.usarBase.fijarOperador(operador);
     SGC.views.sugerencias.fijarOperador(operador);
     SGC.views.sugerenciasJefe.fijarOperador(operador);
+    SGC.views.padronAdmin.fijarOperador(operador);
     actualizarNavJefe(operador);
+    actualizarNavPadron(operador);
     document.getElementById('sgc-tablero-nav').hidden = false;
   }
 
@@ -109,7 +129,8 @@
       sector: sesion.equipo || null,
       nombre: partes[0] || sesion.email,
       apellido: partes.slice(1).join(' '),
-      roles: rolesDe(sesion.rol)
+      roles: rolesDe(sesion.rol),
+      administrador: sesion.administrador === true
     };
   }
 
@@ -214,6 +235,19 @@
     SGC.views.sugerenciasJefe.fijarDescargador(descargadorGenerico);
     SGC.views.sugerenciasJefe.onVolver(alternarTablero);
 
+    // Padrón de operadores (H21, ORDEN-RONDA-17): panel del administrador.
+    // La vista se apaga sola si el adaptador no expone `padronAdmin` o si el
+    // operador no es administrador (el enlace lo controla actualizarNavPadron).
+    SGC.views.padronAdmin.montar(contenedor);
+    SGC.views.padronAdmin.fijarRepo(repo);
+    var rolesIds = [];
+    for (var ir = 0; ir < SGC.core.config.ROLES.length; ir++) {
+      rolesIds.push(SGC.core.config.ROLES[ir].id);
+    }
+    SGC.views.padronAdmin.fijarRoles(rolesIds);
+    SGC.views.padronAdmin.fijarDescargador(descargadorGenerico);
+    SGC.views.padronAdmin.onVolver(alternarTablero);
+
     // El buscador del paso 2 inicia la carga del catálogo y actualiza su
     // propio estado. Después se le avisa al asistente para guardar borradores
     // cuando cambie un renglón.
@@ -225,6 +259,7 @@
     document.getElementById('sgc-nav-tablero').addEventListener('click', alternarTablero);
     document.getElementById('sgc-nav-archivo').addEventListener('click', alternarArchivo);
     document.getElementById('sgc-nav-sugerencias').addEventListener('click', alternarSugerencias);
+    document.getElementById('sgc-nav-padron').addEventListener('click', alternarPadron);
 
     // Configuración de la aplicación: el modo piloto es la fuente de verdad
     // de que el diálogo de sugerencias exista en el DOM.

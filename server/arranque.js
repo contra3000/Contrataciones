@@ -8,7 +8,7 @@ const RAIZ = path.resolve(__dirname, '..');
 const DIR_APP = path.join(RAIZ, 'app');
 
 function leerArgumentos(argv) {
-  const opciones = { datos: null, puerto: 8123, config: null, declarado: false };
+  const opciones = { datos: null, puerto: 8123, config: null, declarado: false, administrador: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--datos' && i + 1 < argv.length) {
       opciones.datos = argv[i + 1];
@@ -41,6 +41,9 @@ function cargarConfig(opciones) {
     if (cfg.declarado === true) {
       opciones.declarado = true;
     }
+    opciones.administrador = (typeof cfg.administrador === 'object' && cfg.administrador !== null)
+      ? cfg.administrador
+      : null;
   } catch (e) {
     throw new Error('el archivo de configuración "' + opciones.config + '" no se pudo leer: revise que exista y sea JSON válido');
   }
@@ -68,14 +71,20 @@ function verificarArranque(opciones, nodeMinVersion, ayudantes) {
   if (!Number.isFinite(major) || major < nodeMinVersion) {
     throw new Error('se necesita Node ' + nodeMinVersion + ' o superior (versión actual: ' + process.version + ')');
   }
+  // ORDEN-RONDA-17: el puerto se valida SIEMPRE, también cuando no hay padrón
+  // (el bootstrap hace válido arrancar sin padrón). Antes este chequeo quedaba
+  // detrás del retorno temprano del padrón, y "--puerto abc" escapaba como un
+  // RangeError de node en lugar de un mensaje claro en español.
+  if (!Number.isInteger(opciones.puerto) || opciones.puerto < 0 || opciones.puerto > 65535) {
+    throw new Error('--puerto debe ser un número entre 0 y 65535 (recibido: ' + opciones.puerto + ')');
+  }
   var rutaPadron = path.join(opciones.datos, 'padron.json');
-  // ADR-036 (§2.1): sin padrón real, el servidor no arranca. El modo declarado
-  // (desarrollo y tests) sólo se activa pidiéndolo con --declarado.
+  // ORDEN-RONDA-17 §1.1: sin padrón, el primer arranque del servidor lo crea
+  // con el administrador (padron-inicial.js). Ya no es un error: sólo exige
+  // credenciales si el padrón ya existe. El modo declarado sigue sirviendo el
+  // padrón de ejemplo de configuración (desarrollo y tests).
   if (!fs.existsSync(rutaPadron)) {
-    if (opciones.declarado) {
-      return;
-    }
-    throw new Error('falta el padrón de usuarios: no existe "' + rutaPadron + '". Siembrelo con tools/padron.js antes de arrancar (ver INSTRUCTIVO.md)');
+    return;
   }
   var padron = null;
   try {
@@ -96,9 +105,6 @@ function verificarArranque(opciones, nodeMinVersion, ayudantes) {
     JSON.parse(fs.readFileSync(rutaManifiesto, 'utf8'));
   } catch (e) {
     throw new Error('el manifiesto del catálogo no es JSON válido: "' + rutaManifiesto + '"');
-  }
-  if (!Number.isInteger(opciones.puerto) || opciones.puerto < 0 || opciones.puerto > 65535) {
-    throw new Error('--puerto debe ser un número entre 0 y 65535 (recibido: ' + opciones.puerto + ')');
   }
 }
 

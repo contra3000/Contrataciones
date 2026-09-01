@@ -212,6 +212,19 @@
     };
   }
 
+  // Superficie opcional de administración del padrón (H21, ORDEN-RONDA-17):
+  // no es parte del contrato ADR-002, así que cada implementación decide si la
+  // expone. La vista la usa si el adaptador activo la tiene; si no, no muestra
+  // el panel (el servidor sigue protegiendo las rutas por sesión).
+  Object.defineProperty(api, 'padronAdmin', {
+    enumerable: true,
+    configurable: true,
+    get: function () {
+      exigirActiva();
+      return activa.padronAdmin || null;
+    }
+  });
+
   api.construirExpediente = construirExpediente;
   api.anioDe = anioDe;
   api.rellenar = rellenar;

@@ -4,7 +4,8 @@
  * ronda-16.test.js
  * ORDEN-RONDA-16 §4. Dieciséis pruebas que tapan los criterios 1-5:
  *
- *   1. sin padrón real el servidor no arranca (excepto --declarado),
+ *   1. un padrón sin credenciales no arranca y avisa en castellano (ADR-037
+ *      cambió el caso "sin padrón": ronda-17 lo cubre con el bootstrap),
  *   2. el comando manual de siembra (tools/padron.js alta) deja padrón listo,
  *   3. un marcador desconocido impide publicar la plantilla,
  *   4. el pliego de servicios sale por el generador real,
@@ -32,16 +33,24 @@ function dirTmp(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix || 'ronda16-'));
 }
 
-// prueba desestructurada: registra el error en español de la falta de padrón.
-function arrancaSinPadron() {
-  return su.ejecutarYEsperar([su.SERVIDOR, '--datos', dirTmp('rp16-nopadron-'), '--puerto', '0'], 8000);
+// RONDA-17 (ADR-037 §1.1): sin padrón el servidor YA NO se niega a arrancar:
+// lo crea con el administrador en el primer arranque (eso lo cubren los tests
+// 1 y 2 de ronda-17). Lo que sigue siendo error de arranque es un padrón que
+// existe y no tiene ningún operador con credencial.
+function arrancaConPadronSinCredencial() {
+  const datos = dirTmp('rp16-sincred-');
+  fs.writeFileSync(path.join(datos, 'padron.json'),
+    JSON.stringify({ schemaVersion: '2.0.0', usuarios: [
+      { nombre: 'X', apellido: 'Y', email: 'x@faa.mil.ar', rol: 'generador', activo: true }
+    ] }, null, 2), 'utf8');
+  return su.ejecutarYEsperar([su.SERVIDOR, '--datos', datos, '--puerto', '0'], 8000);
 }
 
-test('1. sin padrón real el servidor no arranca y avisa en castellano', async () => {
-  const r = await arrancaSinPadron();
-  assert.notStrictEqual(r.exitCode, 0, 'debe fallar al arrancar sin padrón');
+test('1. un padrón sin credenciales impide el arranque y avisa en castellano', async () => {
+  const r = await arrancaConPadronSinCredencial();
+  assert.notStrictEqual(r.exitCode, 0, 'debe fallar al arrancar sin credencial');
   const salida = (r.stdout + ' ' + r.stderr);
-  assert.match(salida, /padr[oó]n/i, 'el motivo debe ser la falta de padrón');
+  assert.match(salida, /credencial/i, 'el motivo debe ser la falta de credencial');
   assert.match(salida, /./, 'contiene algo de texto');
 });
 
@@ -160,15 +169,22 @@ const LECTOR = { rol: 'generador', email: 'maria.gonzalez@faa.mil.ar' };
 test('8. sólo contrataciones_supervisor o jurídica publican; los demás ven', async () => {
   const { ctx, base, datos } = await contextoServidor();
   try {
+    const contenido = 'Objeto {{objeto}}.\n';
     const cuerpo = {
       nombre: 'Plantilla de prueba',
       conteocuerpo: '',
-      contenido: 'Objeto {{objeto}}.\n',
+      contenido,
       criterios: { tipoContrato: 'bienes', modalidad: '*', procedimiento: '*' },
       notaDeCambio: 'Prueba de permisos (N09).',
       pliegoProbado: true,
       contexto: LECTOR
     };
+    // RONDA-17 §2: la prueba se ata al contenido exacto en el servidor (el
+    // pliegoProbado del cliente no alcanza), como en el flujo real.
+    const probado = await su.pedir(base, 'POST', '/api/plantillas/pl-bienes/probar',
+      Object.assign({}, cuerpo, { tipoContrato: 'bienes' }));
+    assert.strictEqual(probado.status, 200,
+      'la prueba server-side deja el contenido listo: ' + JSON.stringify(probado.body));
     const noAutorizado = await su.pedir(base, 'POST', '/api/plantillas/pl-bienes/publicar', cuerpo);
     assert.strictEqual(noAutorizado.status, 403, 'un generador no publica');
     cuerpo.contexto = PUBLICADOR;

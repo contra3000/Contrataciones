@@ -13,9 +13,9 @@ Versión: 1.0.0 | Debian 12 | Node 18+
 
 ## 2. Instalación
 
-**Primero el padrón, después el servicio.** El servidor no arranca sin un padrón
-real con credenciales (ver §7). Instalar primero los archivos y sembrar el
-padrón, y recién después levantar el servicio.
+**El padrón se crea solo.** En el primer arranque el servidor crea el padrón con
+un único usuario: el **administrador** (sus datos salen de la configuración del
+servidor). No hay ningún paso previo de siembra (ver §7).
 
 ### 2.1 Instalar los archivos
 
@@ -34,12 +34,19 @@ Esto crea:
 
 **No pisa** la carpeta de datos si ya existe. Ejecutar dos veces es seguro.
 
-### 2.2 Sembrar el padrón
+### 2.2 Primer arranque
 
-El servidor **no arranca si no hay padrón**. Sembrarlo antes de arrancar el
-servicio (ver §7 con el formato exacto).
+El primer arranque crea el padrón y **genera la clave provisoria del
+administrador**, escrita **una sola vez** en la salida del servicio:
 
-### 2.3 Arrancar el servicio
+```bash
+systemctl start sgc
+journalctl -u sgc | grep -A 8 "SGC-SERVIDOR-ADMINISTRADOR-CLAVE-PROVISORIA"
+```
+
+Anotarla antes de seguir: ese recuadro no vuelve a aparecer.
+
+### 2.3 Arrancar el servicio (arranques siguientes)
 
 ```bash
 systemctl start sgc
@@ -117,51 +124,30 @@ sudo -u sgc node /opt/sgc/tools/restaurar.js --origen /var/backups/sgc/sgc-respa
 
 ## 7. Padrón de usuarios
 
-El padrón vive en `/var/lib/sgc/padron.json` y **es obligatorio**: el servidor
-no arranca sin él (ver §2.1). Se administra con la herramienta `tools/padron.js`
-usando un archivo de texto con **una línea por operador**, con el formato:
+El padrón vive en `/var/lib/sgc/padron.json`. El servidor **lo crea en el
+primer arranque** con un solo usuario: el administrador, cuyos datos salen de
+la configuración. La clave provisoria se muestra **una vez** en la salida del
+servidor; en disco sólo queda su hash.
 
-```
-nombre;apellido;email;rol;[sector];[activo]
-```
+**Administrar el padrón es una función de la aplicación, no de la consola.**
+Desde la pantalla de administración (sólo visible para el administrador) se
+hace todo: alta, importar CSV, exportar, baja, cambio de rol, reposición de
+clave y levantamiento de bloqueos. **Los roles válidos son los que muestra el
+desplegable de esa pantalla** — salen del código, no de este manual.
 
-Los roles válidos son: `contrataciones`, `contrataciones_supervisor`,
-`abastecimiento`, `abastecimiento_supervisor`, `juridica`, `generador`,
-`consultor`.
-
-Ejemplo de archivo de altas (dos renglones):
-
-```
-María;González;maria.gonzalez@faa.mil.ar;contrataciones;Abastecimiento;true
-Carlos;Fernández;carlos.fernandez@faa.mil.ar;contrataciones_supervisor;;true
-```
-
-Sembrar el padrón (el primer alta es bootstrap y no pide `--quien`):
+`tools/padron.js` **queda como camino de rescate**: se usa únicamente cuando
+nadie puede entrar, por ejemplo si el administrador perdió la clave antes del
+primer ingreso:
 
 ```bash
-sudo -u sgc node /opt/sgc/tools/padron.js alta --datos /var/lib/sgc --archivo /tmp/altas.txt
-```
-
-Si el padrón ya existe, `alta` exige `--quien` y `--clave` del Jefe de
-Contrataciones:
-
-```bash
-sudo -u sgc node /opt/sgc/tools/padron.js alta --datos /var/lib/sgc --archivo /tmp/altas.txt --quien carlos.fernandez@faa.mil.ar --clave LA-CLAVE-DEL-JEFE
-```
-
-Otras operaciones:
-
-```bash
+# Reponer la clave del administrador (provisoria, se muestra una vez)
+sudo -u sgc node /opt/sgc/tools/padron.js reponer --datos /var/lib/sgc --para <email-admin>
 # Listar operadores
 sudo -u sgc node /opt/sgc/tools/padron.js listar --datos /var/lib/sgc
-# Dar de baja (nunca borra: activo=false)
-sudo -u sgc node /opt/sgc/tools/padron.js baja --datos /var/lib/sgc --quien <jefe> --clave <clave> --para <email>
-# Reponer clave provisoria
-sudo -u sgc node /opt/sgc/tools/padron.js reponer --datos /var/lib/sgc --quien <jefe> --clave <clave> --para <email>
 ```
 
-Al cargar, `alta` imprime **una vez** la clave provisoria de cada operador (cuatro
-palabras en castellano); entregarla en papel. En disco sólo queda su hash.
+Al reponer, se imprime **una vez** la clave provisoria (cuatro palabras en
+castellano); entregarla en papel. En disco sólo queda su hash.
 
 ## 8. Qué mirar cuando no anda
 

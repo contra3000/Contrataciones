@@ -101,6 +101,16 @@
     if (str(a1.duracionContrato)) {
       datosYaml.duracion_contrato = str(a1.duracionContrato);
     }
+    // ORDEN-RONDA-17 §3: los servicios emiten su plazo y garantía propios
+    // desde el anexo I (no usan el plazo_entrega de bienes).
+    if (tipoContrato === 'servicios') {
+      if (str(a1.plazoEntregaServicio)) {
+        datosYaml.plazo_entrega_servicio = str(a1.plazoEntregaServicio);
+      }
+      if (str(a1.garantiaServicio)) {
+        datosYaml.garantia_servicio = str(a1.garantiaServicio);
+      }
+    }
 
     var eett = SGC.core.anexoEett;
     if (eett && typeof eett.tieneContenido === 'function' && eett.tieneContenido(expediente)) {

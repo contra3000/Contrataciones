@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nota": "V1 de las plantillas del pliego (ORDEN-RONDA-16 §3.8). Trece correcciones normativas del LOG_ERRORES_COMUNES (N01, N03..N11, N13, M01, M02) incorporadas en el texto propuesto y citadas por código en cada notaDeCambio. El Jefe de Contrataciones y el Asesor Jurídico revisan el texto; esta carga deja la estructura y la corrección. Las cláusulas e incisos los numera la plantilla sola (imposibilita E01/E02/E05). Tamaño/vigencia por marca, no por orden de fila.",
+  "nota": "V1 de las plantillas del pliego (ORDEN-RONDA-16 §3.8). Trece correcciones normativas del LOG_ERRORES_COMUNES (N01, N03..N11, N13, M01, M02) incorporadas en el texto propuesto y citadas por código en cada notaDeCambio. El Jefe de Contrataciones y el Asesor Jurídico revisan el texto; esta carga deja la estructura y la corrección. Corrección ORDEN-RONDA-17 §5: la numeración de cláusulas e incisos viene ESCRITA A MANO en este texto; la carga corrige el corrimiento y los saltos de las fuentes (E01/E02/E05), pero la aplicación no numera sola (H20-17 del plan queda pendiente). Tamaño/vigencia por marca, no por orden de fila.",
   "plantillas": [
     {
       "id": "pl-bienes",

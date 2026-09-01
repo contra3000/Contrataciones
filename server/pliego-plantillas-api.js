@@ -2,14 +2,12 @@
 
 /*
  * pliego-plantillas-api.js
- * ORDEN-RONDA-16 §3 (H20). Manejadores HTTP de las plantillas del pliego.
- *
- * La persistencia, la selección por tabla de reglas, la extracción de
- * marcadores y la validación viven en pliego-plantillas.js; aquí están las
- * rutas, la verificación de rol (ADR-021) y el registro de eventos.
- *
- * Roles: contrataciones_supervisor o jurídica publican (cualquiera de los dos,
- * sin aprobación del otro); los demás ven plantillas e historial (§3.4).
+ * ORDEN-RONDA-16 §3 (H20) + RONDA-17 §4/§5. Manejadores HTTP de las plantillas
+ * del pliego. La persistencia, selección por reglas, marcadores y validación
+ * viven en pliego-plantillas.js; aquí las rutas, el rol (ADR-021) y los
+ * eventos. Solo modifican (publicar, volver, editar) contrataciones_supervisor
+ * o jurídica; todos los roles autenticados ven plantillas e historial
+ * (§5 RONDA-17). La regeneración usa la versión estampada del expediente.
  */
 
 const fs = require('node:fs');
@@ -21,16 +19,14 @@ function crearManejadoresPlantillas(entorno) {
     ayudantes,
     eventos
   } = entorno;
-  const { responderJson, parsearCuerpo } = ayudantes;
+  const { responderJson, parsearCuerpo, escribirAtomico, rutaExpediente } = ayudantes;
   const SGC = globalThis.SGC;
 
   // Carga diferida del núcleo para no acoplar el ciclo de arranque.
   const nucleo = require('./pliego-plantillas.js');
   const repo = SGC.adapters.repo;
-  const { escribirAtomico, rutaExpediente } = ayudantes;
 
-  // Escritura de expediente con versión bump: historial de la previa y luego
-  // datos + índice. Idéntica al resto de las escrituras (ADR-005/ADR-009).
+  // Escritura con versión bump + historial de la previa (ADR-005/009).
   function escriboHist(exp, actual) {
     fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
     escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'),
@@ -52,14 +48,12 @@ function crearManejadoresPlantillas(entorno) {
     return v.ok && nucleo.ROLES_PUBLICAN.indexOf(cx.rol) !== -1;
   }
 
-  function idDeRuta(req, base) {
-    const sin = (req.url || '').split('?')[0];
-    if (!sin.startsWith(base)) {
-      return null;
-    }
-    const restante = sin.slice(base.length);
-    const parts = restante.split('/').filter(Boolean);
-    return parts.length ? decodeURIComponent(parts[0]) : null;
+  function versRespuesta(p, v) {
+    return {
+      id: p.id, nombre: p.nombre, contenido: v.contenido,
+      version: v.version, vigente: v.vigente === true,
+      criterios: v.criterios || {}, notaDeCambio: v.notaDeCambio
+    };
   }
 
   function apiListar(req, res, textoCuerpo) {
@@ -81,9 +75,7 @@ function crearManejadoresPlantillas(entorno) {
     });
   }
 
-  // Publicar una versión nueva (o crear la v1). Exige notaDeCambio y que los
-  // marcadores sean válidos. La generación del pliego de prueba la valida el
-  // probador antes (apiProbar), aquí se vuelve a exigir como cierre.
+  // Publica una versión nueva (o la v1): notaDeCambio, marcadores y huella probada.
   function apiPublicarVersion(req, res, textoCuerpo, id) {
     const cuerpo = parsearCuerpo(textoCuerpo) || {};
     if (!esPublicador(cuerpo.contexto)) {
@@ -108,27 +100,23 @@ function crearManejadoresPlantillas(entorno) {
     if (!validacion.valido) {
       return responderJson(res, 422, { error: validacion.error, desconocidos: validacion.desconocidos });
     }
-    // El pliego de prueba debe haber salido (§3.3 paso 3).
-    if (cuerpo.pliegoProbado !== true) {
-      return responderJson(res, 422, { error: 'publicar exige probar el pliego con "Probar ahora" antes' });
+    // RONDA-17 §2: prueba atada al contenido (huella) en el servidor; el cliente
+    // no la declara, y las versiones viejas se vuelven a probar al editar.
+    if (!nucleo.estaProbada(contenido)) {
+      return responderJson(res, 422, { error: 'publicar exige probar el pliego con "Probar ahora" antes (la prueba se ata al contenido exacto)' });
     }
 
     const plantillas = nucleo.cargar(datosDir);
     const encontrada = plantillas.find((x) => x.id === id);
     const ahora = new Date().toISOString();
     const autor = (cuerpo.contexto || {}).email || null;
+    const vNueva = {
+      version: encontrada ? encontrada.versions.length + 1 : 1,
+      contenido, criterios, autor, fecha: ahora, vigente: true, notaDeCambio
+    };
 
     let plantilla;
     if (encontrada) {
-      const vNueva = {
-        version: encontrada.versions.length + 1,
-        contenido,
-        criterios,
-        autor,
-        fecha: ahora,
-        vigente: true,
-        notaDeCambio
-      };
       encontrada.versions.push(vNueva);
       encontrada.versions.forEach((v) => { v.vigente = v.version === vNueva.version; });
       encontrada.vigenteVersion = vNueva.version;
@@ -141,15 +129,7 @@ function crearManejadoresPlantillas(entorno) {
         creada: ahora,
         criterios,
         vigenteVersion: 1,
-        versions: [{
-          version: 1,
-          contenido,
-          criterios,
-          autor,
-          fecha: ahora,
-          vigente: true,
-          notaDeCambio
-        }]
+        versions: [vNueva]
       };
       plantillas.push(plantilla);
     }
@@ -173,8 +153,7 @@ function crearManejadoresPlantillas(entorno) {
       return responderJson(res, 403, { error: 'solo contrataciones_supervisor o jurídica pueden modificar plantillas' });
     }
     const version = parseInt(cuerpo.version, 10);
-    const plantillas = nucleo.cargar(datosDir);
-    const p = plantillas.find((x) => x.id === id);
+    const plantillas = nucleo.cargar(datosDir), p = plantillas.find((x) => x.id === id);
     if (!p) {
       return responderJson(res, 404, { error: 'no existe la plantilla "' + id + '"' });
     }
@@ -209,16 +188,12 @@ function crearManejadoresPlantillas(entorno) {
   }
 
   function apiProbar(req, res, textoCuerpo, id) {
-    // La generación del pliego de prueba la delega al probador (real).
     const probador = require('./pliego-probador.js');
-    return probador.probar(req, res, textoCuerpo, id, entorno).catch(() => {
-      // respondido
-    });
+    return probador.probar(req, res, textoCuerpo, id, entorno).catch(() => {});
   }
 
-  // §3.7: deriva los atributos de selección del tipo de contrato, la modalidad
-  // y el procedimiento desde el expediente. Se usa para la tabla de reglas y
-  // para derivar tipo_contrato/tipo_documento en el YAML.
+  // Deriva los atributos de selección (tipo de contrato, modalidad,
+  // procedimiento) desde el expediente (reglas + tipo_contrato/tipo_documento).
   function atributosDeExpediente(expediente) {
     const datos = (expediente && typeof expediente.datos === 'object' && expediente.datos) || expediente || {};
     const req = (datos.requerimiento && typeof datos.requerimiento === 'object') ? datos.requerimiento : {};
@@ -241,9 +216,8 @@ function crearManejadoresPlantillas(entorno) {
     };
   }
 
-  // §3.5: estampa el id y la versión de la plantilla que produjo el pliego en
-  // el expediente y en el registro de eventos. Versión bump + historial, igual
-  // que el resto de las escrituras de expediente.
+  // Estampa el id y la versión de la plantilla que produjo el pliego en el
+  // expediente (versión bump + historial, como el resto de las escrituras).
   function apiEstampar(req, res, textoCuerpo, id) {
     const cuerpo = parsearCuerpo(textoCuerpo) || {};
     const exp = ayudantes.rutaExpediente(datosDir, id);
@@ -290,11 +264,31 @@ function crearManejadoresPlantillas(entorno) {
     });
   }
 
-  // §3.6: entrega el contenido de la plantilla vigente para acompañar el YAML
-  // al exportar. GET /api/plantillas/:id/vigente.
+  // §4 (RONDA-17): regenerar usa la versión ESTAMPADA del expediente, no la
+  // vigente de hoy; si esa versión ya no existe, se dice.
+  function apiRegenerar(req, res, textoCuerpo, id) {
+    const exp = ayudantes.rutaExpediente(datosDir, id);
+    if (!fs.existsSync(exp.datos)) {
+      return responderJson(res, 404, { error: 'expediente no encontrado: ' + id });
+    }
+    const estampa = JSON.parse(fs.readFileSync(exp.datos, 'utf8')).plantilla;
+    if (!estampa || !estampa.id || typeof estampa.version !== 'number') {
+      return responderJson(res, 422, { error: 'el expediente "' + id + '" no tiene plantilla estampada' });
+    }
+    const r = nucleo.versionDe(nucleo.cargar(datosDir), estampa.id, estampa.version);
+    if (r.error) {
+      return responderJson(res, 404, {
+        error: 'la versión ' + estampa.version + ' de la plantilla "' + estampa.id +
+          '" ya no existe: no se puede regenerar el pliego del expediente "' + id + '"'
+      });
+    }
+    return responderJson(res, 200,
+      Object.assign({ expedienteId: id }, versRespuesta(r.plantilla, r.version)));
+  }
+
+  // Entrega el contenido de la versión vigente para acompañar el YAML.
   function apiVigente(req, res, textoCuerpo, id) {
-    const plantillas = nucleo.cargar(datosDir);
-    const p = plantillas.find((x) => x.id === id);
+    const p = nucleo.cargar(datosDir).find((x) => x.id === id);
     if (!p) {
       return responderJson(res, 404, { error: 'no existe la plantilla "' + id + '"' });
     }
@@ -302,14 +296,17 @@ function crearManejadoresPlantillas(entorno) {
     if (!v) {
       return responderJson(res, 404, { error: 'la plantilla "' + id + '" no tiene versión vigente' });
     }
-    return responderJson(res, 200, {
-      id: p.id,
-      nombre: p.nombre,
-      contenido: v.contenido,
-      version: v.version,
-      criterios: v.criterios || {},
-      notaDeCambio: v.notaDeCambio
-    });
+    return responderJson(res, 200, versRespuesta(p, v));
+  }
+
+  // §4 (RONDA-17): GET /api/plantillas/:id/versiones/:version entrega la
+  // versión CONCRETA, sin caer a la vigente (la regeneración la usa así).
+  function apiVersionEspecifica(req, res, textoCuerpo, id, numero) {
+    const r = nucleo.versionDe(nucleo.cargar(datosDir), id, numero);
+    if (r.error) {
+      return responderJson(res, 404, { error: r.error });
+    }
+    return responderJson(res, 200, versRespuesta(r.plantilla, r.version));
   }
 
   function enrutar(req, res, conCuerpo, api) {
@@ -340,12 +337,25 @@ function crearManejadoresPlantillas(entorno) {
       if (partes.length === 2 && partes[1] === 'vigente' && req.method === 'GET') {
         return conCuerpo((r, s, texto) => api.apiVigentePlantilla(r, s, texto, partes[0]));
       }
+      if (partes.length === 3 && partes[1] === 'versiones' && req.method === 'GET') {
+        const numero = parseInt(partes[2], 10);
+        if (!(numero > 0)) {
+          return conCuerpo((r, s) => responderJson(s, 400, { error: 'la versión debe ser un número positivo' }));
+        }
+        return conCuerpo((r, s, texto) => api.apiVersionEspecificaPlantilla(r, s, texto, partes[0], numero));
+      }
     }
     // Estampa §3.5: POST /api/expedientes/<id>/plantilla selecciona la plantilla
     // por las reglas, la estampa en el expediente y registra el evento.
     const mEstampa = ruta.match(/^\/api\/expedientes\/([^/]+)\/plantilla$/);
     if (mEstampa && req.method === 'POST') {
       return conCuerpo((r, s, texto) => api.apiEstampar(r, s, texto, mEstampa[1]), mEstampa[1]);
+    }
+    // §4 (RONDA-17): GET /api/expedientes/<id>/regenerar usa la versión
+    // estampada del expediente (404 claro si esa versión ya no existe).
+    const mRegenerar = ruta.match(/^\/api\/expedientes\/([^/]+)\/regenerar$/);
+    if (mRegenerar && req.method === 'GET') {
+      return conCuerpo((r, s, texto) => api.apiRegenerar(r, s, texto, mRegenerar[1]), mRegenerar[1]);
     }
     return null;
   }
@@ -360,18 +370,17 @@ function crearManejadoresPlantillas(entorno) {
     apiProbarPlantilla: apiProbar,
     apiEstampar,
     apiVigentePlantilla: apiVigente,
+    apiRegenerar,
+    apiVersionEspecificaPlantilla: apiVersionEspecifica,
     atributosDeExpediente,
     enrutar,
     esPublicador
   };
 }
 
-// Registro de eventos de plantillas. Como la plantilla no es un expediente, se
-// almacenan en <datosDir>/plantillas/eventos.jsonl (append-only).
 function planillaEvento(datosDir, eventos, id, tipo, detalle, contexto) {
   try {
     const dir = path.join(datosDir, 'plantillas');
-    const fs = require('node:fs');
     fs.mkdirSync(dir, { recursive: true });
     const linea = JSON.stringify({
       tipo,
@@ -382,9 +391,7 @@ function planillaEvento(datosDir, eventos, id, tipo, detalle, contexto) {
       email: contexto && contexto.email || null
     }) + '\n';
     fs.appendFileSync(path.join(dir, 'eventos.jsonl'), linea, 'utf8');
-  } catch (e) {
-    // el registro nunca debe tumbar una publicación
-  }
+  } catch (e) { /* el registro nunca debe tumbar una publicación */ }
 }
 
 module.exports = {

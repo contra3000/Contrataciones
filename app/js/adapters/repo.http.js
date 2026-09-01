@@ -1,25 +1,11 @@
 /*
  * repo.http.js
  * Implementación del contrato (ADR-002) que habla con server/servidor.js.
- *
- * - Traduce el 409 del servidor a {ok:false, conflicto:true, versionRemota},
- *   sin lanzar excepción: un conflicto es un resultado esperado del negocio.
- * - Los errores de red sí son excepciones, con mensaje en español y código
- *   'RED'.
- * - Un expediente inexistente rechaza con código 'NO_ENCONTRADO'.
- * - archivar no está expuesto por el servidor (ORDEN-RONDA-03 §3.4): lanza un
- *   error en español con código 'NO_EXPUESTO'. guardarEntregable sí se expone
- *   desde la ronda 7 (ORDEN-RONDA-07 §3.3) y listarArchivoHistorico desde la
- *   ronda 8 (ORDEN-RONDA-08 §2.2): GET /api/archivo lee el directorio del
- *   Archivo Histórico, no el índice.
- * - Las transiciones por intención (ADR-021) se piden con avanzar/devolver: el
- *   servidor ejecuta el motor y persiste su resultado. Un 403 (rechazo por rol,
- *   destino o validación) se devuelve como {ok:false, error} con el motivo del
- *   motor, nunca como excepción.
- *
- * La base se inyecta en la factoría: este archivo no contiene ninguna
- * dirección literal (ADR-018). Usa `fetch`, presente en Chrome 42+ y en
- * Node 18+.
+ * Reglas generales: un 409 es {ok:false, conflicto:true, versionRemota} (sin
+ * excepción); un 403 por rol/destino es {ok:false, error}; errores de red son
+ * excepción código 'RED'; inexistente es excepción 'NO_ENCONTRADO'; archivar
+ * es 'NO_EXPUESTO'. Las transiciones se piden por intención (ADR-021) y el
+ * servidor ejecuta el motor. La base se inyecta en la factoría (ADR-018).
  */
 (function (root) {
   'use strict';
@@ -42,19 +28,14 @@
   }
 
   function errorDeRespuesta(respuesta, contexto) {
-    var e = new Error('repo.http: ' + contexto + ' (el servidor respondió estado ' + respuesta.status + ')');
-    e.codigo = 'HTTP_' + respuesta.status;
-    return e;
-  }
-
-  // Como errorDeRespuesta pero incluye el motivo en español que el servidor
-  // adjuntó: el tope del diálogo de sugerencias o el código dado de baja de
-  // la base, por ejemplo, deben llegar al usuario, no perderse.
-  function errorDelServidor(respuesta, contexto) {
     var motivo = respuesta.cuerpo && respuesta.cuerpo.error ? ': ' + respuesta.cuerpo.error : '';
     var e = new Error('repo.http: ' + contexto + ' (el servidor respondió estado ' + respuesta.status + motivo + ')');
     e.codigo = 'HTTP_' + respuesta.status;
     return e;
+  }
+
+  function errorDelServidor(respuesta, contexto) {
+    return errorDeRespuesta(respuesta, contexto);
   }
 
   function crearRepoHttp(baseUrl) {
@@ -150,12 +131,8 @@
         });
       },
 
-      // Transiciones por intención (ADR-021): el cliente declara el destino y
-      // el contexto; el servidor ejecuta el motor y persiste su resultado. El
-      // rechazo por rol, destino o validación (403) se devuelve como un
-      // resultado {ok:false, error} con el motivo del motor, igual que un
-      // conflicto de versión: es un resultado esperado del negocio, no una
-      // excepción.
+      // Transiciones por intención (ADR-021): un 403 por rol/destino/validación
+      // es un resultado esperado (motivo del motor), no una excepción.
       avanzar: function (id, versionEsperada, destino, contexto) {
         return pedirConErrorRed('POST', ruta(['expedientes', id, 'avanzar']), {
           versionEsperada: versionEsperada,
@@ -226,10 +203,7 @@
         });
       },
 
-      // Valida contra el catálogo del servidor qué códigos no existen
-      // (ORDEN-RONDA-06 §2.2). No es parte del contrato ADR-002: es una
-      // capacidad propia del adaptador HTTP, porque la verificación vive del
-      // lado del servidor. Devuelve {invalidos, catalogoVersion}.
+      // Valida códigos inexistentes contra el catálogo del servidor (§2.2).
       validarCodigos: function (codigos) {
         return pedirConErrorRed('POST', ruta(['catalogo', 'validar-codigos']), {
           codigos: codigos
@@ -241,9 +215,8 @@
         });
       },
 
-      // Archivo Histórico (ORDEN-RONDA-08 §2.2): el servidor expone
-      // GET /api/archivo, que lee el directorio ArchivoHistorico (no el
-      // índice) y devuelve las entradas de los expedientes archivados.
+      // Archivo Histórico (ORDEN-RONDA-08 §2.2): GET /api/archivo lee el
+      // directorio ArchivoHistorico (no el índice).
       listarArchivoHistorico: function () {
         return pedirConErrorRed('GET', ruta(['archivo'])).then(function (respuesta) {
           if (respuesta.status !== 200) {
@@ -288,10 +261,7 @@
       },
 
       // Guarda un presupuesto adjunto (ORDEN-RONDA-09 §3.2): PDF o imagen en
-      // base64. El servidor valida tipo y tamaño y decide el nombre del
-      // archivo en disco; devuelve el id estable que los valores de
-      // referencia citan. No es parte del contrato ADR-002: es una capacidad
-      // propia del adaptador, porque el archivo vive del lado del servidor.
+      // base64; el servidor valida y elige el nombre en disco.
       guardarPresupuesto: function (id, datos, contexto) {
         return pedirConErrorRed('POST', ruta(['expedientes', id, 'presupuestos']), {
           nombreOriginal: datos.nombreOriginal,
@@ -312,9 +282,8 @@
         });
       },
 
-      // Base de un expediente del archivo (ADR-025, ORDEN-RONDA-13 §4): lee
-      // la lista blanca de campos reutilizables de un perfeccionado archivado
-      // y los códigos que quedaron dados de baja en el catálogo vigente.
+      // Base de un expediente del archivo (ADR-025, ORDEN-RONDA-13 §4): lista
+      // blanca de campos reutilizables de un perfeccionado archivado.
       baseDe: function (id) {
         return pedirConErrorRed('GET', ruta(['archivo', id, 'base'])).then(function (respuesta) {
           if (respuesta.status === 404) {
@@ -327,9 +296,8 @@
         });
       },
 
-      // Crea un expediente nuevo a partir de la base (ADR-025, ORDEN-RONDA-13
-      // §4): el servidor copia la lista blanca de los renglones seleccionados
-      // por índice, marca `basadoEn` y registra el evento reuso_base.
+      // Crea un expediente desde la base (ADR-025, ORDEN-RONDA-13 §4): copia los
+      // renglones seleccionados por índice, marca `basadoEn` y registra reuso_base.
       crearDesdeBase: function (origenId, indices, contexto) {
         return pedirConErrorRed('POST', ruta(['expedientes', 'base']), {
           origenId: origenId,
@@ -346,9 +314,7 @@
         });
       },
 
-      // Sugerencias del piloto (H19, ORDEN-RONDA-13 §6). GET lista los
-      // sucesos; POST crea; POST /atender marca como atendida agregando una
-      // línea, sin editar ni borrar ninguna del JSONL.
+      // Sugerencias del piloto (H19, RONDA-13 §6): el JSONL nunca se edita.
       listarSugerencias: function () {
         return pedirConErrorRed('GET', ruta(['sugerencias'])).then(function (respuesta) {
           if (respuesta.status !== 200) {
@@ -387,6 +353,45 @@
           }
           throw errorDelServidor(respuesta, 'no se pudo marcar la sugerencia como atendida');
         });
+      },
+
+      // Administración del padrón (H21, ORDEN-RONDA-17): exige sesión de
+      // administrador; el contexto sale de la sesión del lado del servidor.
+      padronAdmin: {
+        listar: function () {
+          return pedirConErrorRed('GET', ruta(['padron'])).then(function (respuesta) {
+            if (respuesta.status !== 200) throw errorDelServidor(respuesta, 'no se pudo listar el padrón');
+            return respuesta.cuerpo.usuarios;
+          });
+        },
+        alta: function (datos) {
+          return pedirConErrorRed('POST', ruta(['padron', 'alta']), datos).then(function (respuesta) {
+            if (respuesta.status !== 200) throw errorDelServidor(respuesta, 'no se pudo dar de alta al operador');
+            return respuesta.cuerpo;
+          });
+        },
+        accion: function (email, accion, datos) {
+          return pedirConErrorRed('POST', ruta(['padron', encodeURIComponent(email), accion]), datos || {}).then(function (respuesta) {
+            if (respuesta.status !== 200) throw errorDelServidor(respuesta, 'no se pudo ejecutar ' + accion + ' sobre ' + email);
+            return respuesta.cuerpo;
+          });
+        },
+        exportar: function () {
+          return fetch(ruta(['padron', 'exportar'])).then(function (respuesta) {
+            if (respuesta.status !== 200) {
+              return respuesta.json().catch(function () { return null; }).then(function (c) {
+                throw new Error('repo.http: no se pudo exportar el padrón' + (c && c.error ? ': ' + c.error : ''));
+              });
+            }
+            return respuesta.text();
+          });
+        },
+        importar: function (csv, desactivarAusentes) {
+          return pedirConErrorRed('POST', ruta(['padron', 'importar']), { csv: csv, desactivarAusentes: desactivarAusentes === true }).then(function (respuesta) {
+            if (respuesta.status !== 200) throw errorDelServidor(respuesta, 'no se pudo importar el padrón');
+            return respuesta.cuerpo;
+          });
+        }
       }
     };
   }

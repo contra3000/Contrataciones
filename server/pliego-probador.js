@@ -30,66 +30,82 @@ function rutaGenerador() {
   return process.env.SGC_GENERADOR_PLIEGOS || GENERADOR_DEFAULT;
 }
 
-// Reproduce views/pliego-yaml.js para construir el YAML de un expediente de
-// ejemplo. Se fuerza tipo_contrato/tipo_documento derivados (§3.7).
-function construirDatosEjemplo(tipoContrato) {
-  const especiesServicios = tipoContrato === 'servicios';
-  const organismos = [{
-    nombre: 'División Abastecimiento', domicilio: 'Domicilio de prueba',
-    telefono: '011-0000-0000', correo: 'abastecimiento@faa.mil.ar',
-    horario: '09:00 a 13:00', frecuencia_provision: 'mensualmente'
-  }];
-  if (!especiesServicios) {
-    organismos[0].plazo_entrega = 'diez (10) días';
+// ORDEN-RONDA-17 §3: el probador usa LA MISMA función de exportación del flujo
+// real (core → export/pliego-yaml.js → views/pliego-yaml.js), no una copia.
+// Se cargan contra globalThis.SGC igual que en servidor.js (ADR-029).
+function flujoReal() {
+  const core = [
+    'namespaces.js', 'config.js', 'roles.js', 'cotas-encabezado.js',
+    'autorizacion.js', 'auditoria.js', 'migraciones.js', 'utils.js',
+    'requerimiento.js', 'anexo-eett.js', 'validacion.js', 'estados.js'
+  ];
+  for (const f of core) {
+    require(path.join(RAIZ, 'app', 'js', 'core', f));
   }
-  const datos = {
-    tipo_documento: 'proyecto',
-    tipo_contrato: especiesServicios ? 'servicios' : 'bienes',
-    version: '1.0',
-    tipo_procedimiento: 'Licitación Privada',
-    nro_procedimiento: '2026-999',
-    ejercicio: '2026',
-    clase_modalidad: 'CCM',
-    tipo_oc: 'OCA',
-    nro_expediente_gde: 'EX-2026-99999999- -APN-VBAM#FAA',
-    rubros: '"Adquisición de insumos"',
-    nombre_proceso: 'Prueba de plantilla',
-    objeto: 'Prueba de generación de pliego',
-    organismos_requirentes: organismos,
-    ofertas_parciales: 'no',
-    ofertas_alternativas: 'no',
-    duracion_contrato: 'doce (12) meses'
+  require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
+  require(path.join(RAIZ, 'app', 'js', 'export', 'pliego-yaml.js'));
+  require(path.join(RAIZ, 'app', 'js', 'views', 'pliego-yaml.js'));
+  return globalThis.SGC;
+}
+
+// Expediente de ejemplo a juego con lo que el formulario produce: la vista
+// lee datos.anexo1 (a1), datos.requerimiento (rq) y el id del expediente.
+function expedienteEjemplo(tipoContrato) {
+  const esServicio = tipoContrato === 'servicios';
+  const a1 = {
+    unidadResponsable: 'División Abastecimiento',
+    unidadDireccion: 'Domicilio de prueba',
+    unidadTelefono: '011-0000-0000',
+    unidadCorreo: 'abastecimiento@faa.mil.ar',
+    horarioAtencion: '09:00 a 13:00',
+    frecuenciaProvision: 'mensualmente',
+    tipoOc: 'OCA',
+    nroExpedienteGde: 'EX-2026-99999999- -APN-VBAM#FAA',
+    ofertasParciales: 'no',
+    ofertasAlternativas: 'no',
+    duracionContrato: 'doce (12) meses',
+    tipoContrato: esServicio ? 'servicios' : 'bienes'
   };
-  if (especiesServicios) {
-    datos.plazo_entrega_servicio = 'quince (15) días desde la notificación de la Orden de Compra';
-    datos.garantia_servicio = 'garantía de mantenimiento de oferta';
+  if (esServicio) {
+    a1.plazoEntregaServicio = 'quince (15) días desde la notificación de la Orden de Compra';
+    a1.garantiaServicio = 'garantía de mantenimiento de oferta';
+  } else {
+    a1.plazoEntrega = 'diez (10) días';
+  }
+  const requerimiento = {
+    rubro: 'Adquisición de insumos',
+    nombreProceso: 'Prueba de plantilla',
+    objeto: 'Prueba de generación de pliego',
+    tipoContrato: esServicio ? 'servicios' : 'bienes',
+    tipoDocumento: 'proyecto',
+    tipoProcedimiento: 'Licitación Privada',
+    claseModalidad: 'CCM',
+    dependencia: 'División Abastecimiento',
+    procedimientoSeleccion: 'Licitación Privada',
+    modalidadCompra: 'OCA'
+  };
+  return {
+    expedienteId: '2026-999',
+    titulo: 'Prueba de plantilla',
+    datos: { anexo1: a1, requerimiento }
+  };
+}
+
+function construirDatosEjemplo(tipoContrato) {
+  const SGC = flujoReal();
+  // La vista deriva tipo_contrato y campos como en el flujo real.
+  const datos = SGC.views.pliegoYaml.construirDatos(expedienteEjemplo(tipoContrato));
+  // El formulario completa el ejercicio desde el expediente; acá lo fijamos
+  // para que el generador corra (igual valor que antes del flujo real).
+  if (!datos.ejercicio) {
+    datos.ejercicio = '2026';
   }
   return datos;
 }
 
 function emitirYaml(datos) {
-  const escalar = (v) => {
-    if (typeof v === 'boolean') return v ? 'true' : 'false';
-    if (typeof v === 'number') return String(v);
-    const s = String(v == null ? '' : v);
-    return '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-  };
-  const lineas = [];
-  for (const clave of Object.keys(datos)) {
-    const valor = datos[clave];
-    if (Array.isArray(valor)) {
-      lineas.push(clave + ':');
-      for (const item of valor) {
-        lineas.push('  -');
-        for (const k of Object.keys(item)) {
-          lineas.push('    ' + k + ': ' + escalar(item[k]));
-        }
-      }
-    } else {
-      lineas.push(clave + ': ' + escalar(valor));
-    }
-  }
-  return lineas.join('\n') + '\n';
+  const SGC = flujoReal();
+  return SGC.descargas.pliegoYaml.emitir(datos);
 }
 
 function ejecutarPython(script, yamlPath, tempDir) {
@@ -104,10 +120,23 @@ function ejecutarPython(script, yamlPath, tempDir) {
       if (codigo === 0) {
         resolver(salida);
       } else {
-        rechazar(new Error('el generador de pliego falló (código ' + codigo + '): ' + salida.trim()));
+        const e = new Error('el generador de pliego falló (código ' + codigo + '): ' + salida.trim().slice(0, 800));
+        e.mensajeSeguro = true;
+        rechazar(e);
       }
     });
-    hijo.on('error', (e) => rechazar(new Error('no se pudo ejecutar el generador: ' + e.message)));
+    // Nada del error de la máquina llega al usuario: se detecta el caso
+    // común (python no está) y se dice en claro (RONDA-17 §5).
+    hijo.on('error', (e) => {
+      if (e && e.code === 'ENOENT') {
+        const falta = new Error('no se encontró "python" en el sistema: instalelo o póngalo en el PATH para poder probar el pliego');
+        falta.mensajeSeguro = true;
+        return rechazar(falta);
+      }
+      const otror = new Error('no se pudo ejecutar el generador (' + (e && e.constructor ? e.constructor.name : 'Error') + ')');
+      otror.mensajeSeguro = true;
+      rechazar(otror);
+    });
   });
 }
 
@@ -129,7 +158,9 @@ function copiarRecursivo(origen, destino) {
 function generarPliegoPrueba(tipoContrato) {
   const generador = rutaGenerador();
   if (!fs.existsSync(path.join(generador, 'scripts', 'generar_pliego.py'))) {
-    throw new Error('no se encontró el generador de pliegos en: ' + generador);
+    const e = new Error('no se encontró el generador de pliegos en: ' + generador);
+    e.mensajeSeguro = true;
+    throw e;
   }
   const datos = construirDatosEjemplo(tipoContrato);
   const yaml = emitirYaml(datos);
@@ -177,6 +208,9 @@ function probar(req, res, textoCuerpo, id, entorno) {
     }));
   }
   return generarPliegoPrueba(tipoContrato).then((resultado) => {
+    // ORDEN-RONDA-17 §2: la prueba queda registrada atada a LA HUELlla de este
+    // contenido exacto; publicar la verifica al revés (estaProbada).
+    nucleo.marcarProbada(contenido);
     return responderJson(res, 200, {
       ok: true,
       pliegoProbado: true,
@@ -185,7 +219,13 @@ function probar(req, res, textoCuerpo, id, entorno) {
       id
     });
   }).catch((e) => {
-    return responderJson(res, 422, { ok: false, error: e.message });
+    // Ningún mensaje de error de la máquina llega al usuario: solo los
+    // mensajes marcados como seguros (nuestros, en castellano) o la clase.
+    if (e && e.mensajeSeguro === true && e.message) {
+      return responderJson(res, 422, { ok: false, error: e.message });
+    }
+    const clase = e && e.constructor && e.constructor.name ? e.constructor.name : 'Error';
+    return responderJson(res, 422, { ok: false, error: clase });
   });
 }
 

@@ -16,23 +16,13 @@
  *   <datos>/contador.json, origen.log, idx/<id>.json, <anio>/<numero>_Expediente/
  *   (datos.json + hist/v<N>.json) y plantillas/plantillas.json.
  *
- * Las garantías 1 a 8 se resumen en ayudantes.js y manejadores.js:
- *   1. Escritura atómica. 2. Verificación de versión aquí (fs síncrono).
- *   3. Numeración serializada (ADR-009). 4. Índice fragmentado (ADR-005).
- *   5. Origen por petición (ADR-017 medida 3). 6. Guardia de recorrido de
- *   rutas. 7. Carpeta inaccesible informada por /api/salud.
- *   8. POST /api/catalogo/validar-codigos con lista acotada.
- *   9. Transiciones por intención (ADR-021): el servidor cruza el contexto
- *   contra el padrón de usuarios (config/usuarios.ejemplo.json), ejecuta el
- *   motor con ese rol y persiste el resultado; 403 si el padrón o el motor
- *   rechazan, 409 por versión, 404 si no existe. El PUT ya no puede mover el
- *   estado (409) y la auditoría la escribe el servidor.
- *  10. POST /api/expedientes/:id/entregables guarda el entregable generado
- *   (ADR-016) y GET /entregables/<nombre> lo enlaza (ORDEN-RONDA-07 §3.3).
- *  11. Reuso de base (ADR-025): GET /api/archivo/<id>/base lee la lista blan­
- *   ca de un perfeccionado y POST /api/expedientes/base crea el nuevo.
- *  12. Sugerencias del piloto (H19): JSONL append-only con tope de 4000
- *   sucesos; atender agrega una línea, nunca edita ni borra.
+ * Las garantías 1 a 8 se resumen en ayudantes.js y manejadores.js (escritura
+ * atómica, versión y numeración serializada ADR-009, índice fragmentado
+ * ADR-005, origen por petición ADR-017, guardia de recorrido de rutas, carpeta
+ * inaccesible en /api/salud, catálogo acotado, versionado). Las garantías 9 a
+ * 12: transiciones por intención con el motor y el padrón (9, ADR-021),
+ * entregables ADR-016 (10), reuso de base ADR-025 (11) y sugerencias del
+ * piloto H19 (12, JSONL append-only con tope de 4000 sucesos).
  */
 'use strict';
 
@@ -56,6 +46,7 @@ const plantillasApi = require('./pliego-plantillas-api.js');
 const base = require('./base.js');
 const sugerencias = require('./sugerencias.js');
 const { crearPadronVivo } = require('./padron-vivo.js');
+const padronInicial = require('./padron-inicial.js'); const padronAdmin = require('./padron-administracion.js');
 const sesion = require('./sesion.js');
 // El orden de carga importa: los core se registran en globalThis.SGC (ADR-029).
 const APP_CORE = [
@@ -80,19 +71,27 @@ require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 const SGC = globalThis.SGC;
 const repo = SGC.adapters.repo;
 
-// ---------------------------------------------------------------------------
-// Creación del servidor: el router, los manejadores y la infraestructura
-// ---------------------------------------------------------------------------
+// Creación del servidor: el router, los manejadores y la infraestructura.
 function crearServidor(datosDir, configuracion) {
   const rutaPadronReal = path.join(datosDir, 'padron.json');
   const padronVivoReal = crearPadronVivo(rutaPadronReal);
   const padronEjemplo = crearPadronVivo(path.join(DIR_CONFIG, 'usuarios.ejemplo.json'));
   let modoDeclarado = !!(configuracion && configuracion.declarado);
 
-  // ADR-036 (§2.1): la elección de fuente se resuelve EN CADA USO, no al crear
-  // el servidor. Si el padrón real aparece más tarde, el proceso lo toma sin
-  // reiniciar. El modo declarado sólo se activa si se pide explícitamente con
-  // --declarado y no hay padrón real en ese momento.
+  // ORDEN-RONDA-17 §1.1/§1.2 (H21): sin padrón, crea el administrador (clave única).
+  if (!modoDeclarado && !padronVivoReal.existe()) {
+    const siembra = padronInicial.sembrarAdministrador(datosDir, configuracion);
+    if (siembra) {
+      console.log('SGC-SERVIDOR-ADMINISTRADOR-CREADO');
+      console.log('SGC-SERVIDOR-ADMINISTRADOR-CORREO ' + siembra.email);
+      console.log('SGC-SERVIDOR-ADMINISTRADOR-CLAVE-PROVISORIA ' + siembra.clave);
+      console.log('SGC-SERVIDOR-ADMINISTRADOR-TEXTO La clave se muestra una sola vez. Si no la anotás, se repone desde la aplicación con la cuenta del administrador.');
+    }
+  }
+
+  // ADR-036 (§2.1): la elección de fuente se resuelve EN CADA USO. Si el
+  // padrón real aparece más tarde, el proceso lo toma sin reiniciar; --declarado
+  // sólo actúa si se pide y no hay padrón real en ese momento.
   function fuente() {
     if (padronVivoReal.existe()) {
       return { real: true, vivo: padronVivoReal };
@@ -150,6 +149,7 @@ function crearServidor(datosDir, configuracion) {
   entorno.cargarCatalogo = manejadoresApi.cargarCatalogo;
   const eventosApi = eventos.crearManejadoresEventos(entorno);
   const plantillasApiMod = plantillasApi.crearManejadoresPlantillas(entorno);
+  const padronAdminMod = padronAdmin.crearManejadoresPadron(entorno);
   const api = Object.assign(
     manejadoresApi,
     expedientes.crearManejadoresExpedientes(entorno),
@@ -157,6 +157,7 @@ function crearServidor(datosDir, configuracion) {
     base.crearManejadoresBase(entorno),
     sugerencias.crearManejadoresSugerencias(entorno),
     plantillasApiMod,
+    padronAdminMod,
     { apiEventos: eventosApi.apiEventos }
   );
   const {
@@ -191,13 +192,14 @@ function crearServidor(datosDir, configuracion) {
 
     ayudantes.resolverOrigen(req).then((origen) => {
       // ORDEN-RONDA-14 §3.4: en modo autenticado toda la API exige sesión; una
-      // sesión provisoria sólo cambia la clave, sale y se ve.
+      // provisoria sólo cambia la clave, sale y se ve.
       const acceso = capaSesion.protegerRuta(ruta, req.method, req);
       if (!acceso.permitido) {
         ayudantes.registrarOrigen(datosDir, origen, peticion, null, null);
         return ayudantes.responderJson(res, acceso.estado, { error: acceso.error });
       }
       const sesionDePeticion = acceso.sesion;
+      req.sgcSesion = sesionDePeticion || null;
       try {
         function conCuerpo(fn, contratoId) {
           return ayudantes.leerCuerpo(req).then((texto) => {
@@ -263,18 +265,19 @@ function crearServidor(datosDir, configuracion) {
           return apiLeerBase(req, res, baseId);
         }
 
-        // Plantillas del pliego (ORDEN-RONDA-16 §3) y estampa §3.5, antes del
-        // bloque genérico de expedientes (/api/expedientes/<id>/plantilla).
+        // Plantillas del pliego (ORDEN-RONDA-16 §3), estampa §3.5 y padrón (H21).
         const enrutado = plantillasApiMod.enrutar(req, res, conCuerpo, api);
         if (enrutado) {
           return enrutado;
         }
+        const enrutadoPadron = padronAdminMod.enrutar(req, res, conCuerpo, api);
+        if (enrutadoPadron) {
+          return enrutadoPadron;
+        }
 
         // Expediente por id. Un :id que no es anio-numero (por ejemplo con
         // puntos, barras o "..") se rechaza con 400 sin tocar el disco.
-        // También matchean acá los extremos de intención (ADR-021) y el de
-        // entregables (§3.3): /api/expedientes/<id>/avanzar, /devolver y
-        // /entregables.
+        // Matchean acá los extremos de intención (ADR-021) y el de entregables.
         if (ruta.startsWith('/api/expedientes/')) {
           let id = ayudantes.idDeRuta(req);
           let accion = null;
@@ -360,16 +363,13 @@ function crearServidor(datosDir, configuracion) {
 
         return servirEstatico(req, res);
       } catch (e) {
-        const informe = ayudantes.responderErrorEsp(500, 'error interno del servidor: ' + e.message);
+        const informe = ayudantes.responderErrorEsp(500, 'error interno del servidor (' + (e.constructor ? e.constructor.name : 'Error') + ')');
         return ayudantes.responderJson(res, informe.codigoEstado, informe.cuerpo);
       }
     });
   });
 }
 
-// ---------------------------------------------------------------------------
-// Arranque
-// ---------------------------------------------------------------------------
 const { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto } = require('./arranque.js');
 
 async function main() {
@@ -380,11 +380,11 @@ async function main() {
     await verificarPuerto(opciones.puerto);
   } catch (e) {
     console.error('servidor: no se pudo arrancar.');
-    console.error('servidor: ' + e.message);
+    console.error('servidor: ' + e.constructor.name + ': ' + e.message);
     process.exit(1);
   }
 
-  const servidor = crearServidor(opciones.datos, { declarado: opciones.declarado });
+  const servidor = crearServidor(opciones.datos, { declarado: opciones.declarado, administrador: opciones.administrador });
   servidor.listen(opciones.puerto, () => {
     const puertoReal = servidor.address().port;
     console.log('SGC-SERVIDOR-PUERTO ' + puertoReal);

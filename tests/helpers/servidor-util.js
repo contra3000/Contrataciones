@@ -45,21 +45,29 @@ function esperarLinea(proc, prefijo, timeoutMs) {
   });
 }
 
-async function arrancarServidor(datosDir, puerto) {
+async function arrancarServidor(datosDir, puerto, opciones) {
+  const opts = opciones || {};
   const args = [SERVIDOR, '--datos', datosDir, '--puerto', String(puerto === undefined ? 0 : puerto)];
   // ADR-036 (§2.1): sin padrón real, el modo declarado sólo se activa
-  // pidiéndolo. Los tests que no crean un padrón real lo piden explícitamente.
-  if (!fs.existsSync(path.join(datosDir, 'padron.json'))) {
+  // pidiéndolo. Por defecto los tests que no crean un padrón real lo piden
+  // explícitamente ('auto'); ronda-17 pasa { declarado: false | true } para
+  // probar el bootstrap del administrador (H21) y que el modo no se elige solo.
+  const modo = opts.declarado === undefined ? 'auto' : opts.declarado === true;
+  if (modo === true || (modo === 'auto' && !fs.existsSync(path.join(datosDir, 'padron.json')))) {
     args.push('--declarado');
   }
   const proc = spawn(NODE, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  let salida = '';
+  proc.stdout.on('data', (d) => {
+    salida += String(d);
+  });
   const linea = await esperarLinea(proc, 'SGC-SERVIDOR-PUERTO', ESPERA_ARRANQUE);
   const puertoReal = parseInt(linea.trim(), 10);
   if (Number.isNaN(puertoReal)) {
     proc.kill();
     throw new Error('el servidor no imprimió un puerto válido: "' + linea + '"');
   }
-  return { proc, puerto: puertoReal };
+  return { proc, puerto: puertoReal, salida };
 }
 
 function detenerServidor(ctx) {

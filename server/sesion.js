@@ -124,6 +124,7 @@ function crearCapaSesion(datosDir, ayudantes, padronVivo) {
       if (rolActual && rolActual !== sesion.rol) {
         sesion.rol = rolActual;
       }
+      sesion.administrador = usuario.administrador === true;
     }
     sesion.ultimaActividad = Date.now();
     return sesion;
@@ -137,6 +138,7 @@ function crearCapaSesion(datosDir, ayudantes, padronVivo) {
       rol: usuario.rol || (Array.isArray(usuario.roles) ? usuario.roles[0] : ''),
       nombre: usuario.nombre + ' ' + usuario.apellido,
       equipo: usuario.sector || null,
+      administrador: usuario.administrador === true,
       provisoria: !!(usuario.credenciales && usuario.credenciales.provisoria),
       ultimaActividad: Date.now()
     };
@@ -268,7 +270,8 @@ function crearCapaSesion(datosDir, ayudantes, padronVivo) {
       rol: sesion.rol,
       nombre: sesion.nombre,
       equipo: sesion.equipo,
-      provisoria: sesion.provisoria
+      provisoria: sesion.provisoria,
+      administrador: sesion.administrador === true
     });
   }
 
@@ -332,8 +335,7 @@ function crearCapaSesion(datosDir, ayudantes, padronVivo) {
     return null;
   }
 
-  // -- Puerta de acceso y enrutado, para que servidor.js no crezca (ronda-01 §5:
-//    ningún archivo supera las 400 líneas) -----------------------------------
+  // -- Puerta de acceso y enrutado (para que servidor.js no crezca: 400 líneas max)
   // Decisión de acceso a una ruta de API en modo autenticado. Devuelve
   // {permitido:true, sesion} o {permitido:false, estado, error}.
   function protegerRuta(ruta, metodo, req) {
