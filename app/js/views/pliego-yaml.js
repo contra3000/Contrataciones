@@ -51,6 +51,14 @@
       rubros = '"' + rubros + '"';
     }
 
+    // §3.7 (ORDEN-RONDA-16): tipo_contrato y tipo_documento derivados del
+    // expediente en vez de fijos, con la misma normalización que el servidor
+    // (server/pliego-plantillas-api.js). Aplica a la vista y para los tests.
+    var _tc = str(rq.tipoContrato || a1.tipoContrato || '');
+    var tipoContrato = /servicio/i.test(_tc) ? 'servicios'
+      : /bien/i.test(_tc) ? 'bienes' : (_tc || '');
+    var tipoDocumento = str(rq.tipoDocumento || '') || 'proyecto';
+
     var organismo = {
       nombre: str(a1.unidadResponsable || campos.dependenciaSolicitante || rq.dependencia || ''),
       domicilio: str(a1.unidadDireccion || ''),
@@ -66,8 +74,8 @@
     }
 
     var datosYaml = {
-      tipo_documento: 'proyecto',
-      tipo_contrato: 'bienes',
+      tipo_documento: tipoDocumento,
+      tipo_contrato: tipoContrato,
       version: '1.0',
       tipo_procedimiento: str(rq.tipoProcedimiento || campos.tipoProcedimiento || ''),
       nro_procedimiento: idExp,

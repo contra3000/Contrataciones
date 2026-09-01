@@ -47,6 +47,11 @@ function esperarLinea(proc, prefijo, timeoutMs) {
 
 async function arrancarServidor(datosDir, puerto) {
   const args = [SERVIDOR, '--datos', datosDir, '--puerto', String(puerto === undefined ? 0 : puerto)];
+  // ADR-036 (§2.1): sin padrón real, el modo declarado sólo se activa
+  // pidiéndolo. Los tests que no crean un padrón real lo piden explícitamente.
+  if (!fs.existsSync(path.join(datosDir, 'padron.json'))) {
+    args.push('--declarado');
+  }
   const proc = spawn(NODE, args, { stdio: ['ignore', 'pipe', 'pipe'] });
   const linea = await esperarLinea(proc, 'SGC-SERVIDOR-PUERTO', ESPERA_ARRANQUE);
   const puertoReal = parseInt(linea.trim(), 10);
