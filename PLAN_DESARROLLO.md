@@ -571,22 +571,42 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 
 *(ADR-037. Nace de un planteo de diseño del Jefe de Contrataciones que explica de una sola vez los tres defectos de los ciclos 15 y 16.)*
 
-- [ ] H21-1 · **El servidor crea el padrón en el primer arranque** con un solo usuario: el administrador, cuyos datos salen de la configuración. Desaparece el estado "sin padrón"
-- [ ] H21-2 · **La clave del administrador se genera y se muestra una sola vez** en la salida del servidor. **Ninguna clave por omisión**, en ningún lado. Nace provisoria
-- [ ] H21-3 · **`administrador` es una marca en el padrón, no un octavo rol.** La matriz 18 × 7 no crece
-- [ ] H21-4 · La marca gobierna: administrar el padrón, ver el compendio crudo de eventos y sugerencias, reponer claves y levantar bloqueos. **Editar plantillas no cambia** (ADR-032 §5)
-- [ ] H21-5 · **Pantalla de administración**: alta de a uno, importar CSV, exportar CSV sin credenciales, baja, cambio de rol, reposición, listado con estado
-- [ ] H21-6 · Los roles del desplegable salen de `config.js`; **la lista del instructivo se borra**
-- [ ] H21-7 · **La importación muestra el diff antes de aplicar**: creados, modificados con qué campo, y ausentes
-- [ ] H21-8 · **Todo o nada**, con el número de línea y el motivo
-- [ ] H21-9 · **La ausencia no da de baja por sí sola**: desactivar a los ausentes es una opción explícita
-- [ ] H21-10 · **La importación no toca credenciales** de correos que ya existen
-- [ ] H21-11 · **El administrador no puede encerrarse afuera**: ni por pantalla, ni por API, ni por importación, mientras sea el único activo
-- [ ] H21-12 · Tolerancia a BOM, `CRLF`, línea vacía final. **Ida y vuelta idéntica**: exportar e importar no cambia nada
+- [~] H21-1 · **El servidor crea el padrón en el primer arranque** con un solo usuario: el administrador, cuyos datos salen de la configuración. Desaparece el estado "sin padrón"
+- [~] H21-2 · **La clave del administrador se genera y se muestra una sola vez** en la salida del servidor. **Ninguna clave por omisión**, en ningún lado. Nace provisoria
+- [x] H21-3 · **`administrador` es una marca en el padrón, no un octavo rol.** La matriz 18 × 7 no crece
+- [~] H21-4 · La marca gobierna: administrar el padrón, ver el compendio crudo de eventos y sugerencias, reponer claves y levantar bloqueos. **Editar plantillas no cambia** (ADR-032 §5)
+- [x] H21-5 · **Pantalla de administración**: alta de a uno, importar CSV, exportar CSV sin credenciales, baja, cambio de rol, reposición, listado con estado
+- [x] H21-6 · Los roles del desplegable salen de `config.js`; **la lista del instructivo se borra**
+- [x] H21-7 · **La importación muestra el diff antes de aplicar**: creados, modificados con qué campo, y ausentes
+- [x] H21-8 · **Todo o nada**, con el número de línea y el motivo
+- [x] H21-9 · **La ausencia no da de baja por sí sola**: desactivar a los ausentes es una opción explícita
+- [x] H21-10 · **La importación no toca credenciales** de correos que ya existen
+- [~] H21-11 · **El administrador no puede encerrarse afuera**: ni por pantalla, ni por API, ni por importación, mientras sea el único activo
+- [~] H21-12 · Tolerancia a BOM, `CRLF`, línea vacía final. **Ida y vuelta idéntica**: exportar e importar no cambia nada
 - [ ] H21-13 · Neutralización de fórmulas en el CSV exportado (misma clase del ciclo 13, en la otra dirección)
-- [ ] H21-14 · `tools/padron.js` **se queda como camino de rescate** cuando nadie puede entrar
+- [x] H21-14 · `tools/padron.js` **se queda como camino de rescate** cuando nadie puede entrar
 
 **Criterio de aceptación:** sobre una carpeta vacía, el Jefe de Contrataciones arranca el servidor, entra con la clave que imprimió, la cambia, e importa las catorce personas **sin tocar la consola una sola vez más**.
+
+**Estado al cierre del ciclo 17 — 70%.** La superficie existe y está en el lugar correcto: la pantalla, el diff con sus tres partes, todo o nada, la ausencia que no desactiva, las credenciales que no se tocan. Lo que falla son **cuatro guardias**, todas de pocas líneas: el arranque completa con valores por omisión lo que la configuración no trae (H21-1), la clave no sale en un recuadro (H21-2), la marca es código muerto porque el rol sigue abriendo el compendio (H21-4), el anti-encierro sólo corre con un administrador (H21-11), y la ida y vuelta del CSV no es exacta (H21-12, H21-13).
+
+### H22 — El código dice lo que hace · cierre de H21 y revisión de ADR-038
+
+**Ronda 18.** Corta y de precisión, sin diseño nuevo.
+
+- [ ] H22-1 · **Sin bloque `administrador` completo y válido, el servidor no arranca** y nombra qué falta y dónde ponerlo. Con padrón ya existente, arranca igual
+- [ ] H22-2 · **`instalar.sh` escribe el bloque o falla pidiéndolo.** No escribe una configuración incompleta
+- [ ] H22-3 · **La clave, en un recuadro**: enmarcado, en castellano, último bloque de la salida. Criterio de percepción, no de programa
+- [ ] H22-4 · **La marca reemplaza al rol** en el compendio de eventos y de sugerencias. Una sola función, y `GET` desde la pantalla real
+- [ ] H22-5 · **Vocabulario cerrado y normalizado para `activo`**; lo que no está en el vocabulario es error de línea, nunca `false` en silencio
+- [ ] H22-6 · **El anti-encierro se calcula sobre el padrón resultante**, no sobre el número de administradores de hoy. Una sola guardia para pantalla, API e importación
+- [ ] H22-7 · **Neutralización de fórmulas en la exportación**, con ida y vuelta exacta (reutiliza la función que ya existe, no una segunda)
+- [ ] H22-8 · **El correo se normaliza a minúsculas** al entrar y al comparar, en el padrón, en el ingreso y en la sesión
+- [ ] H22-9 · **Tope declarado de 500 líneas** en la importación, e índice por correo en lugar de la búsqueda O(n²)
+- [ ] H22-10 · **Revisión de valores por omisión de todo `server/`** contra las tres familias de ADR-038, escrita en el informe, incluidos los que sobreviven
+- [ ] H22-11 · **Ningún comentario, nombre de función ni informe enuncia una regla que el código no aplique.** Toda regla con "siempre", "nunca" o "sólo" tiene un test que falla al quitarla
+
+**Criterio de aceptación:** ninguno de los cuatro hallazgos altos del ciclo 17 sobrevive, cada uno con un test que falla si se revierte la corrección, y la revisión de ADR-038 está hecha sobre todo `server/` y no sobre los tres casos conocidos.
 
 
 ## Riesgos abiertos
@@ -600,9 +620,11 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 | R10 | El parque de PCs (Windows 7) se renueva y cambia el navegador | Bajo, y sería una mejora | ADR-011 fija un piso, no un techo de funcionamiento: el código que corre en 109 corre en versiones posteriores |
 | ~~R3~~ | ~~Latencia y cortes de la carpeta de red~~ | **Cerrado — 2026-08-29** | Los datos ya no viven en la carpeta de red: **están en el disco de la máquina virtual** (ADR-035 §2). La escritura atómica y el bloqueo de numeración funcionan sobre un sistema de archivos local, que es donde son fiables. **H9-2 deja de tener sentido** |
 | R39 | **Un modo degradado se elige solo y en silencio** — tercera aparición de la misma forma (ADR-029, ciclo 14, ciclo 15) | **Alto por consecuencia** | **ADR-036** + **ADR-037**: el servidor **crea** el padrón en el primer arranque, así que desaparece el estado del que había que salir. El modo declarado sólo se activa pidiéndolo |
-| R40 | **Una validación depende de que el cliente diga la verdad** — cuarta aparición: `pliegoProbado` llega en el cuerpo y se publica una plantilla rota en un solo POST | Alto — las plantillas son el único lugar donde el error de una persona se multiplica por todos los expedientes siguientes | Ronda 17 §2: el servidor **guarda** que la prueba ocurrió, atada al contenido exacto; la bandera del cliente **se ignora** |
-| R41 | **El banco de pruebas prueba una ficción**: el probador fabrica dos campos que la exportación real nunca emite, y por eso el pliego de servicios "pasaba" sin poder generarse | Medio y engañoso — hace que un test pase cuando el sistema no funciona | Ronda 17 §3: el probador arma su expediente **con la función de exportación real** |
+| ~~R40~~ | ~~Una validación depende de que el cliente diga la verdad~~ | **Cerrado — ciclo 17** | El servidor guarda que la prueba ocurrió **atada al contenido exacto por huella SHA-256**; la bandera del cliente se ignora por completo. El auditor repitió su ataque, probó las cinco variantes y **no encontró una quinta vía** |
+| ~~R41~~ | ~~El banco de pruebas prueba una ficción~~ | **Cerrado — ciclo 17** | El probador arma su expediente con la función de exportación real. Y el pliego de servicios sale del generador de verdad, verificado por el auditor |
 | R42 | **Una importación de padrón mal hecha deja afuera a catorce personas** | Alto — un archivo de Excel al que le borraron una fila sin querer | ADR-037 §5 y §6: diff antes de aplicar, todo o nada, la ausencia **no** desactiva, y el administrador no puede encerrarse afuera |
+| R43 | **El comentario enuncia la regla correcta y el código hace otra cosa** — tres instancias en la misma ronda (`padron-inicial.js`, `eventos.js`/`sugerencias.js`, `padron-csv.js`), repetidas después en el informe del desarrollador | **Alto y particular**: derrota a la revisión por lectura. Quien audita leyendo —el revisor, el Jefe de Contrataciones, un sucesor, o cualquier modelo al que se le pase el repositorio— encuentra el comentario correcto y sigue de largo | Regla §3.10 del ciclo de trabajo: *una regla enunciada en un comentario y no en un test que falle al quitarla, no existe*. Y sección propia en la auditoría del ciclo 18: leer el código contra sí mismo |
+| R44 | **Un valor por omisión inventa una identidad o una facultad** — tercera aparición de la misma forma con tres disfraces: el módulo ausente (ciclo 14), el padrón ausente (ciclo 15), la configuración ausente (ciclo 17) | Alto y silencioso — el sistema rellena el hueco y el resultado es plausible: hay una regla, hay un padrón, hay un administrador. Un error ruidoso cuesta media hora; un relleno plausible costó dos ciclos | **ADR-038**: identidad, facultad y guardia nunca tienen valor por omisión. H22-1, H22-2 y H22-10, esta última sobre todo `server/` y no sobre los casos conocidos |
 | R4 | ~~Los 18 estados no reflejan el circuito real~~ | **Bajo** — cada sector confirmó su fase (ronda 2, 2026-08-13) | Se mantiene la verificación de H9-8 como control final, ya no como mitigación de un riesgo alto |
 | ~~R8~~ | ~~El sistema de firmas rechaza el PDF~~ | **Cerrado** — verificado el 2026-08-13: es la mecánica diaria actual | — |
 | R12 | **Atribución equivocada por sesiones compartidas sin contraseña** | Medio — contamina la auditoría y los KPIs por sector. El caso frecuente no es la suplantación deliberada sino el descuido | ADR-017: identidad por correo institucional visible en pantalla, cierre por inactividad, registro de la máquina del lado del servidor, restricción de rol por máquina. La identidad queda **declarada y corroborada**, no verificada, y así se enuncia en la UI |

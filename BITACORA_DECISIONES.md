@@ -1366,6 +1366,46 @@ Y hay una ganancia que no es de diseño sino de proyecto: **el primer arranque d
 
 **Consecuencias.** La herramienta de línea de comandos **no se elimina**: queda como camino de rescate para cuando nadie puede entrar, que es su único uso legítimo. Aparece una pantalla de administración que **no existe hoy**, y con ella una superficie nueva que hay que auditar: importar un archivo es recibir entrada hostil. Y queda pendiente de validar en el uso real algo que no se puede saber antes: **si el diff previo a la importación se lee o se acepta sin mirar.**
 
+### 8. Enmienda del 2026-09-02 — ningún dato de identidad se completa por omisión
+
+La implementación del ciclo 17 completó con valores por omisión los cuatro campos del administrador que esta ADR manda tomar de la configuración, y el instalador escribe la configuración **sin** el bloque `administrador`. El resultado: la instalación por el manual crea a *Administrador del Sistema* `<administrador@sgc.local>` con rol `contrataciones_supervisor`, y la persona real no existe en el padrón.
+
+Se explicita lo que el §1 daba por sobreentendido: **si la configuración no trae el bloque `administrador` completo y válido, el servidor no arranca y dice qué falta.** El instalador escribe el bloque o falla pidiéndolo. La regla general queda en **ADR-038**.
+
+Y se precisa el §2: *"un recuadro que no se pueda pasar por alto"* significa un bloque enmarcado, con líneas en blanco antes y después, en castellano, **y como último bloque de la salida de arranque** — no cuatro líneas con prefijo de máquina en medio del resto. El criterio de aceptación es de persona, no de programa: alguien que mira la consola por primera vez tiene que verlo sin buscarlo.
+
+---
+
+## ADR-038 — Un valor por omisión nunca inventa una identidad, una facultad ni una guardia
+
+**Estado:** Aceptada · 2026-09-02 · *Generaliza ADR-029 y ADR-036; enmienda ADR-037 §1*
+
+**Contexto.** Es la tercera vez que el mismo movimiento produce un hallazgo alto, con tres disfraces distintos:
+
+| Ciclo | Qué faltaba | Qué hizo el sistema en vez de parar |
+|---|---|---|
+| 14 | Un módulo del núcleo | Apagó la regla que ese módulo aplicaba, en silencio (ADR-029) |
+| 15 | El padrón | Cayó al padrón de ejemplo y sirvió un sistema entero de mentira (ADR-036) |
+| 17 | El bloque `administrador` de la configuración | **Inventó una persona**: nombre, apellido, correo y rol |
+
+En los tres, el sistema tenía un hueco y lo **rellenó**. En los tres, nadie vio un error. En los tres, el comportamiento resultante era plausible: había una regla, había un padrón, había un administrador. Eso es lo que los vuelve caros — un error ruidoso cuesta media hora; un relleno plausible cuesta dos ciclos.
+
+**Decisión.** Cuando falta un dato **de identidad, de facultad o de guardia**, el sistema **se detiene y nombra lo que falta**. No lo completa, no lo deduce, no lo toma de un ejemplo.
+
+Tres familias, y sólo estas tres:
+
+- **Identidad** — quién es alguien: nombre, apellido, correo, rol, sector, la marca de administrador. Un correo inventado es una cuenta que nadie controla.
+- **Facultad** — qué puede hacer alguien: el rol, la marca, la matriz de permisos de registro. Una facultad por omisión es un permiso que nadie otorgó.
+- **Guardia** — la regla que impide un daño: la validación de renglones, el anti-encierro, la prueba de la plantilla, el chequeo de versión. Una guardia ausente que se da por cumplida es peor que no tenerla, porque figura como que está.
+
+Lo que **sí** puede tener valor por omisión: presentación (el puerto 8123, el ancho de una columna, el orden de una lista, un formato de fecha), y cualquier dato que el usuario pueda corregir viéndolo en pantalla sin consecuencias. La prueba para distinguirlos es una sola pregunta: **si este valor por omisión estuviera mal, ¿alguien se daría cuenta?** Si la respuesta es no, no puede haber valor por omisión.
+
+**Fundamento.** El costo de detenerse es una línea de error y cinco minutos de quien instala. El costo de rellenar, medido en este proyecto: dos ciclos con el servidor sin gobierno sobre el requerimiento (ciclo 14), un ciclo entero de auditoría contra un padrón de mentira (ciclo 15), y un primer arranque que le crea la cuenta a otra persona (ciclo 17). La asimetría no admite discusión.
+
+**Alternativas consideradas.** *(a)* Valores por omisión con una advertencia en la salida: descartada — es exactamente lo que hace hoy `padron-inicial.js`, y la advertencia se pierde entre las demás líneas de arranque. Una advertencia que no detiene, no detiene. *(b)* Un asistente que pregunte lo que falta: descartada por ADR-037 (obliga a una pantalla sin autenticar). *(c)* Distinguir por criticidad caso por caso: descartada — es el criterio que ya venía fallando; la clasificación en tres familias es la que se puede aplicar sin pensar.
+
+**Consecuencias.** Un arranque más estricto: instalaciones que hoy arrancarían, no van a arrancar, y eso es lo que se busca. Hay que revisar los valores por omisión existentes contra las tres familias —no sólo los tres casos conocidos— y el que sobreviva a la revisión queda documentado como decisión, no como descuido. Y aparece un requisito de forma: **el mensaje tiene que decir qué falta y dónde ponerlo**, no "configuración inválida".
+
 ---
 
 ## Plantilla
