@@ -433,7 +433,16 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 
 ### H16 — Sistema de estilos aplicado a toda la aplicación y a los entregables
 
-*(Fin del roadmap. Toma el paquete que ya existe en `EjemplosProcesoActual/DocUOC/Generador de Pliegos/estilos/guia_estilos/paquete/`: `tokens.json`, `styles.css`, `design-system.md`, `templates/`.)*
+**Adelantado a la ronda 19 — antes del piloto.** Decisión del Jefe de Contrataciones del 2026-09-02, después de ver la aplicación por primera vez: *"quiero que el piloto tenga ya casi todo corregido"*, y *"durante el piloto quiero poder corregirte cuestiones de estilo también"*.
+
+Esa segunda razón es la que decide **hacerlo entero y no por partes**: si cada color y cada espaciado es una variable en un solo archivo, una corrección de estilo durante el piloto es una línea. Si están repartidos entre los 136 selectores de hoy, cada corrección es una búsqueda. **La capa de tokens es lo que hace barata la devolución del piloto.**
+
+*(Toma el paquete que ya existe en `EjemplosProcesoActual/DocUOC/Generador de Pliegos/estilos/guia_estilos/paquete/`: `tokens.json` (10 KB), `styles.css` (23,6 KB), `design-system.md` (13,8 KB), `templates/` y los cuatro logos. **El sistema no se inventa: existe, está aprobado y ya gobierna los pliegos de la UOC.**)*
+
+**Dos mitades que no son iguales:**
+
+- **Los entregables impresos** adoptan el sistema **directo**: es exactamente para lo que fue hecho —A4, tamaños en puntos, portadas, sellos, filetes—. Es casi gratis y es lo que más se nota, porque esos documentos se firman y se archivan.
+- **Las pantallas** necesitan una capa **derivada**: la misma paleta y las mismas familias tipográficas, pero medidas de pantalla, estados de interacción, controles de formulario y tablas. Eso es el trabajo real, y es lo que hay que hacer entero.
 
 - [ ] H16-1 · Traducir `tokens.json` a variables CSS **compatibles con Chrome 109** (ADR-011: sin anidamiento nativo, sin `text-wrap: balance`)
 - [ ] H16-2 · Hoja de estilos única de la aplicación derivada de los tokens; ningún color ni tipografía escrita a mano fuera de ese archivo
@@ -442,8 +451,13 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 - [ ] H16-5 · El guardián de compatibilidad se extiende al CSS nuevo
 - [ ] H16-6 · Verificación de impresión real en A4 de cada plantilla, en una PC del parque
 - [ ] H16-7 · Revisión de accesibilidad: contraste y navegación por teclado sobre la paleta final
+- [ ] H16-8 · **El padrón se muestra como tabla** con encabezado, filas alternas y columnas alineadas *(pedido del Jefe de Contrataciones, 2026-09-02)*
+- [ ] H16-9 · **Los botones se agrupan con sentido** y la disposición responde al ancho de la pantalla *(mismo pedido: "los botones y su orden no tienen sentido")*
+- [ ] H16-10 · **El botón flotante de sugerencias deja de ser un `?`** — hoy es un signo de pregunta literal (`sugerencias.js:210`) y se lee como "ayuda", no como "enviar una sugerencia"
 
-**Criterio de aceptación:** un entregable impreso desde la app y uno producido por el generador de pliegos se ven de la misma familia, sin retoques.
+**Criterio de aceptación:** un entregable impreso desde la app y uno producido por el generador de pliegos se ven de la misma familia, sin retoques. **Y el criterio del piloto:** cambiar el color primario de toda la aplicación tiene que ser **una línea**.
+
+**Fuera de alcance de H16, aunque lo pidieron junto:** que la tabla del padrón sea **filtrable** es comportamiento, no estilo. Va como ítem propio de H21 para no meter funcionalidad nueva en una ronda de estilos.
 
 ### H17 — Identidad de la aplicación y documentación para que la mejore una IA
 
@@ -584,6 +598,8 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 - [~] H21-11 · **El administrador no puede encerrarse afuera**: ni por pantalla, ni por API, ni por importación, mientras sea el único activo
 - [~] H21-12 · Tolerancia a BOM, `CRLF`, línea vacía final. **Ida y vuelta idéntica**: exportar e importar no cambia nada
 - [ ] H21-13 · Neutralización de fórmulas en el CSV exportado (misma clase del ciclo 13, en la otra dirección)
+- [ ] H21-15 · **La confirmación de desactivar ausentes nombra a cada persona** que va a quedar dada de baja *(pedido del Jefe de Contrataciones, probado en vivo el 2026-09-02)*
+- [ ] H21-16 · **La tabla del padrón es filtrable** por nombre, rol, sector y estado *(mismo pedido; es comportamiento, no estilo)*
 - [x] H21-14 · `tools/padron.js` **se queda como camino de rescate** cuando nadie puede entrar
 
 **Criterio de aceptación:** sobre una carpeta vacía, el Jefe de Contrataciones arranca el servidor, entra con la clave que imprimió, la cambia, e importa las catorce personas **sin tocar la consola una sola vez más**.

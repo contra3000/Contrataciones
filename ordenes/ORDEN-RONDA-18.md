@@ -169,7 +169,19 @@ Aplicá la misma neutralización que ya existe para la exportación de eventos �
 
 **Y verificá la ida y vuelta**: un nombre `=SUM(A1:A10)` tiene que exportarse neutralizado, importarse de vuelta, y **quedar exactamente igual que al principio en el padrón**. Neutralizar rompiendo el dato no sirve.
 
-### 3.4 — El correo es la identidad, y no distingue mayúsculas
+### 3.4 — La confirmación de desactivar dice a quiénes · **pedido del Jefe de Contrataciones**
+
+Probado en vivo el 2026-09-02, con el padrón real de catorce personas. Su observación textual:
+
+> *"Me pregunta si desactivar los que no figuran y si le digo que sí, lo deja en el padrón pero como dado de baja. No me molesta que sea así. Lo veo bastante robusto, **solo le agregaría que me aclare qué usuarios está por desactivar si aprieto que sí**."*
+
+El diff **calcula** la lista de ausentes —eso está bien hecho y el auditor lo verificó— pero **en el momento de decidir, la persona no la ve**. Le preguntan "¿desactivo a los que no figuran?" y tiene que contestar sin saber a quiénes.
+
+La corrección: **la confirmación nombra a cada persona que va a quedar desactivada**, con nombre, apellido y correo. Si son más de diez, las primeras diez y el conteo del resto. Y si la lista está vacía, la opción no se ofrece.
+
+Es de las correcciones más baratas de esta orden y es la única que viene de alguien usando el sistema de verdad. **Un diff que se calcula y no se muestra en el instante de decidir es un diff que no existe** — es la misma forma de R43, con la interfaz en lugar del comentario.
+
+### 3.5 — El correo es la identidad, y no distingue mayúsculas
 
 `padron-csv.js:37-41` compara con `===`. `Juan@faa.mil.ar` y `juan@faa.mil.ar` son dos personas distintas para el sistema, y una sola para el servidor de correo.
 
@@ -177,7 +189,7 @@ Aplicá la misma neutralización que ya existe para la exportación de eventos �
 
 Un correo repetido dentro del mismo archivo **con distinta capitalización** es un error de línea, igual que el repetido exacto.
 
-### 3.5 — Un tope declarado para la importación
+### 3.6 — Un tope declarado para la importación
 
 Medido por el auditor: 2.000 líneas ≈ **154 segundos**; 10.000 no termina. El costo está en una búsqueda O(n²) más `scrypt` por línea.
 

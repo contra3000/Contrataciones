@@ -2,5 +2,5 @@
   "schemaVersion": 1,
   "name": "SGC",
   "version": "1.0.0",
-  "modoPiloto": false
+  "modoPiloto": true
 }
