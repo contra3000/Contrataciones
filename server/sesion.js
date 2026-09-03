@@ -16,6 +16,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const credenciales = require('./credenciales.js');
+const identidad = require('./identidad.js');
 
 const NOMBRE_COOKIE = 'sgc_sesion';
 const TIEMPO_SESION_MS = 15 * 60 * 1000;
@@ -201,7 +202,8 @@ function crearCapaSesion(datosDir, ayudantes, padronVivo) {
       return responderJson(res, 403, { error: 'este servidor no pide credenciales (no hay padrón con claves)' });
     }
     const cuerpo = cuerpoDe(textoCuerpo);
-    const email = typeof cuerpo.email === 'string' ? cuerpo.email.trim() : '';
+    // ORDEN-RONDA-18 §3.5: el correo es identidad y no distingue mayúsculas.
+    const email = identidad.normalizarEmail(typeof cuerpo.email === 'string' ? cuerpo.email : '');
     const clave = typeof cuerpo.clave === 'string' ? cuerpo.clave : '';
     if (!email || !clave) {
       return responderJson(res, 400, { error: 'email y clave son obligatorios para ingresar' });

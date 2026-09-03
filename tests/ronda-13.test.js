@@ -35,9 +35,14 @@ const RAIZ = path.join(__dirname, '..');
 
 // --- Núcleo (vía el andamiaje de transiciones, que ya carga las piezas) ---
 const ti = require('./helpers/transiciones-servidor-util.js');
+const su = require('./helpers/servidor-util.js');
 const { pedir } = ti;
 
 // --- Módulos extra de la app que ronda-13 prueba ---
+// csv-seguro.js registra SGC.core.csvSeguro; exploracion.js lo lee al cargar
+// (ORDEN-RONDA-18 §3.3 unifica la neutralización de fórmulas acá), así que va
+// antes de las vistas, igual que en app/index.html.
+require(path.join(RAIZ, 'app', 'js', 'core', 'csv-seguro.js'));
 require(path.join(RAIZ, 'app', 'js', 'export', 'pliego-yaml.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-eett.js'));
@@ -59,6 +64,65 @@ const { Nodo, documento, registrar, obtenerConteoInnerHTML } = dom;
 
 function esperar() {
   return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+// La sesión viaja por cookie; acá se saca de la respuesta del login.
+function cookieDe(respuesta) {
+  const set = respuesta.encabezados['set-cookie'];
+  const una = Array.isArray(set) ? set[0] : set;
+  return una ? una.split(';')[0] : null;
+}
+
+// ORDEN-RONDA-18 §2 (ADR-037 §3): el compendio de sugerencias lo lee y lo
+// atiende quien tiene la MARCA `administrador`; el rol solo no alcanza. Para
+// los H19 se levanta un servidor con bootstrap del administrador (carpeta de
+// datos fresca, bloque `administrador` explícito): ese único usuario activo
+// tiene la marca, y sus credenciales provisorias salen en el arranque.
+const ADMIN_SUGERENCIAS = {
+  nombre: 'Adm', apellido: 'Del Piloto',
+  email: 'admin.sugerencias@sgc.local', rol: 'contrataciones_supervisor'
+};
+
+async function arrancarSugerencias() {
+  const datosDir = su.crearDirDatos('sgc-sugerencias-');
+  const ctx = await su.arrancarServidor(datosDir, 0, {
+    declarado: false, administrador: ADMIN_SUGERENCIAS
+  });
+  const base = 'http://127.0.0.1:' + ctx.puerto;
+  const clave = (ctx.salida.match(/SGC-SERVIDOR-ADMINISTRADOR-CLAVE-PROVISORIA ([^\s]+)/) || [])[1];
+  assert.ok(clave, 'el arranque imprimió la clave provisoria del administrador');
+  return { datosDir, ctx, base, clave };
+}
+
+async function limpiarSugerencias(ent) {
+  await su.detenerServidor(ent.ctx);
+  try {
+    fs.rmSync(ent.datosDir, { recursive: true, force: true });
+  } catch (ignorado) {}
+}
+
+// Ingresa como el administrador (marca) con la provisoria, fija la clave y
+// devuelve la cookie ya operativa (una sesión provisoria no puede operar,
+// sesion.js protegerRuta → 403).
+async function sesionDeAdministrador(ent) {
+  const primero = await pedir(ent.base, 'POST', '/api/sesion/login',
+    { email: ADMIN_SUGERENCIAS.email, clave: ent.clave });
+  assert.equal(primero.status, 200, 'login como administrador (marca) con la provisoria');
+  const cookieProvisoria = cookieDe(primero);
+  const fija = 'clave-fija-cuatro-palabras-admin';
+  const cambio = await pedir(ent.base, 'POST', '/api/sesion/cambio-clave',
+    { claveVieja: ent.clave, claveNueva: fija }, { Cookie: cookieProvisoria });
+  assert.equal(cambio.status, 200, 'fijado de clave del administrador');
+  const segundo = await pedir(ent.base, 'POST', '/api/sesion/login',
+    { email: ADMIN_SUGERENCIAS.email, clave: fija });
+  assert.equal(segundo.status, 200, 'login del administrador con clave fija');
+  return { cookie: cookieDe(segundo), email: ADMIN_SUGERENCIAS.email };
+}
+
+// Lee el compendio con la sesión real (sin contexto en el cuerpo: la sesión
+// es la única fuente de identidad, ADR-033).
+function leerSugerencias(ent, cookie) {
+  return pedir(ent.base, 'GET', '/api/sugerencias', undefined, { Cookie: cookie });
 }
 
 // Ruta del datos.json de un expediente (el original, en el espacio de trabajo).
@@ -343,21 +407,28 @@ test('config/aplicacion.json: el modo piloto por defecto está apagado', () => {
 // 11-13. H19 servidor: sugerencias (JSONL append-only con tope)
 // ======================================================================
 test('H19: POST /api/sugerencias valida email y contenido (hasta 4000)', async () => {
-  const ent = await ti.arrancarEntorno();
+  const ent = await arrancarSugerencias();
   try {
+    // En modo autenticado toda la API exige sesión (ADR-033): se ingresa como
+    // el administrador y cada petición lleva su cookie. Los H19 asumen la
+    // identidad del padrón servida por la sesión, no por un contexto de mano.
+    const admin = await sesionDeAdministrador(ent);
+    const conCookie = { Cookie: admin.cookie };
+    // Sin sesión la creación anónima se rechaza (ADR-033: la identidad la da
+    // la sesión, no un contexto de mano).
     let r = await pedir(ent.base, 'POST', '/api/sugerencias', {
       contenido: 'hola', contexto: {}
     });
-    assert.equal(r.status, 400, 'sin email se rechaza');
+    assert.equal(r.status, 401, 'sin sesión se rechaza');
 
     r = await pedir(ent.base, 'POST', '/api/sugerencias', {
       contenido: '', contexto: ti.contexto('generador')
-    });
+    }, conCookie);
     assert.equal(r.status, 400, 'sin contenido se rechaza');
 
     r = await pedir(ent.base, 'POST', '/api/sugerencias', {
       contenido: 'x'.repeat(4001), contexto: ti.contexto('generador')
-    });
+    }, conCookie);
     assert.equal(r.status, 400, 'contenido de 4001 caracteres se rechaza');
 
     r = await pedir(ent.base, 'POST', '/api/sugerencias', {
@@ -369,11 +440,14 @@ test('H19: POST /api/sugerencias valida email y contenido (hasta 4000)', async (
       catalogoVersion: '98201747',
       navegador: 'ua-de-prueba',
       contexto: ti.contexto('generador')
-    });
+    }, conCookie);
     assert.equal(r.status, 201, 'la sugerencia válida se acepta');
     assert.ok(r.body.id.startsWith('s-'), 'id con prefijo s-');
 
-    const lista = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
+    // ORDEN-RONDA-18 §2: el compendio lo lee quien tiene la MARCA; en este
+    // escenario el único miembro del padrón es el administrador. El caso del
+    // supervisor sin marca (403) se cubre en ronda-14 §4.12 y ronda-18 §2.
+    const lista = await leerSugerencias(ent, admin.cookie);
     assert.equal(lista.status, 200);
     assert.strictEqual(lista.body.sucesos, 1);
     assert.strictEqual(lista.body.completo, true);
@@ -383,21 +457,24 @@ test('H19: POST /api/sugerencias valida email y contenido (hasta 4000)', async (
     assert.strictEqual(s.pantalla, 'expediente');
     assert.strictEqual(s.expediente, '2026-001');
     assert.strictEqual(s.paso, 'SOLICITUD_CONTRATACION');
-    assert.strictEqual(s.email, ti.EMAIL_POR_ROL.generador, 'el email del contexto viaja');
+    assert.strictEqual(s.email, admin.email, 'el email de la sesión viaja (ADR-033)');
     assert.strictEqual(s.atendido, false);
   } finally {
-    await ti.limpiarEntorno(ent);
+    await limpiarSugerencias(ent);
   }
 });
 
 test('H19: el JSONL es append-only y marcar no toca las líneas anteriores', async () => {
-  const ent = await ti.arrancarEntorno();
+  const ent = await arrancarSugerencias();
   try {
+    // Modo autenticado: toda petición lleva la sesión del administrador.
+    const admin = await sesionDeAdministrador(ent);
+    const conCookie = { Cookie: admin.cookie };
     const envios = [];
     for (let i = 0; i < 20; i++) {
       envios.push(pedir(ent.base, 'POST', '/api/sugerencias', {
         contenido: 'reporte ' + i, contexto: ti.contexto('generador')
-      }));
+      }, conCookie));
     }
     const resultados = await Promise.all(envios);
     for (const r of resultados) {
@@ -408,15 +485,16 @@ test('H19: el JSONL es append-only y marcar no toca las líneas anteriores', asy
       .split(/\r?\n/).filter((l) => l.trim() !== '');
     assert.strictEqual(lineas.length, 20, '20 líneas exactas, sin pérdidas');
 
-    const lista = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
+    const lista = await leerSugerencias(ent, admin.cookie);
     assert.strictEqual(lista.body.sucesos, 20);
     const primera = lista.body.sugerencias.find((s) => s.contenido === 'reporte 0');
     assert.ok(primera, 'la primera sugerencia está entre las leídas');
     const lineaOriginal = lineas.find((l) => l.includes('reporte 0'));
 
+    // Marcar exige la MARCA: atiende el administrador, con sesión real.
     const atendido = await pedir(ent.base,
       'POST', '/api/sugerencias/' + primera.id + '/atender',
-      { contexto: ti.contexto('contrataciones_supervisor') });
+      undefined, { Cookie: admin.cookie });
     assert.equal(atendido.status, 200);
     assert.strictEqual(atendido.body.sugerenciaId, primera.id);
 
@@ -425,34 +503,37 @@ test('H19: el JSONL es append-only y marcar no toca las líneas anteriores', asy
     assert.strictEqual(despues.length, 21, 'marcar agrega exactamente una línea');
     assert.ok(despues.includes(lineaOriginal), 'la línea original queda intacta');
 
-    const lista2 = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
+    const lista2 = await leerSugerencias(ent, admin.cookie);
     const marcada = lista2.body.sugerencias.find((s) => s.id === primera.id);
     assert.strictEqual(marcada.atendido, true, 'se cruza el estado');
-    assert.strictEqual(marcada.atendidaPor, ti.EMAIL_POR_ROL.contrataciones_supervisor);
+    assert.strictEqual(marcada.atendidaPor, admin.email);
     assert.ok(typeof marcada.atendidaEn === 'string', 'con su timestamp');
     assert.strictEqual(marcada.contenido, 'reporte 0', 'el contenido original no cambió');
 
+    // Un id inexistente sigue dando 404 cuando hay marca.
     const noExiste = await pedir(ent.base,
       'POST', '/api/sugerencias/s-zzz/atender',
-      { contexto: ti.contexto('contrataciones_supervisor') });
+      undefined, { Cookie: admin.cookie });
     assert.equal(noExiste.status, 404, 'id inexistente');
 
-    const sinEmail = await pedir(ent.base,
+    // Sin sesión no se llega ni al manejador: atender exige estar identificado
+    // (401 en modo autenticado, ADR-033).
+    const sinSesion = await pedir(ent.base,
       'POST', '/api/sugerencias/' + primera.id + '/atender',
       { contexto: {} });
-    assert.equal(sinEmail.status, 400, 'el Jefe debe ir identificado');
+    assert.equal(sinSesion.status, 401, 'quien atiende debe estar en sesión');
 
     const otro = await pedir(ent.base, 'POST', '/api/sugerencias', {
       contenido: 'después', contexto: ti.contexto('generador')
-    });
+    }, { Cookie: admin.cookie });
     assert.equal(otro.status, 201, 'el tope sigue permitiendo escribir');
   } finally {
-    await ti.limpiarEntorno(ent);
+    await limpiarSugerencias(ent);
   }
 });
 
 test('H19: con 4000 sucesos la sugerencia 4001 se rechaza con 400', async () => {
-  const ent = await ti.arrancarEntorno();
+  const ent = await arrancarSugerencias();
   try {
     const lineas = [];
     for (let i = 0; i < 4000; i++) {
@@ -464,26 +545,27 @@ test('H19: con 4000 sucesos la sugerencia 4001 se rechaza con 400', async () => 
     fs.writeFileSync(path.join(ent.datosDir, 'sugerencias.jsonl'),
       lineas.join('\n') + '\n', 'utf8');
 
-    const lista = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
+    const admin = await sesionDeAdministrador(ent);
+    const lista = await leerSugerencias(ent, admin.cookie);
     assert.strictEqual(lista.body.sucesos, 4000);
     assert.strictEqual(lista.body.completo, true,
       'a 4000 sucesos exactos el diálogo está en el límite y aún avisa completo');
 
     const r = await pedir(ent.base, 'POST', '/api/sugerencias', {
       contenido: 'una más', contexto: ti.contexto('generador')
-    });
+    }, { Cookie: admin.cookie });
     assert.equal(r.status, 400, 'la 4001 se rechaza');
     assert.ok(r.body.error.includes('tope'), 'con aviso de tope');
 
     // Defensa del flag: una línea más escrita fuera del API apaga `completo`.
     fs.appendFileSync(path.join(ent.datosDir, 'sugerencias.jsonl'),
       JSON.stringify({ tipo: 'sugerencia', id: 's-linea-4001' }) + '\n', 'utf8');
-    const sobrepasado = await pedir(ent.base, 'GET', '/api/sugerencias', { contexto: ti.contexto('contrataciones_supervisor') });
+    const sobrepasado = await leerSugerencias(ent, admin.cookie);
     assert.strictEqual(sobrepasado.body.sucesos, 4001);
     assert.strictEqual(sobrepasado.body.completo, false,
       'al superar el tope el diálogo deja de avisar que está completo');
   } finally {
-    await ti.limpiarEntorno(ent);
+    await limpiarSugerencias(ent);
   }
 });
 

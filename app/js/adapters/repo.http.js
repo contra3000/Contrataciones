@@ -386,8 +386,12 @@
             return respuesta.text();
           });
         },
-        importar: function (csv, desactivarAusentes) {
-          return pedirConErrorRed('POST', ruta(['padron', 'importar']), { csv: csv, desactivarAusentes: desactivarAusentes === true }).then(function (respuesta) {
+        importar: function (csv, desactivarAusentes, soloPrever) {
+          return pedirConErrorRed('POST', ruta(['padron', 'importar']), {
+            csv: csv,
+            desactivarAusentes: desactivarAusentes === true,
+            soloPrever: soloPrever === true
+          }).then(function (respuesta) {
             if (respuesta.status !== 200) throw errorDelServidor(respuesta, 'no se pudo importar el padrón');
             return respuesta.cuerpo;
           });

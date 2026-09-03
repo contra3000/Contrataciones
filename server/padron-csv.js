@@ -17,9 +17,15 @@
 
 const credenciales = require('./credenciales.js');
 const { diccionarioDePalabras } = require('./palabras.js');
+const identidad = require('./identidad.js');
+const antiEncierro = require('./anti-encierro.js');
 
-const SUFIJOS_INVALIDOS = [';', '\r', '\n'];
-const RE_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const SUFIJOS_INVALIDOS = identidad.SUFIJOS_INVALIDOS;
+const RE_EMAIL = identidad.RE_EMAIL;
+
+// ORDEN-RONDA-18 §3.6: tope defensivo de filas por importación. El alto manual
+// es de a uno; una vuelta grande de padrón entra en tandas.
+const TOPE_IMPORTACION = 500;
 
 function crearCapaCsv(entorno, exigirAdmin) {
   const { responderJson, parsearCuerpo } = entorno.ayudantes;
@@ -40,16 +46,38 @@ function crearCapaCsv(entorno, exigirAdmin) {
       : null;
   }
 
-  function adminsActivos(padron) {
-    return padron.usuarios.filter((u) => u && u.administrador === true && u.activo !== false);
+  // Para el anti-encierro y el prever: el padrón RESULTANTE que la importación
+  // dejaría. Sólo le importa el estado de `activo` (el CSV no toca la marca
+  // `administrador`): los omitidos se desactivan si `desactivarAusentes`, y los
+  // que vienen en el CSV quedan con el `activo` que traen.
+  function patronResultanteDeImportacion(padron, entradas, ausentes, desactivarAusentes) {
+    const r = JSON.parse(JSON.stringify(padron));
+    if (desactivarAusentes) {
+      for (const au of ausentes) {
+        const u = r.usuarios.find((x) => x.email === au);
+        if (u) {
+          u.activo = false;
+        }
+      }
+    }
+    for (const e of entradas) {
+      const u = r.usuarios.find((x) => x.email === e.email);
+      if (u) {
+        u.activo = e.activo;
+      }
+    }
+    return r;
   }
 
+  // ORDEN-RONDA-18 §3.3 (ADR-031): neutralización única compartida con el
+  // navegador. El servidor corre el core del frontend (APP_CORE), así que
+  // SGC.core.csvSeguro está cargado; acá se usa su `campoCSV` y no se duplica.
   function csvCampo(v) {
-    const s = v == null ? '' : String(v);
-    if (/[";\r\n]/.test(s) && !/^\d+$/.test(s)) {
-      return '"' + s.replace(/"/g, '""') + '"';
+    const SGC = globalThis.SGC;
+    if (!SGC.core.csvSeguro) {
+      throw new Error('csv-seguro.js no está cargado (falta en APP_CORE): no se exportan CSVs sin neutralizar fórmulas');
     }
-    return s;
+    return SGC.core.csvSeguro.campoCSV(v, ';');
   }
 
   function apiExportarCsv(req, res, textoCuerpo) {
@@ -109,20 +137,42 @@ function crearCapaCsv(entorno, exigirAdmin) {
     if (!nombre || !apellido || !email || !rol) {
       return { ok: false, error: 'línea ' + (n + 1) + ': se espera nombre;apellido;email;rol;[sector];[activo]' };
     }
-    if (SUFIJOS_INVALIDOS.some((c) => email.indexOf(c) !== -1) || !RE_EMAIL.test(email)) {
+    // ORDEN-RONDA-18 §3.5: el correo es identidad y no distingue mayúsculas.
+    const emailNormal = identidad.normalizarEmail(desneutralizar(email));
+    if (SUFIJOS_INVALIDOS.some((c) => emailNormal.indexOf(c) !== -1) || !RE_EMAIL.test(emailNormal)) {
       return { ok: false, error: 'línea ' + (n + 1) + ': el email "' + email + '" no es válido' };
     }
     if (ROLES.indexOf(rol) === -1) {
       return { ok: false, error: 'línea ' + (n + 1) + ': el rol "' + rol + '" no existe (roles: ' + ROLES.join(', ') + ')' };
     }
+    // ORDEN-RONDA-18 §3.1: vocabulario cerrado, sin tildes, vacío = activo,
+    // mal = error de línea. Nunca se resuelve en silencio como false.
+    const na = identidad.normalizarActivo(desneutralizar(activo), n + 1);
+    if (na.error) {
+      return { ok: false, error: na.error };
+    }
     return {
       ok: true,
       entrada: {
-        nombre, apellido, email, rol,
-        sector: sector || null,
-        activo: activo === undefined || activo === '' ? true : /^(si|true|1|s|y)$/i.test(activo)
+        nombre: desneutralizar(nombre), apellido: desneutralizar(apellido),
+        email: emailNormal, rol,
+        sector: (sector === null || sector === undefined || String(sector).trim() === '')
+          ? null
+          : desneutralizar(sector),
+        activo: na.activo
       }
     };
+  }
+
+  // Reversa de la neutralización de csv-seguro.js (§3.3): si el campo viaja con
+  // la marca de expedio dada a las fórmulas, se la quita para que el dato
+  // vuelva exacto. Si no es una marca, no se toca.
+  function desneutralizar(v) {
+    const SGC = globalThis.SGC;
+    if (!SGC.core.csvSeguro || v === null || v === undefined) {
+      return v;
+    }
+    return SGC.core.csvSeguro.desneutralizarFormulas(v);
   }
 
   function apiImportar(req, res, textoCuerpo) {
@@ -162,6 +212,12 @@ function crearCapaCsv(entorno, exigirAdmin) {
       }
       vistos[e.email] = true;
     }
+    // ORDEN-RONDA-18 §3.6: tope defensivo de filas por importación.
+    if (entradas.length > TOPE_IMPORTACION) {
+      return responderJson(res, 422, {
+        error: 'importar: el CSV trae ' + entradas.length + ' filas; el tope es de ' + TOPE_IMPORTACION + ' (hacelo en tandas)'
+      });
+    }
 
     const padron = leerPadron();
     const emailsActivos = padron.usuarios.filter((u) => u.activo !== false).map((u) => u.email);
@@ -169,23 +225,34 @@ function crearCapaCsv(entorno, exigirAdmin) {
     // se bajan (y el anti-encierro se chequea antes, SIEMPRE respecto de lo que
     // la importación dejaría al final, sea por baja, desactivación u omisión).
     const ausentes = emailsActivos.filter((emailActivo) => !vistos[emailActivo]);
-    // Anti-encierro (§1.6): el único administrador activo nunca puede quedar
-    // desactivado por una importación, esté omitido (si se bajan) o marcado
-    // como inactivo en el CSV. Se valida ANTES de escribir nada.
-    const adm = adminsActivos(padron);
-    if (adm.length === 1) {
-      const entradaAdmin = entradas.find((e) => e.email === adm[0].email);
-      const seDesactivaAdmin =
-        (desactivarAusentes && !vistos[adm[0].email]) ||
-        (entradaAdmin && entradaAdmin.activo === false);
-      if (seDesactivaAdmin) {
-        const motivo = entradaAdmin && entradaAdmin.activo === false
-          ? 'el CSV lo desactiva'
-          : 'no está en el CSV y desactivar ausentes está marcado';
-        return responderJson(res, 422, {
-          error: 'importar: dejaría al sistema sin administrador activo (' + adm[0].email + ': ' + motivo + ')'
-        });
-      }
+    // RONDA-18 §3.4: modo prever. Reporta a quiénes desactivaría (nombre,
+    // apellido, correo) SIN escribir nada, para que la persona decida con el
+    // diff a la vista. Valida el CSV completo de igual manera que la
+    // importación real; sólo difiere en que no aplica.
+    if (cuerpo.soloPrever === true) {
+      const ausentesDetalle = ausentes.map((emailActivo) => {
+        const u = buscar(padron, emailActivo);
+        return { email: emailActivo, nombre: u ? u.nombre : '', apellido: u ? u.apellido : '' };
+      });
+      const resultante = patronResultanteDeImportacion(padron, entradas, ausentes, desactivarAusentes);
+      return responderJson(res, 200, {
+        prever: true,
+        ausentes: ausentesDetalle,
+        totalAusentes: ausentesDetalle.length,
+        aplica: antiEncierro.tieneAdminActivo(resultante)
+      });
+    }
+    // Anti-encierro (RONDA-18 §3.2): la guardia se aplica sobre el ESTADO FINAL
+    // con la misma función que la administración manual (anti-encierro.js). Se
+    // simula el padrón que la importación dejaría y se pregunta si queda un
+    // administrador activo. El CSV no trae columna "administrador": la
+    // importación sólo puede DESACTIVAR admins, nunca agregarlos.
+    if (!antiEncierro.tieneAdminActivo(
+      patronResultanteDeImportacion(padron, entradas, ausentes, desactivarAusentes))) {
+      return responderJson(res, 422, {
+        error: 'importar: dejaría al sistema sin administrador activo, así no se aplica; ' +
+          'deje al menos un administrador activo en el CSV o no marque desactivar ausentes'
+      });
     }
     if (desactivarAusentes) {
       for (const ausente of ausentes) {

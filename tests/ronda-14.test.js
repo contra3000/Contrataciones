@@ -475,15 +475,15 @@ test('4.12 eventos y sugerencias son del Jefe, los rechaza un rol común', async
     const sugsJuan = await pedirCon(e.base, 'GET', '/api/sugerencias', {}, juan);
     assert.equal(sugsJuan.status, 403, 'sugerencias no para abastecimiento');
 
+    // ADR-037 §3 (ORDEN-RONDA-18 §2): el compendio crudo lo ve quien tiene
+    // la MARCA `administrador`, y nadie más. El rol `contrataciones_supervisor`
+    // sin marca no lo ve, aunque "sea el Jefe". El caso positivo (un
+    // administrador con otro rol sí lo ve) se cubre en ronda-18.test.js §2.
     const eventosJefe = await pedirCon(e.base, 'GET', '/api/eventos', {}, carlos);
-    assert.equal(eventosJefe.status, 200, 'el Jefe lee el compendio');
-    assert.equal(typeof eventosJefe.body.expedientes, 'number', 'expedientes del compendio');
-    assert.ok(Array.isArray(eventosJefe.body.eventos), 'eventos del compendio');
-    assert.equal(typeof eventosJefe.body.sucesos, 'number', 'sucesos del compendio');
+    assert.equal(eventosJefe.status, 403, 'el supervisor sin marca no lee el compendio de eventos');
 
     const sugsJefe = await pedirCon(e.base, 'GET', '/api/sugerencias', {}, carlos);
-    assert.equal(sugsJefe.status, 200, 'el Jefe lee las sugerencias');
-    assert.ok(Array.isArray(sugsJefe.body.sugerencias));
+    assert.equal(sugsJefe.status, 403, 'el supervisor sin marca no lee las sugerencias');
   } finally {
     await detenerServidor(e.ctx);
     fs.rmSync(e.datosDir, { recursive: true, force: true });

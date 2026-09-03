@@ -88,9 +88,13 @@ async function operadorFijo(base, email, claveProvisoria) {
 }
 
 // Servidor real en modo autenticado que acaba de sembrar el administrador.
-async function arrancarBootstrap() {
+async function arrancarBootstrap(admin) {
   const datos = dirTmp('rp17-boot-');
-  const ctx = await su.arrancarServidor(datos, 0, { declarado: false });
+  const ctx = await su.arrancarServidor(datos, 0, {
+    declarado: false,
+    administrador: admin || { nombre: 'Administrador', apellido: 'del Sistema',
+      email: CORREO_ADMIN, rol: 'contrataciones_supervisor' }
+  });
   const base = 'http://127.0.0.1:' + ctx.puerto;
   return { ctx, datos, base, clave: claveDe(ctx.salida), salida: ctx.salida };
 }
@@ -165,11 +169,13 @@ test('1. el primer arranque sin padrón crea al administrador y muestra la clave
 
 test('2. el segundo arranque sobre el mismo padrón no crea nada ni imprime otra clave', async () => {
   const datos = dirTmp('rp17-2do-');
-  const ctx1 = await su.arrancarServidor(datos, 0, { declarado: false });
+  const adminCfg = { nombre: 'Administrador', apellido: 'del Sistema',
+    email: CORREO_ADMIN, rol: 'contrataciones_supervisor' };
+  const ctx1 = await su.arrancarServidor(datos, 0, { declarado: false, administrador: adminCfg });
   const clave1 = claveDe(ctx1.salida);
   assert.ok(clave1, 'el primer arranque imprime la clave');
   await su.detenerServidor(ctx1);
-  const ctx2 = await su.arrancarServidor(datos, 0, { declarado: false });
+  const ctx2 = await su.arrancarServidor(datos, 0, { declarado: false, administrador: adminCfg });
   try {
     assert.strictEqual(
       (ctx2.salida.match(/SGC-SERVIDOR-ADMINISTRADOR-CREADO/g) || []).length,

@@ -44,19 +44,12 @@
   }
 
   // §2.1 ORDEN-RONDA-13: neutralización de fórmulas (ADR-031, misma forma que
-  // el YAML: neutralizar siempre, no detectar). Todo texto que empiece con =,
-  // +, -, @ o tabulador lleva un apóstrofo delante, sin excepción: así un
-  // campo no se ejecuta al abrir el CSV en una planilla. Se aplica ANTES del
-  // escapado de coma/comilla, y el apóstrofo conserva el dato (la planilla lo
-  // muestra sin el prefijo).
-  function neutralizarFormulas(texto) {
-    var primero = texto.charAt(0);
-    if (primero === '=' || primero === '+' || primero === '-' ||
-        primero === '@' || primero === '\t') {
-      return "'" + texto;
-    }
-    return texto;
-  }
+  // el YAML: neutralizar siempre, no detectar). La función ÚNICA vive en
+  // SGC.core.csvSeguro (csv-seguro.js), compartida con la exportación del
+  // padrón (ORDEN-RONDA-18 §3.3): todo texto que empiece con =, +, -, @ o
+  // tabulador lleva un apóstrofo delante, sin excepción, para que un campo no
+  // se ejecute al abrir el CSV en una planilla.
+  var neutralizarFormulas = SGC.core.csvSeguro.neutralizarFormulas;
 
   function valorCSV(valor) {
     var str = valor === null || valor === undefined ? '' : String(valor);

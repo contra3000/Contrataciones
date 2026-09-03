@@ -2,7 +2,13 @@
 # instalar.sh — Instalación del SGC en Debian 12 (ORDEN-RONDA-15 §3.1)
 #
 # Uso:
-#   sudo bash instalar.sh [--datos /ruta/datos] [--puerto 8123]
+#   sudo bash instalar.sh [--datos /ruta/datos] [--puerto 8123] \
+#       [--admin-nombre "X"] [--admin-apellido "Y"] [--admin-email "z@dominio"] [--admin-rol r]
+#
+# ORDEN-RONDA-18 §1.2 (ADR-038): el primer arranque necesita el bloque
+# `administrador`. El instalador lo recibe por argumentos, o lo pregunta si la
+# terminal es interactiva; si no puede conseguirlo, FALLA y dice cómo pasarlo.
+# Nunca escribe un servidor.json sin el bloque.
 #
 # Crea usuario de sistema, carpeta de datos, instala aplicación como
 # servicio de systemd. No pisa la carpeta de datos si ya existe.
@@ -17,13 +23,51 @@ DIR_SYSTEMD="/etc/systemd/system"
 DIR_CONFIG_SGC="/etc/sgc"
 ARCHIVO_CONFIG="${DIR_CONFIG_SGC}/servidor.json"
 
+ADMIN_NOMBRE=""
+ADMIN_APELLIDO=""
+ADMIN_EMAIL=""
+ADMIN_ROL=""
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --datos) DIR_DATOS="$2"; shift 2 ;;
     --puerto) PUERTO="$2"; shift 2 ;;
+    --admin-nombre) ADMIN_NOMBRE="$2"; shift 2 ;;
+    --admin-apellido) ADMIN_APELLIDO="$2"; shift 2 ;;
+    --admin-email) ADMIN_EMAIL="$2"; shift 2 ;;
+    --admin-rol) ADMIN_ROL="$2"; shift 2 ;;
     *) echo "Argumento desconocido: $1"; exit 1 ;;
   esac
 done
+
+se_pregunta() {  # ¿la terminal es interactiva?
+  [ -t 0 ] && [ -t 1 ]
+}
+
+# ORDEN-RONDA-18 §1.2: junta el bloque `administrador`, pidiéndolo si falta y
+# la terminal es interactiva, o fallando con las instrucciones si no.
+recolectar_administrador() {
+  if [ -z "$ADMIN_NOMBRE" ] && se_pregunta; then
+    read -r -p "Nombre del administrador inicial: " ADMIN_NOMBRE
+  fi
+  if [ -z "$ADMIN_APELLIDO" ] && se_pregunta; then
+    read -r -p "Apellido del administrador inicial: " ADMIN_APELLIDO
+  fi
+  if [ -z "$ADMIN_EMAIL" ] && se_pregunta; then
+    read -r -p "Correo del administrador inicial: " ADMIN_EMAIL
+  fi
+  if [ -z "$ADMIN_ROL" ] && se_pregunta; then
+    read -r -p "Rol del administrador inicial (ej. contrataciones_supervisor): " ADMIN_ROL
+  fi
+  if [ -z "$ADMIN_NOMBRE" ] || [ -z "$ADMIN_APELLIDO" ] || [ -z "$ADMIN_EMAIL" ] || [ -z "$ADMIN_ROL" ]; then
+    echo "Error: falta el bloque administrador del primer arranque." >&2
+    echo "Pasalo por argumentos o dejalo responder en una terminal interactiva:" >&2
+    echo "  sudo bash instalar.sh --admin-nombre 'X' --admin-apellido 'Y' \ " >&2
+    echo "       --admin-email 'x@dominio.gob.ar' --admin-rol contrataciones_supervisor" >&2
+    echo "No se escribe un servidor.json incompleto: sin administrador, el servidor no arranca." >&2
+    exit 1
+  fi
+}
 
 # --- 1. Usuario de sistema ---------------------------------------------------
 if ! id "$USUARIO_SGC" >/dev/null 2>&1; then
@@ -60,10 +104,17 @@ echo "Archivos de la aplicación instalados en /opt/sgc/"
 # --- 4. Archivo de configuración del servicio ---------------------------------
 mkdir -p "$DIR_CONFIG_SGC"
 if [ ! -f "$ARCHIVO_CONFIG" ]; then
+  recolectar_administrador
   cat > "$ARCHIVO_CONFIG" <<EOF
 {
   "datos": "${DIR_DATOS}",
-  "puerto": ${PUERTO}
+  "puerto": ${PUERTO},
+  "administrador": {
+    "nombre": "${ADMIN_NOMBRE}",
+    "apellido": "${ADMIN_APELLIDO}",
+    "email": "${ADMIN_EMAIL}",
+    "rol": "${ADMIN_ROL}"
+  }
 }
 EOF
   echo "Configuración del servicio creada: ${ARCHIVO_CONFIG}"

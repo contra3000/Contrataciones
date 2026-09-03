@@ -35,28 +35,14 @@ const CAMPOS_SUGERENCIA = [
 function crearManejadoresSugerencias(entorno) {
   const { datosDir, ayudantes: extra } = entorno;
   const { responderJson, parsearCuerpo } = extra;
-  const SGC = globalThis.SGC;
+  // ORDEN-RONDA-18 §2: la guardia ÚNICA del compendio vive en compendio.js.
+  const { tieneMarcaDeAdministrador } = require('./compendio.js').crearGuardiaCompendio(entorno);
 
   const archivo = path.join(datosDir, 'sugerencias.jsonl');
 
-  // ORDEN-RONDA-14 §2.2: la lista y el "atender" son del Jefe de
-  // Contrataciones, verificado contra el padrón en el servidor (el rol no lo
-  // elige el cliente). Crear una sugerencia sigue abierto a cualquier operador
-  // autenticado en el padrón.
-  function esJefe(contexto) {
-    const cx = contexto || {};
-    const usuarios = entorno.padronVivo.usuarios();
-    const v = SGC.core.autorizacion.verificar(usuarios, cx);
-    if (!v.ok) {
-      return false;
-    }
-    // ORDEN-RONDA-17 §1.3: la marca de administrador también ve el compendio.
-    if (cx.rol === 'contrataciones_supervisor') {
-      return true;
-    }
-    const u = usuarios.find((x) => x && x.email === cx.email);
-    return !!(u && u.administrador === true);
-  }
+  // ORDEN-RONDA-18 §2 (ADR-037 §3): la lista y el "atender" son de quien tiene
+  // la MARCA `administrador` en el padrón vivo (rol no cuenta). Crear una
+  // sugerencia sigue abierto a cualquier operador autenticado en el padrón.
 
   function idNuevo() {
     return 's-' + Date.now().toString(36) + '-' + crypto.randomBytes(6).toString('hex');
@@ -121,8 +107,8 @@ function crearManejadoresSugerencias(entorno) {
 
   function apiListarSugerencias(req, res, textoCuerpo) {
     const cuerpo = parsearCuerpo(textoCuerpo) || {};
-    if (!esJefe(cuerpo.contexto)) {
-      return responderJson(res, 403, { error: 'solo el Jefe de Contrataciones puede consultar las sugerencias del piloto' });
+    if (!tieneMarcaDeAdministrador(req, cuerpo)) {
+      return responderJson(res, 403, { error: 'solo quien tiene la marca de administrador puede consultar las sugerencias del piloto' });
     }
     return responderJson(res, 200, {
       sugerencias: leer(),
@@ -183,12 +169,12 @@ function crearManejadoresSugerencias(entorno) {
 
   function apiAtenderSugerencia(req, res, id, textoCuerpo) {
     const cuerpo = parsearCuerpo(textoCuerpo);
-    const cx = cuerpo && cuerpo.contexto || {};
-    if (!esJefe(cx)) {
+    const cx = (cuerpo && cuerpo.contexto) || (req && req.sgcSesion) || {};
+    if (!tieneMarcaDeAdministrador(req, cuerpo)) {
       if (!cx.email) {
-        return responderJson(res, 400, { error: 'el Jefe debe ir identificado (correo del padrón)' });
+        return responderJson(res, 400, { error: 'quien atiende debe ir identificado (correo del padrón)' });
       }
-      return responderJson(res, 403, { error: 'solo el Jefe de Contrataciones puede atender sugerencias' });
+      return responderJson(res, 403, { error: 'solo quien tiene la marca de administrador puede atender sugerencias' });
     }
     const sugerencias = leer();
     const existe = sugerencias.some(function (s) {

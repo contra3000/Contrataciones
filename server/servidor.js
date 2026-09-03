@@ -61,7 +61,8 @@ const APP_CORE = [
   'requerimiento.js',
   'anexo-eett.js',
   'validacion.js',
-  'estados.js'
+  'estados.js',
+  'csv-seguro.js'
 ];
 for (const archivo of APP_CORE) {
   require(path.join(RAIZ, 'app', 'js', 'core', archivo));
@@ -77,15 +78,20 @@ function crearServidor(datosDir, configuracion) {
   const padronVivoReal = crearPadronVivo(rutaPadronReal);
   const padronEjemplo = crearPadronVivo(path.join(DIR_CONFIG, 'usuarios.ejemplo.json'));
   let modoDeclarado = !!(configuracion && configuracion.declarado);
+  // ORDEN-RONDA-18 §1.3: el bootstrap del administrador se anuncia una sola
+  // vez, en una caja castellana al final de la salida (tras SGC-SERVIDOR-PUERTO).
+  let bootstrap = null;
 
   // ORDEN-RONDA-17 §1.1/§1.2 (H21): sin padrón, crea el administrador (clave única).
   if (!modoDeclarado && !padronVivoReal.existe()) {
-    const siembra = padronInicial.sembrarAdministrador(datosDir, configuracion);
+    const siembra = padronInicial.sembrarAdministrador(
+      datosDir, configuracion, false, configuracion.rutaConfig || '<archivo de configuración>');
     if (siembra) {
-      console.log('SGC-SERVIDOR-ADMINISTRADOR-CREADO');
-      console.log('SGC-SERVIDOR-ADMINISTRADOR-CORREO ' + siembra.email);
-      console.log('SGC-SERVIDOR-ADMINISTRADOR-CLAVE-PROVISORIA ' + siembra.clave);
-      console.log('SGC-SERVIDOR-ADMINISTRADOR-TEXTO La clave se muestra una sola vez. Si no la anotás, se repone desde la aplicación con la cuenta del administrador.');
+      // ORDEN-RONDA-18 §1.3: no se imprime acá. La caja castellana con el
+      // correo y la clave provisoria se muestra UNA VEZ, al final de la salida,
+      // después de SGC-SERVIDOR-PUERTO (ver arranque). Mantenerla en sistema
+      // Unix para tests (empezada por 'SGC-SERVIDOR-ADMINISTRADOR').
+      bootstrap = siembra;
     }
   }
 
@@ -184,7 +190,7 @@ function crearServidor(datosDir, configuracion) {
 
   // Despachar con cuerpo. En modo autenticado el contexto del cuerpo se
   // reemplaza por el de la sesión (el rol no lo elige el cliente, ADR-033).
-  return http.createServer((req, res) => {
+  const servidor = http.createServer((req, res) => {
     const ruta = (req.url || '').split('?')[0];
     const peticion = { metodo: req.method, ruta };
     const esRutaApi = ruta === '/api/salud' || ruta === '/api/indice' ||
@@ -368,9 +374,13 @@ function crearServidor(datosDir, configuracion) {
       }
     });
   });
+  if (bootstrap) {
+    servidor.sgcBootstrap = bootstrap;
+  }
+  return servidor;
 }
 
-const { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto } = require('./arranque.js');
+const { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto, anunciarAdministrador } = require('./arranque.js');
 
 async function main() {
   const opciones = leerArgumentos(process.argv.slice(2));
@@ -384,12 +394,21 @@ async function main() {
     process.exit(1);
   }
 
-  const servidor = crearServidor(opciones.datos, { declarado: opciones.declarado, administrador: opciones.administrador });
+  const servidor = crearServidor(opciones.datos, {
+    declarado: opciones.declarado,
+    administrador: opciones.administrador,
+    rutaConfig: opciones.config
+  });
   servidor.listen(opciones.puerto, () => {
     const puertoReal = servidor.address().port;
     console.log('SGC-SERVIDOR-PUERTO ' + puertoReal);
     console.log('SGC-SERVIDOR-DATOS ' + opciones.datos);
-    console.log('SGC-SERVIDOR-LISTO');
+console.log('SGC-SERVIDOR-LISTO');
+    if (servidor.sgcBootstrap) {
+      // ORDEN-RONDA-18 §1.3: la caja castellana con el correo y la clave se
+      // muestra UNA VEZ, al final de la salida (ver arranque.anunciarAdministrador).
+      anunciarAdministrador(servidor.sgcBootstrap);
+    }
   });
 }
 

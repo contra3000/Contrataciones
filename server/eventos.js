@@ -262,24 +262,8 @@ function leerEventos(datosDir, id) {
 function crearManejadoresEventos(entorno) {
   const { datosDir, ayudantes } = entorno;
   const { responderJson, parsearCuerpo } = ayudantes;
-  const SGC = globalThis.SGC;
-
-  // Guardia común con sugerencias: el compendio es sólo del Jefe de
-  // Contrataciones, verificado contra el padrón en el servidor.
-  function esJefe(contexto) {
-    const cx = contexto || {};
-    const usuarios = entorno.padronVivo.usuarios();
-    const v = SGC.core.autorizacion.verificar(usuarios, cx);
-    if (!v.ok) {
-      return false;
-    }
-    // ORDEN-RONDA-17 §1.3: la marca de administrador también ve el compendio.
-    if (cx.rol === 'contrataciones_supervisor') {
-      return true;
-    }
-    const u = usuarios.find((x) => x && x.email === cx.email);
-    return !!(u && u.administrador === true);
-  }
+  // ORDEN-RONDA-18 §2: la guardia ÚNICA del compendio vive en compendio.js.
+  const { tieneMarcaDeAdministrador } = require('./compendio.js').crearGuardiaCompendio(entorno);
 
   // Recorre la carpeta de datos (años → expedientes) y agrupa las líneas de
   // eventos que cada expediente haya registrado. Líneas ilegibles de un
@@ -313,11 +297,11 @@ function crearManejadoresEventos(entorno) {
     return resultado;
   }
 
-  // GET /api/eventos: el compendio de eventos y sugerencias del Jefe.
+  // GET /api/eventos: el compendio de eventos y sugerencias del administrador.
   function apiEventos(req, res, textoCuerpo) {
     const cuerpo = parsearCuerpo(textoCuerpo) || {};
-    if (!esJefe(cuerpo.contexto)) {
-      return responderJson(res, 403, { error: 'solo el Jefe de Contrataciones puede consultar el compendio de eventos' });
+    if (!tieneMarcaDeAdministrador(req, cuerpo)) {
+      return responderJson(res, 403, { error: 'solo quien tiene la marca de administrador puede consultar el compendio de eventos' });
     }
     const eventos = compendio();
     let sucesos = 0;
@@ -332,7 +316,7 @@ function crearManejadoresEventos(entorno) {
   }
 
   return {
-    esJefe,
+    tieneMarcaDeAdministrador,
     apiEventos
   };
 }

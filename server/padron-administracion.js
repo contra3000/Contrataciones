@@ -19,9 +19,11 @@
 const credenciales = require('./credenciales.js');
 const { diccionarioDePalabras } = require('./palabras.js');
 const { crearCapaCsv } = require('./padron-csv.js');
+const identidad = require('./identidad.js');
+const antiEncierro = require('./anti-encierro.js');
 
-const SUFIJOS_INVALIDOS = [';', '\r', '\n'];
-const RE_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const SUFIJOS_INVALIDOS = identidad.SUFIJOS_INVALIDOS;
+const RE_EMAIL = identidad.RE_EMAIL;
 
 function crearManejadoresPadron(entorno) {
   const { responderJson, parsearCuerpo } = entorno.ayudantes;
@@ -87,17 +89,27 @@ function crearManejadoresPadron(entorno) {
   }
 
   function adminsActivos(padron) {
-    return padron.usuarios.filter((u) => u && u.administrador === true && u.activo !== false);
+    return antiEncierro.adminsActivos(padron);
   }
 
   // Prohibido dejar al sistema sin administrador activo (anti-encierro).
+  // RONDA-18 §3.2: es la MISMA guardia que usa la importación CSV, aplicada
+  // sobre el ESTADO FINAL: se simula la operación (se desactiva o se le quita
+  // la marca al administrador) y se pregunta si el padrón que quedaría tiene
+  // todavía un administrador activo.
   function chequearAntiEncierro(padron, email, accion) {
     const target = buscar(padron, email);
     if (!target || target.administrador !== true || target.activo === false) {
       return null;
     }
-    if (adminsActivos(padron).length <= 1) {
-      return 'no se puede ' + accion + ' al único administrador activo (el sistema no puede quedarse sin administrador)';
+    const resultante = JSON.parse(JSON.stringify(padron));
+    const fin = resultante.usuarios.find((u) => u && u.email === email);
+    if (fin) {
+      fin.activo = false;
+      fin.administrador = false;
+    }
+    if (!antiEncierro.tieneAdminActivo(resultante)) {
+      return 'no se puede ' + accion + ': dejaría al sistema sin administrador activo';
     }
     return null;
   }
@@ -135,7 +147,8 @@ function crearManejadoresPadron(entorno) {
     }
     const nombre = typeof cuerpo.nombre === 'string' ? cuerpo.nombre.trim() : '';
     const apellido = typeof cuerpo.apellido === 'string' ? cuerpo.apellido.trim() : '';
-    const email = typeof cuerpo.email === 'string' ? cuerpo.email.trim() : '';
+    // ORDEN-RONDA-18 §3.5: el correo es identidad y no distingue mayúsculas.
+    const email = identidad.normalizarEmail(typeof cuerpo.email === 'string' ? cuerpo.email : '');
     const rol = typeof cuerpo.rol === 'string' ? cuerpo.rol.trim() : '';
     const sector = typeof cuerpo.sector === 'string' && cuerpo.sector.trim() !== ''
       ? cuerpo.sector.trim()
@@ -317,7 +330,9 @@ function crearManejadoresPadron(entorno) {
     if (ruta.startsWith('/api/padron/')) {
       const partes = ruta.slice('/api/padron/'.length).split('/').filter(Boolean);
       if (partes.length === 2) {
-        const email = decodeURIComponent(partes[0]);
+        // ORDEN-RONDA-18 §3.5: el correo es identidad y no distingue
+        // mayúsculas; se normaliza antes de buscar en el padrón.
+        const email = identidad.normalizarEmail(decodeURIComponent(partes[0]));
         const accion = partes[1];
         if (accion === 'baja' && req.method === 'POST') {
           return conCuerpo((r, s, texto) => api.apiPadronBaja(r, s, texto, email));

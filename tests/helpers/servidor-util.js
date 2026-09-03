@@ -45,6 +45,30 @@ function esperarLinea(proc, prefijo, timeoutMs) {
   });
 }
 
+// Espera hasta que aparezcan TODOS los prefijos en la salida, con UN solo
+// listener armado desde el arranque (así no se pierden las líneas emitidas en
+// el MISMO trozo, p.ej. la caja del administrador justo después de LISTO).
+// Devuelve la salida acumulada. Rechaza si pasa el plazo.
+function esperarMarcas(proc, prefijos, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let acumulado = '';
+    const temporizador = setTimeout(() => {
+      proc.stdout.removeListener('data', onData);
+      reject(new Error('el servidor no imprimió ' + JSON.stringify(prefijos) + ' a tiempo. Salida: ' + acumulado));
+    }, timeoutMs);
+    function onData(trozo) {
+      acumulado += String(trozo);
+      const faltan = prefijos.filter((p) => acumulado.indexOf(p) === -1);
+      if (faltan.length === 0) {
+        clearTimeout(temporizador);
+        proc.stdout.removeListener('data', onData);
+        resolve(acumulado);
+      }
+    }
+    proc.stdout.on('data', onData);
+  });
+}
+
 async function arrancarServidor(datosDir, puerto, opciones) {
   const opts = opciones || {};
   const args = [SERVIDOR, '--datos', datosDir, '--puerto', String(puerto === undefined ? 0 : puerto)];
@@ -56,16 +80,49 @@ async function arrancarServidor(datosDir, puerto, opciones) {
   if (modo === true || (modo === 'auto' && !fs.existsSync(path.join(datosDir, 'padron.json')))) {
     args.push('--declarado');
   }
+  // ORDEN-RONDA-18 §1.1: el bootstrap exige el bloque `administrador` completo
+  // y válido (ADR-038). Para simular una instalación real, se escribe un
+  // archivo de configuración y se pasa --config.
+  if (opts.administrador) {
+    const rutaCfg = path.join(datosDir, 'servidor-test.json');
+    fs.writeFileSync(rutaCfg, JSON.stringify({
+      datos: datosDir,
+      puerto: puerto === undefined ? 0 : puerto,
+      administrador: opts.administrador
+    }, null, 2), 'utf8');
+    args.push('--config', rutaCfg);
+  }
+  // RONDA-18 §4.3: start with a caller-provided config path (p.ej. una
+  // configuración SIN bloque administrador) manteniendo el resto del arranque.
+  if (!opts.administrador && opts.rutaConfig) {
+    args.push('--config', opts.rutaConfig);
+  }
   const proc = spawn(NODE, args, { stdio: ['ignore', 'pipe', 'pipe'] });
   let salida = '';
   proc.stdout.on('data', (d) => {
     salida += String(d);
   });
-  const linea = await esperarLinea(proc, 'SGC-SERVIDOR-PUERTO', ESPERA_ARRANQUE);
-  const puertoReal = parseInt(linea.trim(), 10);
+  // En cualquier fallo se mata el hijo para no dejar huérfanos (ronda-18).
+  try {
+    // Marcas a esperar con UN solo listener, armado antes de cualquier salida:
+    // el bootstrap (ORDEN-RONDA-18 §1.3) imprime la caja del administrador
+    // DESPUÉS de LISTO, a veces en el mismo trozo. La clave provisoria queda
+    // garantizada en `salida` cuando el arranque la va a sembrar.
+    const marcas = ['SGC-SERVIDOR-LISTO'];
+    const vaASembrar = !!opts.administrador && !fs.existsSync(path.join(datosDir, 'padron.json'));
+    if (vaASembrar) {
+      marcas.push('SGC-SERVIDOR-ADMINISTRADOR-CLAVE-PROVISORIA');
+    }
+    await esperarMarcas(proc, marcas, ESPERA_ARRANQUE);
+  } catch (e) {
+    try { proc.kill('SIGKILL'); } catch (ign) { /* ya terminó */ }
+    throw e;
+  }
+  const coincidencia = salida.match(/SGC-SERVIDOR-PUERTO\s+([0-9]+)/);
+  const puertoReal = coincidencia ? parseInt(coincidencia[1], 10) : NaN;
   if (Number.isNaN(puertoReal)) {
-    proc.kill();
-    throw new Error('el servidor no imprimió un puerto válido: "' + linea + '"');
+    try { proc.kill('SIGKILL'); } catch (ign) { /* ya terminó */ }
+    throw new Error('el servidor no imprimió un puerto válido: "' + salida + '"');
   }
   return { proc, puerto: puertoReal, salida };
 }

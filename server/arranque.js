@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const net = require('node:net');
 
+const padronInicial = require('./padron-inicial.js');
+
 const RAIZ = path.resolve(__dirname, '..');
 const DIR_APP = path.join(RAIZ, 'app');
 
@@ -80,10 +82,17 @@ function verificarArranque(opciones, nodeMinVersion, ayudantes) {
   }
   var rutaPadron = path.join(opciones.datos, 'padron.json');
   // ORDEN-RONDA-17 §1.1: sin padrón, el primer arranque del servidor lo crea
-  // con el administrador (padron-inicial.js). Ya no es un error: sólo exige
-  // credenciales si el padrón ya existe. El modo declarado sigue sirviendo el
-  // padrón de ejemplo de configuración (desarrollo y tests).
+  // con el administrador (padron-inicial.js). ORDEN-RONDA-18 §1.1 (ADR-038):
+  // en ese primer arranque la configuración del administrador DEBE venir
+  // completa y válida; si no, no arranca y dice qué falta. Con padrón ya
+  // existente, la configuración del administrador es irrelevante (mánda el
+  // padrón) y no bloquea. El modo declarado no siembra y no exige el bloque.
   if (!fs.existsSync(rutaPadron)) {
+    if (!opciones.declarado) {
+      padronInicial.validarAdministrador(
+        { administrador: opciones.administrador },
+        opciones.config || '<archivo de configuración>');
+    }
     return;
   }
   var padron = null;
@@ -128,4 +137,27 @@ function verificarPuerto(puerto) {
   });
 }
 
-module.exports = { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto };
+// ORDEN-RONDA-18 §1.3 (ADR-037 §8): la caja del administrador. Recuadro
+// enmarcado, líneas en blanco antes y después, texto en castellano y ÚLTIMO
+// bloque de la salida de arranque (después de SGC-SERVIDOR-PUERTO). Las líneas
+// con prefijo de máquina se conservan para los tests; el recuadro es lo que ve
+// la persona. Vivre acá para que servidor.js no acumule las ~20 líneas y
+// respete la cota de 400 líneas por archivo (ORDEN-RONDA-10 §3.1).
+function anunciarAdministrador(bootstrap) {
+  console.log('');
+  console.log('================================================================');
+  console.log('  SGC · administrador inicial creado');
+  console.log('');
+  console.log('  Correo          : ' + bootstrap.email);
+  console.log('  Clave provisoria: ' + bootstrap.clave);
+  console.log('');
+  console.log('  La clave se muestra una sola vez. Si no la anotás, se repone');
+  console.log('  desde la aplicación con la cuenta del administrador.');
+  console.log('================================================================');
+  console.log('SGC-SERVIDOR-ADMINISTRADOR-CREADO');
+  console.log('SGC-SERVIDOR-ADMINISTRADOR-CORREO ' + bootstrap.email);
+  console.log('SGC-SERVIDOR-ADMINISTRADOR-CLAVE-PROVISORIA ' + bootstrap.clave);
+  console.log('SGC-SERVIDOR-ADMINISTRADOR-TEXTO La clave se muestra una sola vez. Si no la anotás, se repone desde la aplicación con la cuenta del administrador.');
+}
+
+module.exports = { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto, anunciarAdministrador };

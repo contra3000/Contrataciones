@@ -216,21 +216,37 @@
     if (!csv) {
       return;
     }
-    var desactivar = confirm('¿Desactivar los operadores del padrón que no aparecen en el CSV?');
     estado.dom.error.hidden = true;
-    estado.repo.padronAdmin.importar(csv, desactivar).then(function (respuesta) {
-      var resumen = [
-        'Altas: ' + (respuesta.altas && respuesta.altas.length || 0),
-        'Cambios: ' + (respuesta.cambios && respuesta.cambios.length || 0),
-        'Ya existentes: ' + (respuesta.yaExistentes && respuesta.yaExistentes.length || 0),
-        'Desactivados: ' + (respuesta.desactivados && respuesta.desactivados.length || 0)
-      ].join(' · ');
-      informar('Importación correcta. ' + resumen + '.');
-      if (respuesta.errores && respuesta.errores.length > 0) {
-        informar('Importación correcta con correcciones. ' + resumen +
-          ' · Líneas corregidas: ' + respuesta.errores.join(', ') + '.');
+    // RONDA-18 §3.4: primero se preveé a quiénes desactivaría la importación,
+    // y se le muestra a la persona ANTES de decidir (un diff calculado que no
+    // se muestra en el instante de decidir es un diff que no existe).
+    estado.repo.padronAdmin.importar(csv, false, true).then(function (prever) {
+      var ausentes = Array.isArray(prever.ausentes) ? prever.ausentes : [];
+      var desactivar = false;
+      if (ausentes.length > 0) {
+        var primerasDiez = ausentes.slice(0, 10).map(function (a) {
+          return '  · ' + a.nombre + ' ' + a.apellido + ' <' + a.email + '>';
+        }).join('\n');
+        var resto = ausentes.length > 10
+          ? '\n  … y ' + (ausentes.length - 10) + ' persona(s) más'
+          : '';
+        desactivar = confirm(
+          'La importación desactivaría a ' + ausentes.length + ' operador(es) ' +
+          'que no vienen en el CSV:\n' + primerasDiez + resto +
+          '\n\n¿Los desactiva? (si dice que no, quedan como están)');
       }
-      return refrescar();
+      estado.repo.padronAdmin.importar(csv, desactivar).then(function (respuesta) {
+        var resumen = [
+          'Altas: ' + ((respuesta.creados && respuesta.creados.length) || 0),
+          'Cambios: ' + ((respuesta.cambios && respuesta.cambios.length) || 0),
+          'Ya existentes: ' + ((respuesta.yaExistentes && respuesta.yaExistentes.length) || 0),
+          'Desactivados: ' + ((respuesta.desactivados && respuesta.desactivados.length) || 0)
+        ].join(' · ');
+        informar('Importación correcta. ' + resumen + '.');
+        return refrescar();
+      }).catch(function (err) {
+        informar('No se pudo importar el padrón: ' + err.message);
+      });
     }).catch(function (err) {
       informar('No se pudo importar el padrón: ' + err.message);
     });

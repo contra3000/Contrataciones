@@ -22,8 +22,18 @@ servidor). No hay ningún paso previo de siembra (ver §7).
 Copiar la carpeta del repositorio a la máquina. Ejecutar desde su raíz:
 
 ```bash
-sudo bash instalar.sh
+sudo bash instalar.sh \
+  --admin-nombre "Juana" \
+  --admin-apellido "Pérez" \
+  --admin-email "jperez@faa.mil.ar" \
+  --admin-rol contrataciones_supervisor
 ```
+
+> Los datos son **de ejemplo**: reemplazalos por los del administrador real de tu
+> División. Si la terminal es interactiva y no pasás estos argumentos, el
+> instalador te los pregunta uno por uno. Si no los tiene y no puede pedirlos,
+> **falla** y te dice cómo pasarlos: nunca escribe una configuración incompleta
+> (sin administrador, el servidor no arranca — ORDEN-RONDA-18 §1.2).
 
 Esto crea:
 - Usuario de sistema `sgc` (sin shell, sin login).
@@ -60,9 +70,20 @@ Editar `/etc/sgc/servidor.json`:
 ```json
 {
   "datos": "/var/lib/sgc",
-  "puerto": 8123
+  "puerto": 8123,
+  "administrador": {
+    "nombre": "Juana",
+    "apellido": "Pérez",
+    "email": "jperez@faa.mil.ar",
+    "rol": "contrataciones_supervisor"
+  }
 }
 ```
+
+> El bloque `administrador` es **datos de ejemplo**: usalo como forma, no tal cual.
+> Sólo se usa en el primer arranque (para crear el padrón). Si el padrón ya
+> existe, el servidor arranca aunque el bloque no esté: ahí manda el padrón, no
+> la configuración. `sector` es opcional.
 
 Para cambiar el puerto, editar este archivo y reiniciar: `systemctl restart sgc`.
 
