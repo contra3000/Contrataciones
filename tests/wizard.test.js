@@ -18,6 +18,14 @@
  *  - Alta completa contra el servidor: datos.json, entrada en idx/, número
  *    único, auditoría con el correo y catalogoVersion registrada.
  *  - Fallo del servidor a mitad de la confirmación: borrador intacto.
+ *
+ * ORDEN-RONDA-19 §4: estos tests llaman a
+ * SGC.views.wizard.seleccionarOperador(operador, repo) directamente porque
+ * operadorSeleccionado() vive dentro del IIFE de app.js y las demás vistas
+ * (expediente, exportar, etc.) no están cargadas en este entorno. Desde la
+ * ronda 19, el camino real de producción (login → entrar →
+ * operadorSeleccionado → wizard.seleccionarOperador) produce el mismo estado
+ * final; el test end-to-end está en ronda-19-auth.test.js.
  */
 
 const { test, before } = require('node:test');

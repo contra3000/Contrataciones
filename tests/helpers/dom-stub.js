@@ -105,7 +105,6 @@ class Nodo {
     this.classList = new ListaClases(this);
     this.atributos = {};
     this.eventos = {};
-    this.textContent = '';
     this.hidden = false;
     this.disabled = false;
     this.value = '';
@@ -119,6 +118,7 @@ class Nodo {
     this.rows = undefined;
     this.placeholder = '';
     this.foco = false;
+    this.style = {};
   }
 
   get innerHTML() {
@@ -128,6 +128,18 @@ class Nodo {
   set innerHTML(valor) {
     conteoInnerHTML++;
     this._innerHtml = String(valor);
+  }
+
+  // textContent refleja el propio texto más el de los descendientes, como en
+  // el navegador. La app lee textContent de nodos compuestos (filas del
+  // padrón) y lo escribe para avisos y valores.
+  get textContent() {
+    const propio = this._textoPropio === undefined ? '' : this._textoPropio;
+    return propio + this.children.map((c) => c.textContent).join('');
+  }
+
+  set textContent(valor) {
+    this._textoPropio = String(valor);
   }
 
   appendChild(nodo) {
@@ -193,6 +205,12 @@ class Nodo {
     this.foco = true;
   }
 
+  // APIs de nodo que la app real usa; no hacen nada en el harness.
+  select() {}
+  showModal() {}
+  close() {}
+  scrollIntoView() {}
+
   click() {
     this.emit('click');
   }
@@ -224,8 +242,32 @@ class Nodo {
 const documento = {
   body: new Nodo('body'),
   porId: {},
+  // En el navegador, el documento está "loading" mientras corren los scripts
+  // del final del body: app.js registra `iniciar` para DOMContentLoaded y el
+  // harness dispara ese evento después de ejecutar el script.
+  readyState: 'loading',
+  _eventos: {},
   createElement: (tag) => new Nodo(tag),
-  getElementById: (id) => documento.porId[id] || null
+  getElementById: (id) => documento.porId[id] || null,
+  createTextNode: (texto) => {
+    const n = new Nodo('#text');
+    n.textContent = String(texto);
+    return n;
+  },
+  createDocumentFragment: () => new Nodo('#fragment'),
+  execCommand: () => false,
+  addEventListener: (tipo, fn) => {
+    if (!documento._eventos[tipo]) {
+      documento._eventos[tipo] = [];
+    }
+    documento._eventos[tipo].push(fn);
+  },
+  emit: (tipo, evento) => {
+    const lista = documento._eventos[tipo] || [];
+    for (const fn of lista.slice()) {
+      fn(evento || {});
+    }
+  }
 };
 
 function registrar(nodo) {

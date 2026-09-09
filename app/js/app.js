@@ -15,6 +15,7 @@
 
   var estadoConfig = null;
   var operadorActual = null;
+  var repoActual = null;
 
   function mostrarError(texto) {
     var nodo = document.getElementById('sgc-app-error');
@@ -108,6 +109,7 @@
     SGC.views.sugerencias.fijarOperador(operador);
     SGC.views.sugerenciasJefe.fijarOperador(operador);
     SGC.views.padronAdmin.fijarOperador(operador);
+    SGC.views.wizard.seleccionarOperador(operador, repoActual);
     actualizarNavJefe(operador);
     actualizarNavPadron(operador);
     document.getElementById('sgc-tablero-nav').hidden = false;
@@ -162,6 +164,7 @@
     }
 
     var repo = SGC.adapters.repoHttp.crear(root.location.origin);
+    repoActual = repo;
     SGC.adapters.repo.usar(repo);
 
     SGC.views.wizard.montar(contenedor);
