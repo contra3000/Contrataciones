@@ -300,6 +300,11 @@ Seis detalles de provisión de la máquina virtual. Bloquean el **despliegue**, 
 - [ ] H10-2g · El comando de siembra del padrón del `INSTRUCTIVO.md` **está roto**: apunta `--archivo` a un JSON que la carga masiva no sabe leer. Falla en todas las líneas. Es el comando del día uno
 - [ ] H10-2h · El mensaje de arranque con el padrón ilegible **filtra el error de V8 en inglés**. Único mensaje que rompe la regla del castellano
 - [ ] H10-2i · El instructivo ordena **primero el padrón, después el servicio**, y lo dice donde se lee
+**Estado al 2026-09-03 (ciclo 18): 75%.** H10-2f, H10-2g, H10-2h y H10-2i cerrados. La auditoría del ciclo 18 recomienda instalar. Lo que queda es que **el Jefe de Contrataciones no tenga que escribir un solo comando**:
+
+- [ ] H10-2j · **Arranque sin consola en Windows** para las pruebas: un archivo que se abre con doble clic, verifica que Node esté, crea la carpeta de datos, arranca el servidor y abre el navegador. *Hoy existe una versión hecha a mano fuera del repositorio; hay que oficializarla y versionarla con la aplicación*
+- [ ] H10-2k · **El respaldo y la restauración se hacen desde la pantalla**, no por consola. Es la única prueba de la lista de instalación que todavía no tiene botón — y es la que más importa
+- [ ] H10-2l · **La hoja para Informática se genera desde el paquete**, con los datos del administrador ya completados, en lugar de escribirse a mano cada vez
 - [ ] H10-3 · Configurar permisos NTFS de la carpeta de datos y del Archivo Histórico
 - [ ] H10-4 · Backup automatizado en producción, con restauración probada en producción
 - [ ] H10-5 · Despliegue y enlace desde el portal de intranet existente
@@ -433,7 +438,7 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 
 ### H16 — Sistema de estilos aplicado a toda la aplicación y a los entregables
 
-**Adelantado a la ronda 19 — antes del piloto.** Decisión del Jefe de Contrataciones del 2026-09-02, después de ver la aplicación por primera vez: *"quiero que el piloto tenga ya casi todo corregido"*, y *"durante el piloto quiero poder corregirte cuestiones de estilo también"*.
+**Adelantado a la ronda 20 — antes del piloto.** Decisión del Jefe de Contrataciones del 2026-09-02, después de ver la aplicación por primera vez: *"quiero que el piloto tenga ya casi todo corregido"*, y *"durante el piloto quiero poder corregirte cuestiones de estilo también"*.
 
 Esa segunda razón es la que decide **hacerlo entero y no por partes**: si cada color y cada espaciado es una variable en un solo archivo, una corrección de estilo durante el piloto es una línea. Si están repartidos entre los 136 selectores de hoy, cada corrección es una búsqueda. **La capa de tokens es lo que hace barata la devolución del piloto.**
 
@@ -600,13 +605,19 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 - [ ] H21-13 · Neutralización de fórmulas en el CSV exportado (misma clase del ciclo 13, en la otra dirección)
 - [ ] H21-15 · **La confirmación de desactivar ausentes nombra a cada persona** que va a quedar dada de baja *(pedido del Jefe de Contrataciones, probado en vivo el 2026-09-02)*
 - [ ] H21-16 · **La tabla del padrón es filtrable** por nombre, rol, sector y estado *(mismo pedido; es comportamiento, no estilo)*
+- [ ] H22-12 · **En modo autenticado, el asistente recibe al operador de la sesión.** Hoy `operadorSeleccionado()` avisa a siete vistas y **no al asistente**, así que `identificacion.operador` queda vacío y **no se puede crear ningún expediente con ningún rol**. Tampoco se guarda ningún borrador. Ronda 19
+- [ ] H22-13 · **Revisión de todas las vistas que guardan un operador**: verificar una por una que el modo autenticado las alcance, no sólo los botones del modo declarado
+- [ ] H22-14 · **Un test que recorra el circuito de la persona sin llamar funciones de vista a mano**: entrar como administrador, dar de alta a un `generador`, leer su clave de la pantalla, entrar con ella, y crear un requerimiento completo
+- [ ] H21-17 · **La pantalla muestra la clave provisoria** en el alta, en la importación y en la reposición — hoy el servidor la devuelve y la vista la descarta en los tres casos, y **eso deja al sistema en monousuario**. Ronda 19
+- [ ] H21-18 · **El alta es un formulario**, no cinco `prompt()` encadenados que pierden lo tipeado al cancelar
+- [ ] H21-19 · **La importación toma un archivo**, no un `prompt()` donde hay que pegar el CSV a mano
 - [x] H21-14 · `tools/padron.js` **se queda como camino de rescate** cuando nadie puede entrar
 
 **Criterio de aceptación:** sobre una carpeta vacía, el Jefe de Contrataciones arranca el servidor, entra con la clave que imprimió, la cambia, e importa las catorce personas **sin tocar la consola una sola vez más**.
 
 **Estado al cierre del ciclo 17 — 70%.** La superficie existe y está en el lugar correcto: la pantalla, el diff con sus tres partes, todo o nada, la ausencia que no desactiva, las credenciales que no se tocan. Lo que falla son **cuatro guardias**, todas de pocas líneas: el arranque completa con valores por omisión lo que la configuración no trae (H21-1), la clave no sale en un recuadro (H21-2), la marca es código muerto porque el rol sigue abriendo el compendio (H21-4), el anti-encierro sólo corre con un administrador (H21-11), y la ida y vuelta del CSV no es exacta (H21-12, H21-13).
 
-### H22 — El código dice lo que hace · cierre de H21 y revisión de ADR-038
+### H22 — El código dice lo que hace · rondas 18 y 19
 
 **Ronda 18.** Corta y de precisión, sin diseño nuevo.
 
@@ -640,6 +651,8 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 | ~~R41~~ | ~~El banco de pruebas prueba una ficción~~ | **Cerrado — ciclo 17** | El probador arma su expediente con la función de exportación real. Y el pliego de servicios sale del generador de verdad, verificado por el auditor |
 | R42 | **Una importación de padrón mal hecha deja afuera a catorce personas** | Alto — un archivo de Excel al que le borraron una fila sin querer | ADR-037 §5 y §6: diff antes de aplicar, todo o nada, la ausencia **no** desactiva, y el administrador no puede encerrarse afuera |
 | R43 | **El comentario enuncia la regla correcta y el código hace otra cosa** — tres instancias en la misma ronda (`padron-inicial.js`, `eventos.js`/`sugerencias.js`, `padron-csv.js`), repetidas después en el informe del desarrollador | **Alto y particular**: derrota a la revisión por lectura. Quien audita leyendo —el revisor, el Jefe de Contrataciones, un sucesor, o cualquier modelo al que se le pase el repositorio— encuentra el comentario correcto y sigue de largo | Regla §3.10 del ciclo de trabajo: *una regla enunciada en un comentario y no en un test que falle al quitarla, no existe*. Y sección propia en la auditoría del ciclo 18: leer el código contra sí mismo |
+| R46 | **Los tests arman a mano el estado que la aplicación no produce** — segunda aparición: en el ciclo 16 fue el probador de plantillas fabricando campos (R41, dada por cerrada); ahora son los nueve tests del asistente llamando a `wizard.seleccionarOperador`, que el modo autenticado **nunca llama** | **Crítico**: la función central del sistema —crear un expediente— no funciona en el único modo que se va a usar, con 390 tests en verde. Y el modo declarado y el autenticado divergen sin que nada avise | Ronda 19: la llamada que falta, la revisión de todas las vistas, y **un test que entre por donde entra la persona** y no invoque ninguna función de vista a mano |
+| R45 | **Un dato irrecuperable se genera, se muestra una vez, y la pantalla lo descarta** — la clave provisoria en el alta, la importación y la reposición | **Crítico y silencioso**: no falla nada, no hay error, y el sistema queda en monousuario para siempre. A diferencia del diff no mostrado del ciclo 18, esto **no se puede volver a calcular**: el servidor guarda sólo el hash | Ronda 19. Y el test que faltaba y que lo hubiera evitado: **dar de alta a alguien, tomar la clave de la pantalla, y entrar con ella** |
 | R44 | **Un valor por omisión inventa una identidad o una facultad** — tercera aparición de la misma forma con tres disfraces: el módulo ausente (ciclo 14), el padrón ausente (ciclo 15), la configuración ausente (ciclo 17) | Alto y silencioso — el sistema rellena el hueco y el resultado es plausible: hay una regla, hay un padrón, hay un administrador. Un error ruidoso cuesta media hora; un relleno plausible costó dos ciclos | **ADR-038**: identidad, facultad y guardia nunca tienen valor por omisión. H22-1, H22-2 y H22-10, esta última sobre todo `server/` y no sobre los casos conocidos |
 | R4 | ~~Los 18 estados no reflejan el circuito real~~ | **Bajo** — cada sector confirmó su fase (ronda 2, 2026-08-13) | Se mantiene la verificación de H9-8 como control final, ya no como mitigación de un riesgo alto |
 | ~~R8~~ | ~~El sistema de firmas rechaza el PDF~~ | **Cerrado** — verificado el 2026-08-13: es la mecánica diaria actual | — |
