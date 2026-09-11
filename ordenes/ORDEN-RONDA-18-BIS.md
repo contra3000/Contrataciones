@@ -1,18 +1,14 @@
-# ORDEN DE TRABAJO — RONDA 19
+# ORDEN DE TRABAJO — RONDA 18-BIS · corrección urgente
 
 Proyecto: Sistema de Gestión de Contrataciones (SGC)
-Hito cubierto: **H22 (cierre) — el circuito de la persona funciona de punta a punta**
-Emitida: 2026-09-09
-
-> **Sustituye por completo al borrador «ORDEN-RONDA-18-BIS», que queda anulado y retirado.** Aquel documento se emitió y después se modificó con el mismo nombre, lo cual está mal: **una orden se emite una sola vez, con un nombre único**. Si cambia antes de largarse, cambia de número. Quedó como regla §3.12 del ciclo de trabajo.
->
-> **El Jefe de Contrataciones está bloqueado en este momento**, con el servidor andando y sin poder crear un expediente.
+Alcance: **una línea en `app/js/app.js`** y **tres correcciones en `app/js/views/padron-admin.js`**. Nada más.
+Emitida: 2026-09-09 · **Revisada el mismo día: apareció algo peor.** El Jefe de Contrataciones está bloqueado en este momento con el servidor andando.
 
 ---
 
 ## 0. Lo primero, porque es lo más grave: **en modo autenticado no se puede crear ningún expediente**
 
-Después de emitida la primera redacción de esta orden, el Jefe de Contrataciones intentó cargar el requerimiento con su propio usuario. La aplicación se lo rechazó con:
+Después de emitida la primera versión de esta orden, el Jefe de Contrataciones intentó cargar el requerimiento con su propio usuario. La aplicación se lo rechazó con:
 
 > **El operador es obligatorio**
 
@@ -70,7 +66,7 @@ Agregar la llamada que falta en `operadorSeleccionado()`, con el `repo` que la v
 
 ---
 
-## 1. Y lo que ya venía de la redacción anterior: **el sistema no puede darle una clave a nadie**
+## 0-bis. Y lo que ya estaba en esta orden: **el sistema no puede darle una clave a nadie**
 
 El Jefe de Contrataciones necesitaba entrar como un operador `generador`. **Tampoco va a poder, por una segunda razón independiente.**
 
@@ -96,7 +92,7 @@ Es la misma falla de verificación que el recuadro del ciclo 17: se comprobó el
 
 ---
 
-## 2. Las tres correcciones de las claves
+## 1. Las tres correcciones de las claves
 
 Todas en `app/js/views/padron-admin.js`. **No toques el servidor: hace lo correcto.**
 
@@ -133,7 +129,7 @@ Y mientras estés ahí: **`accion()` descarta la respuesta de todas las acciones
 
 ---
 
-## 3. Dos cosas más que bloquean la prueba, y son de la misma pantalla
+## 2. Dos cosas más que bloquean la prueba, y son de la misma pantalla
 
 No son de la misma gravedad, pero el Jefe de Contrataciones se choca con las dos hoy y son baratas.
 
@@ -157,42 +153,11 @@ Dejá **también** la opción de pegar texto, para el caso de que alguien tenga 
 
 ---
 
-## 4. Los nueve tests del asistente · **decisión del Jefe de Contrataciones**
-
-Su instrucción, textual:
-
-> *"Entonces esos tests deben ser eliminados, porque no cumplen su función de testear."*
-
-Tiene razón en el fondo, y la regla que sale de ahí es ésta:
-
-**Un test que construye a mano un estado que la aplicación no produce no está probando la aplicación: está probando una ficción.** Y es peor que no tener el test, porque da verde sobre una función rota — que es exactamente lo que pasó.
-
-### Qué hacer con los nueve, concretamente
-
-**No los borres a ciegas: hacelos entrar por la puerta.** Cada uno de los nueve empieza con `SGC.views.wizard.seleccionarOperador(MARIA, repoFalso)`, que la aplicación autenticada nunca ejecuta. Ese arranque se reemplaza por el arranque real —la sesión autenticada llegando a la vista por el mismo camino que en producción—, y el resto del test se conserva: lo que verifican después (validaciones, pasos, borradores, persistencia) sigue siendo válido y hay que conservarlo.
-
-**El que no se pueda reescribir así, se elimina.** Si un test sólo existe porque alguien le puso el estado a mano y no hay forma de que la aplicación llegue ahí, ese estado no existe y el test no prueba nada.
-
-En el informe, **uno por uno**: cuál se reescribió, cuál se eliminó y por qué.
-
-### Y la regla general, que va más allá de estos nueve
-
-Recorré **toda** la suite buscando la misma forma: tests que inicializan una vista llamando a una función que la aplicación no llama sola.
-
-El criterio para separar los legítimos de los que no lo son:
-
-- **Legítimo:** un test unitario que le pasa una entrada a una función y verifica su salida. Ahí el estado armado a mano es el objeto de la prueba.
-- **No legítimo:** un test que arma el estado de una vista a mano y después afirma que **el circuito funciona**. Eso no lo prueba, y es lo que hicieron los nueve.
-
-La diferencia práctica: **por cada camino que una persona recorre, tiene que existir al menos un test que lo recorra entero sin ayuda.** Los unitarios se quedan; lo que no puede quedarse es que sean los únicos.
-
----
-
-## 5. Tests · y acá está el cambio de fondo
+## 3. Tests · y acá está el cambio de fondo
 
 Los tests de siempre para cada punto, **más uno que no existe y es el que faltaba en los tres defectos de esta orden**:
 
-### 5.1 — El recorrido de la persona, entrando por donde entra la persona
+### 3.1 — El recorrido de la persona, entrando por donde entra la persona
 
 Un test que arranque **desde el ingreso**, con un padrón real, y que **no llame a ninguna función de vista a mano**:
 
@@ -204,7 +169,7 @@ Un test que arranque **desde el ingreso**, con un padrón real, y que **no llame
 
 Si cualquiera de los cinco pasos necesita que el test invoque a mano una función que la aplicación no invoca sola, **el test está mal escrito y el defecto sigue vivo**. Es la regla nueva y la más importante de esta orden.
 
-### 5.2 — Los específicos
+### 3.2 — Los específicos
 
 - Alta de un operador → la respuesta trae `clave` → **la pantalla la muestra**. Sobre el DOM, no sobre la respuesta.
 - Importación de tres líneas nuevas → **las tres claves aparecen en pantalla**.
@@ -215,15 +180,15 @@ Si cualquiera de los cinco pasos necesita que el test invoque a mano una funció
 
 ---
 
-## 6. Cierre
+## 4. Cierre
 
-Un solo commit, `Ronda 19`, **y push**. Informe —`INFORME-RONDA-19.md`, **en la raíz del repositorio**, no en `ordenes/` (la ronda 18 lo dejó en el lugar equivocado)— con las nueve secciones, aunque varias queden en una línea.
+Un solo commit, `Ronda 18-bis`, **y push**. Informe corto —`INFORME-RONDA-18-BIS.md`, en la raíz del repositorio, no en `ordenes/`— con las nueve secciones, aunque varias queden en una línea.
 
 **Avisá apenas esté publicado**: hay una persona esperando con el servidor prendido.
 
 ---
 
-## 7. Qué se está evaluando
+## 5. Qué se está evaluando
 
 **Que la aplicación funcione entrando por donde entra una persona.**
 

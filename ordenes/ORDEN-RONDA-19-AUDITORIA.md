@@ -2,7 +2,7 @@
 
 Proyecto: Sistema de Gestión de Contrataciones (SGC)
 Trabajo a auditar: **el cierre de H22 — que el circuito de la persona funcione de punta a punta**, según `ordenes/ORDEN-RONDA-19.md`
-Emitida: 2026-09-11
+Emitida: 2026-09-09
 
 ---
 
@@ -33,72 +33,6 @@ Es la segunda vez que aparece esta forma. La primera fue tu propio hallazgo del 
 ### Accesos fuera del repositorio
 
 `auditoria\bateria\`; `AppOptimizar\EjemplosProcesoActual\DocUOC\Generador de Pliegos\` en **sólo lectura**, con permiso de ejecutar `scripts/generar_pliego.py` hacia una carpeta temporal; `os.tmpdir()` y `127.0.0.1`. Nada más.
-
----
-
-## Reglas de tiempo · **léelas antes de ejecutar el primer comando**
-
-*Pedido expreso del Jefe de Contrataciones, 2026-09-11: deja la máquina trabajando sin nadie delante, y en varias rondas se encontró con procesos colgados y horas perdidas.*
-
-**Ningún comando corre "hasta que termine". Todos llevan un tiempo máximo explícito.** Si se vence, el proceso se mata, se anota, y se sigue.
-
-### Los topes
-
-| Qué | Tope | Si se vence |
-|---|---|---|
-| Arrancar un servidor y comprobar que responde | **60 s** | Matarlo y anotar. No reintentar más de una vez |
-| Una petición HTTP suelta | **15 s** | Anotar la ruta y seguir |
-| La suite de tests completa | **600 s** | Matarla, anotar hasta qué archivo llegó, y correr el resto por partes |
-| Un archivo de tests suelto | **120 s** | Matarlo y anotar cuál |
-| La batería adversaria completa | **900 s** | Igual que la suite |
-| El generador de pliegos (`python`) | **120 s** | Matarlo y anotar el expediente que lo colgó |
-| Una importación o carga de archivo grande | **180 s** | Matar y anotar el tamaño |
-| **Cualquier otro comando** | **300 s** | Matar y anotar |
-
-### Tres reglas que no se negocian
-
-**1 · El que enciende, apaga.** Todo servidor que arranques lo matás vos, en el mismo paso, aunque el paso haya fallado. Guardá el identificador del proceso al arrancarlo y usalo para matarlo. **No puede quedar ningún proceso vivo al terminar la ronda** — si queda uno escuchando en un puerto, la ronda siguiente arranca rota y nadie entiende por qué.
-
-**2 · Un tope vencido es un hallazgo, no un accidente.** Va al informe con el comando exacto, el tope, y cuánto tardó. **Un reintento como máximo**, y si vuelve a vencer, se abandona ese punto, se escribe en *"qué NO hice"* y **se sigue con el siguiente**. Está prohibido reintentar en círculo.
-
-**3 · La ronda siempre termina con commit e informe, aunque esté incompleta.** Reservá el final para cerrar. Si llevás **más de quince minutos trabados en el mismo punto**, abandonalo, anotalo, y pasá al siguiente. **Media ronda entregada vale infinitamente más que una ronda completa que nadie recibió**, y ya nos pasó: en el ciclo 10 se hizo el trabajo entero y se perdió por no cerrarlo.
-
-### Cómo se hace, en concreto
-
-**PowerShell** — arrancar el servidor con tope y matarlo siempre:
-
-```powershell
-$p = Start-Process node -ArgumentList 'server\servidor.js','--config','...' -PassThru
-try {
-  # ... la prueba, con su propio tope ...
-} finally {
-  if (!$p.HasExited) { Stop-Process -Id $p.Id -Force }
-}
-```
-
-Un comando cualquiera con tope:
-
-```powershell
-$j = Start-Job { node tests\correr.js }
-if (Wait-Job $j -Timeout 600) { Receive-Job $j } else { Stop-Job $j; 'TOPE VENCIDO: tests' }
-Remove-Job $j -Force
-```
-
-**Node** — si lanzás desde un script:
-
-```js
-const hijo = spawn(cmd, args);
-const reloj = setTimeout(() => hijo.kill('SIGKILL'), 600000);
-hijo.on('exit', () => clearTimeout(reloj));
-```
-
-### Y lo que nunca se hace
-
-- **Ningún comando que espere el teclado.** Nada de `pause`, nada de un editor interactivo, nada de un `prompt` de consola. Si una herramienta pregunta algo, se le pasa la respuesta por argumento.
-- **Ningún proceso en segundo plano que sobreviva al paso.** Si lo arrancaste, lo matás.
-- **Ningún `git` sobre la carpeta montada sin tope**: `git status` ahí se cuelga y devuelve vacío, que se lee igual que "todo limpio" (§3.6 del ciclo de trabajo). Miralo con tope y **controlá el código de salida**: `124` no es `0`.
-
-> **Para vos vale doble**: sos el que arranca servidores, corre la batería entera y ejecuta el generador real. De los dos, el que más procesos enciende sos vos.
 
 ---
 

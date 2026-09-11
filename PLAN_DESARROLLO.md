@@ -438,7 +438,7 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 
 ### H16 — Sistema de estilos aplicado a toda la aplicación y a los entregables
 
-**Adelantado a la ronda 20 — antes del piloto.** Decisión del Jefe de Contrataciones del 2026-09-02, después de ver la aplicación por primera vez: *"quiero que el piloto tenga ya casi todo corregido"*, y *"durante el piloto quiero poder corregirte cuestiones de estilo también"*.
+**Adelantado a la ronda 21 — antes del piloto.** Decisión del Jefe de Contrataciones del 2026-09-02, después de ver la aplicación por primera vez: *"quiero que el piloto tenga ya casi todo corregido"*, y *"durante el piloto quiero poder corregirte cuestiones de estilo también"*.
 
 Esa segunda razón es la que decide **hacerlo entero y no por partes**: si cada color y cada espaciado es una variable en un solo archivo, una corrección de estilo durante el piloto es una línea. Si están repartidos entre los 136 selectores de hoy, cada corrección es una búsqueda. **La capa de tokens es lo que hace barata la devolución del piloto.**
 
@@ -636,6 +636,26 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 **Criterio de aceptación:** ninguno de los cuatro hallazgos altos del ciclo 17 sobrevive, cada uno con un test que falla si se revierte la corrección, y la revisión de ADR-038 está hecha sobre todo `server/` y no sobre los tres casos conocidos.
 
 
+### H23 — El circuito de la persona llega hasta el final
+
+**Ronda 20.** El auditor del ciclo 19 contó los caminos que recorre una persona y cuántos tienen un test que los recorre entero **sin ayuda**: **9 caminos, 2 cubiertos, 1 parcial, 6 sin nada.** Ese número, y no "tests en verde", es el estado real del proyecto.
+
+- [ ] H23-1 · **El presupuesto sube por la pantalla.** Hoy el front manda `contenidoBase64`, el adaptador lee `contenido` y el servidor rechaza con 400 (`requerimiento-presupuestos.js:103`, `repo.http.js:269`, `presupuestos.js:42`). Existe desde hace ciclos: lo tapaba una montura que falseaba `repo.guardarPresupuesto`
+- [ ] H23-2 · **Ninguna vista recibe la raíz de la aplicación.** El ANEXO 1 recibe `<main id="app">` y le pone `hidden`, con lo que **desaparece la aplicación entera** (`app.js:229`, `anexo-uno.js:220-232`)
+- [ ] H23-3 · **El ANEXO 1 guarda lo que se escribe.** Doce identificadores no coinciden entre el JS y el HTML: los campos se escriben sobre nodos inexistentes y el objeto queda vacío **en silencio**. Nunca guardó un dato desde la pantalla, en ningún ciclo
+- [ ] H23-4 · **Una vista que busca un nodo y no lo encuentra falla de forma visible** — ADR-029 aplicado al DOM
+- [ ] H23-5 · **Al salir se ve una sola pantalla de ingreso** (hoy conviven la lista del modo declarado, vacía, y el formulario)
+- [ ] H23-6 · **Los nueve tests del asistente: reescritos por la puerta real, o eliminados.** Pedido en la ronda 19 y no cumplido
+- [ ] H23-7 · **El linaje largo queda marcado**: `expediente.test.js` (6), `expediente-matriz` (1), `exportar` (1), `ronda-13` y `kanban` montando vistas a mano. Marcar y anotar, no reescribir todavía
+- [ ] H23-8 · **C2 completo**: el generador carga tres renglones y dos presupuestos, por la pantalla
+- [ ] H23-9 · **C3**: genera el documento y exporta el pliego contra el generador real
+- [ ] H23-10 · **C4**: el expediente avanza de rol por el botón que ve esa persona
+- [ ] H23-11 · **C5**: el ANEXO 1 se llena, se guarda, y al reabrir está
+- [ ] H23-12 · *(Ronda 21 o más adelante)* **C6** la cadena de roles hasta la firma, **C7** repartir las catorce claves y que cada uno entre, **C9** salir y volver
+
+**Criterio de aceptación:** **6 de 9 caminos de persona** con test que los recorre entero, verificado quitando la corrección y viendo el test en rojo.
+
+
 ## Riesgos abiertos
 
 | # | Riesgo | Impacto | Mitigación |
@@ -651,6 +671,8 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 | ~~R41~~ | ~~El banco de pruebas prueba una ficción~~ | **Cerrado — ciclo 17** | El probador arma su expediente con la función de exportación real. Y el pliego de servicios sale del generador de verdad, verificado por el auditor |
 | R42 | **Una importación de padrón mal hecha deja afuera a catorce personas** | Alto — un archivo de Excel al que le borraron una fila sin querer | ADR-037 §5 y §6: diff antes de aplicar, todo o nada, la ausencia **no** desactiva, y el administrador no puede encerrarse afuera |
 | R43 | **El comentario enuncia la regla correcta y el código hace otra cosa** — tres instancias en la misma ronda (`padron-inicial.js`, `eventos.js`/`sugerencias.js`, `padron-csv.js`), repetidas después en el informe del desarrollador | **Alto y particular**: derrota a la revisión por lectura. Quien audita leyendo —el revisor, el Jefe de Contrataciones, un sucesor, o cualquier modelo al que se le pase el repositorio— encuentra el comentario correcto y sigue de largo | Regla §3.10 del ciclo de trabajo: *una regla enunciada en un comentario y no en un test que falle al quitarla, no existe*. Y sección propia en la auditoría del ciclo 18: leer el código contra sí mismo |
+| R47 | **El orquestador escribe órdenes sin verificar qué se ejecutó** — el 11/9 emitió una orden para trabajo ya hecho y auditado, y editó dos órdenes ya ejecutadas | Alto para el proceso — es el único rol sin nadie que lo controle, y el error llega hasta el desarrollador y el auditor antes de detectarse | **Regla §3.15**: antes de escribir nada, mirar el disco — informes, carpetas de auditoría, fechas de los archivos. Y una orden ejecutada no se toca nunca más |
+| R48 | **Una vista recibe la raíz de la aplicación y puede esconderla entera** (H2), o **escribe sobre nodos que no existen sin protestar** (H3) | Alto y silencioso — el ANEXO 1 nunca guardó un dato en ningún ciclo y nadie lo notó, porque no falla: obedece mal | H23-2, H23-3 y sobre todo **H23-4**: lo que falta en el DOM falla ruidosamente, igual que ADR-029 con los módulos |
 | R46 | **Los tests arman a mano el estado que la aplicación no produce** — segunda aparición: en el ciclo 16 fue el probador de plantillas fabricando campos (R41, dada por cerrada); ahora son los nueve tests del asistente llamando a `wizard.seleccionarOperador`, que el modo autenticado **nunca llama** | **Crítico**: la función central del sistema —crear un expediente— no funciona en el único modo que se va a usar, con 390 tests en verde. Y el modo declarado y el autenticado divergen sin que nada avise | Ronda 19: la llamada que falta, la revisión de todas las vistas, y **un test que entre por donde entra la persona** y no invoque ninguna función de vista a mano |
 | R45 | **Un dato irrecuperable se genera, se muestra una vez, y la pantalla lo descarta** — la clave provisoria en el alta, la importación y la reposición | **Crítico y silencioso**: no falla nada, no hay error, y el sistema queda en monousuario para siempre. A diferencia del diff no mostrado del ciclo 18, esto **no se puede volver a calcular**: el servidor guarda sólo el hash | Ronda 19. Y el test que faltaba y que lo hubiera evitado: **dar de alta a alguien, tomar la clave de la pantalla, y entrar con ella** |
 | R44 | **Un valor por omisión inventa una identidad o una facultad** — tercera aparición de la misma forma con tres disfraces: el módulo ausente (ciclo 14), el padrón ausente (ciclo 15), la configuración ausente (ciclo 17) | Alto y silencioso — el sistema rellena el hueco y el resultado es plausible: hay una regla, hay un padrón, hay un administrador. Un error ruidoso cuesta media hora; un relleno plausible costó dos ciclos | **ADR-038**: identidad, facultad y guardia nunca tienen valor por omisión. H22-1, H22-2 y H22-10, esta última sobre todo `server/` y no sobre los casos conocidos |
