@@ -112,12 +112,10 @@ DOM stub (`expediente`, `expediente-matriz`, `exportar`, `kanban`,
 
 ---
 
-## 4. §3-§4 — Los tests nuevos y la montura
+## 4. §3 — Los caminos que se cierran · ronda-20.test.js
 
-### ronda-20.test.js — el recorrido completo por la puerta real
-
-Un único test que recorre los seis puntos en una sola sesión (~250 s con los
-timeouts del servidor):
+Un único test por la puerta real, en una sola sesión (~250 s con los timeouts
+del servidor):
 
 1. **C2**: genera un requerimiento con 3 renglones reales del catálogo y 2
    presupuestos subidos al servidor (H1) por la pantalla.
@@ -133,7 +131,11 @@ timeouts del servidor):
 6. **H4**: al salir, la pantalla de ingreso es la única visible y la lista
    declarada queda oculta.
 
-### ronda-20-anexo.test.js — ADR-029 en el ANEXO 1
+---
+
+## 5. §4 — Los tests de esta ronda · ronda-20-anexo.test.js
+
+ADR-029 aplicado al ANEXO 1 (el test que H3 vuelve posible):
 
 | # | Qué verifica | Estado |
 |---|-------------|--------|
@@ -144,9 +146,13 @@ La comprobación de ids (`js` vs `index.html`, auditoría ad hoc) verificó que
 todos los identificadores estáticos que las vistas buscan en el DOM existen en
 `index.html` y no quedan más desalineaciones.
 
+Y el criterio de la orden §4, "cada corrección con un test que falla si se
+revierte": los fix H1-H4 se sostienen por `ronda-20` y `ronda-20-anexo`. El
+auditor los va a comprobar quitando cada corrección.
+
 ---
 
-## 5. Regresión de la suite
+## 6. Regresión de la suite
 
 | Total | Pass | Fail | Duración |
 |-------|------|------|----------|
@@ -182,7 +188,7 @@ declarado "no se corrige"; esta ronda lo cierra con su justificación).
 
 ---
 
-## 6. Contradicciones y observaciones
+## 7. Contradicciones y observaciones
 
 - **La carrera del auto-login.** Tras una recarga con la cookie viva de María
   (la administradora que prepara el servidor), la sesión de Juan se cruzaba con
@@ -210,7 +216,7 @@ declarado "no se corrige"; esta ronda lo cierra con su justificación).
 
 ---
 
-## 7. Qué se lleva el paquete
+## 8. Qué se lleva el paquete
 
 ### Modificados (5 archivos de aplicación)
 
@@ -246,7 +252,9 @@ declarado "no se corrige"; esta ronda lo cierra con su justificación).
 
 ---
 
-## 8. La cuenta: caminos y linaje
+## 9. Criterios de aceptación
+
+### La cuenta, hecha: 6 de 9
 
 **6 de 9 caminos de persona con test que los recorre entero (C1, C2 completo,
 C3, C4, C5, C8).**
@@ -282,9 +290,7 @@ estado a mano y qué camino deberían cubrir:
 Se saldan cuando cada camino tenga su e2e por la montura real; los unitarios
 legítimos (p. ej. `requerimiento-formulario.test.js`) no se tocan.
 
----
-
-## 9. Criterios de aceptación
+### La lista
 
 - [x] **C2 completo** — el generador carga un requerimiento con 3 renglones
       del catálogo real y 2 presupuestos subidos por la pantalla (`ronda-20`).
@@ -306,11 +312,9 @@ legítimos (p. ej. `requerimiento-formulario.test.js`) no se tocan.
 - [x] **H4** — al salir, una sola pantalla de ingreso, limpia.
 - [x] **Los nueve tests del asistente** — reescritos (4) o eliminados (3);
       ninguno llama a mano a `seleccionarOperador`.
-- [x] **6 de 9 caminos** con test que los recorre entero (§8).
-- [x] **Suite completa en verde** — 416/416 tests, 0 fail. Cada corrección con
-      su test que falla al revertirla (los fix H1-H4 se sostienen por
-      `ronda-20` y `ronda-20-anexo`).
-- [ ] **C6**, **C7**, **C9** — quedan para ronda 21 en adelante (plan, H23-12).
+- [x] **Suite completa en verde** — 416/416 tests, 0 fail.
+- [ ] **C6** (cadena hasta la firma), **C7** (las catorce claves), **C9**
+      (salir y volver) — quedan para ronda 21 en adelante (plan, H23-12).
 
 ---
 
