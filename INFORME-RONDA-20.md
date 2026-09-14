@@ -318,6 +318,6 @@ legítimos (p. ej. `requerimiento-formulario.test.js`) no se tocan.
 
 ---
 
-*Generado al cierre de ORDEN-RONDA-20. Commit: "Ronda 20" (un solo commit
-según §6 de la orden). Verificado: suite completa en verde (416/416) y
+*Generado al cierre de ORDEN-RONDA-20. Commits: "Ronda 20" + un ajuste del
+informe (nueve secciones). Verificado: suite completa en verde (416/416) y
 `tools/check-compat.js` sin violaciones.*
