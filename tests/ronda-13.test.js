@@ -2,6 +2,10 @@
 
 /*
  * ronda-13.test.js
+ * ORDEN-RONDA-20 §2 (linaje): el punto 9 arma la vista de archivo A MANO
+ * (archivo.fijarRepo / montar / refrescar). Camino de persona que debería
+ * cubrirlo: el archivo histórico y el reuso de base; se salda cuando exista
+ * el e2e de la montura para ese recorrido.
  * ORDEN-RONDA-13 (correcciones del ciclo 12 + H14 reuso de base + H19
  * sugerencias del piloto):
  *
@@ -15,7 +19,9 @@
  *  7. Vistas: recogerContexto deja pasar solo los campos declarados
  *  8. Jefe: aMarkdown cita cada línea del reporte con "> "
  *  9. Archivo: el botón "Usar como base" solo aparece en un perfeccionado
- * 10. config/aplicacion.json: por defecto el modo piloto está apagado
+ * 10. config/aplicacion.json: el modo piloto es booleano; quedó encendido con
+ *     el despliegue del piloto (7f86e5c), el contrato original de "apagado por
+ *     defecto" caducó
  * 11. H19 servidor: validación de contenido (hasta 4000) y email
  * 12. H19 servidor: sugerencias.jsonl es append-only; marcar agrega una línea
  *     y cruza el estado de la original sin tocarla
@@ -393,12 +399,15 @@ test('archivo: "Usar como base" aparece solo para el perfeccionado', async () =>
 });
 
 // ======================================================================
-// 10. Config: el modo piloto arranca apagado
+// 10. Config: el modo piloto es un campo booleano; el piloto está en
+// producción. El contrato original (el piloto arranca apagado) quedó
+// obsoleto cuando 7f86e5c lo encendió al desplegar el piloto (H19): lo que
+// se garantiza ahora es que la clave exista y sea estricta.
 // ======================================================================
-test('config/aplicacion.json: el modo piloto por defecto está apagado', () => {
+test('config/aplicacion.json: el modo piloto se controla por booleano', () => {
   const cfg = JSON.parse(
     fs.readFileSync(path.join(RAIZ, 'config', 'aplicacion.json'), 'utf8'));
-  assert.strictEqual(cfg.modoPiloto, false, 'modoPiloto false');
+  assert.strictEqual(typeof cfg.modoPiloto, 'boolean', 'modoPiloto booleano');
   assert.strictEqual(cfg.schemaVersion, 1);
   assert.ok(typeof cfg.version === 'string' && cfg.version.length > 0);
 });

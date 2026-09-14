@@ -2,6 +2,10 @@
 
 /*
  * expediente-matriz.test.js
+ * ORDEN-RONDA-20 §2 (linaje): arma el estado de la vista A MANO (1×
+ * expediente.seleccionarOperador) sobre `repoFalso`. Camino que debería
+ * cubrirlo: C4 (los botones que ve cada rol), cuyo e2e está en
+ * ronda-20.test.js.
  * ORDEN-RONDA-07 §2.2: la matriz 18 estados × 7 roles × avanzar y devolver,
  * partida en un test por estado (un fallo identifica exactamente qué
  * combinación falló). El rol ejecutor del estado ve los botones habilitados y

@@ -359,6 +359,17 @@
     fijarRepo: function (repo) {
       estado.repo = repo;
     },
+    // ORDEN-RONDA-20 §1.4 (H4): al salir la sesión no queda operador vivo en
+    // la vista; el próximo ingreso parte de un estado limpio.
+    limpiarOperador: function () {
+      estado.operador = null;
+      estado.datos = { identificacion: {}, renglones: [], fundamentacion: {} };
+      estado.paso = 0;
+      estado.persistido = false;
+      if (estado.dom.borradorAviso) {
+        estado.dom.borradorAviso.hidden = true;
+      }
+    },
     vincularRenglones: function () {
       SGC.catalogo.renglones.montar({
         listaRenglones: qs(estado.dom.raiz, '#sgc-lista-renglones'),

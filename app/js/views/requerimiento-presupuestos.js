@@ -100,7 +100,7 @@
           estado.ganchos.repo().guardarPresupuesto(estado.ganchos.expedienteId(), {
             nombreOriginal: file.name,
             tipo: file.type || 'application/octet-stream',
-            contenidoBase64: base64
+            contenido: base64
           }, estado.ganchos.contexto()).then(function (respuesta) {
             if (respuesta.conflicto || respuesta.error) {
               fallar(respuesta.error || 'conflicto de versión.');

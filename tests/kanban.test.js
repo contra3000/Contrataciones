@@ -2,6 +2,10 @@
 
 /*
  * kanban.test.js
+ * ORDEN-RONDA-20 §2 (linaje): arma el tablero A MANO
+ * (kanban.montar / fijarRepo / refrescar) con un `listarIndice` falso. Camino
+ * de persona que debería cubrirlo: el tablero del generador con su índice
+ * real; se salda cuando exista el e2e de la montura para ese recorrido.
  * ORDEN-RONDA-06 §3.5 punto 4 (el tablero se arma SÓLO desde GET /api/indice)
  * y §3.1 (una columna por fase, filtros por texto y fase, tarjetas livianas).
  *

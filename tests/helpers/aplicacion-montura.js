@@ -85,11 +85,34 @@ function instalarEntorno() {
   globalThis.localStorage = globalThis.localStorage || crearStoragePlano();
   if (typeof globalThis.FileReader !== 'function') {
     globalThis.FileReader = function () {};
-    globalThis.FileReader.prototype.readAsText = function () {};
+  }
+  if (!globalThis.FileReader.prototype.readAsText) {
+    globalThis.FileReader.prototype.readAsText = function (archivo) {
+      this.result = archivo && typeof archivo.contenido === 'string'
+        ? archivo.contenido : '';
+      if (typeof this.onload === 'function') { this.onload(); }
+    };
+  }
+  if (!globalThis.FileReader.prototype.readAsDataURL) {
+    globalThis.FileReader.prototype.readAsDataURL = function (archivo) {
+      var nombre = (archivo && archivo.name) || 'archivo';
+      var tipo = (archivo && archivo.type) || 'application/octet-stream';
+      this.result = 'data:' + tipo + ';base64,' +
+        Buffer.from('contenido-sintetico-' + nombre).toString('base64');
+      if (typeof this.onload === 'function') { this.onload(); }
+    };
   }
   if (typeof globalThis.URL.createObjectURL !== 'function') {
     globalThis.URL.createObjectURL = function () { return 'blob:montura'; };
     globalThis.URL.revokeObjectURL = function () {};
+  }
+  if (typeof globalThis.Blob !== 'function') {
+    // La app descarga documentos con `new Blob([...])` (exportar.js,
+    // descargadorGenerico). Sin Blob, el click del descargador explota.
+    globalThis.Blob = function (partes, opciones) {
+      this.partes = partes;
+      this.type = (opciones && opciones.type) || '';
+    };
   }
   globalThis.document = documento;
 }
@@ -373,29 +396,49 @@ function montura(servidor) {
     m.correr();
     await m.esperar(() => !d.getElementById('sgc-ingreso').hidden, 20000,
       'pantalla de ingreso visible');
-    m.setear('sgc-ingreso-email', CORREO_ADMIN);
-    m.setear('sgc-ingreso-clave', m.claveAdmin);
-    m.enviarFormulario('sgc-ingreso');
-    await m.esperar(() => !d.getElementById('sgc-cambio-clave-forma').hidden, 20000,
-      'cambio de clave del administrador');
-    m.setear('sgc-cambio-clave-vieja', m.claveAdmin);
-    m.setear('sgc-cambio-clave-nueva', 'clave-fija-cuatro-palabras-administrador');
-    m.enviarFormulario('sgc-cambio-clave-forma');
-    await m.esperar(() => !d.getElementById('sgc-nav-padron').hidden, 20000,
+    // Orden-Ronda-20 §3: el recorrido repite sesiones del administrador. La
+    // clave provisoria vence la primera vez; si el ingreso con ella no abre el
+    // cambio de clave ni la aplicación, se reingresa con la fija.
+    const entro = async function (clave) {
+      m.setear('sgc-ingreso-email', CORREO_ADMIN);
+      m.setear('sgc-ingreso-clave', clave);
+      m.enviarFormulario('sgc-ingreso');
+      try {
+        await m.esperar(() => !d.getElementById('sgc-cambio-clave-forma').hidden ||
+          !d.getElementById('sgc-app').hidden, 15000, 'intento de ingreso del administrador');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+    const entroOk = (await entro(m.claveAdmin)) || (await entro('clave-fija-cuatro-palabras-administrador'));
+    if (!entroOk) {
+      throw new Error('no se pudo autenticar al administrador (ni provisoria ni fija)');
+    }
+
+    if (!d.getElementById('sgc-cambio-clave-forma').hidden) {
+      m.setear('sgc-cambio-clave-vieja', m.claveAdmin);
+      m.setear('sgc-cambio-clave-nueva', 'clave-fija-cuatro-palabras-administrador');
+      m.enviarFormulario('sgc-cambio-clave-forma');
+    }
+    await m.esperar(() => !d.getElementById('sgc-nav-padron').hidden ||
+      !d.getElementById('sgc-app').hidden, 20000,
       'navegación visible para el administrador');
     d.getElementById('sgc-nav-padron').click();
     await m.esperar(() => !d.getElementById('sgc-padron').hidden, 20000,
       'padrón visible');
   };
 
-  // --- Recorrido completo §5.1/§5.2: ingreso admin, alta de un generador,   ---
-  // --- leer la clave del DOM, salir, re-ingresar como generador y fijar     ---
-  // --- la clave. Devuelve {email, claveProvisoria, claveFija}.              ---
-  m.prepararGenerador = async function (email, nombre, apellido) {
+  // --- Recorrido completo §5.1/§5.2 paramétrico por rol: ingreso del admin, ---
+  // --- alta del operador desde la pantalla, leer la clave del DOM, salir,   ---
+  // --- re-ingresar como ese operador y fijar la clave. Devuelve             ---
+  // --- {email, claveProvisoria, claveFija}. Orden-Ronda-20 §3: el camino    ---
+  // --- C4 necesita operadores de abastecimiento, no sólo generadores.       ---
+  m.prepararOperador = async function (email, nombre, apellido, rol) {
     const d = m.documento;
     await m.prepararAdmin();
 
-    // Alta del generador desde la pantalla.
+    // Alta del operador desde la pantalla.
     d.getElementById('sgc-padron-alta').click();
     await m.esperar(() => d.getElementById('sgc-alta-nombre'), 20000,
       'formulario de alta visible');
@@ -403,14 +446,14 @@ function montura(servidor) {
     m.setear('sgc-alta-apellido', apellido);
     m.setear('sgc-alta-email', email);
     m.setear('sgc-alta-sector', '');
-    m.setear('sgc-alta-rol', 'generador');
+    m.setear('sgc-alta-rol', rol);
     const botonGuardar = botonEn(d.getElementById('sgc-padron-formulario'), 'Guardar');
     botonGuardar.click();
     await m.esperar(() => !d.getElementById('sgc-padron-clave').hidden, 20000,
       'bloque de clave del alta visible');
     const claveProvisoria = m.claveEnPantalla(email);
     if (!claveProvisoria) {
-      throw new Error('no se leyó la clave del generador desde el DOM');
+      throw new Error('no se leyó la clave del operador desde el DOM');
     }
 
     // Salir de la sesión del administrador.
@@ -418,20 +461,24 @@ function montura(servidor) {
     await m.esperar(() => !d.getElementById('sgc-ingreso').hidden, 20000,
       'ingreso visible tras salir');
 
-    // Entrar con el generador y su clave provisoria.
+    // Entrar con el operador y su clave provisoria.
     m.setear('sgc-ingreso-email', email);
     m.setear('sgc-ingreso-clave', claveProvisoria);
     m.enviarFormulario('sgc-ingreso');
     await m.esperar(() => !d.getElementById('sgc-cambio-clave-forma').hidden, 20000,
-      'cambio de clave del generador');
-    const claveFija = 'clave-fija-cuatro-palabras-' + email.split('@')[0];
+      'cambio de clave del operador');
+    const claveFija = 'clave-fija-cuatro-palabras-' + email.split('@')[0].replace(/[^a-z]/g, '');
     m.setear('sgc-cambio-clave-vieja', claveProvisoria);
     m.setear('sgc-cambio-clave-nueva', claveFija);
     m.enviarFormulario('sgc-cambio-clave-forma');
     await m.esperar(() => !d.getElementById('sgc-app').hidden, 20000,
-      'wizard visible para el generador');
+      'aplicación visible para el operador');
 
     return { email, claveProvisoria, claveFija };
+  };
+
+  m.prepararGenerador = async function (email, nombre, apellido) {
+    return m.prepararOperador(email, nombre, apellido, 'generador');
   };
 
   // Clave del bloque #sgc-padron-clave: párrafos "correo — clave".

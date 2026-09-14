@@ -285,7 +285,7 @@
     if (SGC.views.requerimientoFormulario && typeof SGC.views.requerimientoFormulario.actualizar === 'function') {
       SGC.views.requerimientoFormulario.actualizar();
     }
-    if (SGC.views.anexoUno && typeof SGC.views.anexoUno.actualizar === 'function') { SGC.views.anexoUno.actualizar(); }
+    if (SGC.views.anexoUno && typeof SGC.views.anexoUno.actualizar === 'function') { SGC.views.anexoUno.actualizar(expediente); }
   }
 
   function avisar(mensaje, esError) {

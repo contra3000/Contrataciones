@@ -2,6 +2,10 @@
 
 /*
  * expediente.test.js
+ * ORDEN-RONDA-20 §2 (linaje): arma el estado de la vista A MANO (6×
+ * expediente.seleccionarOperador) sobre `repoFalso`. Camino de persona que
+ * debería cubrirlo: C4 (abrir el expediente y hacerlo avanzar por el botón de
+ * su rol), que ya tiene su e2e por la montura real en ronda-20.test.js.
  * ORDEN-RONDA-06 §3.5 puntos 5, 6 y 7 y §3.2/§3.3. Sobre la montura DOM mínima
  * (helpers/dom-stub.js) con un repositorio falso que nunca persiste por su
  * cuenta (se inspecciona lo que la vista le pide guardar). La matriz de

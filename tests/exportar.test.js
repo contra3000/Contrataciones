@@ -2,6 +2,11 @@
 
 /*
  * exportar.test.js
+ * ORDEN-RONDA-20 §2 (linaje): arma la vista A MANO (1×
+ * expediente.seleccionarOperador, repo sin servidor) y falsifica el
+ * descargador/navegador. Camino que debería cubrirlo: C3 (guardar el documento
+ * y exportar JSON/resumen/pliego con el modal de por medio), parcial en
+ * ronda-20.test.js.
  * ORDEN-RONDA-07 §3.5 punto 9 y §3.2/§3.3/§3.4 sobre la montura DOM mínima:
  *
  *  - Ninguna descarga (JSON, resumen, documento) ocurre sin pasar por el modal

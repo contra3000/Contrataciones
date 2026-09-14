@@ -640,18 +640,29 @@ Un panel flotante donde cualquiera que ayude a evaluar el sistema anota, en text
 
 **Ronda 20.** El auditor del ciclo 19 contó los caminos que recorre una persona y cuántos tienen un test que los recorre entero **sin ayuda**: **9 caminos, 2 cubiertos, 1 parcial, 6 sin nada.** Ese número, y no "tests en verde", es el estado real del proyecto.
 
-- [ ] H23-1 · **El presupuesto sube por la pantalla.** Hoy el front manda `contenidoBase64`, el adaptador lee `contenido` y el servidor rechaza con 400 (`requerimiento-presupuestos.js:103`, `repo.http.js:269`, `presupuestos.js:42`). Existe desde hace ciclos: lo tapaba una montura que falseaba `repo.guardarPresupuesto`
-- [ ] H23-2 · **Ninguna vista recibe la raíz de la aplicación.** El ANEXO 1 recibe `<main id="app">` y le pone `hidden`, con lo que **desaparece la aplicación entera** (`app.js:229`, `anexo-uno.js:220-232`)
-- [ ] H23-3 · **El ANEXO 1 guarda lo que se escribe.** Doce identificadores no coinciden entre el JS y el HTML: los campos se escriben sobre nodos inexistentes y el objeto queda vacío **en silencio**. Nunca guardó un dato desde la pantalla, en ningún ciclo
-- [ ] H23-4 · **Una vista que busca un nodo y no lo encuentra falla de forma visible** — ADR-029 aplicado al DOM
-- [ ] H23-5 · **Al salir se ve una sola pantalla de ingreso** (hoy conviven la lista del modo declarado, vacía, y el formulario)
-- [ ] H23-6 · **Los nueve tests del asistente: reescritos por la puerta real, o eliminados.** Pedido en la ronda 19 y no cumplido
-- [ ] H23-7 · **El linaje largo queda marcado**: `expediente.test.js` (6), `expediente-matriz` (1), `exportar` (1), `ronda-13` y `kanban` montando vistas a mano. Marcar y anotar, no reescribir todavía
-- [ ] H23-8 · **C2 completo**: el generador carga tres renglones y dos presupuestos, por la pantalla
-- [ ] H23-9 · **C3**: genera el documento y exporta el pliego contra el generador real
-- [ ] H23-10 · **C4**: el expediente avanza de rol por el botón que ve esa persona
-- [ ] H23-11 · **C5**: el ANEXO 1 se llena, se guarda, y al reabrir está
+- [x] H23-1 · **El presupuesto sube por la pantalla.** Hoy el front manda `contenidoBase64`, el adaptador lee `contenido` y el servidor rechaza con 400 (`requerimiento-presupuestos.js:103`, `repo.http.js:269`, `presupuestos.js:42`). Existe desde hace ciclos: lo tapaba una montura que falseaba `repo.guardarPresupuesto`
+- [x] H23-2 · **Ninguna vista recibe la raíz de la aplicación.** El ANEXO 1 recibe `<main id="app">` y le pone `hidden`, con lo que **desaparece la aplicación entera** (`app.js:229`, `anexo-uno.js:220-232`)
+- [x] H23-3 · **El ANEXO 1 guarda lo que se escribe.** Doce identificadores no coinciden entre el JS y el HTML: los campos se escriben sobre nodos inexistentes y el objeto queda vacío **en silencio**. Nunca guardó un dato desde la pantalla, en ningún ciclo
+- [x] H23-4 · **Una vista que busca un nodo y no lo encuentra falla de forma visible** — ADR-029 aplicado al DOM
+- [x] H23-5 · **Al salir se ve una sola pantalla de ingreso** (hoy conviven la lista del modo declarado, vacía, y el formulario)
+- [x] H23-6 · **Los nueve tests del asistente: reescritos por la puerta real, o eliminados.** Pedido en la ronda 19 y no cumplido
+- [x] H23-7 · **El linaje largo queda marcado**: `expediente.test.js` (6), `expediente-matriz` (1), `exportar` (1), `ronda-13` y `kanban` montando vistas a mano. Marcar y anotar, no reescribir todavía
+- [x] H23-8 · **C2 completo**: el generador carga tres renglones y dos presupuestos, por la pantalla
+- [x] H23-9 · **C3**: genera el documento y exporta el pliego contra el generador real
+- [x] H23-10 · **C4**: el expediente avanza de rol por el botón que ve esa persona
+- [x] H23-11 · **C5**: el ANEXO 1 se llena, se guarda, y al reabrir está
 - [ ] H23-12 · *(Ronda 21 o más adelante)* **C6** la cadena de roles hasta la firma, **C7** repartir las catorce claves y que cada uno entre, **C9** salir y volver
+
+**Linaje anotado (ORDEN-RONDA-20 §2).** Cierran la ronda con una línea en su
+encabezado que dice que arman el estado a mano y qué camino de persona deberían
+cubrir: `expediente.test.js` (6× `seleccionarOperador`, camino C4 ya e2e en
+`ronda-20.test.js`), `expediente-matriz.test.js` (1×, C4), `exportar.test.js`
+(1×, C3, parcial en `ronda-20.test.js`), `ronda-13.test.js` (archivo
+`fijarRepo/montar/refrescar` a mano: el archivo histórico y el reuso de base,
+sin e2e) y `kanban.test.js` (`montar/fijarRepo/refrescar` a mano: el tablero del
+generador con su índice real, sin e2e). Se saldan cuando cada camino tenga su
+e2e por la montura real; los unitarios legítimos
+(`requerimiento-formulario.test.js`, `ronda-12.test.js`) no se tocan.
 
 **Criterio de aceptación:** **6 de 9 caminos de persona** con test que los recorre entero, verificado quitando la corrección y viendo el test en rojo.
 

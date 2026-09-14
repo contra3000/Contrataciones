@@ -28,6 +28,17 @@
 
   function qs(raiz, sel) { return raiz.querySelector(sel); }
 
+  // ADR-029 aplicado al DOM (ORDEN-RONDA-20 §1.3 · H3): cuando la vista busca
+  // un nodo por identificador y no lo encuentra, falla de forma visible en
+  // vez de escribir sobre null en silencio.
+  function requerir(raiz, id) {
+    var el = qs(raiz, id);
+    if (!el) {
+      throw new Error('anexo-uno: no se encuentra el nodo "' + id + '" (ADR-029: lo que falta, falla ruidosamente)');
+    }
+    return el;
+  }
+
   function str(v) { return typeof v === 'string' ? v.trim() : ''; }
 
   function datosDe(exp) {
@@ -59,22 +70,15 @@
     estado.dom.msj.hidden = false;
   }
 
-  function valor(raiz, id) {
-    var el = qs(raiz, id);
-    return el ? el.value.trim() : '';
-  }
-
   function valorTexto(raiz, id) {
-    var el = qs(raiz, id);
-    return el ? el.value.trim() : '';
+    return requerir(raiz, id).value.trim();
   }
 
   function fijarValor(raiz, id, v) {
-    var el = qs(raiz, id);
-    if (el) el.value = v || '';
+    requerir(raiz, id).value = v || '';
   }
 
-  // Empresas consultadas: textarea con una empresa por línea
+  // Empresas consultadas: input con una empresa por línea
   function leerEmpresas(raiz) {
     var txt = valorTexto(raiz, '#sgc-anexo1-empresas');
     if (!txt) return [];
@@ -82,8 +86,7 @@
   }
 
   function fijarEmpresas(raiz, arr) {
-    var el = qs(raiz, '#sgc-anexo1-empresas');
-    if (el) el.value = Array.isArray(arr) ? arr.join('\n') : '';
+    requerir(raiz, '#sgc-anexo1-empresas').value = Array.isArray(arr) ? arr.join('\n') : '';
   }
 
   // Resumen de renglones para §7
@@ -179,39 +182,32 @@
   // ---------------------------------------------------------------------------
   function montar(raiz) {
     estado.dom.raiz = raiz;
-    estado.dom.msj = qs(raiz, '#sgc-anexo1-msj');
+    estado.dom.msj = requerir(raiz, '#sgc-anexo1-msj');
 
-    var trimSel = qs(raiz, '#sgc-anexo1-trimestre');
-    if (trimSel) {
-      for (var i = 0; i < TRIMESTRES.length; i++) {
-        var opt = document.createElement('option');
-        opt.value = TRIMESTRES[i];
-        opt.textContent = TRIMESTRES[i] || '— Seleccionar —';
-        trimSel.appendChild(opt);
+    var trimSel = requerir(raiz, '#sgc-anexo1-pac-trimestre');
+    for (var i = 0; i < TRIMESTRES.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = TRIMESTRES[i];
+      opt.textContent = TRIMESTRES[i] || '— Seleccionar —';
+      trimSel.appendChild(opt);
+    }
+
+    var chkPac = requerir(raiz, '#sgc-anexo1-pac-previsto');
+    var numOrden = requerir(raiz, '#sgc-anexo1-pac-orden');
+    var trimestre = requerir(raiz, '#sgc-anexo1-pac-trimestre');
+    function togglePac() {
+      var activo = chkPac.checked;
+      numOrden.disabled = !activo;
+      trimestre.disabled = !activo;
+      if (!activo) {
+        numOrden.value = '';
+        trimestre.value = '';
       }
     }
+    chkPac.addEventListener('change', togglePac);
+    togglePac();
 
-    var chkPac = qs(raiz, '#sgc-anexo1-pac');
-    var numOrden = qs(raiz, '#sgc-anexo1-numero-orden');
-    var trimestre = qs(raiz, '#sgc-anexo1-trimestre');
-    if (chkPac && numOrden && trimestre) {
-      function togglePac() {
-        var activo = chkPac.checked;
-        numOrden.disabled = !activo;
-        trimestre.disabled = !activo;
-        if (!activo) {
-          numOrden.value = '';
-          trimestre.value = '';
-        }
-      }
-      chkPac.addEventListener('change', togglePac);
-      togglePac();
-    }
-
-    var btnGuardar = qs(raiz, '#sgc-anexo1-guardar');
-    if (btnGuardar) {
-      btnGuardar.addEventListener('click', guardar);
-    }
+    requerir(raiz, '#sgc-anexo1-guardar').addEventListener('click', guardar);
   }
 
   // ---------------------------------------------------------------------------
@@ -240,57 +236,41 @@
 
     fijarValor(raiz, '#sgc-anexo1-objeto', guard.objeto || pre.objeto);
     fijarValor(raiz, '#sgc-anexo1-justificacion', guard.justificacion || pre.justificacion);
-    fijarValor(raiz, '#sgc-anexo1-responsable', guard.unidadResponsable || pre.responsables[0] || '');
+    fijarValor(raiz, '#sgc-anexo1-unidad-resp', guard.unidadResponsable || pre.responsables[0] || '');
     fijarValor(raiz, '#sgc-anexo1-usuario-gde', guard.usuarioGde || pre.responsables[1] || '');
-    fijarValor(raiz, '#sgc-anexo1-direccion', guard.unidadDireccion || pre.direccion);
-    fijarValor(raiz, '#sgc-anexo1-telefono', guard.unidadTelefono || pre.telefono);
-    fijarValor(raiz, '#sgc-anexo1-correo', guard.unidadCorreo || pre.correo);
-    fijarValor(raiz, '#sgc-anexo1-entrega', guard.lugarEntrega || pre.entrega);
-    fijarValor(raiz, '#sgc-anexo1-facturacion', guard.lugarFacturacion || pre.facturacion);
+    fijarValor(raiz, '#sgc-anexo1-unidad-dir', guard.unidadDireccion || pre.direccion);
+    fijarValor(raiz, '#sgc-anexo1-unidad-tel', guard.unidadTelefono || pre.telefono);
+    fijarValor(raiz, '#sgc-anexo1-unidad-correo', guard.unidadCorreo || pre.correo);
+    fijarValor(raiz, '#sgc-anexo1-lugar-entrega', guard.lugarEntrega || pre.entrega);
+    fijarValor(raiz, '#sgc-anexo1-lugar-fact', guard.lugarFacturacion || pre.facturacion);
     fijarValor(raiz, '#sgc-anexo1-requisitos', guard.requisitosMinimos || pre.renglones);
 
     // §2.3: empresas y precio derivados de los presupuestos/renglones.
     // Si el guardado tiene valores manuales, se usan esos; si no, los calculados.
     fijarEmpresas(raiz, guard.empresasConsultadas && guard.empresasConsultadas.length > 0
       ? guard.empresasConsultadas : pre.empresasCalculadas);
-    var precioCalculado = pre.precioReferenciaCalculado;
-    fijarValor(raiz, '#sgc-anexo1-precio', guard.precioReferencia || precioCalculado);
-    // Mostrar el valor calculado como referencia si hay edit manual
-    var elPrecio = qs(raiz, '#sgc-anexo1-precio-ref');
-    if (elPrecio) {
-      if (guard.precioReferencia && guard.precioReferencia !== precioCalculado && precioCalculado) {
-        elPrecio.textContent = '(calculado: ' + precioCalculado + ')';
-        elPrecio.hidden = false;
-      } else {
-        elPrecio.textContent = '';
-        elPrecio.hidden = true;
-      }
-    }
+    fijarValor(raiz, '#sgc-anexo1-precio-ref', guard.precioReferencia || pre.precioReferenciaCalculado);
     fijarValor(raiz, '#sgc-anexo1-moneda-ext', guard.monedaExtranjera || '');
 
-    var chkPac = qs(raiz, '#sgc-anexo1-pac');
-    if (chkPac) {
-      chkPac.checked = guard.pacPrevisto === true || guard.pacPrevisto === 'Si';
-    }
-    fijarValor(raiz, '#sgc-anexo1-numero-orden', guard.pacNumeroOrden || '');
-    fijarValor(raiz, '#sgc-anexo1-trimestre', guard.pacTrimestre || '');
+    var chkPac = requerir(raiz, '#sgc-anexo1-pac-previsto');
+    chkPac.checked = guard.pacPrevisto === true || guard.pacPrevisto === 'Si';
+    fijarValor(raiz, '#sgc-anexo1-pac-orden', guard.pacNumeroOrden || '');
+    fijarValor(raiz, '#sgc-anexo1-pac-trimestre', guard.pacTrimestre || '');
 
     fijarValor(raiz, '#sgc-anexo1-comision', guard.comisionRecepcion || '');
     fijarValor(raiz, '#sgc-anexo1-personal', guard.personalTecnico || '');
     fijarValor(raiz, '#sgc-anexo1-visita', guard.visitaMuestra || '');
     fijarValor(raiz, '#sgc-anexo1-interadmin', guard.interadministrativa || '');
-    fijarValor(raiz, '#sgc-anexo1-bienes', guard.bienesUso || '');
+    fijarValor(raiz, '#sgc-anexo1-bienes-uso', guard.bienesUso || '');
     fijarValor(raiz, '#sgc-anexo1-hw-sw', guard.hardwareSoftware || '');
     fijarValor(raiz, '#sgc-anexo1-reparaciones', guard.reparacionesInfra || '');
-    fijarValor(raiz, '#sgc-anexo1-documentacion', guard.documentacionObligatoria || '');
+    fijarValor(raiz, '#sgc-anexo1-doc-obligatoria', guard.documentacionObligatoria || '');
     fijarValor(raiz, '#sgc-anexo1-criterio', guard.criterioEvaluacion || '');
 
-    if (chkPac) {
-      var numOrd = qs(raiz, '#sgc-anexo1-numero-orden');
-      var triSel = qs(raiz, '#sgc-anexo1-trimestre');
-      if (numOrd) numOrd.disabled = !chkPac.checked;
-      if (triSel) triSel.disabled = !chkPac.checked;
-    }
+    var numOrd = requerir(raiz, '#sgc-anexo1-pac-orden');
+    var triSel = requerir(raiz, '#sgc-anexo1-pac-trimestre');
+    numOrd.disabled = !chkPac.checked;
+    triSel.disabled = !chkPac.checked;
   }
 
   // ---------------------------------------------------------------------------
@@ -299,32 +279,32 @@
   function leer() {
     var raiz = estado.dom.raiz;
     if (!raiz) return {};
-    var chkPac = qs(raiz, '#sgc-anexo1-pac');
+    var chkPac = requerir(raiz, '#sgc-anexo1-pac-previsto');
     return {
       objeto: valorTexto(raiz, '#sgc-anexo1-objeto'),
       justificacion: valorTexto(raiz, '#sgc-anexo1-justificacion'),
       empresasConsultadas: leerEmpresas(raiz),
-      precioReferencia: valorTexto(raiz, '#sgc-anexo1-precio'),
+      precioReferencia: valorTexto(raiz, '#sgc-anexo1-precio-ref'),
       monedaExtranjera: valorTexto(raiz, '#sgc-anexo1-moneda-ext'),
       pacPrevisto: chkPac && chkPac.checked,
-      pacNumeroOrden: valorTexto(raiz, '#sgc-anexo1-numero-orden'),
-      pacTrimestre: valorTexto(raiz, '#sgc-anexo1-trimestre'),
-      unidadResponsable: valorTexto(raiz, '#sgc-anexo1-responsable'),
+      pacNumeroOrden: valorTexto(raiz, '#sgc-anexo1-pac-orden'),
+      pacTrimestre: valorTexto(raiz, '#sgc-anexo1-pac-trimestre'),
+      unidadResponsable: valorTexto(raiz, '#sgc-anexo1-unidad-resp'),
       usuarioGde: valorTexto(raiz, '#sgc-anexo1-usuario-gde'),
-      unidadDireccion: valorTexto(raiz, '#sgc-anexo1-direccion'),
-      unidadTelefono: valorTexto(raiz, '#sgc-anexo1-telefono'),
-      unidadCorreo: valorTexto(raiz, '#sgc-anexo1-correo'),
-      lugarEntrega: valorTexto(raiz, '#sgc-anexo1-entrega'),
-      lugarFacturacion: valorTexto(raiz, '#sgc-anexo1-facturacion'),
+      unidadDireccion: valorTexto(raiz, '#sgc-anexo1-unidad-dir'),
+      unidadTelefono: valorTexto(raiz, '#sgc-anexo1-unidad-tel'),
+      unidadCorreo: valorTexto(raiz, '#sgc-anexo1-unidad-correo'),
+      lugarEntrega: valorTexto(raiz, '#sgc-anexo1-lugar-entrega'),
+      lugarFacturacion: valorTexto(raiz, '#sgc-anexo1-lugar-fact'),
       comisionRecepcion: valorTexto(raiz, '#sgc-anexo1-comision'),
       personalTecnico: valorTexto(raiz, '#sgc-anexo1-personal'),
       requisitosMinimos: valorTexto(raiz, '#sgc-anexo1-requisitos'),
       visitaMuestra: valorTexto(raiz, '#sgc-anexo1-visita'),
       interadministrativa: valorTexto(raiz, '#sgc-anexo1-interadmin'),
-      bienesUso: valorTexto(raiz, '#sgc-anexo1-bienes'),
+      bienesUso: valorTexto(raiz, '#sgc-anexo1-bienes-uso'),
       hardwareSoftware: valorTexto(raiz, '#sgc-anexo1-hw-sw'),
       reparacionesInfra: valorTexto(raiz, '#sgc-anexo1-reparaciones'),
-      documentacionObligatoria: valorTexto(raiz, '#sgc-anexo1-documentacion'),
+      documentacionObligatoria: valorTexto(raiz, '#sgc-anexo1-doc-obligatoria'),
       criterioEvaluacion: valorTexto(raiz, '#sgc-anexo1-criterio')
     };
   }

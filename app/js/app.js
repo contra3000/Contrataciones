@@ -225,8 +225,11 @@
     SGC.views.requerimientoFormulario.montar(contenedor);
     SGC.views.requerimientoFormulario.fijarRepo(repo);
 
-    // ANEXO 1 (ORDEN-RONDA-11 §3.1): formulario para abastecimiento en ANALISIS_SCo.
-    SGC.views.anexoUno.montar(contenedor);
+    // ANEXO 1 (ORDEN-RONDA-11 §3.1): formulario para abastecimiento en
+    // ANALISIS_SCo. Recibe SU PROPIA SECCIÓN, nunca la raíz (ORDEN-RONDA-20
+    // §1.2 · H2): oculta o muestra la sección, no toda la aplicación. Un
+    // detalle mal montado sobre la raíz escondió la app entera durante ciclos.
+    SGC.views.anexoUno.montar(document.getElementById('sgc-anexo1-seccion'));
     SGC.views.anexoUno.fijarRepo(repo);
 
     // Sugerencias del piloto (H19, ORDEN-RONDA-13 §6): el FAB solo se crea
@@ -361,6 +364,11 @@
 
     document.getElementById('sgc-sesion-salir').addEventListener('click', function () {
       SGC.adapters.sesion.salir().then(function () {
+        // ORDEN-RONDA-20 §1.4 (H4): al salir no queda operador en ningún
+        // estado de vista; la próxima pantalla es de ingreso limpia.
+        if (typeof SGC.views.wizard.limpiarOperador === 'function') {
+          SGC.views.wizard.limpiarOperador();
+        }
         location.reload();
       }).catch(function () {
         location.reload();
@@ -375,6 +383,12 @@
         return;
       }
       SGC.views.ingreso.mostrar(true);
+      // ORDEN-RONDA-20 §1.4 (H4): en modo autenticado la lista declarada no
+      // aparece nunca; la pantalla de ingreso es la única puerta.
+      var listaDeclarada = document.getElementById('sgc-lista-operadores');
+      if (listaDeclarada) {
+        listaDeclarada.hidden = true;
+      }
       SGC.adapters.sesion.actualDeSesion().then(function (r) {
         if (r.estado === 200 && r.datos && r.datos.autenticado) {
           entrar(operadorDeSesion(r.datos));
