@@ -438,7 +438,7 @@ El orden importa: **H14 y H15 van antes del UAT (H9)** porque afectan lo que el 
 
 ### H16 — Sistema de estilos aplicado a toda la aplicación y a los entregables
 
-**Adelantado a la ronda 21 — antes del piloto.** Decisión del Jefe de Contrataciones del 2026-09-02, después de ver la aplicación por primera vez: *"quiero que el piloto tenga ya casi todo corregido"*, y *"durante el piloto quiero poder corregirte cuestiones de estilo también"*.
+**En la ronda 21 — antes del piloto.** Decisión del Jefe de Contrataciones del 2026-09-02, después de ver la aplicación por primera vez: *"quiero que el piloto tenga ya casi todo corregido"*, y *"durante el piloto quiero poder corregirte cuestiones de estilo también"*.
 
 Esa segunda razón es la que decide **hacerlo entero y no por partes**: si cada color y cada espaciado es una variable en un solo archivo, una corrección de estilo durante el piloto es una línea. Si están repartidos entre los 136 selectores de hoy, cada corrección es una búsqueda. **La capa de tokens es lo que hace barata la devolución del piloto.**
 
@@ -666,6 +666,12 @@ e2e por la montura real; los unitarios legítimos
 
 **Criterio de aceptación:** **6 de 9 caminos de persona** con test que los recorre entero, verificado quitando la corrección y viendo el test en rojo.
 
+**Estado al cierre del ciclo 20 — cumplido.** H23-1 a H23-11 entregados y verificados por el revisor: un solo nombre de campo para el presupuesto, el ANEXO 1 recibe su propia sección, los identificadores coinciden, los nueve tests reescritos, **6 de 9 caminos**, **416 tests en verde**. Queda abierto un defecto que apareció al recorrerlo:
+
+- [ ] H23-13 · **La versión que devuelve una escritura tiene que llegar a la vista.** `exportar.js:169` guarda el documento, recibe la versión nueva y **la usa sólo para un mensaje**; el expediente conserva la vieja y el siguiente "avanzar" da conflicto contra un operador que no existe. El resto del código ya hace lo correcto (`requerimiento-presupuestos.js:110`, `expediente.js` → `manejarResultado`, las dos llaman a `expediente.abrir`). Ronda 21
+- [ ] H23-14 · **La lista completa de escrituras que devuelven versión**, y qué hace la vista con cada una — quinta aparición de la familia «el servidor devuelve el dato fresco y la pantalla lo tira»
+- [ ] H23-15 · **C6, C7 y C9**: la cadena de roles hasta la firma, repartir las catorce claves y que cada uno entre, y salir y volver. **9 de 9**. Ronda 21
+
 
 ## Riesgos abiertos
 
@@ -682,6 +688,8 @@ e2e por la montura real; los unitarios legítimos
 | ~~R41~~ | ~~El banco de pruebas prueba una ficción~~ | **Cerrado — ciclo 17** | El probador arma su expediente con la función de exportación real. Y el pliego de servicios sale del generador de verdad, verificado por el auditor |
 | R42 | **Una importación de padrón mal hecha deja afuera a catorce personas** | Alto — un archivo de Excel al que le borraron una fila sin querer | ADR-037 §5 y §6: diff antes de aplicar, todo o nada, la ausencia **no** desactiva, y el administrador no puede encerrarse afuera |
 | R43 | **El comentario enuncia la regla correcta y el código hace otra cosa** — tres instancias en la misma ronda (`padron-inicial.js`, `eventos.js`/`sugerencias.js`, `padron-csv.js`), repetidas después en el informe del desarrollador | **Alto y particular**: derrota a la revisión por lectura. Quien audita leyendo —el revisor, el Jefe de Contrataciones, un sucesor, o cualquier modelo al que se le pase el repositorio— encuentra el comentario correcto y sigue de largo | Regla §3.10 del ciclo de trabajo: *una regla enunciada en un comentario y no en un test que falle al quitarla, no existe*. Y sección propia en la auditoría del ciclo 18: leer el código contra sí mismo |
+| R49 | **Un dato fresco que devuelve una escritura no llega a la vista** — la versión del expediente tras guardar el documento (`exportar.js:169`) | Alto y desconcertante: frena a **una persona sola** y le dice que la frenó *"otro operador"* que no existe. Quinta aparición de la misma familia | H23-13 y H23-14: la corrección, y **la lista completa** de escrituras que devuelven versión |
+| R50 | **Una instrucción del revisor cuesta diez veces más de lo que él calcula** — «recorré el circuito como una persona» se convirtió en un robot de navegador de once pasos, 7 min por corrida, roto con cada cambio de pantalla | Alto para el proceso — quemó un ciclo de auditoría entero y dejó la verificación sin terminar | **Regla §3.16**: tres verificaciones, tres dueños. El auditor no maneja el navegador; los e2e los hace el desarrollador; el recorrido humano lo hace el Jefe de Contrataciones |
 | R47 | **El orquestador escribe órdenes sin verificar qué se ejecutó** — el 11/9 emitió una orden para trabajo ya hecho y auditado, y editó dos órdenes ya ejecutadas | Alto para el proceso — es el único rol sin nadie que lo controle, y el error llega hasta el desarrollador y el auditor antes de detectarse | **Regla §3.15**: antes de escribir nada, mirar el disco — informes, carpetas de auditoría, fechas de los archivos. Y una orden ejecutada no se toca nunca más |
 | R48 | **Una vista recibe la raíz de la aplicación y puede esconderla entera** (H2), o **escribe sobre nodos que no existen sin protestar** (H3) | Alto y silencioso — el ANEXO 1 nunca guardó un dato en ningún ciclo y nadie lo notó, porque no falla: obedece mal | H23-2, H23-3 y sobre todo **H23-4**: lo que falta en el DOM falla ruidosamente, igual que ADR-029 con los módulos |
 | R46 | **Los tests arman a mano el estado que la aplicación no produce** — segunda aparición: en el ciclo 16 fue el probador de plantillas fabricando campos (R41, dada por cerrada); ahora son los nueve tests del asistente llamando a `wizard.seleccionarOperador`, que el modo autenticado **nunca llama** | **Crítico**: la función central del sistema —crear un expediente— no funciona en el único modo que se va a usar, con 390 tests en verde. Y el modo declarado y el autenticado divergen sin que nada avise | Ronda 19: la llamada que falta, la revisión de todas las vistas, y **un test que entre por donde entra la persona** y no invoque ninguna función de vista a mano |
