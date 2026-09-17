@@ -83,6 +83,23 @@ function crearManejadoresExpedientes(entorno) {
       return responderJson(res, 400, { error: erroresEncabezado.join(' · ') });
     }
     const contexto = cuerpo.contexto || {};
+    // ORDEN-RONDA-22 §1: el nacimiento tiene dueño. Crear un expediente es
+    // ejecutar el primer paso: exige el rol de la primera etapa del circuito
+    // (ESPECIFICACIONES_TECNICAS → generador). Antes de quemar un número, el
+    // servidor cruza el contexto contra el padrón (ADR-021) y, con los roles
+    // efectivos de ADR-033, exige que ese operador pueda originar. Nunca se
+    // confía en el rol que el cliente declara por fuera de su padrón.
+    const autorizacionDelNacimiento = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), contexto);
+    if (!autorizacionDelNacimiento.ok) {
+      return responderJson(res, 403, { error: autorizacionDelNacimiento.error });
+    }
+    const rolDelPrimerPaso = SGC.core.config.ESTADOS[0].rolEjecutor;
+    if (SGC.core.config.rolesEfectivos(contexto.rol).indexOf(rolDelPrimerPaso) === -1) {
+      return responderJson(res, 403, {
+        error: 'crear un expediente exige el rol "' + rolDelPrimerPaso + '", el que ejecuta la primera etapa del circuito (' +
+          SGC.core.config.ESTADOS[0].id + ')'
+      });
+    }
     const anio = repo.anioDe(datosIniciales, contexto) ||
       String(new Date().getFullYear());
     const numero = ayudantes.siguienteNumero(datosDir, anio);

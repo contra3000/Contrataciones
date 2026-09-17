@@ -87,6 +87,21 @@
     nav.hidden = !(operador && operador.administrador === true);
   }
 
+  // ORDEN-RONDA-22 §1: el botón de crear no aparece para quien no puede. El
+  // servidor revalida de todos modos (misma regla, contra el padrón); aquí la
+  // pantalla refleja la regla: solo ve "Alta de Especificación" quien ejecuta
+  // la primera etapa del circuito (ESPECIFICACIONES_TECNICAS → generador).
+  function actualizarNavAlta(operador) {
+    var nav = document.getElementById('sgc-nav-alta');
+    if (!nav) {
+      return;
+    }
+    var rolDelPrimerPaso = SGC.core.config.ESTADOS[0].rolEjecutor;
+    var puedeCrear = operador && Array.isArray(operador.roles) &&
+      operador.roles.indexOf(rolDelPrimerPaso) !== -1;
+    nav.hidden = !puedeCrear;
+  }
+
   function descargadorGenerico(nombre, contenido) {
     var blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
     var url = URL.createObjectURL(blob);
@@ -112,6 +127,7 @@
     SGC.views.wizard.seleccionarOperador(operador, repoActual);
     actualizarNavJefe(operador);
     actualizarNavPadron(operador);
+    actualizarNavAlta(operador);
     document.getElementById('sgc-tablero-nav').hidden = false;
   }
 

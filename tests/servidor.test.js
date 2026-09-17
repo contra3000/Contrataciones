@@ -30,8 +30,8 @@ const {
 function contextoBase(extra) {
   return Object.assign({
     timestamp: '2026-08-14T10:00:00.000Z',
-    email: 'operador@faa.mil.ar',
-    rol: 'contrataciones',
+    email: 'maria.gonzalez@faa.mil.ar',
+    rol: 'generador',
     equipo: 'PC-PRUEBA-01'
   }, extra || {});
 }

@@ -628,7 +628,12 @@ test('17. el probador usa la salida real: los bienes no llevan campos de servici
 });
 
 test('18. regenerar usa la versión estampada y dice claro si esa versión ya no existe', async () => {
-  const s = await sesionAdmin();
+  // ORDEN-RONDA-22 §1: crear ya no es tarea del administrador. El expediente
+  // nace con el rol del primer paso (generador) y se estampa con esa misma
+  // sesión; la estampa y el regenerar no exigen rol, lo que este test mide es
+  // la versión.
+  const s = await servidorConRoles();
+  const cookie = s.cookies.generador;
   try {
     const creado = await pedirCon(s.base, 'POST', '/api/expedientes',
       {
@@ -645,16 +650,16 @@ test('18. regenerar usa la versión estampada y dice claro si esa versión ya no
             dependencia: 'División Abastecimiento'
           }
         }
-      }, s.cookie);
+      }, cookie);
     assert.strictEqual(creado.status, 201, 'expediente creado: ' + (creado.body && creado.body.expediente));
     const id = creado.body.id;
     const estampa = await pedirCon(s.base, 'POST', '/api/expedientes/' + id + '/plantilla',
-      {}, s.cookie);
+      {}, cookie);
     assert.strictEqual(estampa.status, 200, 'la plantilla se estampa');
     const estampado = estampa.body.plantilla;
     assert.strictEqual(estampado.version, 1, 'estampa la v1 sembrada');
     const especifica = await pedirCon(s.base, 'GET',
-      '/api/plantillas/' + estampado.id + '/versiones/1', undefined, s.cookie);
+      '/api/plantillas/' + estampado.id + '/versiones/1', undefined, cookie);
     assert.strictEqual(especifica.status, 200, 'la versión 1 existe todavía');
 
     const guardadas = nucleo.cargar(s.datos);
@@ -666,7 +671,7 @@ test('18. regenerar usa la versión estampada y dice claro si esa versión ya no
     nucleo.guardar(s.datos, guardadas);
 
     const regenerar = await pedirCon(s.base, 'GET', '/api/expedientes/' + id + '/regenerar',
-      undefined, s.cookie);
+      undefined, cookie);
     assert.strictEqual(regenerar.status, 404, 'la versión estampada ya no existe');
     assert.match(regenerar.body.error || '', /ya no existe/i,
       'dice que esa versión no existe y no cae a la vigente');

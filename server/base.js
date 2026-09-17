@@ -180,6 +180,21 @@ function crearManejadoresBase(entorno) {
       return responderJson(res, 400, { error: 'indices debe ser una lista de posiciones de renglón' });
     }
     const contexto = cuerpo.contexto || {};
+    // ORDEN-RONDA-22 §1: el nacimiento tiene dueño, también por reuso de base.
+    // Es la misma regla que apiCrear en expedientes.js: reutilizar una base es
+    // originar un expediente nuevo, así que exige el rol del primer paso
+    // (ESPECIFICACIONES_TECNICAS → generador) contra el padrón (ADR-021/033).
+    const autorizacionDelNacimiento = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), contexto);
+    if (!autorizacionDelNacimiento.ok) {
+      return responderJson(res, 403, { error: autorizacionDelNacimiento.error });
+    }
+    const rolDelPrimerPaso = SGC.core.config.ESTADOS[0].rolEjecutor;
+    if (SGC.core.config.rolesEfectivos(contexto.rol).indexOf(rolDelPrimerPaso) === -1) {
+      return responderJson(res, 403, {
+        error: 'crear un expediente desde una base exige el rol "' + rolDelPrimerPaso + '", el que ejecuta la primera etapa del circuito (' +
+          SGC.core.config.ESTADOS[0].id + ')'
+      });
+    }
     const exp = rutaExpediente(datosDir, origenId);
     if (!fs.existsSync(exp.datos)) {
       return responderJson(res, 404, { error: 'expediente origen no encontrado: ' + origenId });
