@@ -106,7 +106,58 @@ Va como texto de ayuda **visible**, no como globito que aparece al pasar el mous
 
 ---
 
-## 4. Tests
+## 4. Los barridos · **repartilos, si podés**
+
+Esta orden te pide dos inventarios completos, y en las últimas rondas te vengo pidiendo entre tres y cinco. **Son independientes entre sí, son de sólo lectura, y no comparten nada.**
+
+**Repartilos en sub-agentes.** Está confirmado que tu entorno lo permite. Son la parte más lenta de la ronda y la que más se hace a medias cuando aprieta el reloj.
+
+Cada uno tiene **una pregunta y una tabla de salida**, para que se puedan hacer por separado y juntar al final:
+
+| # | Barrido | La pregunta | La tabla |
+|---|---|---|---|
+| **B1** | Todos los extremos del servidor que **crean** algo | ¿Qué pasa si lo llama el rol equivocado? | extremo · quién debería poder · quién lo verifica · qué pasa hoy |
+| **B2** | Todos los lugares donde está escrito un **límite** (tamaño, cantidad, caracteres) | ¿Está declarado una vez, o repetido? | límite · dónde se declara · quiénes lo consumen · ¿coinciden? |
+
+**Lo que NO se reparte, y es importante:**
+
+- **Escribir código y tests: un solo agente, un solo árbol.** Dos manos editando `dev/` a la vez es cómo se pierde una ronda entera, y ya perdimos una (ciclo 10). El daño no se mide en minutos: se mide en días.
+- **Arrancar servidores: nunca en paralelo.** Fue la causa de la peor demora del proyecto (ciclo 20: procesos huérfanos en el 8136, dos días). N tareas en paralelo son N servidores en N puertos.
+- **Redactar el informe: uno solo.** Lo que hace valioso un informe es que una sola cabeza sostenga la ronda entera y reconozca una forma que ya vio. Cinco informes parciales pegados dan cinco descripciones correctas y ninguna de esas frases.
+
+Y si por lo que sea no podés repartirlos, hacelos igual **como tareas separadas**, una después de otra, con su tabla cada una. El problema de hoy no es sólo que tarden: es que se hacen mezcladas con el resto del trabajo y por eso salen incompletas.
+
+### Y contame cómo te fue con esta configuración · **es la primera vez y quiero saberlo**
+
+Es la primera ronda organizada así, y lo pide el Jefe de Contrataciones expresamente. En el informe, una sección corta y honesta:
+
+- **Cuántos sub-agentes lanzaste** y para qué.
+- **Qué te sirvió y qué te estorbó.** Si repartir costó más de lo que ahorró en alguno, decilo.
+- **Si alguno volvió con algo inútil, incompleto o duplicado**, y por qué te parece que pasó.
+- **Qué tarea de esta orden habrías repartido y no se podía**, o al revés: **qué repartiste y no había que repartir**.
+- **Cuánto tardó la ronda**, comparado con lo que te llevó la anterior.
+
+**No hay respuesta correcta.** Si la conclusión es que no sirvió, esa es la información que necesito — el esquema se cambia, no se defiende.
+
+---
+
+## 5. La suite tarda cinco minutos, y la corrés muchas veces
+
+Medido en tu propio informe de la ronda 21: **420 tests, 294 segundos**, en **52 archivos**.
+
+Si la corrés cuatro o cinco veces en una ronda, son **veinte o veinticinco minutos mirando pasar tests**, casi todos ajenos a lo que estás tocando. Es, hoy, el gasto de tiempo más grande y más fácil de eliminar del ciclo.
+
+**Dos cambios, los dos de una tarde:**
+
+- **Corré los archivos en paralelo.** Son 52 y son independientes: de a cuatro procesos, los 294 segundos bajan a poco más de uno. Dejá el comando escrito en el repositorio para que no haya que acordarse de cómo se hace, y **que el orden de la salida no dependa de quién termine primero** — un resumen que cambia de orden en cada corrida no se puede comparar entre rondas.
+- **Durante el trabajo, corré lo que tocaste. La suite entera, una vez, al cerrar.** Y decilo en el informe: cuántas corridas completas hiciste.
+
+**Cuidado con una cosa**: los tests que levantan un servidor **no pueden compartir puerto**. Si dos archivos en paralelo piden el mismo, se pisan y el rojo que aparece no tiene nada que ver con el código. Que cada uno pida **puerto libre al sistema** en lugar de un número fijo — y si alguno no puede, que quede fuera del paralelo y se diga cuál.
+
+
+---
+
+## 6. Tests
 
 - Crear un expediente con cada uno de los siete roles: **sólo el que ejecuta el primer paso lo consigue**, y los otros seis reciben 403. Por la API **y** por la pantalla.
 - El botón de crear no aparece para quien no puede — y aunque lo fabrique a mano, el servidor lo rechaza igual.
@@ -116,17 +167,18 @@ Va como texto de ayuda **visible**, no como globito que aparece al pasar el mous
 
 ---
 
-## 5. `INFORME-RONDA-22.md` — en la raíz del repositorio
+## 7. `INFORME-RONDA-22.md` — en la raíz del repositorio
 
 Las nueve secciones. Tres cosas propias:
 
-- **La lista de todos los extremos que crean algo**, con quién puede y quién lo verifica.
+- **B1 y B2**, los dos barridos, cada uno con su tabla.
+- **Cuántas corridas completas de la suite** hiciste, y cuánto tardó con el paralelo.
 - **Las mediciones del archivo de 20 MB**: tiempo, memoria, y dos subidas simultáneas.
 - **Dónde quedó declarado el límite**, y qué lo consume.
 
 ---
 
-## 6. Cierre
+## 8. Cierre
 
 Un solo commit, `Ronda 22`, **y push**.
 
@@ -134,7 +186,7 @@ Un solo commit, `Ronda 22`, **y push**.
 
 ---
 
-## 7. Criterios de aceptación
+## 9. Criterios de aceptación
 
 - Un `contrataciones_supervisor` **no puede** crear un expediente; un `generador` sí. Verificado en el servidor.
 - La lista completa de extremos que crean algo, con su control.
@@ -142,10 +194,11 @@ Un solo commit, `Ronda 22`, **y push**.
 - El límite está escrito **una sola vez**.
 - El texto de ayuda de la aclaración, visible.
 - Los 9 caminos en verde, sin tocar ningún test.
+- **La suite completa en menos de dos minutos**, corriendo los archivos en paralelo, con la salida en orden estable.
 
 ---
 
-## 8. Qué se está evaluando
+## 10. Qué se está evaluando
 
 **Que el sistema aguante el primer expediente real.**
 

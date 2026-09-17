@@ -20,6 +20,20 @@ El experimento central lo hiciste impecable: quitaste las tres líneas de `expor
 
 **Desde esta ronda lo pido bien: tres experimentos, no nueve.** Los elegís vos entre los caminos que la ronda tocó, y **van rotando**, de modo que en tres rondas los nueve queden verificados a mano alguna vez. Anotá cuáles hiciste y cuáles te tocan la próxima, para que la rotación no se pierda.
 
+### Una cosa que cambió y que tenés que tener presente todo el tiempo
+
+**El código que vas a auditar lo escribiste vos**, en otra sesión, contra la orden de trabajo de esta misma ronda. Hasta hace unas rondas el desarrollador era otro modelo; ya no.
+
+No compartís contexto con esa sesión —no sabés qué pensó ni qué descartó, sólo ves el resultado— y eso conserva buena parte del valor del control. Pero **hay algo que sí compartís: las inclinaciones**. Si al escribirlo te pareció razonable, al leerlo te va a volver a parecer razonable, y no hay nadie adentro del ciclo que lo contrapese.
+
+**Ya pasó, y hace una ronda.** Encontraste que guardar un documento impedía avanzar el expediente y lo clasificaste como *"control de concurrencia legítimo, no un defecto del servidor"*. Era un defecto que frenaba a una persona sola y le echaba la culpa a un compañero inexistente. La descripción técnica era impecable; la conclusión, equivocada.
+
+Por eso, en esta ronda:
+
+- **Ante la duda, elegí lo mecánico sobre lo opinable.** Quitá la corrección y mostrá el test en rojo; compará dos archivos byte a byte; contá. Eso da el mismo resultado sin importar quién lo mire.
+- **Cuando algo te parezca razonable, preguntate si te parece razonable porque lo es o porque lo escribiste vos.**
+- Y ante cualquier comportamiento que frene a una persona: la pregunta no es *"¿cada componente actuó bien?"* sino **"¿esto tiene sentido para quien está adelante de la pantalla?"**.
+
 ### Accesos fuera del repositorio
 
 `auditoria\bateria\`; `AppOptimizar\EjemplosProcesoActual\DocUOC\Generador de Pliegos\` en **sólo lectura**, con permiso de ejecutar `scripts/generar_pliego.py` hacia una carpeta temporal; `os.tmpdir()` y `127.0.0.1`. Nada más.
@@ -78,7 +92,34 @@ Anotá **cuáles hiciste y cuáles quedan para la próxima**, para que la rotaci
 
 ---
 
-## 5. Regresiones
+## 5. Los barridos · **repartilos, si podés**
+
+Esta orden te pide **dos listas propias**, y en las últimas rondas te vengo pidiendo entre tres y cinco. **Son independientes, de sólo lectura, y no comparten nada.**
+
+**Repartilas en sub-agentes.** Está confirmado que tu entorno lo permite. Es la parte más lenta y la primera que se recorta cuando aprieta el reloj — el ciclo 21 entregó un experimento de nueve por eso.
+
+| # | Barrido | La pregunta | La tabla |
+|---|---|---|---|
+| **B1** | Todos los extremos del servidor que **crean** algo | ¿Qué pasa si lo llama el rol equivocado? | extremo · quién debería poder · quién lo verifica · qué pasa hoy |
+| **B2** | Todos los lugares donde vive un **límite** | ¿Está declarado una vez o repetido? | límite · dónde se declara · quiénes lo consumen · ¿coinciden? |
+
+**Y lo que NO se reparte, que es más importante que lo que sí:**
+
+- **Los experimentos de quitar la corrección, nunca en paralelo.** Modifican un archivo y tienen que restaurarlo. Dos a la vez sobre el mismo árbol se pisan, y el peor caso no es que fallen: es que **uno restaure el respaldo del otro** y el código quede con una corrección ausente que nadie nota. Un defecto introducido por la herramienta de verificación es el peor defecto posible.
+- **Arrancar servidores, nunca en paralelo.** Fue la causa de los dos días del ciclo 20: huérfanos en el 8136 y esperas a procesos que no terminaban. N tareas paralelas son N servidores en N puertos.
+- **Redactar el reporte, uno solo.** Tus mejores hallazgos no fueron defectos sueltos sino **formas que cruzan rondas**: *"es la misma forma que el probador del ciclo 16, del otro lado"*, *"los tests arman a mano el estado que la aplicación no produce"*. Eso sale de que una sola cabeza sostenga la ronda entera. Cinco informes parciales pegados dan cinco descripciones correctas y **ninguna** de esas frases — y esas frases son las que corrigieron el rumbo del proyecto.
+
+Si por lo que sea no podés repartirlos, hacelos igual **como tareas separadas** con su tabla cada una.
+
+### Y contame cómo te fue · **es la primera vez y lo pide el Jefe de Contrataciones**
+
+Sección corta en el reporte: cuántos sub-agentes lanzaste y para qué, qué te sirvió y qué te estorbó, si alguno volvió con algo inútil o duplicado, qué habrías repartido y no se podía, y cuánto tardó la ronda comparada con la anterior.
+
+**No hay respuesta correcta.** Si la conclusión es que no sirvió, esa es la información que hace falta.
+
+---
+
+## 6. Regresiones
 
 Todo lo anterior, con la batería completa. Con atención especial a lo del ciclo 21, porque esta ronda toca la creación y el transporte de archivos:
 
@@ -90,7 +131,7 @@ Todo lo anterior, con la batería completa. Con atención especial a lo del cicl
 
 ---
 
-## 6. El reporte — `AUDITORIA-CICLO-22.md`
+## 7. El reporte — `AUDITORIA-CICLO-22.md`
 
 Misma estructura. Cuatro secciones propias:
 
@@ -112,7 +153,7 @@ Cierre: un solo commit, `Auditoria ciclo 22`, sin push.
 
 ---
 
-## 7. Qué se espera de vos
+## 8. Qué se espera de vos
 
 **Encontrar las puertas que nadie cerró, antes de que las encuentre una persona usando el sistema.**
 
