@@ -1,20 +1,18 @@
-:root {
-  --color-texto: #1f2933;
-  --color-texto-suave: #52606d;
-  --color-fondo: #ffffff;
-  --color-fondo-suave: #f5f7fa;
-  --color-primario: #0b5394;
-  --color-primario-oscuro: #08427a;
-  --color-borde: #cbd2d9;
-  --color-error: #b91c1c;
-  --color-exito: #047857;
-
-  --fuente-base: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --fuente-mono: "Consolas", "Courier New", monospace;
-  --espaciado-base: 8px;
-  --radio-borde: 4px;
-  --tamano-fuente-base: 15px;
-}
+/*
+ * main.css
+ * Capa derivada del sistema de estilos (H16). Pantalla.
+ *
+ * Toda variable de color, tipografía y layout cuelga de
+ * css/tokens.css (H16-1): acá NO se escribe ningún color ni tipografía a
+ * mano. Cambiar el color primario de toda la aplicación es una línea en
+ * tokens.css (--color-primario).
+ *
+ * Reglas del paquete que gobiernan esta hoja:
+ *  - navy-800 es el único color de énfasis. Los estados se resuelven
+ *    tipográficamente: no hay rojos, verdes ni anaranjados.
+ *  - El dorado sólo aparece sobre navy. Nunca como color de texto.
+ *  - Chrome 109 (ADR-011): sin anidamiento nativo, sin text-wrap: balance.
+ */
 
 * {
   margin: 0;
@@ -58,8 +56,83 @@ a {
   display: none !important;
 }
 
-.buscador {
-  max-width: 880px;
+/* -------------------------------------------------------------------------
+ * Botones y barras de acciones (H16-9): botones agrupados con sentido y
+ * disposición que responde al ancho. Un solo patrón para todas las barras.
+ * ------------------------------------------------------------------------- */
+button {
+  padding: 10px 20px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo-panel);
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+button:hover,
+button:focus-visible {
+  border-color: var(--color-primario);
+}
+
+button.primario {
+  border-color: var(--color-primario);
+  background-color: var(--color-primario);
+  color: var(--white);
+}
+
+button.primario:hover,
+button.primario:focus-visible {
+  background-color: var(--color-primario-hover);
+  border-color: var(--color-primario-hover);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.padron-filtros,
+.sugerencias-filtros,
+.archivo-filtros,
+.kanban-filtros,
+.documento-acciones,
+.expediente-acciones,
+.dialogo-acciones,
+.navegacion,
+.tablero-nav,
+.base-pie,
+.sugerencia-botones,
+.exploracion-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.accion-bloque button,
+.renglon-editor .quitar,
+.borrador-aviso button,
+.fasttrack button,
+.sesion-barra button,
+.expediente-cabecera button,
+.expediente-cabecera a,
+.conflicto button,
+.tablero-nav button,
+.dialogo-acciones button,
+.base-pie button,
+.archivo-item button,
+.sugerencia-item button,
+.kanban-abrir {
+  padding: 8px 16px;
+}
+
+/* -------------------------------------------------------------------------
+ * Buscador y wizard (asistente de la Especificación Técnica)
+ * ------------------------------------------------------------------------- */
+.buscador,
+.app,
+.wizard {
+  max-width: var(--col-max);
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
@@ -86,7 +159,9 @@ a {
 }
 
 .seccion-busqueda,
-.seccion-items {
+.seccion-items,
+.seccion-renglones,
+.revision-filas {
   margin-bottom: 24px;
 }
 
@@ -105,12 +180,12 @@ a {
   padding: 10px 12px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
 }
 
 .caja-combobox input[type="search"]:focus {
   border-color: var(--color-primario);
-  box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
+  box-shadow: 0 0 0 2px var(--color-primario-aura);
 }
 
 .desplegable {
@@ -120,10 +195,10 @@ a {
   right: 0;
   z-index: 20;
   list-style: none;
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px var(--sombra-card);
   max-height: 320px;
   overflow-y: auto;
 }
@@ -133,7 +208,7 @@ a {
   gap: 12px;
   align-items: baseline;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--color-fondo-suave);
+  border-bottom: 1px solid var(--color-borde);
   cursor: pointer;
 }
 
@@ -142,7 +217,7 @@ a {
 }
 
 .desplegable li.activo {
-  background-color: var(--color-fondo-suave);
+  background-color: var(--color-primario-tint);
 }
 
 .opcion-codigo {
@@ -170,7 +245,7 @@ a {
 }
 
 mark {
-  background-color: #ffe08a;
+  background-color: var(--color-primario-tint);
   color: inherit;
   border-radius: 2px;
 }
@@ -194,7 +269,7 @@ mark {
 }
 
 .renglon {
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
   padding: 12px;
@@ -238,7 +313,7 @@ mark {
   padding: 6px 8px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   width: 100%;
 }
 
@@ -248,11 +323,7 @@ mark {
 
 .renglon-editor .quitar {
   margin-top: 22px;
-  padding: 6px 12px;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  background-color: var(--color-fondo-panel);
 }
 
 .renglon-editor .quitar:hover {
@@ -277,27 +348,9 @@ mark {
   color: var(--color-exito);
 }
 
-@media (max-width: 640px) {
-  .renglon-editor {
-    grid-template-columns: 1fr;
-  }
-
-  .renglon-editor .quitar {
-    margin-top: 4px;
-  }
-}
-
-/* ---------------------------------------------------------------------------
- * Aplicación completa (ORDEN-RONDA-05 §3.5): selección de operador y wizard.
- * ------------------------------------------------------------------------- */
-.app {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
-}
-
 .error-global {
   color: var(--color-error);
+  font-weight: 600;
   margin-top: 8px;
 }
 
@@ -311,16 +364,16 @@ mark {
 
 /* Ingreso y cambio de clave (ORDEN-RONDA-14 §3.4-§3.6) */
 .ingreso {
-  max-width: 420px;
+  max-width: var(--sidebar);
   margin-top: 16px;
 }
 
 .cambio-clave {
-  max-width: 420px;
+  max-width: var(--sidebar);
 }
 
 .aviso-clave {
-  color: var(--color-texto-suave, inherit);
+  color: var(--color-texto-suave);
   font-size: 0.9em;
   margin-top: 6px;
 }
@@ -335,7 +388,7 @@ mark {
 }
 
 .sesion-barra button {
-  padding: 4px 10px;
+  background-color: var(--color-fondo-panel);
 }
 
 .lista-operadores button {
@@ -344,8 +397,7 @@ mark {
   padding: 12px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  background-color: var(--color-fondo-panel);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -354,7 +406,7 @@ mark {
 .lista-operadores button:hover,
 .lista-operadores button:focus-visible {
   border-color: var(--color-primario);
-  box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
+  box-shadow: 0 0 0 2px var(--color-primario-aura);
 }
 
 .operador-nombre {
@@ -373,7 +425,7 @@ mark {
 
 .borrador-aviso {
   border: 1px solid var(--color-primario);
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border-radius: var(--radio-borde);
   padding: 12px;
   margin-bottom: 16px;
@@ -385,11 +437,7 @@ mark {
 
 .borrador-aviso button {
   margin-right: 8px;
-  padding: 6px 12px;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  background-color: var(--color-fondo-panel);
 }
 
 .pasos {
@@ -407,14 +455,14 @@ mark {
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
   padding: 8px 12px;
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   color: var(--color-texto-suave);
   font-size: 0.9rem;
 }
 
 .pasos li[aria-current="step"] {
   border-color: var(--color-primario);
-  background-color: rgba(11, 83, 148, 0.08);
+  background-color: var(--color-primario-tint);
   color: var(--color-primario-oscuro);
   font-weight: 600;
 }
@@ -426,7 +474,7 @@ mark {
 }
 
 .paso-panel {
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
   padding: 16px;
@@ -445,6 +493,17 @@ mark {
   margin-bottom: 8px;
 }
 
+.paso-panel h4 {
+  font-size: 0.95rem;
+  color: var(--color-primario-oscuro);
+  margin: 14px 0 6px;
+}
+
+.paso-panel label {
+  display: block;
+  margin-bottom: 8px;
+}
+
 .campo {
   margin-bottom: 14px;
 }
@@ -456,18 +515,20 @@ mark {
 }
 
 .campo input,
-.campo textarea {
+.campo textarea,
+.campo select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
 }
 
 .campo input:focus,
-.campo textarea:focus {
+.campo textarea:focus,
+.campo select:focus {
   border-color: var(--color-primario);
-  box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
+  box-shadow: 0 0 0 2px var(--color-primario-aura);
 }
 
 .error-campo {
@@ -477,24 +538,16 @@ mark {
 }
 
 .fasttrack {
-  border: 1px dashed var(--color-borde);
+  border: 1px dashed var(--color-borde-fuerte);
   border-radius: var(--radio-borde);
   padding: 12px;
   margin-bottom: 16px;
 }
 
-.fasttrack button,
-.fasttrack input[type="file"] {
+.fasttrack button {
   margin-right: 10px;
   margin-bottom: 6px;
-}
-
-.fasttrack button {
-  padding: 6px 12px;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  background-color: var(--color-fondo-panel);
 }
 
 .etiqueta-inline {
@@ -505,10 +558,6 @@ mark {
   color: var(--color-primario-oscuro);
   white-space: pre-line;
   margin-top: 6px;
-}
-
-.revision-filas {
-  margin-bottom: 16px;
 }
 
 .revision-filas dt {
@@ -525,69 +574,21 @@ mark {
   padding-left: 18px;
 }
 
-.navegacion {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.navegacion button,
-.primario {
-  padding: 10px 20px;
-  border-radius: var(--radio-borde);
-  border: 1px solid var(--color-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
-}
-
-.navegacion button.primario {
-  border-color: var(--color-primario);
-  background-color: var(--color-primario);
-  color: #ffffff;
-}
-
-.navegacion button.primario:hover,
-.navegacion button.primario:focus-visible {
-  background-color: var(--color-primario-oscuro);
-}
-
-.navegacion button:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
 .exito {
   color: var(--color-exito);
   font-weight: 600;
   margin-top: 8px;
 }
 
-/* ---------------------------------------------------------------------------
+/* -------------------------------------------------------------------------
    Tablero Kanban (ORDEN-RONDA-06 §3.1)
 --------------------------------------------------------------------------- */
 .tablero-nav {
-  display: flex;
-  gap: 8px;
   margin: 16px 0;
 }
 
 .tablero-nav button {
-  padding: 10px 20px;
-  border-radius: var(--radio-borde);
-  border: 1px solid var(--color-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
-}
-
-.tablero-nav button.primario {
-  border-color: var(--color-primario);
-  background-color: var(--color-primario);
-  color: #ffffff;
-}
-
-.tablero-nav button.primario:hover,
-.tablero-nav button.primario:focus-visible {
-  background-color: var(--color-primario-oscuro);
+  background-color: var(--color-fondo-panel);
 }
 
 .kanban-cabecera {
@@ -597,11 +598,12 @@ mark {
   margin-bottom: 16px;
 }
 
-.kanban-filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+.kanban-filtros input,
+.kanban-filtros select {
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo-panel);
 }
 
 .kanban-columnas {
@@ -614,7 +616,7 @@ mark {
 }
 
 .kanban-columna {
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
   padding: 8px;
@@ -659,7 +661,7 @@ mark {
 .kanban-etiqueta {
   font-size: 0.85rem;
   align-self: flex-start;
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
   border-radius: 12px;
   padding: 1px 8px;
@@ -673,11 +675,44 @@ mark {
 
 .kanban-abrir {
   align-self: flex-start;
-  padding: 6px 12px;
-  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo-panel);
+}
+
+/* -------------------------------------------------------------------------
+   Tablero de indicadores del administrador (tablero.js)
+--------------------------------------------------------------------------- */
+.tablero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.tablero-tarjeta {
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  border-radius: var(--radio-borde);
+  padding: 12px;
+}
+
+.tablero-tarjeta h3 {
+  font-size: 0.95rem;
+  color: var(--color-primario-oscuro);
+  margin-bottom: 6px;
+}
+
+.tablero-valor {
+  font-family: var(--fuente-mono);
+  font-size: 1.2rem;
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+.tablero-detalle {
+  list-style: none;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
 }
 
 /* ---------------------------------------------------------------------------
@@ -697,11 +732,7 @@ mark {
 
 .expediente-cabecera button {
   align-self: flex-start;
-  padding: 6px 12px;
-  border-radius: var(--radio-borde);
-  border: 1px solid var(--color-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  background-color: var(--color-fondo-panel);
 }
 
 .expediente-cuerpo {
@@ -710,58 +741,31 @@ mark {
   gap: 16px;
 }
 
-@media (max-width: 720px) {
-  .expediente-cuerpo {
-    grid-template-columns: 1fr;
-  }
-}
-
 .expediente-seccion {
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
   padding: 12px;
+  margin-bottom: 16px;
 }
 
 .expediente-seccion h3 {
   margin-bottom: 8px;
 }
 
-.expediente-acciones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+.expediente-seccion h4 {
+  margin: 12px 0 6px;
 }
 
 .accion-bloque {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 360px;
+  max-width: var(--sidebar);
 }
 
 .accion-bloque button {
-  padding: 10px 20px;
-  border-radius: var(--radio-borde);
-  border: 1px solid var(--color-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
-}
-
-.accion-bloque button.primario {
-  border-color: var(--color-primario);
-  background-color: var(--color-primario);
-  color: #ffffff;
-}
-
-.accion-bloque button.primario:hover,
-.accion-bloque button.primario:focus-visible {
-  background-color: var(--color-primario-oscuro);
-}
-
-.accion-bloque button:disabled {
-  opacity: 0.6;
-  cursor: default;
+  background-color: var(--color-fondo-panel);
 }
 
 .accion-porque {
@@ -782,8 +786,9 @@ mark {
 }
 
 .conflicto {
-  border: 1px solid var(--color-error);
-  background-color: #fef2f2;
+  border: 1px solid var(--color-borde-fuerte);
+  border-left: 4px solid var(--color-primario);
+  background-color: var(--color-fondo-panel);
   border-radius: var(--radio-borde);
   padding: 10px 12px;
   display: flex;
@@ -793,11 +798,7 @@ mark {
 
 .conflicto button {
   align-self: flex-start;
-  padding: 6px 12px;
-  border-radius: var(--radio-borde);
-  border: 1px solid var(--color-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  background-color: var(--color-fondo-panel);
 }
 
 .lista-auditoria {
@@ -829,16 +830,141 @@ mark {
   font-size: 0.85rem;
 }
 
+/* Carga del requerimiento (ORDEN-RONDA-10 §3.1, H11) */
+.req-encabezado {
+  margin-bottom: 8px;
+}
+
+.req-ayuda {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+  margin: 4px 0 8px;
+}
+
+.req-presupuestos,
+.req-valores {
+  list-style: none;
+  margin: 8px 0;
+}
+
+.req-total {
+  font-family: var(--fuente-mono);
+  font-size: 1rem;
+  margin: 8px 0;
+}
+
+.req-imputacion {
+  border: 1px dashed var(--color-borde-fuerte);
+  border-radius: var(--radio-borde);
+  padding: 10px 12px;
+  margin: 12px 0;
+  background-color: var(--color-fondo-suave);
+  color: var(--color-texto-suave);
+}
+
+.req-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.req-renglon {
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: var(--color-fondo-panel);
+}
+
+.req-valores-filas {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.req-valores-filas th,
+.req-valores-filas td {
+  border: 1px solid var(--color-borde);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.req-agregar-valor,
+.req-quitar-valor {
+  padding: 6px 12px;
+  background-color: var(--color-fondo-panel);
+}
+
+.req-calculo {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.req-oca-campos {
+  margin: 8px 0;
+}
+
+.req-oca-nota {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+  margin: 4px 0 8px;
+}
+
+.leyenda-adicion {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+  margin: 4px 0;
+}
+
+.archivado-aviso {
+  border: 1px solid var(--color-borde-fuerte);
+  background-color: var(--color-fondo-panel);
+  border-radius: var(--radio-borde);
+  padding: 10px 12px;
+}
+
+/* Documento imprimible en pantalla: la misma familia que los entregables. */
+.documento-impresion {
+  font-family: var(--ff-serif);
+  color: var(--color-texto);
+  background-color: var(--color-fondo-panel);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 24px;
+  margin-top: 12px;
+}
+
+.documento-enlace {
+  display: inline-block;
+  margin-right: 8px;
+  text-decoration: none;
+}
+
+.documento-impresion table.doc-renglones {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.doc-renglones th,
+.doc-renglones td {
+  border: 1px solid var(--color-borde);
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
 .dialogo {
   position: fixed;
   inset: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background-color: var(--color-fondo);
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px var(--sombra-dialogo);
   padding: 20px;
   max-width: 480px;
   margin: 10vh auto;
@@ -854,27 +980,437 @@ mark {
   font: inherit;
 }
 
-.dialogo-acciones {
+.dialogo-acciones button,
+.base-pie button {
+  background-color: var(--color-fondo-panel);
+}
+
+.advertencia {
+  border: 1px solid var(--color-borde-fuerte);
+  border-radius: var(--radio-borde);
+  padding: 16px;
+  box-shadow: 0 8px 24px var(--sombra-dialogo);
+}
+
+/* ---------------------------------------------------------------------------
+   Archivo Histórico (ORDEN-RONDA-10-CIERRE) y revisión de la base H21
+--------------------------------------------------------------------------- */
+.archivo {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.archivo-cabecera {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.dialogo-acciones button {
-  padding: 8px 16px;
-  border-radius: var(--radio-borde);
+.archivo-cabecera button {
+  align-self: flex-start;
+  background-color: var(--color-fondo-panel);
+}
+
+.lista-archivo,
+.lista-base,
+.lista-sugerencias {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.archivo-item,
+.sugerencia-item,
+.renglon-base {
+  background-color: var(--color-fondo-panel);
   border: 1px solid var(--color-borde);
-  background-color: var(--color-fondo);
-  cursor: pointer;
+  border-radius: var(--radio-borde);
+  padding: 12px;
 }
 
-.dialogo-acciones button.primario {
-  border-color: var(--color-primario);
+.archivo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.archivo-item button {
+  align-self: flex-start;
+  background-color: var(--color-fondo-panel);
+}
+
+.archivo-detalle {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.base-revision {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.base-cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.base-cabecera button {
+  align-self: flex-start;
+  background-color: var(--color-fondo-panel);
+}
+
+.base-seccion {
+  background-color: var(--color-fondo-panel);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.base-seccion h3 {
+  margin-bottom: 8px;
+}
+
+.base-pie {
+  margin-top: 8px;
+}
+
+.renglon-base {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.renglon-base.dado-de-baja {
+  border-color: var(--color-borde-fuerte);
+  color: var(--color-texto-suave);
+}
+
+.base-invalida {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+  margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   Padrón de operadores (H16-8): tabla con encabezado, filas alternas y
+   columnas alineadas.
+--------------------------------------------------------------------------- */
+.padron {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.padron-cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.padron-cabecera button {
+  align-self: flex-start;
+  background-color: var(--color-fondo-panel);
+}
+
+.padron-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-fondo-panel);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+}
+
+.padron-tabla thead th {
+  text-align: left;
   background-color: var(--color-primario);
-  color: #ffffff;
+  color: var(--white);
+  font-weight: 600;
+  padding: 10px 12px;
 }
 
-.dialogo-acciones button:disabled {
-  opacity: 0.6;
-  cursor: default;
+.padron-tabla tbody td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-borde);
+  vertical-align: top;
 }
 
+.padron-tabla tbody tr:nth-child(even) {
+  background-color: var(--color-fondo-suave);
+}
+
+.padron-item.inactivo {
+  color: var(--color-texto-suave);
+}
+
+.padron-celda-correo {
+  font-family: var(--fuente-mono);
+  font-size: 0.9rem;
+}
+
+.padron-acciones {
+  white-space: nowrap;
+}
+
+.padron-acciones-grupo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.padron-acciones-grupo button {
+  padding: 6px 12px;
+  background-color: var(--color-fondo-panel);
+}
+
+.clave-mostrar {
+  background-color: var(--color-fondo-panel);
+  border: 1px solid var(--color-primario);
+  border-radius: var(--radio-borde);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clave-mostrar p {
+  font-family: var(--fuente-mono);
+}
+
+.campo-formulario {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campo-formulario label {
+  font-weight: 600;
+}
+
+.campo-formulario input,
+.campo-formulario select,
+.campo-formulario textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo-panel);
+}
+
+.campo-error {
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Sugerencias del piloto (H19) y botón flotante (H16-10)
+--------------------------------------------------------------------------- */
+.sugerencias-jefe {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sugerencias-cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sugerencias-cabecera button {
+  align-self: flex-start;
+  background-color: var(--color-fondo-panel);
+}
+
+.sugerencias-filtros select {
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo-panel);
+}
+
+.sugerencia-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sugerencia-item.atendida {
+  opacity: 0.75;
+}
+
+.sugerencia-cabecera {
+  font-weight: 600;
+}
+
+.sugerencia-contexto {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.sugerencia-nota {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+}
+
+.sugerencia-item button {
+  align-self: flex-start;
+  padding: 6px 12px;
+  background-color: var(--color-fondo-panel);
+}
+
+/* Overlay del formulario de sugerencia (operador) */
+.sugerencia-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--sombra-dialogo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.sugerencia-caja {
+  background-color: var(--color-fondo-panel);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 16px;
+  max-width: 480px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px var(--sombra-dialogo);
+}
+
+.sugerencia-caja textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo-panel);
+  font: inherit;
+}
+
+.sugerencia-feedback {
+  font-size: 0.9rem;
+}
+
+/* Botón flotante de sugerencias: ya no es un '?'. */
+.fab-sugerencia {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  height: 56px;
+  width: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--color-primario);
+  background-color: var(--color-primario);
+  color: var(--white);
+  font-weight: 600;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px var(--sombra-card);
+}
+
+.fab-sugerencia:hover,
+.fab-sugerencia:focus-visible {
+  background-color: var(--color-primario-hover);
+  border-color: var(--color-primario-hover);
+  color: var(--white);
+}
+
+/* ---------------------------------------------------------------------------
+   Exploración de eventos (H12 / exploracion.js)
+--------------------------------------------------------------------------- */
+.exploracion-advertencia {
+  border: 1px solid var(--color-primario);
+  background-color: var(--color-fondo-panel);
+  border-radius: var(--radio-borde);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  color: var(--color-primario-oscuro);
+}
+
+.exploracion-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.exploracion-filtros select,
+.exploracion-filtros input {
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-fondo-panel);
+}
+
+.exploracion-tabla {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.exploracion-contador {
+  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+}
+
+/* -------------------------------------------------------------------------
+   Responsive (H16-9: la disposición responde al ancho)
+--------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .expediente-cuerpo {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .renglon-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .renglon-editor .quitar {
+    margin-top: 4px;
+  }
+
+  .padron-tabla {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .fab-sugerencia {
+    right: 16px;
+    bottom: 16px;
+    height: 48px;
+    width: 48px;
+  }
+
+  .padron-filtros,
+  .sugerencias-filtros,
+  .archivo-filtros,
+  .kanban-filtros,
+  .documento-acciones,
+  .expediente-acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .padron-filtros button,
+  .sugerencias-filtros button,
+  .archivo-filtros button,
+  .kanban-filtros button,
+  .documento-acciones button {
+    width: 100%;
+  }
+}

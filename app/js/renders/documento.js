@@ -95,21 +95,53 @@
   // ---------------------------------------------------------------------------
   // HTML (para el archivo guardado como entregable)
   // ---------------------------------------------------------------------------
+  // H16-4: los entregables adoptan el sistema de estilos directo, igual que el
+  // generador de la UOC. Valores del paquete (tokens.json) escritos acá porque
+  // el archivo guardado es autocontenido: un documento salido de la aplicación
+  // y uno del generador se ven de la misma familia (crit. H16).
+  var SERIF = "'IBM Plex Serif',Georgia,'Times New Roman',serif";
+  var SANS = "'IBM Plex Sans','Helvetica Neue',Arial,sans-serif";
+  var MONO = "'IBM Plex Mono','Consolas','Courier New',monospace";
   var ESTILOS = [
-    'body{font-family:Georgia,"Times New Roman",serif;margin:2cm;color:#000;background:#fff;}',
-    'h1{font-size:20pt;text-align:center;}',
-    'h2{font-size:13pt;margin-top:1.2cm;border-bottom:1px solid #000;padding-bottom:2mm;}',
-    'table{border-collapse:collapse;width:100%;}',
-    'th,td{border:1px solid #000;padding:2mm;font-size:10pt;vertical-align:top;}',
-    'dt{font-weight:bold;margin-top:2mm;}',
-    'dd{margin:0 0 1mm 0;}',
+    'body{font-family:' + SERIF + ';margin:25mm 25mm 22mm 30mm;color:#111418;background:#FAF8F3;line-height:1.55;}',
+    '.doc-membrete{font-family:' + SANS + ';text-align:center;text-transform:uppercase;color:#0E2748;letter-spacing:0.12em;}',
+    '.doc-membrete .doc-l1{font-weight:700;font-size:11.5pt;letter-spacing:0.12em;}',
+    '.doc-membrete .doc-l2,.doc-membrete .doc-l3{font-weight:500;font-size:10.5pt;letter-spacing:0.14em;}',
+    'h1{font-size:18pt;font-weight:600;color:#111418;text-align:center;margin-top:10mm;}',
+    '.doc-unidad{font-family:' + SANS + ';font-size:9pt;color:#5C6470;text-align:center;text-transform:uppercase;' +
+      'letter-spacing:0.2em;border-bottom:1pt solid #0E2748;padding:2mm 0 3mm;}',
+    'h2{font-family:' + SANS + ';font-size:11pt;font-weight:600;color:#0E2748;text-transform:uppercase;' +
+      'letter-spacing:0.22em;margin-top:8mm;padding-bottom:1mm;border-bottom:1pt solid #0E2748;}',
+    'table{border-collapse:collapse;width:100%;margin:4mm 0;}',
+    'th{background:#0E2748;color:#FFFFFF;font-family:' + SANS + ';font-size:9pt;font-weight:600;' +
+      'text-transform:uppercase;letter-spacing:0.1em;text-align:left;padding:2mm;}',
+    'td{border-bottom:0.5pt solid #D6D8DC;padding:2mm;font-size:10pt;vertical-align:top;}',
+    'tbody tr:nth-child(even){background:#F2EFE7;}',
+    '.doc-renglones td:first-child{font-family:' + MONO + ';color:#0E2748;}',
+    'dt{font-family:' + SANS + ';font-weight:600;font-size:9pt;color:#0E2748;text-transform:uppercase;' +
+      'letter-spacing:0.1em;margin-top:3mm;}',
+    'dd{margin:0 0 1mm 0;font-size:11pt;}',
+    '.doc-operador{font-size:11pt;}',
+    '.doc-fecha{font-size:9pt;color:#5C6470;}',
     '.doc-firma{margin-top:2cm;}',
-    '.doc-firma-linea{border-bottom:1px solid #000;width:8cm;height:1.2cm;}',
-    '.doc-pie{margin-top:2cm;font-size:9pt;border-top:1px solid #000;padding-top:2mm;}'
+    '.doc-firma-linea{border-bottom:1pt solid #111418;width:8cm;height:1.2cm;}',
+    '.doc-pie{margin-top:2cm;font-size:9pt;border-top:0.5pt solid #D6D8DC;padding-top:2mm;' +
+      'color:#5C6470;font-family:' + SANS + ';}'
   ].join('\n');
 
+  // Membrete obligatorio del sistema (design-system.md §1): bloque de tres
+  // líneas en versales, familia sans, tracking amplio. Sin escudo: el paquete
+  // exige el archivo de imagen que la app no puede enlazar (ADR-018).
+  function membreteHtml() {
+    return '<p class="doc-membrete">' +
+      '<span class="doc-l1">Fuerza Aérea Argentina</span><br>' +
+      '<span class="doc-l2">VII Brigada Aérea</span><br>' +
+      '<span class="doc-l3">División Contrataciones Moreno</span></p>';
+  }
+
   function encabezadoHtml(m, tituloDocumento) {
-    return '<h1>' + esc(tituloDocumento) + '</h1>' +
+    return membreteHtml() +
+      '<h1>' + esc(tituloDocumento) + '</h1>' +
       '<p class="doc-unidad">Unidad solicitante: ' + esc(m.unidad) +
       ' — Expediente Nº ' + esc(m.numero) + '</p>';
   }
@@ -222,8 +254,24 @@
   }
 
   function encabezadoDom(contenedor, m, tituloDocumento) {
+    membreteDom(contenedor);
     nuevo(contenedor, 'h1', null, tituloDocumento);
     pDom(contenedor, 'doc-unidad', 'Unidad solicitante: ' + m.unidad + ' — Expediente Nº ' + m.numero);
+  }
+
+  function membreteDom(contenedor) {
+    var p = nuevo(contenedor, 'p', 'doc-membrete');
+    var lineas = ['Fuerza Aérea Argentina', 'VII Brigada Aérea', 'División Contrataciones Moreno'];
+    for (var i = 0; i < lineas.length; i++) {
+      var span = document.createElement('span');
+      span.className = 'doc-l' + (i + 1);
+      span.textContent = lineas[i];
+      p.appendChild(span);
+      if (i < lineas.length - 1) {
+        var salto = document.createElement('br');
+        p.appendChild(salto);
+      }
+    }
   }
 
   function tablaRenglonesDom(contenedor, m) {
@@ -304,7 +352,7 @@
     }
     estilo.textContent = '@page{@top-center{content:"SGC — ' +
       String(tituloDocumento).replace(/"/g, '\\"') +
-      '";font-family:Georgia,"Times New Roman",serif;font-size:9pt;color:#000;}}';
+      '";font-family:' + SANS + ';font-size:9pt;color:#0E2748;}}';
   }
 
   SGC.renders.documento = {
@@ -314,6 +362,8 @@
     ESTILOS: ESTILOS,
     LEYENDA_ADR016: LEYENDA_ADR016,
     LEYENDA_ADR023: LEYENDA_ADR023,
+    membreteHtml: membreteHtml,
+    membreteDom: membreteDom,
     encabezadoHtml: encabezadoHtml,
     tablaRenglonesHtml: tablaRenglonesHtml,
     firmaHtml: firmaHtml,

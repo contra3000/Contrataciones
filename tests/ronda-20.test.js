@@ -42,14 +42,15 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
   try {
     const d = m.documento;
 
-  async function recargarExpediente() {
-    // Recargar (botón real de la vista) sincroniza la versión del cliente con
-    // el servidor; sin eso, el avance siguiente responde 409 (conflicto).
+  async function esperarDocumentoRemontado() {
+    // ORDEN-RONDA-21 §1.1: tras guardar el documento, la vista de expediente se
+    // recarga sola (expediente.abrir) y re-monta el documento; el avance que
+    // sigue no debe dar 409 de versión. Sin el fix, el sector queda intacto y
+    // la espera expira (rojo), el mismo síntoma que reportó la RONDA-20.
     const sector = d.getElementById('sgc-expediente-documento');
     const previo = sector.children[0];
-    d.getElementById('sgc-expediente-recargar').click();
     await m.esperar(() => sector.children[0] !== previo && sector.children.length > 0,
-      30000, 'el expediente quedó recargado (versión sincronizada)');
+      30000, 'el documento se re-montó por la recarga automática tras guardar');
   }
 
   function esperarPresupuestoEnLista(nombre) {
@@ -151,7 +152,7 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
       'enlace al entregable guardado');
 
     // C4 · el generador avanza ESPECIFICACIONES_TECNICAS → SOLICITUD_CONTRATACION.
-    await recargarExpediente();
+    await esperarDocumentoRemontado();
     d.getElementById('sgc-expediente-avanzar').click();
     await m.esperar(() => (d.getElementById('sgc-expediente-resumen').textContent || '')
       .indexOf('Solicitud de Contratación') !== -1, 30000, 'el expediente avanzó a Solicitud de Contratación');
@@ -184,7 +185,7 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
     d.getElementById('sgc-expediente-documento-guardar').click();
     await m.esperar(() => (d.getElementById('sgc-expediente-documento-msj').textContent || '')
       .indexOf('Documento guardado') !== -1, 30000, 'solicitud de contratación guardada');
-    await recargarExpediente();
+    await esperarDocumentoRemontado();
     d.getElementById('sgc-expediente-avanzar').click();
     await m.esperar(() => (d.getElementById('sgc-expediente-resumen').textContent || '')
       .indexOf('Análisis de SCo') !== -1, 30000, 'C4: el expediente avanzó a Análisis de SCo');

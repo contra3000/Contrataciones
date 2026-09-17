@@ -75,7 +75,13 @@
       return;
     }
     if (respuesta.conflicto) {
-      onResultado({ ok: false, conflicto: true, versionRemota: respuesta.versionRemota });
+      onResultado({
+        ok: false,
+        conflicto: true,
+        versionRemota: respuesta.versionRemota,
+        ultimoUsuario: respuesta.ultimoUsuario || null,
+        ultimaModificacion: respuesta.ultimaModificacion || null
+      });
       return;
     }
     if (respuesta.ok) {

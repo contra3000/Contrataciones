@@ -332,7 +332,12 @@
     estado.repo.guardarExpediente(estado.expedienteId, copia, estado.version, contextoActual())
       .then(function (resp) {
         if (resp.conflicto) {
-          avisar('El expediente fue modificado por otro operador (versión ' +
+          var op = estado.operador || {};
+          var esOtroOperador = !!resp.ultimoUsuario && resp.ultimoUsuario !== op.email;
+          var texto = esOtroOperador
+            ? 'El expediente fue modificado por otro operador'
+            : 'El expediente fue modificado después de que usted lo abrió (posiblemente en otra pestaña)';
+          avisar(texto + ' (versión ' +
             resp.versionRemota + '). No se guardó nada.', true);
           return;
         }
@@ -342,6 +347,9 @@
         }
         estado.version = resp.version;
         avisar('ANEXO 1 guardado (versión ' + resp.version + ').', false);
+        if (SGC.views.expediente && typeof SGC.views.expediente.abrir === 'function') {
+          SGC.views.expediente.abrir(estado.expedienteId);
+        }
       })
       .catch(function (err) {
         avisar('No se pudo guardar el ANEXO 1: ' + err.message, true);

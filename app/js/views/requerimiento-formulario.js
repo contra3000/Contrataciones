@@ -138,7 +138,12 @@
     estado.repo.guardarExpediente(estado.expedienteId, copia, estado.version, contextoActual())
       .then(function (respuesta) {
         if (respuesta.conflicto) {
-          avisar('El expediente fue modificado por otro operador (versión actual en el servidor: ' +
+          var op = estado.operador || {};
+          var esOtroOperador = !!respuesta.ultimoUsuario && respuesta.ultimoUsuario !== op.email;
+          var texto = esOtroOperador
+            ? 'El requerimiento fue modificado por otro operador'
+            : 'El requerimiento fue modificado después de que usted lo abrió (posiblemente en otra pestaña)';
+          avisar(texto + ' (versión actual en el servidor: ' +
             respuesta.versionRemota + '). No se guardó nada.', true);
           return;
         }

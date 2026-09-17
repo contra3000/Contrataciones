@@ -256,7 +256,7 @@ test('sugerencias: con modo piloto activo el FAB y el panel se arman con textCon
   assert.strictEqual(sugerencias.paneles(), 1, 'FAB creado');
   assert.strictEqual(raiz.children.length, 2, 'botón + panel');
   assert.strictEqual(raiz.children[0].id, 'sgc-fab-sugerencia');
-  assert.strictEqual(raiz.children[0].textContent, '?');
+  assert.strictEqual(raiz.children[0].textContent, 'Sugerir');
   assert.strictEqual(raiz.children[1].id, 'sgc-panel-sugerencia');
   assert.strictEqual(raiz.children[1].hidden, true, 'el panel nace cerrado');
   assert.strictEqual(obtenerConteoInnerHTML(), 0, 'cero innerHTML (ADR-011)');

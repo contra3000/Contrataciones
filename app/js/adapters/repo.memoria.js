@@ -101,7 +101,13 @@ function registroDe(id) {
       return Promise.resolve({ ok: false, conflicto: false, error: autorizacion.error });
     }
     if (registro.version !== versionEsperada) {
-      return Promise.resolve({ ok: false, conflicto: true, versionRemota: registro.version });
+      return Promise.resolve({
+        ok: false,
+        conflicto: true,
+        versionRemota: registro.version,
+        ultimoUsuario: registro.contexto && registro.contexto.email ? registro.contexto.email : null,
+        ultimaModificacion: registro.contexto && registro.contexto.timestamp ? registro.contexto.timestamp : null
+      });
     }
     var resultado = tipo === 'avanzar'
       ? motor().avanzar(registro.expediente, ctx.rol, args.destino, ctx)
@@ -175,7 +181,9 @@ function registroDe(id) {
             return Promise.resolve({
               ok: false,
               conflicto: true,
-              versionRemota: registro.version
+              versionRemota: registro.version,
+              ultimoUsuario: registro.contexto && registro.contexto.email ? registro.contexto.email : null,
+              ultimaModificacion: registro.contexto && registro.contexto.timestamp ? registro.contexto.timestamp : null
             });
           }
           var snapshot = JSON.parse(JSON.stringify(registro.expediente));

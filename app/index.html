@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SGC — Circuito de contrataciones</title>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/impresion.css" media="print">
 </head>
@@ -281,7 +282,18 @@
         <div id="sgc-padron-formulario" hidden></div>
         <div id="sgc-padron-importar-area" hidden></div>
       </header>
-      <ul id="sgc-padron-lista" class="lista-padron"></ul>
+      <table class="padron-tabla" aria-label="Padrón de operadores">
+        <thead>
+          <tr>
+            <th scope="col">Operador</th>
+            <th scope="col">Correo</th>
+            <th scope="col">Rol</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="sgc-padron-lista" class="lista-padron"></tbody>
+      </table>
     </section>
 
     <section id="sgc-expediente" class="expediente" aria-label="Expediente" hidden>

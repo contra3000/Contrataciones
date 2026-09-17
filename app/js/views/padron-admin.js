@@ -241,33 +241,42 @@
       estado.dom.conteo.textContent = estado.usuarios.length + ' operadores · ' + activos + ' activos';
       limpiar(estado.dom.lista);
       if (estado.usuarios.length === 0) {
-        var vacio = document.createElement('li');
-        vacio.textContent = 'El padrón está vacío.';
+        var vacio = document.createElement('tr');
+        var vacioCelda = document.createElement('td');
+        vacioCelda.colSpan = 5;
+        vacioCelda.textContent = 'El padrón está vacío.';
+        vacio.appendChild(vacioCelda);
         estado.dom.lista.appendChild(vacio);
         return;
       }
       for (var j = 0; j < estado.usuarios.length; j++) {
         (function (u) {
-          var li = document.createElement('li');
-          li.className = 'padron-item' + (u.activo === false ? ' inactivo' : '');
-          var cabecera = document.createElement('p');
-          cabecera.className = 'padron-cabecera';
-          cabecera.textContent = u.nombre + ' ' + (u.apellido || '') +
-            ' · ' + u.email + ' · ' + u.rol +
-            (u.administrador ? ' · administrador' : '') +
-            (u.activo === false ? ' · dado de baja' : '') +
-            (u.bloqueado ? ' · bloqueado' : '') +
-            (u.provisoria ? ' · clave provisoria' : '');
-          li.appendChild(cabecera);
-          if (u.sector) {
-            var detalle = document.createElement('p');
-            detalle.className = 'padron-detalle';
-            detalle.textContent = 'Sector: ' + u.sector;
-            li.appendChild(detalle);
+          var fila = document.createElement('tr');
+          fila.className = 'padron-item' + (u.activo === false ? ' inactivo' : '');
+
+          function celda(texto, clase) {
+            var td = document.createElement('td');
+            if (clase) td.className = clase;
+            td.textContent = texto;
+            fila.appendChild(td);
+            return td;
           }
-          var acciones = document.createElement('p');
-          acciones.className = 'padron-acciones';
-          li.appendChild(acciones);
+
+          celda(u.nombre + ' ' + (u.apellido || ''), 'padron-celda-operador');
+          celda(u.email, 'padron-celda-correo');
+          celda(u.rol + (u.administrador ? ' · administrador' : ''), 'padron-celda-rol');
+          var estadoTexto = [];
+          if (u.activo === false) estadoTexto.push('dado de baja');
+          if (u.bloqueado) estadoTexto.push('bloqueado');
+          if (u.provisoria) estadoTexto.push('clave provisoria');
+          if (u.sector) estadoTexto.push(u.sector);
+          celda(estadoTexto.join(' · ') || 'activo', 'padron-celda-estado');
+          var celdasAcciones = document.createElement('td');
+          celdasAcciones.className = 'padron-acciones';
+          var acciones = document.createElement('div');
+          acciones.className = 'padron-acciones-grupo';
+          celdasAcciones.appendChild(acciones);
+          fila.appendChild(celdasAcciones);
 
           function boton(texto, fn) {
             var b = document.createElement('button');
@@ -303,7 +312,7 @@
               accion(u.email, 'baja', {}, 'Se dio de baja a ' + u.email + '.');
             });
           }
-          estado.dom.lista.appendChild(li);
+          estado.dom.lista.appendChild(fila);
         })(estado.usuarios[j]);
       }
     }).catch(function (err) {

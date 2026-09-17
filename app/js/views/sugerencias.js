@@ -207,7 +207,7 @@
     fab.type = 'button';
     fab.id = 'sgc-fab-sugerencia';
     fab.className = 'fab-sugerencia';
-    fab.textContent = '?';
+    fab.textContent = 'Sugerir';
     fab.setAttribute('aria-label', 'Enviar una sugerencia al Jefe de Contrataciones');
     fab.addEventListener('click', abrirPanel);
     raiz.appendChild(fab);

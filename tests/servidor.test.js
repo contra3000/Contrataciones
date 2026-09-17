@@ -284,7 +284,12 @@ test('el segundo guardado con la misma versión esperada recibe un 409 con confl
       contexto: contextoBase({ email: 'carlos.ramirez@faa.mil.ar' })
     });
     assert.equal(segundo.status, 409);
-    assert.deepEqual(segundo.body, { conflicto: true, versionRemota: 2 });
+    assert.deepEqual(segundo.body, {
+      conflicto: true,
+      versionRemota: 2,
+      ultimoUsuario: 'maria.gonzalez@faa.mil.ar',
+      ultimaModificacion: '2026-08-14T10:00:00.000Z'
+    });
 
     const final = await pedir(base, 'GET', '/api/expedientes/' + id);
     assert.equal(final.body.expediente.titulo, 'Resmas A4 (mod)',

@@ -145,7 +145,13 @@ function correrBateria(etiqueta, crearContexto, conExtra) {
         1,
         contextoBase()
       );
-      assert.deepEqual(r, { ok: false, conflicto: true, versionRemota: 2 });
+      assert.deepEqual(r, {
+        ok: false,
+        conflicto: true,
+        versionRemota: 2,
+        ultimoUsuario: 'operador@faa.mil.ar',
+        ultimaModificacion: '2026-08-14T10:00:00.000Z'
+      });
       const leido = await ctx.repo.leerExpediente(creado.id);
       assert.equal(leido.version, 2);
       assert.equal(leido.expediente.marca, 'A', 'el intento con conflicto no debe escribir');

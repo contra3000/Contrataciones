@@ -121,7 +121,9 @@
             return {
               ok: false,
               conflicto: true,
-              versionRemota: respuesta.cuerpo.versionRemota
+              versionRemota: respuesta.cuerpo.versionRemota,
+              ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
+              ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
             };
           }
           if (respuesta.status === 404) {
@@ -157,7 +159,9 @@
             return {
               ok: false,
               conflicto: true,
-              versionRemota: respuesta.cuerpo.versionRemota
+              versionRemota: respuesta.cuerpo.versionRemota,
+              ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
+              ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
             };
           }
           if (respuesta.status === 404) {
@@ -193,7 +197,9 @@
             return {
               ok: false,
               conflicto: true,
-              versionRemota: respuesta.cuerpo.versionRemota
+              versionRemota: respuesta.cuerpo.versionRemota,
+              ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
+              ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
             };
           }
           if (respuesta.status === 404) {

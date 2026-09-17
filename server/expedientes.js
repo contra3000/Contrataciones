@@ -140,7 +140,7 @@ function crearManejadoresExpedientes(entorno) {
       return responderJson(res, 403, { error: autorizacion.error });
     }
     const actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
-    if (actual.version !== cuerpo.versionEsperada) { return responderJson(res, 409, { conflicto: true, versionRemota: actual.version }); }
+    if (actual.version !== cuerpo.versionEsperada) { return responderJson(res, 409, { conflicto: true, versionRemota: actual.version, ultimoUsuario: actual.ultimoUsuario || null, ultimaModificacion: actual.ultimaModificacion || null }); }
     const contexto = Object.assign({}, cuerpo.contexto, { origen });
     const motor = SGC.core.estados;
     const resultado = accion === 'avanzar'
@@ -159,6 +159,8 @@ function crearManejadoresExpedientes(entorno) {
       contexto.rolEfectivo = ultimaEntrada.rolEfectivo;
     }
     const nuevaVersion = actual.version + 1;
+    if (typeof contexto.timestamp === 'string') { nuevo.ultimaModificacion = contexto.timestamp; }
+    if (typeof contexto.email === 'string') { nuevo.ultimoUsuario = contexto.email; }
     fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
     escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'), JSON.stringify(actual, null, 2));
     escribirAtomico(exp.datos, JSON.stringify(nuevo, null, 2));
@@ -256,11 +258,13 @@ function crearManejadoresExpedientes(entorno) {
     });
     if (typeof contexto.timestamp === 'string') {
       if (typeof actualizado.actualizado === 'string') { actualizado.actualizado = contexto.timestamp; }
-      if (typeof actualizado.ultimaModificacion === 'string') { actualizado.ultimaModificacion = contexto.timestamp; }
     }
-    if (typeof contexto.email === 'string' && typeof actualizado.ultimoUsuario === 'string') {
-      actualizado.ultimoUsuario = contexto.email;
-    }
+    // ADR-042: el servidor recuerda quién escribió la última versión. El campo
+    // se guarda siempre (no sólo si ya existía) para que el 409 de conflicto
+    // pueda distinguir "lo cambió otro operador" de "lo cambiaste vos en otra
+    // pestaña" (ORDEN-RONDA-21 §1.1).
+    if (typeof contexto.timestamp === 'string') { actualizado.ultimaModificacion = contexto.timestamp; }
+    if (typeof contexto.email === 'string') { actualizado.ultimoUsuario = contexto.email; }
     escribirAtomico(exp.datos, JSON.stringify(actualizado, null, 2));
     const entrada = repo.entradaIndice(id, actualizado, contexto);
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true }); escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
@@ -309,7 +313,7 @@ function crearManejadoresExpedientes(entorno) {
       return responderJson(res, 404, { error: 'expediente no encontrado: ' + id });
     }
     const actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
-    if (actual.version !== versionEsperada) { return responderJson(res, 409, { conflicto: true, versionRemota: actual.version }); }
+    if (actual.version !== versionEsperada) { return responderJson(res, 409, { conflicto: true, versionRemota: actual.version, ultimoUsuario: actual.ultimoUsuario || null, ultimaModificacion: actual.ultimaModificacion || null }); }
     // ADR-021: el PUT edita campos pero no puede mover el estado. Si el
     // documento recibido trae un estado distinto del de disco, 409 explícito
     // sin escribir nada. La única vía para cambiar el estado son los extremos
@@ -373,6 +377,8 @@ function crearManejadoresExpedientes(entorno) {
     if (cambiaImputacion && !autorizadoImputacion) {
       actualizado.imputacion = actual.imputacion;
     }
+    if (typeof contexto.timestamp === 'string') { actualizado.ultimaModificacion = contexto.timestamp; }
+    if (typeof contexto.email === 'string') { actualizado.ultimoUsuario = contexto.email; }
     escribirAtomico(exp.datos, JSON.stringify(actualizado, null, 2));
     const entrada = repo.entradaIndice(id, actualizado, contexto);
     fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true }); escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));

@@ -158,7 +158,13 @@ test('un operador con varios roles opera con el primero que el motor habilite', 
 test('conflicto de versión: aviso claro y botón de recargar, sin pisar lo ajeno', async () => {
   const { raiz, nodos } = armarExpediente();
   const repo = repoFalso({
-    guardar: () => Promise.resolve({ ok: false, conflicto: true, versionRemota: 7 })
+    guardar: () => Promise.resolve({
+      ok: false,
+      conflicto: true,
+      versionRemota: 7,
+      ultimoUsuario: 'carlos.ramirez@faa.mil.ar',
+      ultimaModificacion: '2026-08-14T11:00:00.000Z'
+    })
   });
   SGC.views.expediente.montar(raiz);
   SGC.views.expediente.fijarRepo(repo);
@@ -184,6 +190,36 @@ test('conflicto de versión: aviso claro y botón de recargar, sin pisar lo ajen
   await nuevaVuelta();
   assert.equal(nodos['sgc-expediente-conflicto'].hidden, true, 'recargar limpia el aviso');
   assert.ok(repo._leidos.length > leidosAntes, 'recargar vuelve a leer el expediente');
+});
+
+test('conflicto con la MISMA cuenta (otra pestaña) avisa en neutral, no "otro operador"', async () => {
+  const { raiz, nodos } = armarExpediente();
+  const repo = repoFalso({
+    guardar: () => Promise.resolve({
+      ok: false,
+      conflicto: true,
+      versionRemota: 7,
+      ultimoUsuario: 'maria.gonzalez@faa.mil.ar',
+      ultimaModificacion: '2026-08-14T11:00:00.000Z'
+    })
+  });
+  SGC.views.expediente.montar(raiz);
+  SGC.views.expediente.fijarRepo(repo);
+  SGC.views.expediente.seleccionarOperador(MARIA);
+
+  const expediente = expedienteEnEstado('ESPECIFICACIONES_TECNICAS', 44);
+  repo.fijarExpediente(expediente);
+  await SGC.views.expediente.abrir(expediente.expedienteId);
+  await nuevaVuelta();
+
+  nodos['sgc-expediente-avanzar'].click();
+  await nuevaVuelta();
+
+  assert.equal(nodos['sgc-expediente-conflicto'].hidden, false);
+  assert.doesNotMatch(nodos['sgc-expediente-conflicto-texto'].textContent,
+    /otro operador/, 'con la misma cuenta no se acusa a otro operador');
+  assert.match(nodos['sgc-expediente-conflicto-texto'].textContent,
+    /otra pestaña/, 'se menciona la probable otra pestaña');
 });
 
 test('la auditoría se pinta cronológica con quién, qué, cuándo y desde qué equipo', async () => {

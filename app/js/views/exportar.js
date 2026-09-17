@@ -187,6 +187,9 @@
         ', versión ' + respuesta.version + ').', false);
       enlazarDocumento('api/expedientes/' + expediente.expedienteId +
         '/entregables/' + plantilla.nombre, plantilla);
+      if (SGC.views.expediente && typeof SGC.views.expediente.abrir === 'function') {
+        SGC.views.expediente.abrir(expediente.expedienteId);
+      }
     }).catch(function (err) {
       avisar('No se pudo guardar el documento: ' + err.message, true);
     });

@@ -294,16 +294,23 @@
     estado.dom.mensaje.hidden = false;
   }
 
-  function mostrarConflicto(versionRemota) {
-    estado.dom.conflictoTexto.textContent = 'El expediente fue modificado por otro operador' +
-      (versionRemota !== undefined ? ' (versión actual en el servidor: ' + versionRemota + ')' : '') +
-      '. No se guardó el cambio.';
+  function mostrarConflicto(respuesta) {
+    var quien = respuesta && respuesta.ultimoUsuario ? respuesta.ultimoUsuario : null;
+    var esOtroOperador = !!quien && (!estado.operador || quien !== estado.operador.email);
+    var mensaje = esOtroOperador
+      ? 'El expediente fue modificado por otro operador'
+      : 'El expediente fue modificado después de que usted lo abrió (posiblemente en otra pestaña)';
+    if (respuesta && respuesta.versionRemota !== undefined) {
+      mensaje += ' (versión actual en el servidor: ' + respuesta.versionRemota + ')';
+    }
+    mensaje += '. No se guardó el cambio.';
+    estado.dom.conflictoTexto.textContent = mensaje;
     estado.dom.conflicto.hidden = false;
   }
 
   function manejarResultado(respuesta) {
     if (!respuesta) { return; }
-    if (respuesta.conflicto) { mostrarConflicto(respuesta.versionRemota); return; }
+    if (respuesta.conflicto) { mostrarConflicto(respuesta); return; }
     if (respuesta.ok) {
       avisar('Cambio guardado (versión ' + respuesta.version + ').', false);
       abrir(estado.id);

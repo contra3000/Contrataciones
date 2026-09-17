@@ -1,0 +1,103 @@
+/*
+ * tokens.css
+ * H16-1 · Capa única de variables del sistema de estilos.
+ *
+ * Traducción de
+ * EjemplosProcesoActual/DocUOC/Generador de Pliegos/estilos/guia_estilos/
+ *   paquete/tokens.json  (v1.0.0, 2026-05)
+ * a variables CSS compatibles con Chrome 109 (ADR-011: sin anidamiento
+ * nativo, sin text-wrap: balance).
+ *
+ * Regla duras del paquete que gobiernan este archivo:
+ *  - El azul marino institucional (navy-800) es el ÚNICO color de énfasis.
+ *    No hay rojos, verdes ni anaranjados, ni siquiera para estados: la
+ *    señal de estado se resuelve tipográficamente.
+ *  - El dorado sólo aparece sobre navy. Nunca sobre papel. Nunca como color
+ *    de cuerpo de texto.
+ *  - Todos los colores y tipografías de la aplicación cuelgan de las
+ *    variables de este archivo: cambiar el color primario de toda la
+ *    aplicación es UNA línea (--color-primario).
+ *
+ * Sin URLs al exterior (ADR-018): las familias IBM Plex se declaran por
+ * nombre; si el equipo del parque no las tiene instaladas, la pila cae a la
+ * plantilla local (Helvetica/Arial y Georgia/Times).
+ */
+:root {
+  /* ------------------------------------------------------------ color · X */
+  /* Navy — institucional */
+  --navy-900: #061A35;
+  --navy-800: #0E2748;
+  --navy-700: #1A3559;
+  --navy-200: #C6CFDC;
+  --navy-100: #E2E7EF;
+
+  /* Gold — ceremonial, sólo sobre navy */
+  --gold-600: #A98736;
+  --gold-500: #C9A14A;
+  --gold-300: #E2C078;
+
+  /* Ink — tinta sobre papel */
+  --ink-900: #111418;
+  --ink-700: #2A2F36;
+  --ink-500: #5C6470;
+  --ink-400: #8A8F98;
+  --ink-300: #B8BBC2;
+  --ink-200: #D6D8DC;
+  --ink-100: #ECEDEF;
+
+  /* Paper — soporte cálido */
+  --paper: #FAF8F3;
+  --paper-tint: #F2EFE7;
+  --paper-dark: #E8E3D6;
+  --white: #FFFFFF;
+
+  /* ---------------------------------------------------- color · derivada */
+  /* El primario de la aplicación es navy-800. Cambiar ESTA línea recolorea
+     toda la aplicación (criterio de aceptación de H16). */
+  --color-primario: var(--navy-800);
+  --color-primario-oscuro: var(--navy-900);
+  --color-primario-hover: var(--navy-700);
+  --color-primario-aura: rgba(14, 39, 72, 0.15);
+  --color-primario-tint: rgba(14, 39, 72, 0.08);
+
+  --color-texto: var(--ink-900);
+  --color-texto-suave: var(--ink-500);
+  --color-fondo: var(--paper);
+  --color-fondo-suave: var(--ink-100);
+  --color-fondo-panel: var(--white);
+  --color-borde: var(--ink-200);
+  --color-borde-fuerte: var(--ink-300);
+
+  /* Estados: se resuelven tipográficamente (regla single_accent del paquete).
+     --color-error y --color-exito se mantienen como alias para no tocar los
+     consumidores, pero ya no introducen rojos ni verdes. */
+  --color-error: var(--ink-900);
+  --color-exito: var(--navy-800);
+
+  --sombra-card: rgba(17, 20, 24, 0.12);
+  --sombra-dialogo: rgba(17, 20, 24, 0.2);
+
+  /* ---------------------------------------------------------- tipografía */
+  --ff-serif: 'IBM Plex Serif', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+  --ff-sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --ff-mono: 'IBM Plex Mono', 'Menlo', monospace;
+
+  --fuente-base: var(--ff-sans);
+  --fuente-mono: var(--ff-mono);
+
+  /* ------------------------------------------------------------- layout */
+  --col-max: 880px;
+  --sidebar: 260px;
+  --shell-pad: 56px;
+
+  /* Escala tipográfica de pantalla (derivada de typography.scale) */
+  --tamano-fuente-base: 15px;
+  --espaciado-base: 8px;
+  --radio-borde: 4px;
+
+  /* -------------------------------------------------------------- A4 */
+  --a4-w: 794px;
+  --a4-h: 1123px;
+  --filete-principal-pt: 1pt;
+  --filete-secundario-pt: 0.5pt;
+}
