@@ -673,6 +673,23 @@ e2e por la montura real; los unitarios legítimos
 - [ ] H23-15 · **C6, C7 y C9**: la cadena de roles hasta la firma, repartir las catorce claves y que cada uno entre, y salir y volver. **9 de 9**. Ronda 21
 
 
+### H24 — Lo que apareció cuando alguien lo usó de verdad
+
+**Ronda 22.** Los tres puntos salieron de **una sola sesión del Jefe de Contrataciones cargando un expediente real**. Ninguno lo encontró un test ni una auditoría.
+
+- [ ] H24-1 · **Crear un expediente exige el rol que ejecuta el primer paso**, verificado en el servidor contra el padrón. Hoy `expedientes.js:63 apiCrear` valida renglones, textos y encabezado **y nunca mira el rol**: cualquiera autenticado puede originar un requerimiento. La matriz de 18 × 7 gobierna las transiciones y **nadie gobierna el nacimiento**
+- [ ] H24-2 · **La lista de todos los extremos que crean algo**, con quién puede y quién lo verifica — expedientes, presupuestos, entregables, adjuntos, plantillas, sugerencias, padrón
+- [ ] H24-3 · **El presupuesto admite 20 MB**, porque los documentos de GDE vienen escaneados y pesan eso
+- [ ] H24-4 · **El archivo viaja como archivo**, no codificado en texto dentro de un JSON: elimina la inflación del 33% y baja el pico de memoria de ~100 MB a menos de 1 MB por subida
+- [ ] H24-5 · **El límite se declara una sola vez** y de ahí salen el control, el aviso del cliente y el mensaje
+- [ ] H24-6 · **Indicador de progreso** en la subida: 20 MB desde una PC del parque tardan segundos, y el silencio se lee como "se colgó"
+- [ ] H24-7 · **Texto de ayuda visible en la aclaración**: que no repita la descripción del ítem, y que evite marcas como sinónimo de calidad — los parámetros técnicos son los que después permiten evaluar las ofertas *(pedido textual del Jefe de Contrataciones; ataca R14 y buena parte del log de errores)*
+
+**Criterio de aceptación:** un `contrataciones_supervisor` no puede crear un expediente y un `generador` sí; un PDF de 20 MB sube con progreso a la vista sin que el servidor tome cien megas para hacerlo.
+
+**Pendiente de Informática:** con 20 MB por archivo, tres por expediente y un centenar de expedientes al año son **~6 GB anuales**, que además el respaldo diario mueve por la red. Preguntar **cuánto disco tiene la máquina virtual** y **si el destino del respaldo aguanta ese volumen**.
+
+
 ## Riesgos abiertos
 
 | # | Riesgo | Impacto | Mitigación |
@@ -688,6 +705,8 @@ e2e por la montura real; los unitarios legítimos
 | ~~R41~~ | ~~El banco de pruebas prueba una ficción~~ | **Cerrado — ciclo 17** | El probador arma su expediente con la función de exportación real. Y el pliego de servicios sale del generador de verdad, verificado por el auditor |
 | R42 | **Una importación de padrón mal hecha deja afuera a catorce personas** | Alto — un archivo de Excel al que le borraron una fila sin querer | ADR-037 §5 y §6: diff antes de aplicar, todo o nada, la ausencia **no** desactiva, y el administrador no puede encerrarse afuera |
 | R43 | **El comentario enuncia la regla correcta y el código hace otra cosa** — tres instancias en la misma ronda (`padron-inicial.js`, `eventos.js`/`sugerencias.js`, `padron-csv.js`), repetidas después en el informe del desarrollador | **Alto y particular**: derrota a la revisión por lectura. Quien audita leyendo —el revisor, el Jefe de Contrataciones, un sucesor, o cualquier modelo al que se le pase el repositorio— encuentra el comentario correcto y sigue de largo | Regla §3.10 del ciclo de trabajo: *una regla enunciada en un comentario y no en un test que falle al quitarla, no existe*. Y sección propia en la auditoría del ciclo 18: leer el código contra sí mismo |
+| R51 | **Nadie controla quién origina un requerimiento** — `apiCrear` no mira el rol; cualquiera autenticado puede crear un expediente | **Alto**: borra en silencio la separación entre quien pide y quien compra, que es el control que sostiene el circuito. Y el registro de auditoría queda diciendo que la necesidad la pidió Contrataciones | H24-1 y H24-2: la guardia en el servidor, y **la lista de todas las puertas** que crean algo |
+| R52 | **Un límite escrito en dos lugares se desincroniza** — el tope del presupuesto vive en el servidor y el mensaje se arma aparte | Medio — el día que se cambie uno y no el otro, el aviso miente | H24-5: un solo lugar de declaración, tres consumidores |
 | R49 | **Un dato fresco que devuelve una escritura no llega a la vista** — la versión del expediente tras guardar el documento (`exportar.js:169`) | Alto y desconcertante: frena a **una persona sola** y le dice que la frenó *"otro operador"* que no existe. Quinta aparición de la misma familia | H23-13 y H23-14: la corrección, y **la lista completa** de escrituras que devuelven versión |
 | R50 | **Una instrucción del revisor cuesta diez veces más de lo que él calcula** — «recorré el circuito como una persona» se convirtió en un robot de navegador de once pasos, 7 min por corrida, roto con cada cambio de pantalla | Alto para el proceso — quemó un ciclo de auditoría entero y dejó la verificación sin terminar | **Regla §3.16**: tres verificaciones, tres dueños. El auditor no maneja el navegador; los e2e los hace el desarrollador; el recorrido humano lo hace el Jefe de Contrataciones |
 | R47 | **El orquestador escribe órdenes sin verificar qué se ejecutó** — el 11/9 emitió una orden para trabajo ya hecho y auditado, y editó dos órdenes ya ejecutadas | Alto para el proceso — es el único rol sin nadie que lo controle, y el error llega hasta el desarrollador y el auditor antes de detectarse | **Regla §3.15**: antes de escribir nada, mirar el disco — informes, carpetas de auditoría, fechas de los archivos. Y una orden ejecutada no se toca nunca más |
