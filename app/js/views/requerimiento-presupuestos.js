@@ -6,10 +6,12 @@
  * los errores se muestran en español junto al archivo.
  *
  * Vive separado de requerimiento-formulario.js para que ningún archivo de la
- * pantalla supere las 400 líneas (ORDEN-RONDA-10 §3.1). Las reglas del lado
- * servidor (tipos admitidos, tope de 2 MB) están repetidas a propósito: es la
- * misma verificación previa que evita viajes al servidor por un archivo que ya
- * se ve mal acá.
+ * pantalla supere las 400 líneas (ORDEN-RONDA-10 §3.1). Los tipos admitidos
+ * están repetidos a propósito (es la verificación previa que evita viajes al
+ * servidor por un archivo que ya se ve mal acá), pero el LÍMITE del presupuesto
+ * NO: se lee de core/limites.js, el único lugar donde se declara
+ * (ORDEN-RONDA-23 §4), para que el aviso de acá y el rechazo del servidor no
+ * digan números distintos.
  */
 (function (root) {
   'use strict';
@@ -21,9 +23,22 @@
 
   var TIPOS_ADMITIDOS = ['application/pdf', 'image/png', 'image/jpeg'];
   var EXTENSIONES = ['pdf', 'png', 'jpg', 'jpeg'];
-  var LIMITE_BYTES = 2 * 1024 * 1024;
 
   var estado = { dom: {}, ganchos: null };
+
+  // El límite no se escribe acá: se lee vivo del único lugar donde se declara
+  // (core/limites.js, ORDEN-RONDA-23 §4).
+  function limiteBytes() {
+    return SGC.core.limites.LIMITE_PRESUPUESTO_BYTES;
+  }
+
+  function pesoLegible(bytes) {
+    var n = typeof bytes === 'number' ? bytes : 0;
+    if (n >= 1024 * 1024) {
+      return SGC.core.limites.aMB(n) + ' MB';
+    }
+    return Math.round(n / 1024) + ' KB';
+  }
 
   // El expediente llega plano; la misma normalización que hace
   // core/requerimiento.js.
@@ -96,7 +111,7 @@
       (function (file) {
         var li = doc ? doc.createElement('li') : null;
         if (li) {
-          li.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)…';
+          li.textContent = file.name + ' (' + pesoLegible(file.size) + ')…';
           ul.appendChild(li);
         }
         function fallar(mensaje) {
@@ -106,15 +121,27 @@
           fallar('el formato no es admitido; usá PDF, PNG o JPG.');
           return;
         }
-        if (file.size > LIMITE_BYTES) {
-          fallar('supera el límite de 2 MB.');
+        // El aviso es ANTES de subir y con el tamaño real y el máximo, al lado
+        // del archivo (ORDEN-RONDA-23 §4). Ambos números salen de limites.js.
+        if (file.size > limiteBytes()) {
+          fallar('supera el máximo de ' + SGC.core.limites.textoLimite() +
+            '; el archivo pesa ' + pesoLegible(file.size) + '.');
           return;
         }
         // ORDEN-RONDA-23 §3: el archivo viaja crudo, sin pasar por base64.
+        // §4: mientras sube, la lista del archivo muestra el avance para que
+        // nadie lo lea como "se colgó" y vuelva a apretar.
         estado.ganchos.repo().guardarPresupuesto(estado.ganchos.expedienteId(), {
           nombreOriginal: file.name,
           tipo: tipoDeArchivo(file),
-          archivo: file
+          archivo: file,
+          onProgress: function (cargado, total) {
+            if (!li || !total) {
+              return;
+            }
+            li.textContent = file.name + ' (' + pesoLegible(file.size) + ') · subiendo ' +
+              Math.round((cargado / total) * 100) + '%';
+          }
         }, estado.ganchos.contexto()).then(function (respuesta) {
           if (respuesta.conflicto || respuesta.error) {
             fallar(respuesta.error || 'conflicto de versión.');

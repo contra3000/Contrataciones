@@ -277,13 +277,20 @@ function leerCuerpo(req) {
 // archivo y el servidor lo deja caer al temporal que después se renombra. El
 // flujo se frena cuando el disco va más lento (backpressure) y se corta en
 // cuanto se pasa del límite, borrando el temporal. Resuelve con los bytes
-// recibidos; si el límite se pasa, rechaza con codigoEstado 413 y el tamaño
-// recibido y el máximo en el mensaje.
+// recibidos; si el límite se pasa, rechaza con codigoEstado 413 y los bytes
+// recibidos y el límite en el error (`recibidos`, `limite`). El mensaje en
+// castellano lo arma el dominio (presupuestos.js), que es quien conoce el
+// único lugar donde se declara el número (core/limites.js, ORDEN-RONDA-23 §4).
 function recibirEnArchivo(req, rutaArchivo, limite) {
   return new Promise((resolve, reject) => {
     const salida = fs.createWriteStream(rutaArchivo);
     let bytes = 0;
     let terminado = false;
+    // Tamaño total del archivo, si el cliente lo declaró: sirve para decirle al
+    // usuario cuánto pesaba de verdad (el corte del flujo se detecta unos KB
+    // más tarde, con el trozo que cruzó el límite).
+    const declarado = Number(req.headers['content-length']);
+    const tamanoDeclarado = Number.isFinite(declarado) && declarado > 0 ? declarado : null;
 
     function limpiarTemporal() {
       try {
@@ -314,14 +321,11 @@ function recibirEnArchivo(req, rutaArchivo, limite) {
       }
       bytes += trozo.length;
       if (bytes > limite) {
-        const exceso = new Error('el presupuesto supera el límite de ' +
-          Math.round(limite / (1024 * 1024)) + ' MB; llegaron ' +
-          Math.round(bytes / (1024 * 1024) * 10) / 10 + ' MB');
+        const exceso = new Error('el archivo supera el límite permitido');
         exceso.codigoEstado = 413;
         exceso.recibidos = bytes;
         exceso.limite = limite;
-        // El motivo es nuestro (en castellano); puede llegar al usuario.
-        exceso.mensajeSeguro = true;
+        exceso.tamanoDeclarado = tamanoDeclarado;
         req.removeAllListeners('data');
         req.removeAllListeners('end');
         req.removeAllListeners('error');

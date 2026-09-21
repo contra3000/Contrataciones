@@ -13,7 +13,8 @@
  *    (`presupuesto-<n>.<ext>`), con un id estable que los valores de
  *    referencia citan. El `nombreOriginal` queda sólo como dato del registro.
  *  - El servidor valida tipo (PDF, PNG, JPG), firma (magic bytes) y tamaño
- *    (2 MB) y lo escribe en binario en `presupuestos/` dentro del expediente.
+ *    (el declarado una sola vez en core/limites.js, ORDEN-RONDA-23 §4) y lo
+ *    escribe en binario en `presupuestos/` dentro del expediente.
  *  - El registro queda en datos.json (con versión), el archivo se persiste en
  *    disco, y repo.http.guardarPresupuesto lo resuelve desde el cliente.
  */
@@ -27,6 +28,7 @@ const RAIZ = path.join(__dirname, '..');
 
 require(path.join(RAIZ, 'app', 'js', 'core', 'namespaces.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'config.js'));
+require(path.join(RAIZ, 'app', 'js', 'core', 'limites.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'roles.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'cotas-encabezado.js'));
 require(path.join(RAIZ, 'app', 'js', 'core', 'utils.js'));
@@ -153,14 +155,36 @@ test('un cuerpo vacío o con la firma equivocada se rechaza con 400', async () =
   assert.equal((enDisco.presupuestos || []).length, 0);
 });
 
-test('un presupuesto que supera el límite de 2 MB se rechaza con el tamaño', async () => {
-  const id = await crearExpediente();
-  const contenido = Buffer.alloc(2500 * 1024, 7);
+const LIMITES = globalThis.SGC.core.limites;
+
+function pdfDe(bytes) {
+  const contenido = Buffer.alloc(bytes, 7);
   contenido.write('%PDF-1.4', 0, 'utf8');
+  return contenido;
+}
+
+// ORDEN-RONDA-23 §4/§7: 19 MB entra y 21 MB se rechaza con el tamaño real y el
+// máximo. El número no se escribe acá: sale de core/limites.js.
+test('un presupuesto de 19 MB entra y se guarda byte a byte', async () => {
+  const id = await crearExpediente();
+  const contenido = pdfDe(19 * 1024 * 1024);
   const r = await subir(id, contenido, 'application/pdf', 'grande.pdf');
+  assert.equal(r.status, 201, '19 MB entra');
+  assert.equal(r.body.peso, contenido.length);
+  const guardado = rutaPresupuesto(ENTORNO.datosDir, id, 'presupuesto-1.pdf');
+  assert.equal(fs.statSync(guardado).size, contenido.length, 'el archivo pesa lo que viajó');
+  assert.deepEqual(fs.readFileSync(guardado).subarray(0, 16), contenido.subarray(0, 16));
+});
+
+test('un presupuesto de 21 MB se rechaza con el tamaño real y el máximo', async () => {
+  const id = await crearExpediente();
+  const contenido = pdfDe(21 * 1024 * 1024);
+  const r = await subir(id, contenido, 'application/pdf', 'enorme.pdf');
   assert.equal(r.status, 413, 'lo que se pasa del límite se rechaza');
-  assert.match(r.body.error, /límite de 2 MB/);
+  assert.ok(r.body.error.indexOf('límite de ' + LIMITES.textoLimite()) !== -1,
+    'el mensaje dice el máximo declarado');
   assert.match(r.body.error, /llegaron/);
+  assert.match(r.body.error, /21 MB/, 'el mensaje dice el tamaño real');
   const enDisco = docEnDisco(ENTORNO.datosDir, id);
   assert.equal((enDisco.presupuestos || []).length, 0);
   const carpeta = path.dirname(rutaPresupuesto(ENTORNO.datosDir, id, 'x.pdf'));

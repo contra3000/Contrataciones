@@ -52,6 +52,7 @@ const sesion = require('./sesion.js');
 const APP_CORE = [
   'namespaces.js',
   'config.js',
+  'limites.js',
   'roles.js',
   'cotas-encabezado.js',
   'autorizacion.js',

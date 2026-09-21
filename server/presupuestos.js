@@ -27,7 +27,6 @@ const TIPOS_PRESUPUESTO = {
   'image/png': 'png',
   'image/jpeg': 'jpg'
 };
-const LIMITE_PRESUPUESTO = 2 * 1024 * 1024;
 
 // Firma (magic bytes) de cada tipo admitido: un archivo con el Content-Type
 // correcto pero sin la firma no es lo que dice ser.
@@ -188,7 +187,7 @@ function crearManejadoresPresupuestos(entorno) {
       const temporal = path.join(carpeta, '.' + archivo + '.' + process.pid + '.tmp');
       const nuevaVersion = actual.version + 1;
 
-      return recibirEnArchivo(req, temporal, LIMITE_PRESUPUESTO).then((recibido) => {
+      return recibirEnArchivo(req, temporal, SGC.core.limites.LIMITE_PRESUPUESTO_BYTES).then((recibido) => {
         if (recibido.bytes === 0) {
           borrarSilencioso(temporal);
           return responderJson(res, 400, { error: 'el contenido del presupuesto está vacío' });
@@ -236,15 +235,20 @@ function crearManejadoresPresupuestos(entorno) {
         });
       }).catch((e) => {
         // El límite del presupuesto responde su propio mensaje (con lo recibido
-        // y el máximo); el resto de los fallos sigue el camino general. Sólo un
-        // motivo marcado como seguro (nuestro, en castellano) puede salir.
-        const motivo = e && e.mensajeSeguro === true && e.message ? e.message : null;
-        if (motivo && e.codigoEstado === 413) {
+        // y el máximo), armado desde el único lugar donde se declara el número
+        // (core/limites.js, ORDEN-RONDA-23 §4); el resto sigue el camino
+        // general. El motivo sale de `recibidos` (un número nuestro), nunca del
+        // error de la máquina.
+        if (e && e.codigoEstado === 413 && typeof e.recibidos === 'number') {
+          // Si el cliente declaró el tamaño total, se informa ése (el real); si
+          // no, lo que alcanzó a llegar antes del corte.
+          const tamano = typeof e.tamanoDeclarado === 'number' && e.tamanoDeclarado > 0
+            ? e.tamanoDeclarado : e.recibidos;
           res.writeHead(413, {
             'Content-Type': 'application/json; charset=utf-8',
             'Connection': 'close'
           });
-          res.end(JSON.stringify({ error: motivo }));
+          res.end(JSON.stringify({ error: SGC.core.limites.mensajeLimite(tamano) }));
           return;
         }
         throw e;
