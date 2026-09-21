@@ -163,6 +163,10 @@ async function contextoServidor() {
   const ctx = await su.arrancarServidor(datos, 0);
   return { ctx, base: 'http://127.0.0.1:' + ctx.puerto, datos };
 }
+// ORDEN-RONDA-23 §2: carlos.ramirez es el supervisor de contrataciones y, en el
+// padrón de ejemplo, el marcado como `administrador` (config/usuarios.ejemplo
+// .json). Publicar/volver siguen con esPublicador; la estampa, además, exige la
+// marca (mismo contexto, otra puerta).
 const PUBLICADOR = { rol: 'contrataciones_supervisor', email: 'carlos.ramirez@faa.mil.ar' };
 const LECTOR = { rol: 'generador', email: 'maria.gonzalez@faa.mil.ar' };
 

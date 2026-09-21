@@ -31,6 +31,7 @@
       "email": "carlos.ramirez@faa.mil.ar",
       "rol": "contrataciones_supervisor",
       "sector": "contrataciones",
+      "administrador": true,
       "activo": true
     },
     {

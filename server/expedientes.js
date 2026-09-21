@@ -251,6 +251,15 @@ function crearManejadoresExpedientes(entorno) {
     }
     const actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
     const contexto = cuerpo.contexto || {};
+    // ORDEN-RONDA-23 §2: guardar un entregable es una operación del estado en
+    // curso; la exige quien ejecuta ese estado (su rolEjecutor), no cualquier
+    // usuario del padrón. Es el mismo cruce que apiCrear hace con la primera
+    // etapa, aplicado a la etapa que está abierta ahora.
+    const autorizacionDelEstado = SGC.core.autorizacion.autorizarRolDelEstado(
+      entorno.padronVivo.usuarios(), contexto, actual.estado ? actual.estado.id : null);
+    if (!autorizacionDelEstado.ok) {
+      return responderJson(res, 403, { error: autorizacionDelEstado.error });
+    }
     const rutaEntregable = path.join(exp.dir, 'entregables', nombre);
     if (!estaDentro(rutaEntregable, exp.dir)) {
       return responderJson(res, 400, { error: 'el nombre del entregable no es válido (recorrido de rutas no permitido)' });

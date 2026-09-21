@@ -26,7 +26,7 @@ const TIPOS_PRESUPUESTO = {
 const LIMITE_PRESUPUESTO = 2 * 1024 * 1024;
 
 function crearManejadoresPresupuestos(entorno) {
-  const { datosDir, repo, ayudantes } = entorno;
+  const { datosDir, repo, ayudantes, padronVivo } = entorno;
   const {
     escribirAtomico,
     estaDentro,
@@ -34,6 +34,7 @@ function crearManejadoresPresupuestos(entorno) {
     parsearCuerpo,
     responderJson
   } = ayudantes;
+  const SGC = globalThis.SGC;
 
   function apiGuardarPresupuesto(req, res, id, contextoCuerpo) {
     const cuerpo = parsearCuerpo(contextoCuerpo);
@@ -74,6 +75,13 @@ function crearManejadoresPresupuestos(entorno) {
     }
     const actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
     const contexto = cuerpo.contexto || {};
+    // ORDEN-RONDA-23 §2: adjuntar un presupuesto es una operación del estado en
+    // curso; la exige quien ejecuta ese estado, no cualquier usuario del padrón.
+    const autorizacionDelEstado = SGC.core.autorizacion.autorizarRolDelEstado(
+      padronVivo.usuarios(), contexto, actual.estado ? actual.estado.id : null);
+    if (!autorizacionDelEstado.ok) {
+      return responderJson(res, 403, { error: autorizacionDelEstado.error });
+    }
     const numero = (Array.isArray(actual.presupuestos) ? actual.presupuestos : []).length + 1;
     const archivo = 'presupuesto-' + numero + '.' + extension;
     const ruta = path.join(exp.dir, 'presupuestos', archivo);

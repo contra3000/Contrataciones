@@ -629,11 +629,14 @@ test('17. el probador usa la salida real: los bienes no llevan campos de servici
 
 test('18. regenerar usa la versión estampada y dice claro si esa versión ya no existe', async () => {
   // ORDEN-RONDA-22 §1: crear ya no es tarea del administrador. El expediente
-  // nace con el rol del primer paso (generador) y se estampa con esa misma
-  // sesión; la estampa y el regenerar no exigen rol, lo que este test mide es
-  // la versión.
+  // nace con el rol del primer paso (generador). ORDEN-RONDA-23 §2 revierte la
+  // otra mitad de §1 —"la estampa no exige rol"—: estampar es una puerta que
+  // cambia la plantilla elegida y ahora exige la marca `administrador`; acá la
+  // lleva contrataciones_supervisor (servidorConRoles). El regenerar (GET) sí
+  // sigue sin rol, y lo que este test mide es la versión.
   const s = await servidorConRoles();
   const cookie = s.cookies.generador;
+  const cookieAdmin = s.cookies.contrataciones_supervisor;
   try {
     const creado = await pedirCon(s.base, 'POST', '/api/expedientes',
       {
@@ -654,7 +657,7 @@ test('18. regenerar usa la versión estampada y dice claro si esa versión ya no
     assert.strictEqual(creado.status, 201, 'expediente creado: ' + (creado.body && creado.body.expediente));
     const id = creado.body.id;
     const estampa = await pedirCon(s.base, 'POST', '/api/expedientes/' + id + '/plantilla',
-      {}, cookie);
+      {}, cookieAdmin);
     assert.strictEqual(estampa.status, 200, 'la plantilla se estampa');
     const estampado = estampa.body.plantilla;
     assert.strictEqual(estampado.version, 1, 'estampa la v1 sembrada');

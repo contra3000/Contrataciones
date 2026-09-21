@@ -54,5 +54,41 @@
     return { ok: false, error: 'el rol "' + rol + '" no corresponde al correo "' + email + '" en el padrón' };
   }
 
-  SGC.core.autorizacion = { verificar: verificar };
+  // ORDEN-RONDA-23 §2: hay operaciones que no son "de la persona" sino "del
+  // estado": guardar el presupuesto o el entregable de la etapa en curso las
+  // hace quien ejecuta esa etapa (config.ESTADOS[].rolEjecutor). Cruza primero
+  // el contexto contra el padrón (como verificar) y después pregunta si el rol
+  // de ese correo —con sus heredados, ADR-033— incluye el rol del estado.
+  // Devuelve {ok:true} o {ok:false, error} en español.
+  function autorizarRolDelEstado(usuarios, contexto, idEstado) {
+    var v = verificar(usuarios, contexto);
+    if (!v.ok) {
+      return v;
+    }
+    var estados = SGC.core.config.ESTADOS;
+    var estado = null;
+    for (var i = 0; i < estados.length; i++) {
+      if (estados[i].id === idEstado) {
+        estado = estados[i];
+        break;
+      }
+    }
+    if (!estado) {
+      return { ok: false, error: 'el expediente no tiene un estado actual válido' };
+    }
+    var rol = contexto.rol.trim();
+    if (SGC.core.config.rolesEfectivos(rol).indexOf(estado.rolEjecutor) === -1) {
+      return {
+        ok: false,
+        error: 'esta operación exige el rol "' + estado.rolEjecutor +
+          '", el que ejecuta el estado actual ("' + estado.id + '")'
+      };
+    }
+    return { ok: true };
+  }
+
+  SGC.core.autorizacion = {
+    verificar: verificar,
+    autorizarRolDelEstado: autorizarRolDelEstado
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

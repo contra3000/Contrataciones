@@ -21,6 +21,7 @@ const { diccionarioDePalabras } = require('./palabras.js');
 const { crearCapaCsv } = require('./padron-csv.js');
 const identidad = require('./identidad.js');
 const antiEncierro = require('./anti-encierro.js');
+const { crearGuardaAdministrador } = require('./admin-guardia.js');
 
 const SUFIJOS_INVALIDOS = identidad.SUFIJOS_INVALIDOS;
 const RE_EMAIL = identidad.RE_EMAIL;
@@ -29,6 +30,7 @@ function crearManejadoresPadron(entorno) {
   const { responderJson, parsearCuerpo } = entorno.ayudantes;
   const SGC = globalThis.SGC;
   const ROLES = SGC.core.config.ROLES.map((r) => r.id);
+  const guardaAdmin = crearGuardaAdministrador(entorno.padronVivo);
 
   function leerPadron() {
     return entorno.padronVivo.leer() || { schemaVersion: '2.0.0', usuarios: [] };
@@ -57,21 +59,10 @@ function crearManejadoresPadron(entorno) {
     return s ? { email: s.email, rol: s.rol } : null;
   }
 
+  // ORDEN-RONDA-23 §2: la pregunta se comparte en server/admin-guardia.js; acá
+  // conserva el mensaje del padrón.
   function esAdministrador(contexto) {
-    const cx = contexto || {};
-    const usuarios = entorno.padronVivo.usuarios();
-    const v = SGC.core.autorizacion.verificar(usuarios, cx);
-    if (!v.ok) {
-      return { ok: false, error: v.error };
-    }
-    const usuario = usuarios.find((u) => u && u.email === cx.email);
-    if (!usuario || usuario.activo === false) {
-      return { ok: false, error: 'su cuenta no está activa en el padrón' };
-    }
-    if (usuario.administrador !== true) {
-      return { ok: false, error: 'solo el administrador puede administrar el padrón' };
-    }
-    return { ok: true, usuario };
+    return guardaAdmin.esAdministrador(contexto, 'solo el administrador puede administrar el padrón');
   }
 
   function exigirAdmin(res, req, cuerpo) {

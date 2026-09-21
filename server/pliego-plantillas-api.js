@@ -12,6 +12,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { crearGuardaAdministrador } = require('./admin-guardia.js');
 
 function crearManejadoresPlantillas(entorno) {
   const {
@@ -25,6 +26,11 @@ function crearManejadoresPlantillas(entorno) {
   // Carga diferida del núcleo para no acoplar el ciclo de arranque.
   const nucleo = require('./pliego-plantillas.js');
   const repo = SGC.adapters.repo;
+  // ORDEN-RONDA-23 §2: la marca `administrador` (server/admin-guardia.js) es la
+  // que gobierna las puertas de acá que cambian la plantilla elegida. Publicar y
+  // volver siguen con esPublicador (ROLES_PUBLICAN); estampar y seleccionar no
+  // tenían guardia y ahora la exigen.
+  const guardaAdmin = crearGuardaAdministrador(entorno.padronVivo);
 
   // Escritura con versión bump + historial de la previa (ADR-005/009).
   function escriboHist(exp, actual) {
@@ -171,6 +177,11 @@ function crearManejadoresPlantillas(entorno) {
 
   function apiSeleccionar(req, res, textoCuerpo) {
     const cuerpo = parsearCuerpo(textoCuerpo) || {};
+    const admin = guardaAdmin.esAdministrador(cuerpo.contexto,
+      'solo el administrador puede elegir la plantilla del pliego');
+    if (!admin.ok) {
+      return responderJson(res, 403, { error: admin.error });
+    }
     const atributos = (cuerpo.atributos && typeof cuerpo.atributos === 'object') ? cuerpo.atributos : {};
     const resultado = nucleo.seleccionar(nucleo.cargar(datosDir), atributos);
     return responderJson(res, 200, {
@@ -220,6 +231,11 @@ function crearManejadoresPlantillas(entorno) {
   // expediente (versión bump + historial, como el resto de las escrituras).
   function apiEstampar(req, res, textoCuerpo, id) {
     const cuerpo = parsearCuerpo(textoCuerpo) || {};
+    const admin = guardaAdmin.esAdministrador(cuerpo.contexto,
+      'solo el administrador puede estampar la plantilla del pliego');
+    if (!admin.ok) {
+      return responderJson(res, 403, { error: admin.error });
+    }
     const exp = ayudantes.rutaExpediente(datosDir, id);
     if (!fs.existsSync(exp.datos)) {
       return responderJson(res, 404, { error: 'expediente no encontrado: ' + id });
