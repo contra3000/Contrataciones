@@ -24,6 +24,13 @@
     throw new Error('renglones.js requiere que namespaces.js se cargue primero');
   }
 
+  // Texto de ayuda visible de la aclaración (ORDEN-RONDA-23 §1). No valida ni
+  // obliga: es la regla que hace evaluable una oferta. Visible, no globito.
+  var AYUDA_ACLARACION = 'Qué agrega esta aclaración por sobre la descripción del ítem. ' +
+    'No repita la descripción. Evite nombrar marcas para indicar calidad: escriba los ' +
+    'parámetros técnicos exigibles —medidas, materiales, normas, tolerancias, garantía—, ' +
+    'que son los que después permiten comparar y evaluar las ofertas.';
+
   // Definición única en config.js (ORDEN-RONDA-10 §2.1). Se lee perezosamente
   // para no depender del orden de carga.
   function limitesAclaracion() {
@@ -107,8 +114,12 @@
     var contador = document.createElement('span');
     contador.className = 'contador';
     contador.textContent = '0/' + limites.total;
+    var ayuda = document.createElement('p');
+    ayuda.className = 'ayuda-aclaracion';
+    ayuda.textContent = AYUDA_ACLARACION;
     lblAclaracion.appendChild(aclaracion);
     lblAclaracion.appendChild(contador);
+    lblAclaracion.appendChild(ayuda);
     editor.appendChild(lblAclaracion);
 
     var btnQuitar = document.createElement('button');

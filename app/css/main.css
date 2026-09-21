@@ -336,6 +336,13 @@ mark {
   text-align: right;
 }
 
+.ayuda-aclaracion {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--color-texto-suave);
+}
+
 .renglon-error {
   color: var(--color-error);
   font-size: 0.85rem;
