@@ -85,6 +85,41 @@ async function entorno() {
   return { ctx, base, datos, cookies };
 }
 
+const ROLES7 = [
+  'generador', 'abastecimiento', 'abastecimiento_supervisor',
+  'contrataciones', 'contrataciones_supervisor', 'juridica', 'contaduria'
+];
+
+// Padrón de siete roles (uno por rol) con el supervisor de contrataciones
+// marcado como administrador. Devuelve la cookie operativa de cada rol.
+async function entorno7() {
+  const datos = dirTmp('rp23-c2-7-');
+  const lineas = ROLES7.map((rol, i) =>
+    'Persona' + i + ';Prueba;operador' + (i + 1) + '@faa.mil.ar;' + rol + ';;true').join('\n');
+  const archivo = path.join(datos, 'operadores.txt');
+  fs.writeFileSync(archivo, lineas, 'utf8');
+  const siembra = padronTool.alta({ datos, archivo });
+  assert.strictEqual(siembra.ok, true, 'siembra del padrón de siete roles');
+  const claves = {};
+  siembra.creados.forEach((c) => { claves[c.email] = c.clave; });
+  const padron = JSON.parse(fs.readFileSync(path.join(datos, 'padron.json'), 'utf8'));
+  const porRol = {};
+  padron.usuarios.forEach((u) => {
+    porRol[u.rol] = u.email;
+    if (u.rol === 'contrataciones_supervisor') {
+      u.administrador = true;
+    }
+  });
+  fs.writeFileSync(path.join(datos, 'padron.json'), JSON.stringify(padron, null, 2), 'utf8');
+  const ctx = await su.arrancarServidor(datos, 0, { declarado: false });
+  const base = 'http://127.0.0.1:' + ctx.puerto;
+  const cookies = {};
+  for (const rol of ROLES7) {
+    cookies[rol] = await operadorFijo(base, porRol[rol], claves[porRol[rol]]);
+  }
+  return { ctx, base, datos, cookies };
+}
+
 const CAMPOS_EXPEDIENTE = {
   renglones: [],
   requerimiento: {
@@ -228,6 +263,55 @@ test('publicar y volver siguen con esPublicador, sin exigir la marca', async () 
       { version: 1 }, e.cookies.contrataciones_supervisor);
     assert.strictEqual(volver.status, 200,
       'volver no exige la marca: ' + JSON.stringify(volver.body));
+  } finally {
+    await su.detenerServidor(e.ctx);
+    fs.rmSync(e.datos, { recursive: true, force: true });
+  }
+});
+
+// ORDEN-RONDA-23 §7: cada una de las tres guardias, con los siete roles: el que
+// corresponde la consigue, los otros seis reciben 403. Presupuestos y entregables
+// se atan al rol del estado (generador, la etapa inicial); estampar y seleccionar
+// a la marca administrador (acá la lleva contrataciones_supervisor).
+test('las tres guardias contra los siete roles: pasa el que corresponde, los otros seis 403', async () => {
+  const e = await entorno7();
+  try {
+    const idPresu = await crearExpediente(e.base, e.cookies.generador);
+    for (const rol of ROLES7) {
+      const r = await pedirCon(e.base, 'POST', '/api/expedientes/' + idPresu + '/presupuestos', {
+        nombreOriginal: 'proveedor.pdf', tipo: 'application/pdf', contenido: PDF_BASE64
+      }, e.cookies[rol]);
+      const esperado = rol === 'generador' ? 201 : 403;
+      assert.strictEqual(r.status, esperado, 'presupuestos: ' + rol + ' → ' + esperado);
+      if (esperado === 403) {
+        assert.match(r.body.error || '', /generador|estado actual/i);
+      }
+    }
+
+    const idEnt = await crearExpediente(e.base, e.cookies.generador);
+    for (const rol of ROLES7) {
+      const r = await pedirCon(e.base, 'POST', '/api/expedientes/' + idEnt + '/entregables', {
+        id: 'especificacion-tecnica', nombre: 'especificacion-tecnica.html',
+        contenido: '<p>Documento</p>'
+      }, e.cookies[rol]);
+      const esperado = rol === 'generador' ? 201 : 403;
+      assert.strictEqual(r.status, esperado, 'entregables: ' + rol + ' → ' + esperado);
+    }
+
+    const idEst = await crearExpediente(e.base, e.cookies.generador);
+    const CUERPO_SEL = { atributos: { tipoContrato: 'bienes', modalidad: 'OCA', procedimiento: 'LP' } };
+    for (const rol of ROLES7) {
+      const esAdmin = rol === 'contrataciones_supervisor';
+      const r = await pedirCon(e.base, 'POST', '/api/plantillas/seleccionar', CUERPO_SEL,
+        e.cookies[rol]);
+      assert.strictEqual(r.status, esAdmin ? 200 : 403, 'seleccionar: ' + rol);
+      const est = await pedirCon(e.base, 'POST', '/api/expedientes/' + idEst + '/plantilla', {},
+        e.cookies[rol]);
+      assert.strictEqual(est.status, esAdmin ? 200 : 403, 'estampar: ' + rol);
+      if (!esAdmin) {
+        assert.match(est.body.error || '', /administrador/i);
+      }
+    }
   } finally {
     await su.detenerServidor(e.ctx);
     fs.rmSync(e.datos, { recursive: true, force: true });
