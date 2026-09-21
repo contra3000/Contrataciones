@@ -178,7 +178,7 @@ function crearServidor(datosDir, configuracion) {
     apiDevolver,
     apiGuardarEntregable,
     apiLeerEntregable,
-    apiGuardarPresupuesto,
+    apiGuardarPresupuestoBinario,
     apiValidarCodigos,
     apiListarSugerencias,
     apiCrearSugerencia,
@@ -332,9 +332,16 @@ function crearServidor(datosDir, configuracion) {
           if (req.method === 'POST' && accion === 'entregables') {
             return conCuerpo((r, s, texto) => apiGuardarEntregable(r, s, id, texto), id);
           }
-          // Presupuestos adjuntos (ORDEN-RONDA-09 §3.2).
+          // Presupuestos adjuntos (ORDEN-RONDA-09 §3.2, ORDEN-RONDA-23 §3): el
+          // archivo viaja como bytes crudos; no pasa por leerCuerpo (que junta
+          // el cuerpo en memoria) sino por recibirEnArchivo, que lo escribe
+          // directo a un temporal.
           if (req.method === 'POST' && accion === 'presupuestos') {
-            return conCuerpo((r, s, texto) => apiGuardarPresupuesto(r, s, id, texto), id);
+            return apiGuardarPresupuestoBinario(req, res, id, (contexto) => {
+              ayudantes.registrarOrigen(datosDir, origen, peticion, id, contexto);
+            }).catch((e) => {
+              return ayudantes.responderErrorPeticion(res, e);
+            });
           }
         }
 

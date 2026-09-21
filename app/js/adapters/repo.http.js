@@ -38,6 +38,56 @@
     return errorDeRespuesta(respuesta, contexto);
   }
 
+  // Sube un archivo crudo (ORDEN-RONDA-23 §3): el navegador usa XHR para poder
+  // informar el progreso; los tests de Node (sin XMLHttpRequest) usan fetch con
+  // el mismo cuerpo. En ambos casos el archivo viaja tal cual, sin base64.
+  function enviarArchivo(url, archivo, encabezados, alProgreso) {
+    if (typeof root.XMLHttpRequest === 'function') {
+      return new Promise(function (resolve, reject) {
+        var xhr = new root.XMLHttpRequest();
+        xhr.open('POST', url);
+        Object.keys(encabezados).forEach(function (nombre) {
+          xhr.setRequestHeader(nombre, encabezados[nombre]);
+        });
+        if (typeof alProgreso === 'function' && xhr.upload) {
+          xhr.upload.onprogress = function (evento) {
+            if (evento.lengthComputable) {
+              alProgreso(evento.loaded, evento.total);
+            }
+          };
+        }
+        xhr.onload = function () {
+          var cuerpo = null;
+          try {
+            cuerpo = JSON.parse(xhr.responseText);
+          } catch (e) {
+            cuerpo = null;
+          }
+          resolve({ status: xhr.status, cuerpo: cuerpo });
+        };
+        xhr.onerror = function () {
+          var error = new Error('repo.http: error de red al subir el presupuesto');
+          error.codigo = 'RED';
+          reject(error);
+        };
+        xhr.send(archivo);
+      });
+    }
+    return fetch(url, { method: 'POST', headers: encabezados, body: archivo })
+      .then(function (respuesta) {
+        return respuesta.json().catch(function () {
+          return null;
+        }).then(function (cuerpo) {
+          return { status: respuesta.status, cuerpo: cuerpo };
+        });
+      })
+      .catch(function (e) {
+        var error = new Error('repo.http: error de red al subir el presupuesto: ' + e.message);
+        error.codigo = 'RED';
+        throw error;
+      });
+  }
+
   function crearRepoHttp(baseUrl) {
     if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
       throw new Error('repo.http: crear() requiere la base del servidor (la dirección de la PC donde corre server/servidor.js)');
@@ -266,19 +316,28 @@
         });
       },
 
-      // Guarda un presupuesto adjunto (ORDEN-RONDA-09 §3.2): PDF o imagen en
-      // base64; el servidor valida y elige el nombre en disco.
+      // Guarda un presupuesto adjunto (ORDEN-RONDA-09 §3.2, ORDEN-RONDA-23 §3):
+      // el archivo viaja crudo (datos.archivo) y el servidor valida y elige el
+      // nombre en disco. `datos.onProgress(cargado, total)` es opcional.
       guardarPresupuesto: function (id, datos, contexto) {
-        return pedirConErrorRed('POST', ruta(['expedientes', id, 'presupuestos']), {
-          nombreOriginal: datos.nombreOriginal,
-          tipo: datos.tipo,
-          contenido: datos.contenido,
-          contexto: contexto
-        }).then(function (respuesta) {
+        if (!datos || !datos.archivo) {
+          return Promise.reject(new Error('repo.http.guardarPresupuesto: falta el archivo (datos.archivo)'));
+        }
+        var encabezados = {
+          'Content-Type': datos.tipo || 'application/octet-stream',
+          'X-SGC-Nombre-Original': encodeURIComponent(String(datos.nombreOriginal || 'presupuesto')),
+          'X-SGC-Contexto': encodeURIComponent(JSON.stringify(contexto || {}))
+        };
+        return enviarArchivo(
+          ruta(['expedientes', id, 'presupuestos']),
+          datos.archivo,
+          encabezados,
+          datos.onProgress
+        ).then(function (respuesta) {
           if (respuesta.status === 201) {
             return respuesta.cuerpo;
           }
-          if (respuesta.status === 400) {
+          if (respuesta.status === 400 || respuesta.status === 413) {
             throw errorDeRespuesta(respuesta, 'el servidor rechazó el presupuesto del expediente ' + id);
           }
           if (respuesta.status === 404) {

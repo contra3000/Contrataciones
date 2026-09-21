@@ -28,7 +28,7 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.http.js'));
 
-const { crearDirDatos, arrancarServidor, detenerServidor, pedir } =
+const { crearDirDatos, arrancarServidor, detenerServidor, pedir, enviarBytes } =
   require('./servidor-util.js');
 
 const SGC = globalThis.SGC;
@@ -175,5 +175,6 @@ module.exports = {
   crearEnEstado,
   arrancarEntorno,
   limpiarEntorno,
-  pedir
+  pedir,
+  enviarBytes
 };

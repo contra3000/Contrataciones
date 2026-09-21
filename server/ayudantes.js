@@ -272,6 +272,88 @@ function leerCuerpo(req) {
   });
 }
 
+// Recibe el cuerpo crudo de una petición y lo escribe EN UN ARCHIVO sin
+// juntarlo nunca en memoria (ORDEN-RONDA-23 §3): el presupuesto viaja como
+// archivo y el servidor lo deja caer al temporal que después se renombra. El
+// flujo se frena cuando el disco va más lento (backpressure) y se corta en
+// cuanto se pasa del límite, borrando el temporal. Resuelve con los bytes
+// recibidos; si el límite se pasa, rechaza con codigoEstado 413 y el tamaño
+// recibido y el máximo en el mensaje.
+function recibirEnArchivo(req, rutaArchivo, limite) {
+  return new Promise((resolve, reject) => {
+    const salida = fs.createWriteStream(rutaArchivo);
+    let bytes = 0;
+    let terminado = false;
+
+    function limpiarTemporal() {
+      try {
+        fs.unlinkSync(rutaArchivo);
+      } catch (e) {
+        // mejor esfuerzo: si el temporal ya no está, no hay nada que borrar
+      }
+    }
+
+    function fallar(e) {
+      if (terminado) {
+        return;
+      }
+      terminado = true;
+      // En Windows no se puede borrar un archivo con el descriptor abierto: se
+      // destruye el stream y recién en su 'close' se borra el temporal, antes
+      // de rechazar. Así, cuando el llamador responde, el temporal ya no está.
+      salida.on('close', () => {
+        limpiarTemporal();
+        reject(e);
+      });
+      salida.destroy();
+    }
+
+    req.on('data', (trozo) => {
+      if (terminado) {
+        return;
+      }
+      bytes += trozo.length;
+      if (bytes > limite) {
+        const exceso = new Error('el presupuesto supera el límite de ' +
+          Math.round(limite / (1024 * 1024)) + ' MB; llegaron ' +
+          Math.round(bytes / (1024 * 1024) * 10) / 10 + ' MB');
+        exceso.codigoEstado = 413;
+        exceso.recibidos = bytes;
+        exceso.limite = limite;
+        // El motivo es nuestro (en castellano); puede llegar al usuario.
+        exceso.mensajeSeguro = true;
+        req.removeAllListeners('data');
+        req.removeAllListeners('end');
+        req.removeAllListeners('error');
+        req.resume();
+        fallar(exceso);
+        return;
+      }
+      if (!salida.write(trozo)) {
+        req.pause();
+        salida.once('drain', () => {
+          if (!terminado) {
+            req.resume();
+          }
+        });
+      }
+    });
+    req.on('end', () => {
+      if (terminado) {
+        return;
+      }
+      salida.end(() => {
+        if (!terminado) {
+          terminado = true;
+          resolve({ bytes });
+        }
+      });
+    });
+    req.on('error', fallar);
+    salida.on('error', fallar);
+  });
+}
+
 function parsearCuerpo(texto) {
   if (!texto || texto.trim() === '') {
     return null;
@@ -330,6 +412,7 @@ module.exports = {
   sugerenciaDeRuta,
   rutaExpediente,
   leerCuerpo,
+  recibirEnArchivo,
   parsearCuerpo,
   responderJson,
   responderErrorEsp,

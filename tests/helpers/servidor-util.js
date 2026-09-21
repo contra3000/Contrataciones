@@ -200,6 +200,40 @@ function pedir(baseUrl, metodo, ruta, cuerpo, encabezados) {
   return pedirConPath(baseUrl, metodo, ruta, cuerpo, encabezados);
 }
 
+// Envía un cuerpo binario crudo con las cabeceras dadas (ORDEN-RONDA-23 §3): a
+// diferencia de pedir(), no serializa JSON ni fuerza Content-Type.
+function enviarBytes(baseUrl, ruta, bytes, encabezados) {
+  return new Promise((resolve, reject) => {
+    const base = new URL(baseUrl);
+    const cuerpo = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
+    const opciones = {
+      hostname: base.hostname,
+      port: base.port,
+      path: ruta,
+      method: 'POST',
+      headers: Object.assign({ 'Content-Length': String(cuerpo.length) }, encabezados || {})
+    };
+    const req = http.request(opciones, (res) => {
+      let datos = '';
+      res.on('data', (trozo) => {
+        datos += trozo;
+      });
+      res.on('end', () => {
+        let json = null;
+        try {
+          json = JSON.parse(datos);
+        } catch (e) {
+          // no era JSON
+        }
+        resolve({ status: res.statusCode, body: json, raw: datos, encabezados: res.headers });
+      });
+    });
+    req.on('error', reject);
+    req.write(cuerpo);
+    req.end();
+  });
+}
+
 function ejecutarYEsperar(args, timeoutMs) {
   return new Promise((resolve) => {
     let stdout = '';
@@ -227,6 +261,7 @@ module.exports = {
   detenerServidor,
   pedir,
   pedirConPath,
+  enviarBytes,
   ejecutarYEsperar,
   SERVIDOR,
   NODE

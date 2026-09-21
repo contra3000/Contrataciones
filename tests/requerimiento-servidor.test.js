@@ -50,7 +50,8 @@ const {
   arrancarEntorno,
   limpiarEntorno,
   docEnDisco,
-  pedir
+  pedir,
+  enviarBytes
 } = require('./helpers/transiciones-servidor-util.js');
 
 const ENTORNO = {};
@@ -85,12 +86,14 @@ async function leerExpediente(id) {
 }
 
 async function subirPresupuesto(id, nombre) {
-  const r = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: nombre + '.pdf',
-    tipo: 'application/pdf',
-    contenido: Buffer.from('%PDF-1.4 ' + nombre).toString('base64'),
-    contexto: contexto('generador')
-  });
+  // ORDEN-RONDA-23 §3: bytes crudos; el contexto va en la cabecera (modo declarado).
+  const r = await enviarBytes(ENTORNO.base, '/api/expedientes/' + id + '/presupuestos',
+    Buffer.from('%PDF-1.4 ' + nombre),
+    {
+      'Content-Type': 'application/pdf',
+      'X-SGC-Nombre-Original': encodeURIComponent(nombre + '.pdf'),
+      'X-SGC-Contexto': encodeURIComponent(JSON.stringify(contexto('generador')))
+    });
   assert.equal(r.status, 201, 'el presupuesto se sube');
   return r.body.id;
 }

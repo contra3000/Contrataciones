@@ -5,9 +5,13 @@
  * §2.2): la subida de archivos es un tema propio y el archivo estaba
  * quedando grande para el límite de 400 líneas.
  *
- * PDF o imagen, con un tope de 2 MB por archivo. El límite convive con el
- * tope de 4 MB del cuerpo (base64 infla ~33%) y es lo que se documenta como
- * límite del presupuesto.
+ * ORDEN-RONDA-23 §3: el presupuesto ya no viaja como base64 dentro de un JSON
+ * (que inflaba el cuerpo y obligaba a juntar el archivo entero en memoria): se
+ * sube el archivo tal cual. El tipo viaja en la cabecera Content-Type, el
+ * nombre original en X-SGC-Nombre-Original y el contexto (sólo en modo
+ * declarado) en X-SGC-Contexto. El cuerpo se escribe directo a un temporal y
+ * al final se renombra a `presupuesto-<n>.<ext>`: nunca se arma el archivo
+ * completo en un buffer. El nombre en disco lo decide el servidor.
  */
 'use strict';
 
@@ -25,105 +29,231 @@ const TIPOS_PRESUPUESTO = {
 };
 const LIMITE_PRESUPUESTO = 2 * 1024 * 1024;
 
+// Firma (magic bytes) de cada tipo admitido: un archivo con el Content-Type
+// correcto pero sin la firma no es lo que dice ser.
+const FIRMAS = {
+  'application/pdf': [0x25, 0x50, 0x44, 0x46],
+  'image/png': [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  'image/jpeg': [0xff, 0xd8, 0xff]
+};
+
+function borrarSilencioso(rutaArchivo) {
+  try {
+    fs.unlinkSync(rutaArchivo);
+  } catch (e) {
+    // mejor esfuerzo: si el temporal ya no está, no hay nada que borrar
+  }
+}
+
+function tipoDe(req) {
+  return String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+}
+
+function nombreOriginalDe(req) {
+  const crudo = req.headers['x-sgc-nombre-original'];
+  if (typeof crudo !== 'string' || crudo.trim() === '') {
+    return null;
+  }
+  let nombre = crudo;
+  try {
+    nombre = decodeURIComponent(crudo);
+  } catch (e) {
+    nombre = crudo;
+  }
+  return nombre.slice(0, 200);
+}
+
+// Contexto de la petición: en modo autenticado manda la sesión (el rol no lo
+// elige el cliente, ADR-033); en modo declarado viene de la cabecera.
+function contextoDePeticion(req) {
+  const sesion = req.sgcSesion;
+  if (sesion) {
+    return {
+      timestamp: new Date().toISOString(),
+      email: sesion.email,
+      rol: sesion.rol,
+      nombre: sesion.nombre,
+      equipo: sesion.equipo
+    };
+  }
+  const crudo = req.headers['x-sgc-contexto'];
+  if (typeof crudo !== 'string' || crudo.length === 0) {
+    return {};
+  }
+  try {
+    const contexto = JSON.parse(decodeURIComponent(crudo));
+    return contexto && typeof contexto === 'object' && !Array.isArray(contexto) ? contexto : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function firmaValida(rutaArchivo, tipo) {
+  const esperada = FIRMAS[tipo];
+  if (!esperada) {
+    return false;
+  }
+  let fd = null;
+  try {
+    fd = fs.openSync(rutaArchivo, 'r');
+    const cabecera = Buffer.alloc(esperada.length);
+    const leidos = fs.readSync(fd, cabecera, 0, esperada.length, 0);
+    if (leidos < esperada.length) {
+      return false;
+    }
+    for (let i = 0; i < esperada.length; i++) {
+      if (cabecera[i] !== esperada[i]) {
+        return false;
+      }
+    }
+    return true;
+  } catch (e) {
+    return false;
+  } finally {
+    if (fd !== null) {
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        // ya estaba cerrado
+      }
+    }
+  }
+}
+
 function crearManejadoresPresupuestos(entorno) {
   const { datosDir, repo, ayudantes, padronVivo } = entorno;
   const {
     escribirAtomico,
+    reemplazarTemporal,
     estaDentro,
     rutaExpediente,
-    parsearCuerpo,
+    recibirEnArchivo,
     responderJson
   } = ayudantes;
   const SGC = globalThis.SGC;
 
-  function apiGuardarPresupuesto(req, res, id, contextoCuerpo) {
-    const cuerpo = parsearCuerpo(contextoCuerpo);
-    if (!cuerpo || typeof cuerpo !== 'object' ||
-        typeof cuerpo.nombreOriginal !== 'string' ||
-        typeof cuerpo.tipo !== 'string' || typeof cuerpo.contenido !== 'string') {
-      return responderJson(res, 400, { error: 'cuerpo inválido: se espera {nombreOriginal, tipo, contenido, contexto}' });
-    }
-    const extension = TIPOS_PRESUPUESTO[cuerpo.tipo];
+  // Cola por expediente: dos subidas al mismo expediente no se pisan el número
+  // ni la versión. La lectura de datos.json y la escritura se hacen EN FILA,
+  // porque el transporte binario (ORDEN-RONDA-23 §3) deja el archivo en disco
+  // entre medio y dos peticiones simultáneas leerían la misma versión.
+  const colas = new Map();
+  function enFila(id, tarea) {
+    const anterior = colas.get(id) || Promise.resolve();
+    const siguiente = anterior.then(tarea, tarea);
+    colas.set(id, siguiente.then(() => {}, () => {}));
+    return siguiente;
+  }
+
+  function apiGuardarPresupuestoBinario(req, res, id, registrar) {
+    const tipo = tipoDe(req);
+    const extension = TIPOS_PRESUPUESTO[tipo];
     if (!extension) {
-      return responderJson(res, 400, { error: 'tipo de archivo no permitido: "' + cuerpo.tipo + '". Se admiten PDF e imágenes (application/pdf, image/png, image/jpeg)' });
+      return Promise.resolve(responderJson(res, 400, { error: 'tipo de archivo no permitido: "' + tipo + '". Se admiten PDF e imágenes (application/pdf, image/png, image/jpeg)' }));
     }
-    const base64Limpio = String(cuerpo.contenido).replace(/\s+/g, '');
-    if (base64Limpio.length === 0) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto está vacío' });
+    const nombreOriginal = nombreOriginalDe(req);
+    if (nombreOriginal === null) {
+      return Promise.resolve(responderJson(res, 400, { error: 'falta el nombre original del archivo (cabecera X-SGC-Nombre-Original)' }));
     }
-    // Buffer.from(..., 'base64') ignora en silencio los caracteres ajenos al
-    // alfabeto: "no-es-base64!!!" decodifica a bytes. Se exige el alfabeto
-    // estricto para no aceptar basura como archivo.
-    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64Limpio)) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto no es base64 válido' });
-    }
-    let buffer = null;
-    try {
-      buffer = Buffer.from(base64Limpio, 'base64');
-    } catch (e) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto no es base64 válido' });
-    }
-    if (buffer.length === 0) {
-      return responderJson(res, 400, { error: 'el contenido del presupuesto no es base64 válido' });
-    }
-    if (buffer.length > LIMITE_PRESUPUESTO) {
-      return responderJson(res, 400, { error: 'el presupuesto excede el límite de ' + Math.round(LIMITE_PRESUPUESTO / (1024 * 1024)) + ' MB' });
-    }
+    const contexto = contextoDePeticion(req);
     const exp = rutaExpediente(datosDir, id);
     if (!fs.existsSync(exp.datos)) {
-      return responderJson(res, 404, { error: 'expediente no encontrado: ' + id });
+      return Promise.resolve(responderJson(res, 404, { error: 'expediente no encontrado: ' + id }));
     }
-    const actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
-    const contexto = cuerpo.contexto || {};
-    // ORDEN-RONDA-23 §2: adjuntar un presupuesto es una operación del estado en
-    // curso; la exige quien ejecuta ese estado, no cualquier usuario del padrón.
-    const autorizacionDelEstado = SGC.core.autorizacion.autorizarRolDelEstado(
-      padronVivo.usuarios(), contexto, actual.estado ? actual.estado.id : null);
-    if (!autorizacionDelEstado.ok) {
-      return responderJson(res, 403, { error: autorizacionDelEstado.error });
-    }
-    const numero = (Array.isArray(actual.presupuestos) ? actual.presupuestos : []).length + 1;
-    const archivo = 'presupuesto-' + numero + '.' + extension;
-    const ruta = path.join(exp.dir, 'presupuestos', archivo);
-    if (!estaDentro(ruta, exp.dir)) {
-      return responderJson(res, 400, { error: 'recorrido de rutas no permitido' });
-    }
-    const nuevaVersion = actual.version + 1;
-    fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
-    fs.mkdirSync(path.join(exp.dir, 'presupuestos'), { recursive: true });
-    escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'), JSON.stringify(actual, null, 2));
-    escribirAtomico(ruta, buffer);
-    const actualizado = JSON.parse(JSON.stringify(actual));
-    actualizado.version = nuevaVersion;
-    if (!Array.isArray(actualizado.presupuestos)) {
-      actualizado.presupuestos = [];
-    }
-    actualizado.presupuestos.push({
-      id: 'presupuesto-' + numero,
-      nombreOriginal: String(cuerpo.nombreOriginal).slice(0, 200),
-      archivo: archivo,
-      ruta: 'presupuestos/' + archivo,
-      tipo: cuerpo.tipo,
-      peso: buffer.length,
-      subido: typeof contexto.timestamp === 'string' ? contexto.timestamp : null,
-      email: typeof contexto.email === 'string' ? contexto.email : null,
-      equipo: typeof contexto.equipo === 'string' ? contexto.equipo : null
+
+    return enFila(id, () => {
+      let actual;
+      try {
+        actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
+      } catch (e) {
+        return responderJson(res, 500, { error: 'no se pudo leer el expediente' });
+      }
+      // ORDEN-RONDA-23 §2: adjuntar un presupuesto es una operación del estado
+      // en curso; la exige quien ejecuta ese estado, no cualquier usuario.
+      const autorizacionDelEstado = SGC.core.autorizacion.autorizarRolDelEstado(
+        padronVivo.usuarios(), contexto, actual.estado ? actual.estado.id : null);
+      if (!autorizacionDelEstado.ok) {
+        return responderJson(res, 403, { error: autorizacionDelEstado.error });
+      }
+      const numero = (Array.isArray(actual.presupuestos) ? actual.presupuestos : []).length + 1;
+      const archivo = 'presupuesto-' + numero + '.' + extension;
+      const ruta = path.join(exp.dir, 'presupuestos', archivo);
+      if (!estaDentro(ruta, exp.dir)) {
+        return responderJson(res, 400, { error: 'recorrido de rutas no permitido' });
+      }
+      if (typeof registrar === 'function') {
+        registrar(contexto);
+      }
+      const carpeta = path.join(exp.dir, 'presupuestos');
+      fs.mkdirSync(carpeta, { recursive: true });
+      const temporal = path.join(carpeta, '.' + archivo + '.' + process.pid + '.tmp');
+      const nuevaVersion = actual.version + 1;
+
+      return recibirEnArchivo(req, temporal, LIMITE_PRESUPUESTO).then((recibido) => {
+        if (recibido.bytes === 0) {
+          borrarSilencioso(temporal);
+          return responderJson(res, 400, { error: 'el contenido del presupuesto está vacío' });
+        }
+        if (!firmaValida(temporal, tipo)) {
+          borrarSilencioso(temporal);
+          return responderJson(res, 400, { error: 'el archivo no tiene la firma de un ' + tipo + ' (el tipo declarado no coincide con su contenido)' });
+        }
+        fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
+        escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'), JSON.stringify(actual, null, 2));
+        reemplazarTemporal(temporal, ruta);
+        const actualizado = JSON.parse(JSON.stringify(actual));
+        actualizado.version = nuevaVersion;
+        if (!Array.isArray(actualizado.presupuestos)) {
+          actualizado.presupuestos = [];
+        }
+        actualizado.presupuestos.push({
+          id: 'presupuesto-' + numero,
+          nombreOriginal: nombreOriginal,
+          archivo: archivo,
+          ruta: 'presupuestos/' + archivo,
+          tipo: tipo,
+          peso: recibido.bytes,
+          subido: typeof contexto.timestamp === 'string' ? contexto.timestamp : null,
+          email: typeof contexto.email === 'string' ? contexto.email : null,
+          equipo: typeof contexto.equipo === 'string' ? contexto.equipo : null
+        });
+        if (typeof contexto.timestamp === 'string') {
+          if (typeof actualizado.actualizado === 'string') { actualizado.actualizado = contexto.timestamp; }
+          if (typeof actualizado.ultimaModificacion === 'string') { actualizado.ultimaModificacion = contexto.timestamp; }
+        }
+        if (typeof contexto.email === 'string' && typeof actualizado.ultimoUsuario === 'string') {
+          actualizado.ultimoUsuario = contexto.email;
+        }
+        escribirAtomico(exp.datos, JSON.stringify(actualizado, null, 2));
+        const entrada = repo.entradaIndice(id, actualizado, contexto);
+        fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true });
+        escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
+        return responderJson(res, 201, {
+          id: 'presupuesto-' + numero,
+          archivo: archivo,
+          ruta: 'presupuestos/' + archivo,
+          peso: recibido.bytes,
+          version: nuevaVersion
+        });
+      }).catch((e) => {
+        // El límite del presupuesto responde su propio mensaje (con lo recibido
+        // y el máximo); el resto de los fallos sigue el camino general. Sólo un
+        // motivo marcado como seguro (nuestro, en castellano) puede salir.
+        const motivo = e && e.mensajeSeguro === true && e.message ? e.message : null;
+        if (motivo && e.codigoEstado === 413) {
+          res.writeHead(413, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Connection': 'close'
+          });
+          res.end(JSON.stringify({ error: motivo }));
+          return;
+        }
+        throw e;
+      });
     });
-    if (typeof contexto.timestamp === 'string') {
-      if (typeof actualizado.actualizado === 'string') { actualizado.actualizado = contexto.timestamp; }
-      if (typeof actualizado.ultimaModificacion === 'string') { actualizado.ultimaModificacion = contexto.timestamp; }
-    }
-    if (typeof contexto.email === 'string' && typeof actualizado.ultimoUsuario === 'string') {
-      actualizado.ultimoUsuario = contexto.email;
-    }
-    escribirAtomico(exp.datos, JSON.stringify(actualizado, null, 2));
-    const entrada = repo.entradaIndice(id, actualizado, contexto);
-    fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true }); escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
-    return responderJson(res, 201, { id: 'presupuesto-' + numero, archivo: archivo, ruta: 'presupuestos/' + archivo, peso: buffer.length, version: nuevaVersion });
   }
 
   return {
-    apiGuardarPresupuesto
+    apiGuardarPresupuestoBinario
   };
 }
 

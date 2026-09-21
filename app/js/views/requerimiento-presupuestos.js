@@ -40,6 +40,26 @@
     return !!m && EXTENSIONES.indexOf(m[1].toLowerCase()) !== -1;
   }
 
+  // MIME que se manda al servidor: el del archivo si es uno admitido; si no,
+  // se deduce de la extensión (mismo criterio que tipoValido).
+  function tipoDeArchivo(file) {
+    if (file.type && TIPOS_ADMITIDOS.indexOf(file.type) !== -1) {
+      return file.type;
+    }
+    var m = /\.([a-z0-9]+)$/i.exec(String(file.name || ''));
+    var extension = m ? m[1].toLowerCase() : '';
+    if (extension === 'pdf') {
+      return 'application/pdf';
+    }
+    if (extension === 'png') {
+      return 'image/png';
+    }
+    if (extension === 'jpg' || extension === 'jpeg') {
+      return 'image/jpeg';
+    }
+    return file.type || 'application/octet-stream';
+  }
+
   function render(expediente) {
     var ul = estado.dom.presupuestosLista;
     if (!ul) {
@@ -90,32 +110,21 @@
           fallar('supera el límite de 2 MB.');
           return;
         }
-        if (typeof root.FileReader !== 'function') {
-          fallar('este navegador no permite leer archivos.');
-          return;
-        }
-        var lector = new root.FileReader();
-        lector.onload = function () {
-          var base64 = String(lector.result).split(',')[1] || '';
-          estado.ganchos.repo().guardarPresupuesto(estado.ganchos.expedienteId(), {
-            nombreOriginal: file.name,
-            tipo: file.type || 'application/octet-stream',
-            contenido: base64
-          }, estado.ganchos.contexto()).then(function (respuesta) {
-            if (respuesta.conflicto || respuesta.error) {
-              fallar(respuesta.error || 'conflicto de versión.');
-              return;
-            }
-            estado.ganchos.avisar('Presupuesto guardado: "' + file.name + '" quedó como ' + respuesta.id + '.', false);
-            SGC.views.expediente.abrir(estado.ganchos.expedienteId());
-          }).catch(function (err) {
-            fallar(err.message);
-          });
-        };
-        lector.onerror = function () {
-          fallar('no se pudo leer el archivo.');
-        };
-        lector.readAsDataURL(file);
+        // ORDEN-RONDA-23 §3: el archivo viaja crudo, sin pasar por base64.
+        estado.ganchos.repo().guardarPresupuesto(estado.ganchos.expedienteId(), {
+          nombreOriginal: file.name,
+          tipo: tipoDeArchivo(file),
+          archivo: file
+        }, estado.ganchos.contexto()).then(function (respuesta) {
+          if (respuesta.conflicto || respuesta.error) {
+            fallar(respuesta.error || 'conflicto de versión.');
+            return;
+          }
+          estado.ganchos.avisar('Presupuesto guardado: "' + file.name + '" quedó como ' + respuesta.id + '.', false);
+          SGC.views.expediente.abrir(estado.ganchos.expedienteId());
+        }).catch(function (err) {
+          fallar(err.message);
+        });
       })(archivos[i]);
     }
   }

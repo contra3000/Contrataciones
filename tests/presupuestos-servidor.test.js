@@ -2,14 +2,18 @@
 
 /*
  * presupuestos-servidor.test.js
- * ORDEN-RONDA-09 §3.2 (ADR-022): los presupuestos de los proveedores se
- * adjuntan al expediente como archivos PDF o imágenes en base64.
+ * ORDEN-RONDA-09 §3.2 (ADR-022) y ORDEN-RONDA-23 §3: los presupuestos de los
+ * proveedores se adjuntan al expediente como PDF o imágenes.
  *
+ *  - El archivo viaja como BYTES CRUDOS (no base64 en un JSON): el tipo en la
+ *    cabecera Content-Type, el nombre original en X-SGC-Nombre-Original y el
+ *    contexto (modo declarado) en X-SGC-Contexto. Así el servidor lo escribe
+ *    directo a un temporal y lo renombra, sin juntarlo entero en memoria.
  *  - El nombre del archivo en disco lo decide el servidor
  *    (`presupuesto-<n>.<ext>`), con un id estable que los valores de
  *    referencia citan. El `nombreOriginal` queda sólo como dato del registro.
- *  - El servidor valida tipo (PDF, PNG, JPG) y tamaño (2 MB) y lo escribe en
- *    binario en `presupuestos/` dentro de la carpeta del expediente.
+ *  - El servidor valida tipo (PDF, PNG, JPG), firma (magic bytes) y tamaño
+ *    (2 MB) y lo escribe en binario en `presupuestos/` dentro del expediente.
  *  - El registro queda en datos.json (con versión), el archivo se persiste en
  *    disco, y repo.http.guardarPresupuesto lo resuelve desde el cliente.
  */
@@ -41,7 +45,8 @@ const {
   arrancarEntorno,
   limpiarEntorno,
   docEnDisco,
-  pedir
+  pedir,
+  enviarBytes
 } = require('./helpers/transiciones-servidor-util.js');
 
 const ENTORNO = {};
@@ -66,8 +71,21 @@ async function crearExpediente() {
   return r.body.id;
 }
 
-function base64De(buffer) {
-  return Buffer.from(buffer).toString('base64');
+const FIRMA_PDF = Buffer.from('%PDF-1.4 presupuesto de ejemplo');
+const FIRMA_PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('png')]);
+const FIRMA_JPG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.from('jpg')]);
+
+function cabeceras(tipo, nombre) {
+  return {
+    'Content-Type': tipo,
+    'X-SGC-Nombre-Original': encodeURIComponent(nombre),
+    'X-SGC-Contexto': encodeURIComponent(JSON.stringify(contexto('generador')))
+  };
+}
+
+function subir(id, bytes, tipo, nombre) {
+  return enviarBytes(ENTORNO.base, '/api/expedientes/' + id + '/presupuestos',
+    bytes, cabeceras(tipo, nombre));
 }
 
 function rutaPresupuesto(datosDir, id, archivo) {
@@ -77,13 +95,8 @@ function rutaPresupuesto(datosDir, id, archivo) {
 
 test('el servidor guarda un presupuesto PDF con id estable y lo persiste en disco', async () => {
   const id = await crearExpediente();
-  const contenido = Buffer.from('%PDF-1.4 presupuesto de ejemplo');
-  const r = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: 'cotizacion-proveedor.pdf',
-    tipo: 'application/pdf',
-    contenido: base64De(contenido),
-    contexto: contexto('generador')
-  });
+  const contenido = FIRMA_PDF;
+  const r = await subir(id, contenido, 'application/pdf', 'cotizacion-proveedor.pdf');
   assert.equal(r.status, 201, 'el servidor acepta el presupuesto');
   assert.equal(r.body.id, 'presupuesto-1');
   assert.equal(r.body.archivo, 'presupuesto-1.pdf');
@@ -105,15 +118,9 @@ test('el servidor guarda un presupuesto PDF con id estable y lo persiste en disc
 
 test('un segundo presupuesto recibe el siguiente número y el primero no se pisa', async () => {
   const id = await crearExpediente();
-  const primero = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: 'a.png', tipo: 'image/png', contenido: base64De('png'),
-    contexto: contexto('generador')
-  });
+  const primero = await subir(id, FIRMA_PNG, 'image/png', 'a.png');
   assert.equal(primero.status, 201);
-  const segundo = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: 'b.jpg', tipo: 'image/jpeg', contenido: base64De('jpg'),
-    contexto: contexto('generador')
-  });
+  const segundo = await subir(id, FIRMA_JPG, 'image/jpeg', 'b.jpg');
   assert.equal(segundo.status, 201);
   assert.equal(segundo.body.id, 'presupuesto-2');
   assert.equal(segundo.body.archivo, 'presupuesto-2.jpg');
@@ -126,65 +133,53 @@ test('un segundo presupuesto recibe el siguiente número y el primero no se pisa
 
 test('un tipo de archivo no permitido se rechaza con 400 sin escribir nada', async () => {
   const id = await crearExpediente();
-  const r = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: 'virus.txt', tipo: 'text/plain', contenido: base64De('texto'),
-    contexto: contexto('generador')
-  });
+  const r = await subir(id, Buffer.from('texto'), 'text/plain', 'virus.txt');
   assert.equal(r.status, 400);
   assert.match(r.body.error, /no permitido/);
   const enDisco = docEnDisco(ENTORNO.datosDir, id);
   assert.equal((enDisco.presupuestos || []).length, 0);
 });
 
-test('un contenido vacío o que no es base64 se rechaza con 400', async () => {
+test('un cuerpo vacío o con la firma equivocada se rechaza con 400', async () => {
   const id = await crearExpediente();
-  const vacio = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: 'x.pdf', tipo: 'application/pdf', contenido: '   ',
-    contexto: contexto('generador')
-  });
+  const vacio = await subir(id, Buffer.alloc(0), 'application/pdf', 'x.pdf');
   assert.equal(vacio.status, 400);
+  assert.match(vacio.body.error, /vacío/);
 
-  const noBase64 = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: 'x.pdf', tipo: 'application/pdf', contenido: 'no-es-base64!!!',
-    contexto: contexto('generador')
-  });
-  assert.ok(noBase64.status === 400, 'lo que no decodifica se rechaza');
+  const sinFirma = await subir(id, Buffer.from('no soy un pdf'), 'application/pdf', 'x.pdf');
+  assert.equal(sinFirma.status, 400);
+  assert.match(sinFirma.body.error, /firma/);
   const enDisco = docEnDisco(ENTORNO.datosDir, id);
   assert.equal((enDisco.presupuestos || []).length, 0);
 });
 
-test('un presupuesto que supera el límite de 2 MB se rechaza', async () => {
+test('un presupuesto que supera el límite de 2 MB se rechaza con el tamaño', async () => {
   const id = await crearExpediente();
-  // 2,5 MB de datos: el body base64 queda por debajo del tope global del
-  // cuerpo (4 MB) y dispara limpio el límite de 2 MB del presupuesto.
   const contenido = Buffer.alloc(2500 * 1024, 7);
-  const r = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: 'grande.pdf', tipo: 'application/pdf', contenido: base64De(contenido),
-    contexto: contexto('generador')
-  });
-  assert.equal(r.status, 400);
-  assert.match(r.body.error, /límite/);
+  contenido.write('%PDF-1.4', 0, 'utf8');
+  const r = await subir(id, contenido, 'application/pdf', 'grande.pdf');
+  assert.equal(r.status, 413, 'lo que se pasa del límite se rechaza');
+  assert.match(r.body.error, /límite de 2 MB/);
+  assert.match(r.body.error, /llegaron/);
   const enDisco = docEnDisco(ENTORNO.datosDir, id);
   assert.equal((enDisco.presupuestos || []).length, 0);
+  const carpeta = path.dirname(rutaPresupuesto(ENTORNO.datosDir, id, 'x.pdf'));
+  const sobrantes = fs.existsSync(carpeta)
+    ? fs.readdirSync(carpeta).filter((n) => n.indexOf('.tmp') !== -1)
+    : [];
+  assert.deepEqual(sobrantes, [], 'el temporal del rechazo se borra');
 });
 
 test('un expediente inexistente da 404', async () => {
-  const r = await pedir(ENTORNO.base, 'POST', '/api/expedientes/2099-999/presupuestos', {
-    nombreOriginal: 'x.pdf', tipo: 'application/pdf', contenido: base64De('x'),
-    contexto: contexto('generador')
-  });
+  const r = await enviarBytes(ENTORNO.base, '/api/expedientes/2099-999/presupuestos',
+    FIRMA_PDF, cabeceras('application/pdf', 'x.pdf'));
   assert.equal(r.status, 404);
 });
 
 test('un nombre de archivo con "../" no escapa de la carpeta del expediente', async () => {
   const id = await crearExpediente();
-  const contenido = Buffer.from('datos');
-  const r = await pedir(ENTORNO.base, 'POST', '/api/expedientes/' + id + '/presupuestos', {
-    nombreOriginal: '../../secreto.pdf',
-    tipo: 'application/pdf',
-    contenido: base64De(contenido),
-    contexto: contexto('generador')
-  });
+  const contenido = FIRMA_PDF;
+  const r = await subir(id, contenido, 'application/pdf', '../../secreto.pdf');
   assert.equal(r.status, 201, 'el nombre se acepta como dato');
   assert.equal(r.body.archivo, 'presupuesto-1.pdf', 'el nombre en disco lo decide el servidor');
 
@@ -205,11 +200,11 @@ test('repo.http.guardarPresupuesto sube el archivo y el expediente lo refleja', 
     { titulo: 'Vía cliente', anio: '2026' },
     contexto('generador')
   );
-  const contenido = Buffer.from('PNG binario de ejemplo');
+  const contenido = FIRMA_PNG;
   const guardado = await repo.guardarPresupuesto(creado.id, {
     nombreOriginal: 'plano.png',
     tipo: 'image/png',
-    contenido: contenido.toString('base64')
+    archivo: new Blob([contenido])
   }, contexto('generador'));
   assert.equal(guardado.id, 'presupuesto-1');
   assert.equal(guardado.archivo, 'presupuesto-1.png');

@@ -218,6 +218,25 @@ function construirDom() {
 }
 
 // --------------------------------------------------------------- Fetch ------------------
+// Bytes sintéticos de un archivo de la montura (los inputs de archivo se
+// simulan con {name, type, size}). ORDEN-RONDA-23 §3: el presupuesto viaja
+// crudo, así que hay que mandar bytes con la firma que el servidor valida.
+function bytesDeArchivoFalso(archivo) {
+  const nombre = (archivo && archivo.name) || 'archivo';
+  const tipo = (archivo && archivo.type) || '';
+  const cuerpo = Buffer.from('contenido-sintetico-' + nombre, 'utf8');
+  if (tipo === 'application/pdf') {
+    return Buffer.concat([Buffer.from('%PDF-1.4 ', 'utf8'), cuerpo]);
+  }
+  if (tipo === 'image/png') {
+    return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), cuerpo]);
+  }
+  if (tipo === 'image/jpeg') {
+    return Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), cuerpo]);
+  }
+  return cuerpo;
+}
+
 function crearFetch(base) {
   const uBase = new URL(base);
   let cookie = '';
@@ -229,9 +248,18 @@ function crearFetch(base) {
     if (cookie) {
       headers.Cookie = cookie;
     }
-    const cuerpo = op.body !== undefined ? String(op.body) : undefined;
+    let cuerpo;
+    if (op.body === undefined) {
+      cuerpo = undefined;
+    } else if (op.body && typeof op.body === 'object' && (op.body.name || op.body.type)) {
+      cuerpo = bytesDeArchivoFalso(op.body);
+    } else if (op.body instanceof Buffer) {
+      cuerpo = op.body;
+    } else {
+      cuerpo = Buffer.from(String(op.body), 'utf8');
+    }
     if (cuerpo !== undefined && !('Content-Length' in headers)) {
-      headers['Content-Length'] = String(Buffer.byteLength(cuerpo));
+      headers['Content-Length'] = String(cuerpo.length);
     }
     return new Promise((resolve, reject) => {
       const req = http.request({
