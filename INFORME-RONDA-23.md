@@ -74,3 +74,115 @@ acá y entra en la ronda 24, priorizado por el daño que hace la desincronizaci�
 - El límite del presupuesto quedó **en un solo lugar** en la pieza 4; es el único
   de los topes grandes con control de servidor y aviso de cliente saliendo del
   mismo número.
+
+---
+
+## Pieza 6 · La suite: dónde se va el tiempo
+
+**Método.** Cada archivo se corrió solo (`node --test <archivo>`, que ejecuta sus
+tests en serie dentro de un proceso) y se cronometró el muro. Después, la suite
+entera en dos formas. Máquina: 4 CPU, `os.availableParallelism()` = 4, Node
+v24.16.0. Los 436 tests pasan en todas las corridas.
+
+| Corrida | Muro |
+|---|---|
+| Suma de los 56 archivos de a uno (serie) | **905 s** |
+| `node --test "tests/*.test.js"` (default del runner) | **328 s** |
+| `node --test --test-concurrency=4 "tests/*.test.js"` | **269 s** |
+
+### Tabla de tiempos por archivo (de mayor a menor)
+
+| s | Archivo |
+|---:|---|
+| 99,4 | `transiciones-servidor-matriz-2.test.js` |
+| 85,9 | `ronda-17.test.js` |
+| 72,2 | `ronda-21-c6.test.js` |
+| 59,2 | `transiciones-servidor-matriz.test.js` |
+| 58,5 | `ronda-14.test.js` |
+| 58,1 | `ronda-23-c2.test.js` |
+| 45,7 | `wizard.test.js` |
+| 42,2 | `imputacion-servidor.test.js` |
+| 39,9 | `ronda-18.test.js` |
+| 37,5 | `ronda-13.test.js` |
+| 36,6 | `ronda-20.test.js` |
+| 28,0 | `ronda-22-nacimiento.test.js` |
+| 26,8 | `repo.http.test.js` |
+| 19,5 | `servidor.test.js` |
+| 19,0 | `build-catalogo.test.js` |
+| 15,8 | `requerimiento-servidor.test.js` |
+| 15,2 | `transiciones-servidor.test.js` |
+| 15,0 | `ronda-21-c7.test.js` |
+| 13,9 | `archivo.test.js` |
+| 13,4 | `ronda-18-bis.test.js` |
+| 13,0 | `recorrido.test.js` |
+| 12,5 | `servidor-concurrencia.test.js` |
+| 11,8 | `ronda-19-padron.test.js` |
+| 9,4 | `presupuestos-servidor.test.js` |
+| 9,3 | `ronda-12.test.js` |
+| 9,0 | `ronda-21-c9.test.js` |
+| 6,7 | `ronda-19-borrador.test.js` |
+| 6,6 | `ronda-19-auth.test.js` |
+| 6,1 | `ronda-16.test.js` |
+| 4,4 | `check-compat.test.js` |
+| 1,9 | `ronda-20-anexo.test.js` |
+| 1,5 | `pantalla.test.js` |
+| 1,3 | `servidor-ayudantes.test.js` |
+| 1,3 | `ronda-19-estructural.test.js` |
+| 0,69 | `respaldo.test.js` |
+| 0,65 | `ronda-23-c4.test.js` |
+| 0,54 | `catalogo.test.js` |
+| 0,45 | `expediente-matriz.test.js` |
+| 0,44 | `requerimiento-formulario.test.js` |
+| 0,43 | `ronda-15.test.js` |
+| 0,41 | `ronda-11.test.js` |
+| 0,41 | `repo.memoria.test.js` |
+| 0,39 | `expediente.test.js` |
+| 0,38 | `kanban.test.js` |
+| 0,37 | `exportar.test.js` |
+| 0,37 | `plantillas.test.js` |
+| 0,37 | `anexo-eett.test.js` |
+| 0,35 | `renders.test.js` |
+| 0,35 | `requerimiento.test.js` |
+| 0,35 | `validacion.test.js` |
+| 0,34 | `migraciones.test.js` |
+| 0,34 | `motor.test.js` |
+| 0,33 | `config.test.js` |
+| 0,33 | `auditoria.test.js` |
+| 0,32 | `ronda-23-c1.test.js` |
+| 0,32 | `estados.test.js` |
+
+Son **56 archivos** (la orden dice 52).
+
+### ¿Por qué no paraleliza? — las candidatas, descartadas de a una
+
+**1. Los puertos fijos — descartado.** No hay ninguno. Todos los tests levantan el
+servidor con `--puerto 0` o `listen(0, …)` y leen el puerto real de la línea
+`SGC-SERVIDOR-PUERTO <n>`; el `8123` sólo es el default de `server/arranque.js` y
+los tests lo pisan siempre. Por eso esta pieza **no cambió código**: la corrección
+que la orden preveía para este caso no aplica.
+
+**2. La carpeta de datos compartida — descartado.** Cada test crea su propio
+directorio con `fs.mkdtempSync(path.join(os.tmpdir(), …))`. No hay un
+`datos` común entre archivos, así que no se serializan por el `contador.lock`.
+
+**3. La bandera no hace lo que suponíamos — hallazgo real.** El default del runner
+en Node 24 es **3 archivos a la vez**, no `availableParallelism()` (=4). Pedir
+`--test-concurrency=4` bajó el muro de 328 s a 269 s: un 18% que estaba sobre la
+mesa. Vale como corrección de una línea en el comando de cierre.
+
+**4. Sí paraleliza; lo que pasa es que el piso es alto y el reparto es desparejo.**
+La serie suma 905 s y con 4 workers el muro es 269 s: **≈3,4×**, cerca del techo de
+4. El problema no es la falta de paralelismo, son dos cosas:
+
+- **Un archivo dominante:** `transiciones-servidor-matriz-2.test.js` dura 99 s solo.
+  Los cuatro más lentos suman 316 s. El ideal teórico (905 / 4) es ≈226 s y se
+  llega a 269 s: la diferencia es la cola de archivos grandes que no entra a la
+  primera tanda. Dentro de un archivo los tests corren **en serie** (Node no parte
+  un archivo), así que esos 99 s no se reparten.
+- **Esos archivos son lentos porque levantan el servidor como proceso real** una vez
+  por escenario (matriz 18 × 7, `wizard`, `imputacion-servidor`, `ronda-14/17/18`) y
+  porque el login usa **scrypt** (`N=16384`), que es CPU y deliberadamente caro.
+
+**Camino rápido, escrito en el repositorio:** `tests/LEEME.md`. Deja el comando de
+la suite completa (`--test-concurrency=4`), el de los archivos tocados, la regla de
+`check-compat` y los ejemplos de esta ronda.
