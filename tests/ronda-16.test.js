@@ -26,8 +26,8 @@ const probador = require('../server/pliego-probador.js');
 const respaldo = require('../tools/ayudantes-respaldo.js');
 const su = require('./helpers/servidor-util.js');
 
-const GENERADOR = process.env.SGC_GENERADOR_PLIEGOS || 'C:\\Proyectos\\DContrataciones\\Automatizar\\AppOptimizar\\EjemplosProcesoActual\\DocUOC\\Generador de Pliegos';
-process.env.SGC_GENERADOR_PLIEGOS = GENERADOR;
+// ORDEN-RONDA-24 §2: la ruta del generador se define en un solo lugar.
+require('./helpers/generador-pliegos.js');
 
 function dirTmp(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix || 'ronda16-'));

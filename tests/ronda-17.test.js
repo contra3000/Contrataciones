@@ -41,9 +41,9 @@ const probador = require('../server/pliego-probador.js');
 const su = require('./helpers/servidor-util.js');
 
 const RAIZ = path.resolve(__dirname, '..');
-const GENERADOR = process.env.SGC_GENERADOR_PLIEGOS ||
-  'C:\\Proyectos\\DContrataciones\\Automatizar\\AppOptimizar\\EjemplosProcesoActual\\DocUOC\\Generador de Pliegos';
-process.env.SGC_GENERADOR_PLIEGOS = GENERADOR;
+
+// ORDEN-RONDA-24 §2: la ruta del generador se define en un solo lugar.
+require('./helpers/generador-pliegos.js');
 
 const ROLES7 = [
   'generador', 'abastecimiento', 'abastecimiento_supervisor',

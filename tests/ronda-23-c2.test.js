@@ -25,6 +25,9 @@ const path = require('node:path');
 const padronTool = require('../tools/padron.js');
 const su = require('./helpers/servidor-util.js');
 
+// ORDEN-RONDA-24 §2: la ruta del generador se define en un solo lugar.
+require('./helpers/generador-pliegos.js');
+
 function dirTmp(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix || 'rp23-'));
 }

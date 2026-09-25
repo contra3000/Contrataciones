@@ -30,10 +30,8 @@ const path = require('node:path');
 const padronTool = require('../tools/padron.js');
 const su = require('./helpers/servidor-util.js');
 
-const RAIZ = path.resolve(__dirname, '..');
-const GENERADOR = process.env.SGC_GENERADOR_PLIEGOS ||
-  'C:\\Proyectos\\DContrataciones\\Automatizar\\AppOptimizar\\EjemplosProcesoActual\\DocUOC\\Generador de Pliegos';
-process.env.SGC_GENERADOR_PLIEGOS = GENERADOR;
+// ORDEN-RONDA-24 §2: la ruta del generador se define en un solo lugar.
+require('./helpers/generador-pliegos.js');
 
 const RE_CLAVE = /^[a-z][a-záéíóúüñ]*(-[a-z][a-záéíóúüñ]*){3}$/;
 const ROLES7 = [
