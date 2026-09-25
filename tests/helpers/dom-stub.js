@@ -101,7 +101,6 @@ class Nodo {
     this.children = [];
     this.parentNode = null;
     this._clases = new Set();
-    this.className = '';
     this.classList = new ListaClases(this);
     this.atributos = {};
     this.eventos = {};
@@ -119,6 +118,18 @@ class Nodo {
     this.placeholder = '';
     this.foco = false;
     this.style = {};
+  }
+
+  // className y classList son la MISMA lista de clases, como en el navegador.
+  // La app asigna className por propiedad en los nodos que crea (botón
+  // "Agregar valor") y después pregunta classList.contains por delegación; sin
+  // esta sincronía la delegación real no dispara en la montura.
+  get className() {
+    return Array.from(this._clases).join(' ');
+  }
+
+  set className(valor) {
+    this._clases = new Set(String(valor === undefined ? '' : valor).split(/\s+/).filter((c) => c.length > 0));
   }
 
   get innerHTML() {
@@ -156,6 +167,16 @@ class Nodo {
     if (indice !== -1) {
       this.children.splice(indice, 1);
       nodo.parentNode = null;
+    }
+    // RONDA-24 (pieza 3): simulación del layout del navegador. Si un nodo
+    // conectado al documento pierde TODO su contenido, el documento colapsa y
+    // el navegador clampa el scroll al principio de la página. La vista guarda
+    // la posición antes de reconstruir y la restaura después; sin esa
+    // restauración el scroll queda en 0 (rojo), que es el síntoma real.
+    if (this.children.length === 0 && estaEnElCuerpo(this) &&
+        documento.scrollingElement &&
+        typeof documento.scrollingElement.scrollTop === 'number') {
+      documento.scrollingElement.scrollTop = 0;
     }
     return nodo;
   }
@@ -239,8 +260,27 @@ class Nodo {
   }
 }
 
+function estaEnElCuerpo(nodo) {
+  let p = nodo.parentNode;
+  while (p) {
+    if (p === documento.body) {
+      return true;
+    }
+    p = p.parentNode;
+  }
+  return false;
+}
+
 const documento = {
   body: new Nodo('body'),
+  // RONDA-24 (pieza 3): scroll del documento para que la capa de vistas
+  // pueda guardar y restaurar la posición. El stub no tiene layout; el layout
+  // simulado (colapso al vaciar un nodo del cuerpo) vive en Nodo.removeChild.
+  scrollingElement: (() => {
+    const html = new Nodo('html');
+    html.scrollTop = 0;
+    return html;
+  })(),
   porId: {},
   // En el navegador, el documento está "loading" mientras corren los scripts
   // del final del body: app.js registra `iniciar` para DOMContentLoaded y el

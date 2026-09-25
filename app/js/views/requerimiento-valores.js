@@ -183,11 +183,37 @@
     return sel;
   }
 
+  // RONDA-24 (pieza 3): al reconstruir el bloque, el contenedor se achica un
+  // instante y el navegador lleva el scroll al principio de la página. Se
+  // guarda la posición antes de desarmar y se restaura al terminar, así el
+  // campo nuevo queda a la vista (con muchos renglones, si no, se pierde).
+  function posicionScroll() {
+    if (typeof document === 'undefined') {
+      return null;
+    }
+    var se = document.scrollingElement;
+    return se && typeof se.scrollTop === 'number' ? se.scrollTop : null;
+  }
+
+  function restaurarScroll(posicion) {
+    if (posicion === null || posicion === undefined) {
+      return;
+    }
+    if (typeof document === 'undefined') {
+      return;
+    }
+    var se = document.scrollingElement;
+    if (se && typeof se.scrollTop === 'number') {
+      se.scrollTop = posicion;
+    }
+  }
+
   function render() {
     var contenedor = estado.dom.contenedor;
     if (!contenedor) {
       return;
     }
+    var posicion = posicionScroll();
     while (contenedor.children.length > 0) {
       contenedor.removeChild(contenedor.children[0]);
     }
@@ -231,6 +257,7 @@
       pintarFilas(tabla, i, doc);
     }
     recalcular();
+    restaurarScroll(posicion);
   }
 
   function pintarFilas(tabla, i, doc) {
@@ -367,6 +394,14 @@
     }
     estado.valores[i].push(filaVacia());
     render();
+    // RONDA-24 (pieza 3): el foco queda en el campo nuevo, el último de la
+    // fila recién agregada. Selector por atributo: data-valor es único por fila
+    // (renglón:fila) y el DOM sintético no mezcla tag y atributo en un selector.
+    var j = estado.valores[i].length - 1;
+    var campo = estado.dom.contenedor.querySelector('[data-valor="' + i + ':' + j + '"]');
+    if (campo && typeof campo.focus === 'function') {
+      campo.focus();
+    }
   }
 
   function quitarFila(i, j) {
