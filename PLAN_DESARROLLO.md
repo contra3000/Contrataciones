@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-09-01** · ciclo 16 auditado · **entra H21: el padrón se administra desde la aplicación** · incorporada ADR-037
+Última actualización: **2026-09-24** · prueba real del Jefe · ronda 24 emitida · **la tabla de §0 es la única fuente del estado del proyecto**
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -12,28 +12,34 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 
 | Hito | Nombre | Estado | Depende de |
 |------|--------|--------|-----------|
-| H0 | Relevamiento de entorno | ✅ **Cerrado** — Informática autorizó una VM Debian 12 sobre Proxmox ⇒ ADR-035. Restan seis detalles de provisión, que no bloquean | — |
+| H0 | Relevamiento de entorno | ✅ **Cerrado** — ADR-035. Pendiente con Informática: disco de la VM y si el respaldo aguanta ~6 GB/año; ruta UNC de `Y:` (3.8) | — |
 | H1 | Fundaciones del repositorio | ✅ **Terminado** — ciclo 1 | — |
 | H2 | Núcleo de dominio (sin UI) | ✅ **Terminado** — ciclo 2 | H1 |
-| H3 | Persistencia + servidor local | ✅ **Terminado** — ciclos 3 y 8 (respaldo) | H1, H2 |
-| H4 | Catálogo de ítems y autocompletado | ✅ **Terminado** — ciclo 4 | H1 |
-| H5 | Vertical Fase 1 — Wizard del Usuario | ✅ **Terminado** — ciclo 5 | H2, H3, H4 |
-| H6 | Tablero Kanban, roles y transiciones | ✅ **Terminado** — ciclos 6 y 7 (autorización) | H5 |
-| H7 | Entregables y exportación AI-ready | ✅ **Terminado** — ciclos 7 y 8 | H5 |
-| H8 | KPIs y Archivo Histórico | ✅ **Terminado** — archivo histórico (ciclo 8) y KPIs (ciclo 12, vía H15) | H6 |
-| H9 | **Testing integral en local (UAT)** | 🟡 **40%** — auditoría independiente activa y prueba manual hecha; falta UAT con operadores | H6, H7 |
-| H11 | Requerimiento completo y presupuestos | ✅ **Terminado** — ciclos 9 y 10 (pantalla de carga) | H7 |
+| H3 | Persistencia + servidor local | ✅ **Terminado** — ciclos 3 y 8 | H1, H2 |
+| H4 | Catálogo de ítems y autocompletado | ✅ **Terminado** — ciclo 4. **Falta el programa que baja el catálogo** (ADR-018): sin él queda fijo en la foto de septiembre | H1 |
+| H5 | Vertical Fase 1 — asistente del usuario | ✅ **Terminado** — ciclo 5 | H2, H3, H4 |
+| H6 | Tablero, roles y transiciones | ✅ **Terminado** — ciclos 6 y 7 | H5 |
+| H7 | Entregables y exportación | ✅ **Terminado** — ciclos 7 y 8 | H5 |
+| H8 | KPIs y Archivo Histórico | ✅ **Terminado** — ciclos 8 y 12 | H6 |
+| H9 | **Prueba integral en local** | 🟡 **En curso** — 24/09: expediente real de 29 renglones y 3 presupuestos (hasta 19,5 MB, subieron bien). Frenado antes de Abastecimiento: "Avanzar" era blanco sobre blanco y estaba al final. **La descripción del ítem no se imprime** (se pierde al crear). Ronda 24 | H6, H7 |
+| H11 | Requerimiento completo y presupuestos | ✅ **Terminado** — ciclos 9 y 10 | H7 |
 | H12 | EETT con regla de desborde | ✅ **Terminado** — ciclo 10 | H11 |
-| H13 | ANEXO 1 y salida hacia el pliego | ✅ **Terminado** — ciclos 11 a 13; el tipo de contrato real pasa a H20 | H11, H12 |
+| H13 | ANEXO 1 y salida hacia el pliego | ✅ **Terminado** — ciclos 11 a 13; el ANEXO 1 recién guarda datos desde la ronda 20 | H11, H12 |
 | H14 | Expediente adjudicado como base de uno nuevo | ✅ **Terminado** — ciclo 13 | H8 |
-| H16 | Sistema de estilos aplicado a toda la app | ⬜ Pendiente — **nuevo** · final del roadmap | H13 |
-| H17 | Identidad de la app y documentación IA-friendly | ⬜ Pendiente — **nuevo** · lo último | H16 |
-| H15 | Observabilidad y tableros de indicadores por rol | ✅ **Terminado** — ciclos 12 y 13 | H8 |
-| H19 | Diálogo de sugerencias del piloto | ✅ **Terminado** — ciclo 13 | H6 |
-| H18 | Credenciales y administración del padrón | ✅ **Terminado** — ciclo 14 | H5 |
-| H20 | Plantillas del pliego, versionadas y editables | 🟡 **60%** — modelo, versiones, reglas y las 13 correcciones normativas hechas; falta que la validación no se pueda saltear | H13 |
-| H21 | Administración del padrón desde la aplicación | ⬜ Pendiente — **nuevo, 2026-09-01** · ronda 17 | H18 |
-| H10 | Despliegue a intranet y piloto | 🟡 **50%** — paquete, servicio, respaldo e instructivo hechos; **tres correcciones antes de instalar** | H0, H9 |
+| H15 | Observabilidad e indicadores por rol | ✅ **Terminado** — ciclos 12 y 13 | H8 |
+| H16 | Sistema de estilos | ✅ **Terminado** — ronda 21. Acabado pedido por el Jefe: barra fija (arreglo del 23/09), **logo de la FAA (falta el archivo oficial)** | H13 |
+| H17 | Identidad y documentación IA-friendly | ⬜ **Después del piloto** | H16 |
+| H18 | Credenciales | ✅ **Terminado** — ciclo 14 | H5 |
+| H19 | Sugerencias del piloto | ✅ **Terminado** — ciclo 13 | H6 |
+| H20 | Plantillas del pliego | 🟡 **Servidor completo** (ciclos 16 y 17), **sin pantalla**: nada de la aplicación lo usa (R56). El Jefe decide si hace falta para el piloto | H13 |
+| H21 | Padrón desde la aplicación | ✅ **Terminado** — rondas 17 y 18. La entrada no se encontraba; arreglado el 23/09 (botón "Usuarios", barra fija) | H18 |
+| H22 | El código dice lo que hace | ✅ **Terminado** — rondas 18 y 19 | — |
+| H23 | El circuito de la persona llega hasta el final | ✅ **Terminado** — ronda 21, 9 de 9 caminos | H22 |
+| H24 | Lo que apareció al usarlo de verdad | 🟡 **7 de 12 + ronda 24 emitida** (9 piezas, de la prueba del 24/09): botones visibles, suite reproducible, agregar valor sin salto, ver documentos, acciones arriba, sesión viva, impresión limpia, **descripción del ítem**, corregir renglones. El PUT, la bitácora, los topes de B2 y el `python` pasan a la 25 | H9 |
+| H25 | **Controles automáticos y entorno de prueba** | ⬜ **Nuevo, 2026-09-23** — aprobado por el Jefe: entorno de prueba con siete roles, matriz de permisos como test, `estado-ciclo` | H24 |
+| H10 | **Puesta en uso, por hitos** | 🟡 Paquete, servicio y respaldo hechos (ciclo 15). **Etapas definidas por el Jefe el 2026-09-23**, ver H10 | H9 |
+
+> **Cómo leer este plan.** Esta tabla es **la única fuente del estado**. Las casillas `[ ]` de cada sección son el plan original: la mayoría no se marcó al terminar y **no se mantienen**. Si una casilla contradice la tabla, vale la tabla.
 
 > ### ⚠️ Sigue pendiente
 > **Rescate del scraper del catálogo** (ADR-018). Al 2026-08-20 se conserva **sólo un fragmento**: el bloque `page.evaluate()` de un script Puppeteer/Playwright, ya versionado en `Contrataciones/tools/scraper-catalogo/`. **Falta** la URL de origen, el arranque del navegador, el bucle de paginación y la escritura de salida. Ver el README de esa carpeta.
@@ -285,7 +291,19 @@ Seis detalles de provisión de la máquina virtual. Bloquean el **despliegue**, 
 
 ---
 
-## H10 — Despliegue a intranet y piloto
+## H10 — Puesta en uso, por hitos
+
+**Definido por el Jefe de Contrataciones el 2026-09-23: no va por fechas, va por hitos.** Cada etapa empieza cuando la anterior quedó bien:
+
+1. **Su prueba local**, en su PC, con un expediente real (H9).
+2. **La carpeta compartida**: lleva la aplicación a la carpeta compartida y la prueba **él**.
+3. **Su oficina.**
+4. **Se expande.**
+
+> **Riesgo para las etapas 2 y 3 (R57): un solo servidor por carpeta de datos.** Si dos personas abren `Iniciar SGC.bat` sobre la misma carpeta de datos, corren **dos servidores escribiendo los mismos archivos**, y nada lo impide hoy. La forma segura es **un solo servidor** —en la PC del Jefe o en la máquina virtual de ADR-035— y los demás entran **con el navegador** a `http://<esa-máquina>:8123`. Eso exige que el puerto esté abierto en esa máquina, y en las PCs de la Fuerza el administrador es Informática. **La traba contra un segundo servidor va en la ronda 24.**
+
+Lo que sigue es el plan técnico original del paquete para la máquina virtual (ciclo 15):
+
 
 - [ ] H10-1 · Cerrar H0 y confirmar el adaptador definitivo
 - [ ] H10-2 · **Paquete de despliegue** para Debian 12: `app/`, `server/`, `tools/`, `config/`, el catálogo, y un `instalar.sh` que crea el usuario del servicio, la carpeta de datos y los permisos
@@ -668,22 +686,30 @@ e2e por la montura real; los unitarios legítimos
 
 **Estado al cierre del ciclo 20 — cumplido.** H23-1 a H23-11 entregados y verificados por el revisor: un solo nombre de campo para el presupuesto, el ANEXO 1 recibe su propia sección, los identificadores coinciden, los nueve tests reescritos, **6 de 9 caminos**, **416 tests en verde**. Queda abierto un defecto que apareció al recorrerlo:
 
-- [ ] H23-13 · **La versión que devuelve una escritura tiene que llegar a la vista.** `exportar.js:169` guarda el documento, recibe la versión nueva y **la usa sólo para un mensaje**; el expediente conserva la vieja y el siguiente "avanzar" da conflicto contra un operador que no existe. El resto del código ya hace lo correcto (`requerimiento-presupuestos.js:110`, `expediente.js` → `manejarResultado`, las dos llaman a `expediente.abrir`). Ronda 21
-- [ ] H23-14 · **La lista completa de escrituras que devuelven versión**, y qué hace la vista con cada una — quinta aparición de la familia «el servidor devuelve el dato fresco y la pantalla lo tira»
-- [ ] H23-15 · **C6, C7 y C9**: la cadena de roles hasta la firma, repartir las catorce claves y que cada uno entre, y salir y volver. **9 de 9**. Ronda 21
+- [x] H23-13 · **La versión que devuelve una escritura tiene que llegar a la vista.** `exportar.js:169` guarda el documento, recibe la versión nueva y **la usa sólo para un mensaje**; el expediente conserva la vieja y el siguiente "avanzar" da conflicto contra un operador que no existe. El resto del código ya hace lo correcto (`requerimiento-presupuestos.js:110`, `expediente.js` → `manejarResultado`, las dos llaman a `expediente.abrir`). Ronda 21
+- [x] H23-14 · **La lista completa de escrituras que devuelven versión**, y qué hace la vista con cada una — quinta aparición de la familia «el servidor devuelve el dato fresco y la pantalla lo tira»
+- [x] H23-15 · **C6, C7 y C9**: la cadena de roles hasta la firma, repartir las catorce claves y que cada uno entre, y salir y volver. **9 de 9**. Ronda 21
 
 
 ### H24 — Lo que apareció cuando alguien lo usó de verdad
 
 **Ronda 22.** Los tres puntos salieron de **una sola sesión del Jefe de Contrataciones cargando un expediente real**. Ninguno lo encontró un test ni una auditoría.
 
-- [ ] H24-1 · **Crear un expediente exige el rol que ejecuta el primer paso**, verificado en el servidor contra el padrón. Hoy `expedientes.js:63 apiCrear` valida renglones, textos y encabezado **y nunca mira el rol**: cualquiera autenticado puede originar un requerimiento. La matriz de 18 × 7 gobierna las transiciones y **nadie gobierna el nacimiento**
-- [ ] H24-2 · **La lista de todos los extremos que crean algo**, con quién puede y quién lo verifica — expedientes, presupuestos, entregables, adjuntos, plantillas, sugerencias, padrón
-- [ ] H24-3 · **El presupuesto admite 20 MB**, porque los documentos de GDE vienen escaneados y pesan eso
-- [ ] H24-4 · **El archivo viaja como archivo**, no codificado en texto dentro de un JSON: elimina la inflación del 33% y baja el pico de memoria de ~100 MB a menos de 1 MB por subida
-- [ ] H24-5 · **El límite se declara una sola vez** y de ahí salen el control, el aviso del cliente y el mensaje
-- [ ] H24-6 · **Indicador de progreso** en la subida: 20 MB desde una PC del parque tardan segundos, y el silencio se lee como "se colgó"
-- [ ] H24-7 · **Texto de ayuda visible en la aclaración**: que no repita la descripción del ítem, y que evite marcas como sinónimo de calidad — los parámetros técnicos son los que después permiten evaluar las ofertas *(pedido textual del Jefe de Contrataciones; ataca R14 y buena parte del log de errores)*
+- [x] H24-1 · **Crear un expediente exige el rol que ejecuta el primer paso**, verificado en el servidor contra el padrón. Hoy `expedientes.js:63 apiCrear` valida renglones, textos y encabezado **y nunca mira el rol**: cualquiera autenticado puede originar un requerimiento. La matriz de 18 × 7 gobierna las transiciones y **nadie gobierna el nacimiento** · **ronda 22**
+- [x] H24-2 · **La lista de todos los extremos que crean algo**, con quién puede y quién lo verifica — expedientes, presupuestos, entregables, adjuntos, plantillas, sugerencias, padrón · **ronda 22 (B1)**
+- [x] H24-3 · **El presupuesto admite 20 MB**, porque los documentos de GDE vienen escaneados y pesan eso · **ronda 23**
+- [x] H24-4 · **El archivo viaja como archivo**, no codificado en texto dentro de un JSON: elimina la inflación del 33% y baja el pico de memoria de ~100 MB a menos de 1 MB por subida · **ronda 23 — medido: +13 MB contra +80 MB**
+- [x] H24-5 · **El límite se declara una sola vez** y de ahí salen el control, el aviso del cliente y el mensaje · **ronda 23 — `core/limites.js`**
+- [x] H24-6 · **Indicador de progreso** en la subida: 20 MB desde una PC del parque tardan segundos, y el silencio se lee como "se colgó" · **ronda 23**
+- [x] H24-7 · **Texto de ayuda visible en la aclaración**: que no repita la descripción del ítem, y que evite marcas como sinónimo de calidad — los parámetros técnicos son los que después permiten evaluar las ofertas *(pedido textual del Jefe de Contrataciones; ataca R14 y buena parte del log de errores)* · **ronda 23**
+
+**Ronda 24 — en borrador, se emite después del recorrido del Jefe de Contrataciones.** Salió de las auditorías de los ciclos 22 y 23 y del barrido B2:
+
+- [ ] H24-8 · **El PUT del expediente con guardia de rol del estado.** `apiGuardar` deja a cualquier autenticado reescribir renglones, justificación y encabezado de cualquier expediente en cualquier estado; sólo controla la imputación. Es el hermano que falta de presupuestos y entregables (`autorizarRolDelEstado`). **Antes, el inventario de todos los PUT de la pantalla**
+- [ ] H24-9 · **La suite corre igual en cualquier clon**: `SGC_GENERADOR_PLIEGOS` fijada en un solo lugar de `tests/helpers/` (hoy `ronda-23-c2` cae en el clon del auditor)
+- [ ] H24-10 · **Los tres topes desparejos de B2**: unidad de medida sin cota en el servidor, los 4000 de la sugerencia escritos dos veces, 280 contra 300 KB del fragmento de catálogo
+- [ ] H24-11 · **Nada del sistema espera para siempre**: el `python` del generador de pliegos se lanza sin tope de tiempo (`pliego-probador.js:115`)
+- [ ] H24-12 · **La bitácora al día**: termina en el ADR-038 (ronda 18); el ADR-042 está citado y nunca se escribió, y del 039 al 041 no hay nada. Faltan las decisiones de las rondas 19 a 23 —el presupuesto como bytes crudos, `core/limites.js`, las guardias por rol del estado y de administrador
 
 **Criterio de aceptación:** un `contrataciones_supervisor` no puede crear un expediente y un `generador` sí; un PDF de 20 MB sube con progreso a la vista sin que el servidor tome cien megas para hacerlo.
 
@@ -705,8 +731,14 @@ e2e por la montura real; los unitarios legítimos
 | ~~R41~~ | ~~El banco de pruebas prueba una ficción~~ | **Cerrado — ciclo 17** | El probador arma su expediente con la función de exportación real. Y el pliego de servicios sale del generador de verdad, verificado por el auditor |
 | R42 | **Una importación de padrón mal hecha deja afuera a catorce personas** | Alto — un archivo de Excel al que le borraron una fila sin querer | ADR-037 §5 y §6: diff antes de aplicar, todo o nada, la ausencia **no** desactiva, y el administrador no puede encerrarse afuera |
 | R43 | **El comentario enuncia la regla correcta y el código hace otra cosa** — tres instancias en la misma ronda (`padron-inicial.js`, `eventos.js`/`sugerencias.js`, `padron-csv.js`), repetidas después en el informe del desarrollador | **Alto y particular**: derrota a la revisión por lectura. Quien audita leyendo —el revisor, el Jefe de Contrataciones, un sucesor, o cualquier modelo al que se le pase el repositorio— encuentra el comentario correcto y sigue de largo | Regla §3.10 del ciclo de trabajo: *una regla enunciada en un comentario y no en un test que falle al quitarla, no existe*. Y sección propia en la auditoría del ciclo 18: leer el código contra sí mismo |
-| R51 | **Nadie controla quién origina un requerimiento** — `apiCrear` no mira el rol; cualquiera autenticado puede crear un expediente | **Alto**: borra en silencio la separación entre quien pide y quien compra, que es el control que sostiene el circuito. Y el registro de auditoría queda diciendo que la necesidad la pidió Contrataciones | H24-1 y H24-2: la guardia en el servidor, y **la lista de todas las puertas** que crean algo |
-| R52 | **Un límite escrito en dos lugares se desincroniza** — el tope del presupuesto vive en el servidor y el mensaje se arma aparte | Medio — el día que se cambie uno y no el otro, el aviso miente | H24-5: un solo lugar de declaración, tres consumidores |
+| R58 | **La descripción del ítem se pierde al crear el expediente** — `pasos.js:152` guarda código, cantidad, unidad y aclaración, y tira `item`; los documentos imprimen la columna DESCRIPCIÓN vacía | **Crítico**: el requerimiento que se firma no dice qué se compra. Veintitrés rondas, y los tests no lo ven porque fabrican `descripcion` a mano | Ronda 24, pieza 8, más la herramienta que completa los expedientes existentes |
+| R57 | **Dos servidores sobre la misma carpeta de datos** — nada impide abrir `Iniciar SGC.bat` dos veces, o en dos PCs, contra la misma carpeta compartida | **Alto**: dos procesos escribiendo el mismo expediente y la misma numeración; el candado de numeración no alcanza entre máquinas | Ronda 24: el servidor toma la carpeta al arrancar y se niega si otro la tiene. Y en las etapas 2 y 3 de H10, **un solo servidor** y los demás por navegador |
+| R53 | **El PUT del expediente no mira rol ni estado** — cualquiera autenticado reescribe los renglones de cualquier expediente, también después de firmado el requerimiento | **Alto**: lo guardado deja de coincidir con lo firmado y nada lo marca. Lo miraron el revisor y dos auditores, y los tres lo dieron por bueno | H24-8, con el inventario de los PUT de la pantalla antes de la guardia |
+| R54 | **El revisor afirma una ausencia a partir de una búsqueda recortada** — `grep … \| head -40` dejó afuera la guardia de `pliego-plantillas-api.js:47`, y la tabla falsa llegó a la orden 23 | Alto para el proceso — el error no se ve: el resultado parece completo | Regla §3.15, agregado del 2026-09-21: una ausencia se afirma con la búsqueda entera, o contando primero |
+| R55 | **La suite depende de cómo está armada la carpeta de quien la corre** — un test nuevo usa la ruta por omisión del generador de pliegos | Medio — el "436/436" es cierto en una sola máquina, y el auditor pierde media hora en un rojo que no es del código | H24-9: la variable en un solo lugar |
+| R56 | **H20 no tiene camino de persona** — publicar, volver, estampar y regenerar plantillas existen sólo por API y tests; ninguna pantalla los llama | Medio — el pliego del piloto depende del generador externo y del YAML, y los permisos de estampar se decidieron sobre una tabla equivocada | Pregunta al Jefe de Contrataciones en su recorrido: ¿alcanza para el piloto? |
+| ~~R51~~ | ~~**Nadie controla quién origina un requerimiento** — `apiCrear` no mira el rol; cualquiera autenticado puede crear un expediente~~ | **Cerrado — 2026-09-21** (rondas 22 y 23, verificado por el auditor) | H24-1 y H24-2: la guardia en el servidor, y **la lista de todas las puertas** que crean algo |
+| ~~R52~~ | ~~**Un límite escrito en dos lugares se desincroniza** — el tope del presupuesto vive en el servidor y el mensaje se arma aparte~~ | **Cerrado — 2026-09-21** (ronda 23, verificado por el auditor) | H24-5: un solo lugar de declaración, tres consumidores |
 | R49 | **Un dato fresco que devuelve una escritura no llega a la vista** — la versión del expediente tras guardar el documento (`exportar.js:169`) | Alto y desconcertante: frena a **una persona sola** y le dice que la frenó *"otro operador"* que no existe. Quinta aparición de la misma familia | H23-13 y H23-14: la corrección, y **la lista completa** de escrituras que devuelven versión |
 | R50 | **Una instrucción del revisor cuesta diez veces más de lo que él calcula** — «recorré el circuito como una persona» se convirtió en un robot de navegador de once pasos, 7 min por corrida, roto con cada cambio de pantalla | Alto para el proceso — quemó un ciclo de auditoría entero y dejó la verificación sin terminar | **Regla §3.16**: tres verificaciones, tres dueños. El auditor no maneja el navegador; los e2e los hace el desarrollador; el recorrido humano lo hace el Jefe de Contrataciones |
 | R47 | **El orquestador escribe órdenes sin verificar qué se ejecutó** — el 11/9 emitió una orden para trabajo ya hecho y auditado, y editó dos órdenes ya ejecutadas | Alto para el proceso — es el único rol sin nadie que lo controle, y el error llega hasta el desarrollador y el auditor antes de detectarse | **Regla §3.15**: antes de escribir nada, mirar el disco — informes, carpetas de auditoría, fechas de los archivos. Y una orden ejecutada no se toca nunca más |
