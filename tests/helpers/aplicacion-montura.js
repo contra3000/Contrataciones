@@ -433,7 +433,7 @@ function montura(servidor) {
       m.enviarFormulario('sgc-ingreso');
       try {
         await m.esperar(() => !d.getElementById('sgc-cambio-clave-forma').hidden ||
-          !d.getElementById('sgc-app').hidden, 15000, 'intento de ingreso del administrador');
+          !d.getElementById('sgc-sesion-barra').hidden, 15000, 'intento de ingreso del administrador');
         return true;
       } catch (e) {
         return false;
@@ -450,7 +450,7 @@ function montura(servidor) {
       m.enviarFormulario('sgc-cambio-clave-forma');
     }
     await m.esperar(() => !d.getElementById('sgc-nav-padron').hidden ||
-      !d.getElementById('sgc-app').hidden, 20000,
+      !d.getElementById('sgc-sesion-barra').hidden, 20000,
       'navegación visible para el administrador');
     d.getElementById('sgc-nav-padron').click();
     await m.esperar(() => !d.getElementById('sgc-padron').hidden, 20000,
@@ -499,7 +499,9 @@ function montura(servidor) {
     m.setear('sgc-cambio-clave-vieja', claveProvisoria);
     m.setear('sgc-cambio-clave-nueva', claveFija);
     m.enviarFormulario('sgc-cambio-clave-forma');
-    await m.esperar(() => !d.getElementById('sgc-app').hidden, 20000,
+    // Entró cuando aparece la barra de sesión: el alta sólo la ve quien
+    // puede originar; los demás aterrizan en el tablero.
+    await m.esperar(() => !d.getElementById('sgc-sesion-barra').hidden, 20000,
       'aplicación visible para el operador');
 
     return { email, claveProvisoria, claveFija };

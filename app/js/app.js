@@ -91,15 +91,18 @@
   // servidor revalida de todos modos (misma regla, contra el padrón); aquí la
   // pantalla refleja la regla: solo ve "Alta de Especificación" quien ejecuta
   // la primera etapa del circuito (ESPECIFICACIONES_TECNICAS → generador).
+  function puedeOriginar(operador) {
+    var rolDelPrimerPaso = SGC.core.config.ESTADOS[0].rolEjecutor;
+    return !!(operador && Array.isArray(operador.roles) &&
+      operador.roles.indexOf(rolDelPrimerPaso) !== -1);
+  }
+
   function actualizarNavAlta(operador) {
     var nav = document.getElementById('sgc-nav-alta');
     if (!nav) {
       return;
     }
-    var rolDelPrimerPaso = SGC.core.config.ESTADOS[0].rolEjecutor;
-    var puedeCrear = operador && Array.isArray(operador.roles) &&
-      operador.roles.indexOf(rolDelPrimerPaso) !== -1;
-    nav.hidden = !puedeCrear;
+    nav.hidden = !puedeOriginar(operador);
   }
 
   function descargadorGenerico(nombre, contenido) {
@@ -129,6 +132,11 @@
     actualizarNavPadron(operador);
     actualizarNavAlta(operador);
     document.getElementById('sgc-tablero-nav').hidden = false;
+    // Quien no puede originar no aterriza en un alta que no puede enviar
+    // (desde la ronda 22 sólo el generador crea): va al tablero.
+    if (!puedeOriginar(operador)) {
+      alternarTablero();
+    }
   }
 
   // ORDEN-RONDA-14 §3.1/§3.5 (ADR-033): el padrón declara UN rol; las vistas
@@ -155,6 +163,14 @@
   // Entrar (modo autenticado): oculta la pantalla de ingreso/cambio de clave,
   // activa las vistas y muestra la barra de sesión con el operador a la vista.
   function entrar(operador) {
+    // El contrato: al entrar se oculta la pantalla de ingreso. La rama
+    // provisoria la oculta aparte (ingreso.mostrar(false)); el ingreso directo
+    // con clave fija pasa aquí, y sin este paso la pantalla de ingreso queda
+    // visible debajo de la aplicación (y confunde a los helpers de sesión).
+    var ingreso = document.getElementById('sgc-ingreso');
+    if (ingreso) {
+      ingreso.hidden = true;
+    }
     var seleccion = document.getElementById('sgc-seleccion-operador');
     if (seleccion) {
       seleccion.hidden = true;

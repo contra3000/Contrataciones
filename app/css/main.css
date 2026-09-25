@@ -394,17 +394,12 @@ mark {
   font-size: 0.92em;
 }
 
-.sesion-barra button {
-  background-color: var(--color-fondo-panel);
-}
-
 .lista-operadores button {
   width: 100%;
   text-align: left;
   padding: 12px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  background-color: var(--color-fondo-panel);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -444,7 +439,6 @@ mark {
 
 .borrador-aviso button {
   margin-right: 8px;
-  background-color: var(--color-fondo-panel);
 }
 
 .pasos {
@@ -554,7 +548,6 @@ mark {
 .fasttrack button {
   margin-right: 10px;
   margin-bottom: 6px;
-  background-color: var(--color-fondo-panel);
 }
 
 .etiqueta-inline {
@@ -591,11 +584,13 @@ mark {
    Tablero Kanban (ORDEN-RONDA-06 §3.1)
 --------------------------------------------------------------------------- */
 .tablero-nav {
-  margin: 16px 0;
-}
-
-.tablero-nav button {
-  background-color: var(--color-fondo-panel);
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  margin: 0 0 16px;
+  padding: 8px 0;
+  background-color: var(--color-fondo-suave);
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .kanban-cabecera {
@@ -739,7 +734,6 @@ mark {
 
 .expediente-cabecera button {
   align-self: flex-start;
-  background-color: var(--color-fondo-panel);
 }
 
 .expediente-cuerpo {
@@ -769,10 +763,6 @@ mark {
   flex-direction: column;
   gap: 4px;
   max-width: var(--sidebar);
-}
-
-.accion-bloque button {
-  background-color: var(--color-fondo-panel);
 }
 
 .accion-porque {
@@ -805,7 +795,6 @@ mark {
 
 .conflicto button {
   align-self: flex-start;
-  background-color: var(--color-fondo-panel);
 }
 
 .lista-auditoria {
@@ -987,11 +976,6 @@ mark {
   font: inherit;
 }
 
-.dialogo-acciones button,
-.base-pie button {
-  background-color: var(--color-fondo-panel);
-}
-
 .advertencia {
   border: 1px solid var(--color-borde-fuerte);
   border-radius: var(--radio-borde);
@@ -1016,7 +1000,6 @@ mark {
 
 .archivo-cabecera button {
   align-self: flex-start;
-  background-color: var(--color-fondo-panel);
 }
 
 .lista-archivo,
@@ -1045,7 +1028,6 @@ mark {
 
 .archivo-item button {
   align-self: flex-start;
-  background-color: var(--color-fondo-panel);
 }
 
 .archivo-detalle {
@@ -1067,7 +1049,6 @@ mark {
 
 .base-cabecera button {
   align-self: flex-start;
-  background-color: var(--color-fondo-panel);
 }
 
 .base-seccion {
@@ -1121,7 +1102,6 @@ mark {
 
 .padron-cabecera button {
   align-self: flex-start;
-  background-color: var(--color-fondo-panel);
 }
 
 .padron-tabla {
@@ -1171,7 +1151,6 @@ mark {
 
 .padron-acciones-grupo button {
   padding: 6px 12px;
-  background-color: var(--color-fondo-panel);
 }
 
 .clave-mostrar {
@@ -1231,7 +1210,6 @@ mark {
 
 .sugerencias-cabecera button {
   align-self: flex-start;
-  background-color: var(--color-fondo-panel);
 }
 
 .sugerencias-filtros select {
@@ -1268,7 +1246,6 @@ mark {
 .sugerencia-item button {
   align-self: flex-start;
   padding: 6px 12px;
-  background-color: var(--color-fondo-panel);
 }
 
 /* Overlay del formulario de sugerencia (operador) */

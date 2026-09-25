@@ -50,8 +50,12 @@ function claveFijaDe(email) {
 
 async function cambiarSesion(m, email, clave, claveFija) {
   const d = m.documento;
-  if (!d.getElementById('sgc-ingreso').hidden) {
-    // ya estamos en la pantalla de ingreso (primera entrada del test o tras salir)
+  // La decisión se toma por la barra de sesión, no por la visibilidad de la
+  // pantalla de ingreso: tras un re-ingreso con clave fija la pantalla de
+  // ingreso queda visible aunque haya una sesión activa, y ese resto no debe
+  // confundir el guard (primera entrada: sin sesión, se entra directo).
+  if (d.getElementById('sgc-sesion-barra').hidden) {
+    // Primera entrada del test: no hay sesión activa, el ingreso está visible.
   } else {
     d.getElementById('sgc-sesion-salir').click();
     await m.esperar(() => !d.getElementById('sgc-ingreso').hidden, 20000,
@@ -62,13 +66,13 @@ async function cambiarSesion(m, email, clave, claveFija) {
   m.setear('sgc-ingreso-clave', clave);
   m.enviarFormulario('sgc-ingreso');
   await m.esperar(() => !d.getElementById('sgc-cambio-clave-forma').hidden ||
-    !d.getElementById('sgc-app').hidden, 20000, 'ingreso de ' + email);
+    !d.getElementById('sgc-sesion-barra').hidden, 20000, 'ingreso de ' + email);
   if (!d.getElementById('sgc-cambio-clave-forma').hidden) {
     m.setear('sgc-cambio-clave-vieja', clave);
     m.setear('sgc-cambio-clave-nueva', fija);
     m.enviarFormulario('sgc-cambio-clave-forma');
   }
-  await m.esperar(() => !d.getElementById('sgc-app').hidden, 20000,
+  await m.esperar(() => !d.getElementById('sgc-sesion-barra').hidden, 20000,
     'aplicación visible para ' + email);
   return fija;
 }

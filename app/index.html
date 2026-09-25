@@ -21,6 +21,15 @@
         <button id="sgc-sesion-salir" type="button">Salir</button>
       </div>
     </header>
+    <!-- Barra principal fija arriba: la misma posición en todas las pantallas
+         (antes quedaba debajo del asistente de alta, al final de la página). -->
+    <nav id="sgc-tablero-nav" class="tablero-nav" aria-label="Navegación principal" hidden>
+      <button id="sgc-nav-alta" type="button" class="primario">Alta de Especificación</button>
+      <button id="sgc-nav-tablero" type="button">Tablero</button>
+      <button id="sgc-nav-archivo" type="button">Archivo Histórico</button>
+      <button id="sgc-nav-sugerencias" type="button" hidden>Sugerencias</button>
+      <button id="sgc-nav-padron" type="button" hidden>Usuarios</button>
+    </nav>
 
     <section id="sgc-seleccion-operador" class="seccion-operador" aria-label="Selección de operador">
       <h2>Seleccione su operador</h2>
@@ -177,13 +186,6 @@
       </nav>
     </section>
 
-    <nav id="sgc-tablero-nav" class="tablero-nav" aria-label="Navegación principal" hidden>
-      <button id="sgc-nav-alta" type="button" class="primario">Alta de Especificación</button>
-      <button id="sgc-nav-tablero" type="button">Tablero</button>
-      <button id="sgc-nav-archivo" type="button">Archivo Histórico</button>
-      <button id="sgc-nav-sugerencias" type="button" hidden>Sugerencias</button>
-      <button id="sgc-nav-padron" type="button" hidden>Padrón</button>
-    </nav>
 
     <section id="sgc-kanban" class="kanban" aria-label="Tablero de expedientes" hidden>
       <header class="kanban-cabecera">
