@@ -224,6 +224,6 @@ entregable) ya existían de la ronda 23.
 ---
 
 ```
-git -C ..\auditoria\ciclo-25 log --oneline -1   →  a7cdcab Ronda 25 · corregir renglones
-git log --oneline -1 (en dev\)                  →  a7cdcab Ronda 25 · corregir renglones
+git -C ..\auditoria\ciclo-25 log --oneline -1   →  f4dc96f Ronda 25 · informe
+git log --oneline -1 (en dev\)                  →  f4dc96f Ronda 25 · informe
 ```
