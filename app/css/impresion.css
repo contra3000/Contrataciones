@@ -35,14 +35,24 @@
 }
 
 /* Con la clase .imprimiendo (que pone el botón antes de window.print()) sólo
-   queda visible el documento; todo el resto de la aplicación se oculta. */
+   queda el documento; todo el resto de la aplicación se oculta.
+
+   RONDA-25 pieza 4: esconder con `visibility: hidden` conserva el layout y
+   producía las hojas en blanco al final del PDF real. En cada nivel del árbol
+   la única rama que se conserva es la que lleva al documento; todo lo demás
+   queda `display: none` y no ocupa lugar (`.documento-impresion` lo excluyen
+   los `:not(...)`: sigue en la página). Estructura real:
+   body > main#app > #sgc-expediente > #sgc-expediente-documento-seccion
+   > #sgc-expediente-documento. */
 @media print {
-  body.imprimiendo * {
-    visibility: hidden;
+  body.imprimiendo > #app > *:not(#sgc-expediente) {
+    display: none;
   }
-  body.imprimiendo .documento-impresion,
-  body.imprimiendo .documento-impresion * {
-    visibility: visible;
+  body.imprimiendo #sgc-expediente > *:not(#sgc-expediente-documento-seccion) {
+    display: none;
+  }
+  body.imprimiendo #sgc-expediente-documento-seccion > *:not(#sgc-expediente-documento) {
+    display: none;
   }
   body.imprimiendo .documento-impresion {
     position: absolute;
