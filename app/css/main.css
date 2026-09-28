@@ -937,6 +937,28 @@ mark {
   text-decoration: none;
 }
 
+/* RONDA-25 pieza 1: lista de documentos guardados del expediente. */
+.documento-guardados {
+  margin-top: 12px;
+}
+
+.documento-lista {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.documento-lista li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.documento-lista button {
+  margin-left: auto;
+}
+
 .documento-impresion table.doc-renglones {
   width: 100%;
   border-collapse: collapse;

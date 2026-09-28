@@ -80,6 +80,11 @@ function armarMontaje() {
   sec.appendChild(nodo('button', 'sgc-expediente-exportar-json'));
   sec.appendChild(nodo('button', 'sgc-expediente-exportar-resumen'));
   sec.appendChild(nodo('button', 'sgc-expediente-exportar-yaml'));
+  const bloque = nodo('div', 'sgc-expediente-entregables-bloque');
+  bloque.hidden = true;
+  bloque.appendChild(nodo('h4'));
+  bloque.appendChild(nodo('ul', 'sgc-expediente-entregables'));
+  sec.appendChild(bloque);
   sec.appendChild(nodo('p', 'sgc-expediente-documento-msj'));
   app.appendChild(sec);
 
@@ -244,4 +249,46 @@ test('§3.2 el botón Imprimir llama a window.print con la clase de impresión p
   assert.equal(claseDurantePrint, true, 'la hoja de impresión está activa durante la llamada');
   assert.equal(globalThis.document.body.classList.contains('imprimiendo'), false,
     'la clase se quita después de imprimir');
+});
+
+test('RONDA-25 pieza 1 · la lista de documentos guardados muestra cada uno con "Ver" y la apertura pasa por el modal', () => {
+  const { montaje, aperturas } = montarExportar();
+  const nodos = montaje.nodos;
+  const expediente = expedientePrueba();
+  expediente.entregables = [
+    { nombre: 'anexo-eett-alfa.html', ruta: 'entregables/anexo-eett-alfa.html' },
+    { nombre: 'especificacion-tecnica.html', ruta: 'entregables/especificacion-tecnica.html' }
+  ];
+  SGC.views.exportar.fijarProveedor(() => ({ expediente, version: 2 }));
+  SGC.views.exportar.actualizar();
+
+  const lista = nodos['sgc-expediente-entregables'];
+  assert.equal(nodos['sgc-expediente-entregables-bloque'].hidden, false,
+    'el bloque de documentos guardados se muestra cuando hay registro');
+  assert.ok(lista.querySelector('[data-documento="anexo-eett-alfa.html"]'),
+    'el anexo guardado figura en la lista');
+  assert.ok(lista.querySelector('[data-documento="especificacion-tecnica.html"]'),
+    'el documento del estado guardado figura en la lista');
+
+  const ver = lista.querySelector('[data-ruta="api/expedientes/2026-011/entregables/anexo-eett-alfa.html"]');
+  assert.ok(ver, 'el "Ver" del anexo lleva la ruta que ya sirve el servidor');
+
+  ver.click();
+  assert.equal(nodos['sgc-modal-advertencia'].hidden, false,
+    'abrir un guardado pasa por el modal de advertencia');
+  assert.equal(aperturas.length, 0, 'no se abre la pestaña sin confirmar');
+
+  nodos['sgc-modal-advertencia-confirmar'].click();
+  assert.equal(aperturas.length, 1, 'confirmar abre la pestaña nueva con la ruta del documento');
+  assert.equal(aperturas[0], 'api/expedientes/2026-011/entregables/anexo-eett-alfa.html');
+});
+
+test('RONDA-25 pieza 1 · sin documentos guardados el bloque no ocupa lugar', () => {
+  const { montaje } = montarExportar();
+  const nodos = montaje.nodos;
+  SGC.views.exportar.actualizar();
+  assert.equal(nodos['sgc-expediente-entregables-bloque'].hidden, true,
+    'sin entregables el bloque queda oculto');
+  assert.equal(nodos['sgc-expediente-entregables'].children.length, 0,
+    'la lista queda vacía');
 });

@@ -12,6 +12,11 @@
  *  - Exportar JSON: el datos.json crudo del expediente (§3.4).
  *  - Exportar resumen.md: el relato generado por SGC.renders.resumen (§3.4).
  *
+ * RONDA-25 pieza 1: la lista de documentos guardados del expediente (los
+ * registros `entregables` de datos.json: el documento del estado y los anexos),
+ * cada uno con su "Ver", que abre en una pestaña nueva la ruta que ya sirve el
+ * servidor: GET /api/expedientes/<id>/entregables/<nombre>.
+ *
  * Toda descarga o apertura fuera del sistema pasa por el modal de advertencia
  * obligatorio (FSD §6): recuerda que se está sacando información de un
  * sistema aislado y el manejo queda bajo responsabilidad del operador. La
@@ -209,9 +214,62 @@
     root.document.body.classList.remove('imprimiendo');
   }
 
+  // RONDA-25 pieza 1: lista los documentos guardados del expediente desde el
+  // registro `entregables` de datos.json (lo lleva el servidor en cada
+  // guardarEntregable). Cada fila deja el nombre y un "Ver" que agenda la
+  // apertura de la ruta detrás del modal de advertencia (mismo flujo que
+  // enlazarDocumento). Los nombres se escriben con textContent, nunca
+  // innerHTML (ADR-011).
+  function pintarEntregables() {
+    var contenedor = estado.dom.entregables;
+    var bloque = estado.dom.entregablesBloque;
+    if (!contenedor || !bloque) {
+      return;
+    }
+    while (contenedor.children.length > 0) {
+      contenedor.removeChild(contenedor.children[0]);
+    }
+    var expediente = expedienteActual();
+    var lista = expediente && Array.isArray(expediente.entregables)
+      ? expediente.entregables : [];
+    bloque.hidden = lista.length === 0;
+    var id = expediente ? (expediente.expedienteId || expediente.id) : null;
+    if (!id) {
+      return;
+    }
+    for (var i = 0; i < lista.length; i++) {
+      var entrada = lista[i];
+      if (!entrada || typeof entrada.nombre !== 'string' || entrada.nombre.length === 0) {
+        continue;
+      }
+      var fila = document.createElement('li');
+      fila.setAttribute('data-documento', entrada.nombre);
+      var etiqueta = document.createElement('span');
+      etiqueta.textContent = entrada.nombre;
+      fila.appendChild(etiqueta);
+      var ver = document.createElement('button');
+      ver.type = 'button';
+      ver.className = 'doc-ver';
+      ver.textContent = 'Ver';
+      ver.setAttribute('data-ruta', 'api/expedientes/' + id + '/entregables/' + entrada.nombre);
+      (function (boton, nombreArchivo) {
+        boton.addEventListener('click', function () {
+          estado.pendiente = { tipo: 'abrir', url: boton.getAttribute('data-ruta') };
+          abrirModal('Va a abrir el documento "' + nombreArchivo + '" del expediente ' +
+            id + '. Es información de un sistema aislado; su manejo queda bajo su ' +
+            'responsabilidad. ¿Confirma?');
+        });
+      })(ver, entrada.nombre);
+      fila.appendChild(ver);
+      contenedor.appendChild(fila);
+    }
+  }
+
   function montar(raiz) {
     estado.dom.mensaje = qs(raiz, '#sgc-expediente-documento-msj');
     estado.dom.enlace = qs(raiz, '#sgc-expediente-documento-enlace');
+    estado.dom.entregables = qs(raiz, '#sgc-expediente-entregables');
+    estado.dom.entregablesBloque = qs(raiz, '#sgc-expediente-entregables-bloque');
     estado.dom.modal = qs(raiz, '#sgc-modal-advertencia');
     estado.dom.modalTexto = qs(raiz, '#sgc-modal-advertencia-texto');
 
@@ -242,9 +300,11 @@
       estado.navegador = fn;
     },
     // Lo llama la vista de expediente en cada render: recalcula la plantilla
-    // del documento según el estado actual.
+    // del documento según el estado actual y repinta la lista de documentos
+    // guardados del expediente (RONDA-25 pieza 1).
     actualizar: function () {
       estado.plantilla = plantillaActual();
+      pintarEntregables();
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
