@@ -248,6 +248,12 @@
     renderRenglones(estado.dom.renglones, expediente);
     renderAuditoria(estado.dom.auditoria, expediente);
 
+    // Editor de renglones (ORDEN-RONDA-25 §6): la vista del estado actual.
+    // Se monta con su propia sección; guardado por PUT con versionEsperada.
+    if (SGC.views.renglonesEditor && typeof SGC.views.renglonesEditor.actualizar === 'function') {
+      SGC.views.renglonesEditor.actualizar();
+    }
+
     // Documento del estado (ORDEN-RONDA-08 §2.1): se compone con la plantilla
     // que produce el estado actual (nodos DOM, nunca innerHTML). Si el estado
     // no produce documento, la sección se oculta.

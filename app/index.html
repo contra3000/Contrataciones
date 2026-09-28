@@ -387,6 +387,48 @@
         <p id="sgc-requerimiento-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
       </section>
 
+      <section class="expediente-seccion" id="sgc-renglones-editor-seccion"
+               aria-labelledby="sgc-renglones-editor-titulo" hidden>
+        <h3 id="sgc-renglones-editor-titulo">Corregir renglones</h3>
+        <p class="req-ayuda">Agregue, corrija la cantidad o la aclaración de los renglones del
+          requerimiento. Los valores de referencia y el restante de lo guardado en las
+          Especificaciones Técnicas se conservan tal cual.</p>
+
+        <div class="seccion-busqueda" aria-label="Búsqueda de clases">
+          <label for="sgc-renglones-buscar" class="etiqueta">Buscar clase o rubro</label>
+          <div class="caja-combobox">
+            <input id="sgc-renglones-buscar" type="search" role="combobox"
+                   aria-expanded="false" aria-controls="sgc-renglones-lista-clases"
+                   aria-autocomplete="list" autocomplete="off"
+                   placeholder="Ej.: válvula, termostato, oficina…">
+            <ul id="sgc-renglones-lista-clases" role="listbox" class="desplegable" hidden></ul>
+          </div>
+        </div>
+
+        <div id="sgc-renglones-panel-items" class="seccion-items" aria-label="Ítems de la clase" hidden>
+          <h3 id="sgc-renglones-titulo-clase"></h3>
+          <p id="sgc-renglones-detalle-clase" class="detalle"></p>
+          <label for="sgc-renglones-buscar-item" class="etiqueta">Filtrar ítems de la clase</label>
+          <div class="caja-combobox">
+            <input id="sgc-renglones-buscar-item" type="search" role="combobox"
+                   aria-expanded="false" aria-controls="sgc-renglones-lista-items"
+                   aria-autocomplete="list" autocomplete="off"
+                   placeholder="Filtre dentro de la clase…">
+            <ul id="sgc-renglones-lista-items" role="listbox" class="desplegable" hidden></ul>
+          </div>
+          <p id="sgc-renglones-conteo-items" class="conteo"></p>
+        </div>
+
+        <div class="seccion-renglones" aria-label="Renglones del expediente">
+          <h3>Renglones del expediente</h3>
+          <ul id="sgc-renglones-lista-renglones" class="lista-renglones"></ul>
+          <p id="sgc-renglones-resumen" class="resumen" role="status" aria-live="polite">Sin renglones todavía.</p>
+        </div>
+
+        <button id="sgc-renglones-guardar" type="button" class="primario">Guardar renglones</button>
+        <p id="sgc-renglones-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
+      </section>
+
       <section class="expediente-seccion" id="sgc-anexo1-seccion"
                aria-labelledby="sgc-anexo1-titulo" hidden>
         <h3 id="sgc-anexo1-titulo">ANEXO 1 — Análisis de Abastecimiento</h3>
@@ -564,6 +606,7 @@
   <script src="js/views/kanban.js"></script>
   <script src="js/views/expediente-dialogo.js"></script>
   <script src="js/views/expediente.js"></script>
+  <script src="js/views/renglones-editor.js"></script>
   <script src="js/views/exportar.js"></script>
   <script src="js/export/pliego-yaml.js"></script>
   <script src="js/views/pliego-yaml.js"></script>

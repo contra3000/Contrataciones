@@ -134,6 +134,7 @@ var estadoConfig = null;
     SGC.views.exportar.seleccionarOperador(operador);
     SGC.views.requerimientoFormulario.seleccionarOperador(operador);
     if (SGC.views.anexoUno) { SGC.views.anexoUno.seleccionarOperador(operador); }
+    if (SGC.views.renglonesEditor) { SGC.views.renglonesEditor.seleccionarOperador(operador); }
     SGC.views.usarBase.fijarOperador(operador);
     SGC.views.sugerencias.fijarOperador(operador);
     SGC.views.sugerenciasJefe.fijarOperador(operador);
@@ -277,6 +278,12 @@ var estadoConfig = null;
     // detalle mal montado sobre la raíz escondió la app entera durante ciclos.
     SGC.views.anexoUno.montar(document.getElementById('sgc-anexo1-seccion'));
     SGC.views.anexoUno.fijarRepo(repo);
+
+    // Corrección de renglones (ORDEN-RONDA-25 §6): editor para quien ejecuta el
+    // estado actual mientras el requerimiento no se firmó. Recibe SU PROPIA
+    // SECCIÓN (como anexoUno); la vista de expediente la avisa en cada render.
+    SGC.views.renglonesEditor.montar(document.getElementById('sgc-renglones-editor-seccion'));
+    SGC.views.renglonesEditor.fijarRepo(repo);
 
     // Sugerencias del piloto (H19, ORDEN-RONDA-13 §6): el FAB solo se crea
     // cuando config/aplicacion.json llega con modoPiloto true; la vista del

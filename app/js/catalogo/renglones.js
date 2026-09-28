@@ -218,6 +218,10 @@
     estado.renglones = [];
     estado.dom.listaRenglones.textContent = '';
     for (var i = 0; i < lista.length; i++) {
+      // RONDA-25 pieza 6: el editor de renglones vuelve a cargar los que ya
+      // están en disco, que pueden traer campos del requerimiento
+      // (valoresReferencia, cantidadMaxima/minima). Se preservan para que una
+      // corrección de cantidad o aclaración no los borre de la escritura.
       var renglon = {
         id: estado.siguienteId++,
         codigo: lista[i].codigo,
@@ -226,6 +230,12 @@
         unidad: lista[i].unidad,
         aclaracion: lista[i].aclaracion
       };
+      for (var k in lista[i]) {
+        if (Object.prototype.hasOwnProperty.call(lista[i], k) && k !== 'id' &&
+            renglon[k] === undefined) {
+          renglon[k] = lista[i][k];
+        }
+      }
       estado.renglones.push(renglon);
       estado.dom.listaRenglones.appendChild(filaRenglon(renglon));
     }

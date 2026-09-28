@@ -370,6 +370,21 @@ function crearManejadoresExpedientes(entorno) {
     if (erroresEncabezado.length > 0) {
       return responderJson(res, 400, { error: erroresEncabezado.join(' · ') });
     }
+    // ORDEN-RONDA-25 §6: corregir los renglones de un requerimiento en curso es
+    // una operación del estado en curso; la exige quien ejecuta ese estado con
+    // autorizarRolDelEstado, la misma guardia que rige presupuestos y
+    // entregables (ORDEN-RONDA-23 §2). Quien no ejecuta el estado recibe 403
+    // antes de que se escriba nada. El resto del PUT no se toca: editar campos
+    // con los renglones intactos sigue su curso normal.
+    const renglonesActual = Array.isArray(actual.renglones) ? actual.renglones : [];
+    const renglonesRecibidos = Array.isArray(expedienteNuevo.renglones) ? expedienteNuevo.renglones : [];
+    if (JSON.stringify(renglonesActual) !== JSON.stringify(renglonesRecibidos)) {
+      const autorizacionDeRenglones = SGC.core.autorizacion.autorizarRolDelEstado(
+        entorno.padronVivo.usuarios(), contexto, actual.estado ? actual.estado.id : null);
+      if (!autorizacionDeRenglones.ok) {
+        return responderJson(res, 403, { error: autorizacionDeRenglones.error });
+      }
+    }
     // ORDEN-RONDA-09 §3.1 (ADR-022 §4): la imputación presupuestaria la
     // completa Contaduría en la Afectación. La restricción vive acá, con la
     // matriz de ADR-021: escribirla desde otro rol u otro estado da 403; si la
