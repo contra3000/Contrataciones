@@ -361,6 +361,23 @@ mark {
   margin-top: 8px;
 }
 
+/* ORDEN-RONDA-25 pieza 3: el aviso de sesión vencida es fijo y no tapa la
+   pantalla: lo que no se guardó queda visible para copiarlo en otra pestaña. */
+.sesion-vencida {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  margin: 0;
+  padding: 0.6em 1em;
+  background: var(--color-error, #a11);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
 .lista-operadores {
   list-style: none;
   display: grid;

@@ -88,7 +88,7 @@
       });
   }
 
-  function crearRepoHttp(baseUrl) {
+  function crearRepoHttp(baseUrl, al401) {
     if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
       throw new Error('repo.http: crear() requiere la base del servidor (la dirección de la PC donde corre server/servidor.js)');
     }
@@ -108,6 +108,11 @@
         opciones.body = JSON.stringify(cuerpo);
       }
       return fetch(url, opciones).then(function (respuesta) {
+        // ORDEN-RONDA-25 pieza 3: un 401 es la sesión vencida; se avisa (el
+        // vencimiento por inactividad también sale por aquí en la próxima op).
+        if (respuesta.status === 401 && typeof al401 === 'function') {
+          al401();
+        }
         return respuesta.json().catch(function () {
           return null;
         }).then(function (cuerpoRespuesta) {

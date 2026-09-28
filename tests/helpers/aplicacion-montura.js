@@ -366,6 +366,12 @@ function montura(servidor) {
     esperar,
     botonEn,
     cerrar: function () {
+      // ORDEN-RONDA-25 pieza 3: la sesión viva deja un intervalo real en el
+      // proceso; sin esto la suite entera quedaría viva hasta el próximo pulso.
+      const sgc = globalThis.SGC;
+      if (sgc && sgc.sesionViva && typeof sgc.sesionViva.detener === 'function') {
+        sgc.sesionViva.detener();
+      }
       return su.detenerServidor(servidor.ctx);
     }
   };

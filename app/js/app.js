@@ -13,17 +13,28 @@
 
   var SGC = root.SGC;
 
-  var estadoConfig = null;
-  var operadorActual = null;
-  var repoActual = null;
+var estadoConfig = null;
+    var operadorActual = null;
+    var repoActual = null;
 
-  function mostrarError(texto) {
-    var nodo = document.getElementById('sgc-app-error');
-    if (nodo) {
-      nodo.textContent = texto;
-      nodo.hidden = false;
+    function mostrarError(texto) {
+      var nodo = document.getElementById('sgc-app-error');
+      if (nodo) {
+        nodo.textContent = texto;
+        nodo.hidden = false;
+      }
     }
-  }
+
+    // ORDEN-RONDA-25 pieza 3: un 401 (de cualquier operación) es la sesión
+    // vencida. El aviso es fijo y no tapa la pantalla: lo no guardado sigue a
+    // la vista para copiarlo en otra pestaña.
+    function avisarSesionVencida() {
+      var aviso = document.getElementById('sgc-sesion-vencida');
+      if (aviso) {
+        aviso.textContent = 'Tu sesión venció. Lo que no guardaste sigue en la pantalla: volvé a entrar en otra pestaña y guardá.';
+        aviso.hidden = false;
+      }
+    }
 
   function esconderTodas() {
     document.getElementById('sgc-app').hidden = true;
@@ -186,6 +197,9 @@
       quien.textContent = operador.nombre + ' ' + operador.apellido +
         ' — ' + rolesDe(operador.rol).join(', ') + ' — ' + operador.email;
     }
+    // ORDEN-RONDA-25 pieza 3: con la sesión activa, el teclado y el mouse
+    // renuevan cada 5 minutos; la inactividad sigue venciendo a los 15.
+    SGC.sesionViva.montar({ alVencer: avisarSesionVencida });
     operadorSeleccionado(operador);
   }
 
@@ -195,7 +209,7 @@
       throw new Error('No se encontró el contenedor #app');
     }
 
-    var repo = SGC.adapters.repoHttp.crear(root.location.origin);
+    var repo = SGC.adapters.repoHttp.crear(root.location.origin, avisarSesionVencida);
     repoActual = repo;
     SGC.adapters.repo.usar(repo);
 
@@ -395,6 +409,9 @@
     });
 
     document.getElementById('sgc-sesion-salir').addEventListener('click', function () {
+      if (SGC.sesionViva) {
+        SGC.sesionViva.detener();
+      }
       SGC.adapters.sesion.salir().then(function () {
         // ORDEN-RONDA-20 §1.4 (H4): al salir no queda operador en ningún
         // estado de vista; la próxima pantalla es de ingreso limpia.

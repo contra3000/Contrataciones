@@ -14,6 +14,12 @@
       <h1>SGC — Circuito de contrataciones</h1>
       <p class="subtitulo">Alta de la Especificación Técnica y tablero de expedientes.</p>
       <p id="sgc-app-error" class="error-global" role="alert" hidden></p>
+      <!-- ORDEN-RONDA-25 pieza 3: cuando una operación devuelve 401, la sesión
+           venció. El aviso no tapa la pantalla: lo que no se guardó sigue a la
+           vista para copiarlo en la otra pestaña. -->
+      <p id="sgc-sesion-vencida" class="sesion-vencida" role="alert" hidden>
+        Tu sesión venció. Lo que no guardaste sigue en la pantalla: volvé a entrar en otra pestaña y guardá.
+      </p>
       <!-- ORDEN-RONDA-14 §3.6: el operador activo, su rol y su correo siguen a
            la vista (ADR-017) y la salida es explícita. -->
       <div id="sgc-sesion-barra" class="sesion-barra" aria-label="Sesión" hidden>
@@ -580,6 +586,7 @@
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.http.js"></script>
   <script src="js/adapters/repo.sesion.js"></script>
+  <script src="js/sesion-viva.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
