@@ -559,6 +559,7 @@ async function arrancar(opciones) {
 module.exports = {
   arrancar,
   cargarModulos,
+  construirDom,
   documento,
   APP_DIR,
   RE_CLAVE,

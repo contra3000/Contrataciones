@@ -304,6 +304,17 @@
         <h2 id="sgc-expediente-titulo"></h2>
         <p id="sgc-expediente-resumen" class="detalle"></p>
       </header>
+      <section class="expediente-acciones" id="sgc-expediente-acciones"
+               aria-label="Acciones del expediente">
+        <div class="accion-bloque">
+          <button id="sgc-expediente-avanzar" type="button" class="primario">Avanzar</button>
+          <p id="sgc-expediente-avanzar-porque" class="accion-porque"></p>
+        </div>
+        <div class="accion-bloque">
+          <button id="sgc-expediente-devolver" type="button">Devolver por observación</button>
+          <p id="sgc-expediente-devolver-porque" class="accion-porque"></p>
+        </div>
+      </section>
       <p id="sgc-expediente-mensaje" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
       <p id="sgc-expediente-archivado" class="archivado-aviso" role="status" hidden>
         Expediente archivado en el Archivo Histórico. No admite más operaciones.
@@ -467,17 +478,6 @@
         </div>
         <p id="sgc-expediente-documento-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
         <div id="sgc-expediente-documento" class="documento-impresion" aria-label="Documento imprimible"></div>
-      </section>
-
-      <section class="expediente-acciones" aria-label="Acciones del expediente">
-        <div class="accion-bloque">
-          <button id="sgc-expediente-avanzar" type="button" class="primario">Avanzar</button>
-          <p id="sgc-expediente-avanzar-porque" class="accion-porque"></p>
-        </div>
-        <div class="accion-bloque">
-          <button id="sgc-expediente-devolver" type="button">Devolver por observación</button>
-          <p id="sgc-expediente-devolver-porque" class="accion-porque"></p>
-        </div>
       </section>
 
       <section class="expediente-seccion" aria-labelledby="sgc-expediente-auditoria-titulo">
