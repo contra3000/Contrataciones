@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-09-24** · prueba real del Jefe · ronda 24 emitida · **la tabla de §0 es la única fuente del estado del proyecto**
+Última actualización: **2026-09-25** · ciclo 24 evaluado (3 de 9 piezas) · ronda 25 emitida · **la tabla de §0 es la única fuente del estado del proyecto**
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -35,7 +35,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H21 | Padrón desde la aplicación | ✅ **Terminado** — rondas 17 y 18. La entrada no se encontraba; arreglado el 23/09 (botón "Usuarios", barra fija) | H18 |
 | H22 | El código dice lo que hace | ✅ **Terminado** — rondas 18 y 19 | — |
 | H23 | El circuito de la persona llega hasta el final | ✅ **Terminado** — ronda 21, 9 de 9 caminos | H22 |
-| H24 | Lo que apareció al usarlo de verdad | 🟡 **7 de 12 + ronda 24 emitida** (9 piezas, de la prueba del 24/09): botones visibles, suite reproducible, agregar valor sin salto, ver documentos, acciones arriba, sesión viva, impresión limpia, **descripción del ítem**, corregir renglones. El PUT, la bitácora, los topes de B2 y el `python` pasan a la 25 | H9 |
+| H24 | Lo que apareció al usarlo de verdad | 🟡 **Ronda 24: 3 de 9** — botones visibles, suite reproducible (primer clon limpio con 0 fallas), agregar valor sin salto. Sin informe. **Ronda 25** lleva las 6 que faltan: ver documentos, acciones arriba, sesión viva, impresión limpia, descripción del ítem (R58), corregir renglones + guardia del PUT de renglones (R53). El resto a la 26 | H9 |
 | H25 | **Controles automáticos y entorno de prueba** | ⬜ **Nuevo, 2026-09-23** — aprobado por el Jefe: entorno de prueba con siete roles, matriz de permisos como test, `estado-ciclo` | H24 |
 | H10 | **Puesta en uso, por hitos** | 🟡 Paquete, servicio y respaldo hechos (ciclo 15). **Etapas definidas por el Jefe el 2026-09-23**, ver H10 | H9 |
 
