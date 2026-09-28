@@ -74,7 +74,6 @@ function sembrarExpediente(datosDir) {
     renglones: [
       {
         codigo: '2.1.1-439.102',
-        descripcion: 'Resma de papel A4',
         item: 'Resma de papel A4',
         cantidad: '2',
         unidad: 'unidad',

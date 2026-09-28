@@ -152,6 +152,10 @@
       renglones: renglones.map(function (r) {
         return {
           codigo: r.codigo,
+          // RONDA-25 pieza 5 (R58): el renglón lleva la descripción del
+          // catálogo. Sin `item`, la columna DESCRIPCIÓN de todos los
+          // documentos sale vacía (los renders imprimen r.descripcion || r.item).
+          item: typeof r.item === 'string' ? r.item : '',
           cantidad: r.cantidad,
           unidad: r.unidad,
           aclaracion: typeof r.aclaracion === 'string' ? r.aclaracion : ''

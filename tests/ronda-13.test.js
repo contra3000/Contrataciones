@@ -216,9 +216,9 @@ test('EETT: la ficha del anexo no imprime "Cantidad"', () => {
     datos: {
       titulo: 'EETT sin cantidades',
       renglones: [
-        { codigo: '2.1.1-439.102', descripcion: 'Resma A4', cantidad: 99, unidad: 'UN',
+        { codigo: '2.1.1-439.102', item: 'Resma A4', cantidad: 99, unidad: 'UN',
           aclaracion: 'x'.repeat(300) },
-        { codigo: '2.1.1-439.102', descripcion: 'Resma A3', cantidad: 5, unidad: 'UN',
+        { codigo: '2.1.1-439.102', item: 'Resma A3', cantidad: 5, unidad: 'UN',
           aclaracion: 'y'.repeat(280) }
       ],
       requerimiento: { condicionesParticulares: 'Entrega en boca' }

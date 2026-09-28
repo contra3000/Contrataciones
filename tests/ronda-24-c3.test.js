@@ -43,7 +43,6 @@ function renglonesDePrueba(cantidad) {
   for (let i = 0; i < cantidad; i++) {
     renglones.push({
       codigo: 'X.100.' + (i + 1),
-      descripcion: 'Insumo de prueba ' + (i + 1),
       item: 'Ítem ' + (i + 1),
       cantidad: '1',
       unidad: 'unidad',
