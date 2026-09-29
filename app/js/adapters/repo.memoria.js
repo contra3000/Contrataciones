@@ -63,6 +63,189 @@
     var entregables = {};   // id -> { nombre -> contenido }
     var orden = [];         // ids en orden de creación
     var contadorPorAnio = {}; // anio -> último número asignado
+    // ORDEN-RONDA-27 §3: registro de SCo, en memoria como el servidor lo
+    // tiene en `datos/sco/`. Mismo formato y MISMAS reglas: la batería
+    // `tests/helpers/repo-bateria.js` corre los mismos casos contra esta
+    // implementación y contra repo.http, así que las dos se obligan a
+    // comportarse igual.
+    var scoRegistros = {};  // numeroSCo -> { numeroSCo, anio, expedientes, entregables, version, auditoria }
+
+    var ESTADO_SOLICITUD = 'SOLICITUD_CONTRATACION';
+
+    function numeroSCoUtil(numero) {
+      if (typeof numero !== 'string') {
+        return null;
+      }
+      var recortado = numero.trim();
+      if (recortado.length === 0) {
+        return null;
+      }
+      // El mismo criterio de nombre de archivo que el servidor: si al sanear no
+      // queda nada, el número no sirve para abrir un registro.
+      var limpio = recortado.replace(/[^A-Za-z0-9._-]+/g, '_')
+        .replace(/_{2,}/g, '_').replace(/^[._-]+/, '').slice(0, 120);
+      return limpio.length > 0 ? recortado : null;
+    }
+
+    function estadoDeExpediente(id) {
+      var registro = expedientes[id];
+      if (!registro || !registro.expediente || !registro.expediente.estado) {
+        return null;
+      }
+      return registro.expediente.estado.id || null;
+    }
+
+    function fueraDeSolicitud(ids) {
+      var fuera = [];
+      for (var i = 0; i < ids.length; i++) {
+        var estado = estadoDeExpediente(ids[i]);
+        if (estado !== ESTADO_SOLICITUD) {
+          fuera.push({ id: ids[i], estado: estado });
+        }
+      }
+      return fuera;
+    }
+
+    function nombresDe(fuera) {
+      var textos = [];
+      for (var i = 0; i < fuera.length; i++) {
+        textos.push(fuera[i].id + ' (en ' + (fuera[i].estado || 'un estado desconocido') + ')');
+      }
+      return textos.join(', ');
+    }
+
+    function entradaAuditoria(contexto, accion, detalle) {
+      var c = contexto || {};
+      var entrada = {
+        timestamp: typeof c.timestamp === 'string' ? c.timestamp : null,
+        email: typeof c.email === 'string' ? c.email : null,
+        rol: typeof c.rol === 'string' ? c.rol : null,
+        equipo: typeof c.equipo === 'string' ? c.equipo : null,
+        accion: accion
+      };
+      if (detalle && typeof detalle === 'object') {
+        for (var clave in detalle) {
+          if (Object.prototype.hasOwnProperty.call(detalle, clave)) {
+            entrada[clave] = detalle[clave];
+          }
+        }
+      }
+      return entrada;
+    }
+
+    function tocar(registro, contexto) {
+      registro.version = (typeof registro.version === 'number' ? registro.version : 0) + 1;
+      var c = contexto || {};
+      if (typeof c.timestamp === 'string') {
+        registro.actualizado = c.timestamp;
+      }
+      if (typeof c.email === 'string') {
+        registro.actualizadoPor = c.email;
+      }
+      return registro;
+    }
+
+    // Mismas dos reglas que el servidor (ORDEN-RONDA-27 §3). Devuelve
+    // {ok:false, error} para que el llamador lo muestre, sin escribir nada.
+    function salirDeRegistro(id, numero, contexto) {
+      var registro = scoRegistros[numero];
+      if (!registro) {
+        return { ok: true };
+      }
+      var miembros = registro.expedientes;
+      if (miembros.indexOf(id) === -1) {
+        return { ok: true };
+      }
+      var fuera = fueraDeSolicitud(miembros);
+      if (fuera.length > 0) {
+        return {
+          ok: false,
+          error: 'no se puede salir de la SCo ' + numero + ' porque ya avanzó: ' +
+            nombresDe(fuera) + '. El número de SCo queda como parte de la historia del ' +
+            'expediente una vez que la SCo se mueve.'
+        };
+      }
+      return { ok: true, registro: registro, miembros: miembros };
+    }
+
+    function planRegistro(id, numeroNuevo, numeroAnterior, contexto, versionEsperadaSCO) {
+      var usable = numeroSCoUtil(numeroNuevo);
+      if (usable === null) {
+        return {
+          ok: false,
+          error: 'el número de SCo no es válido: no puede quedar vacío ni tener sólo símbolos'
+        };
+      }
+      if (numeroAnterior !== null) {
+        var salida = salirDeRegistro(id, numeroAnterior, contexto);
+        if (!salida.ok) {
+          return salida;
+        }
+      }
+      var existente = scoRegistros[usable];
+      if (existente) {
+        if (typeof versionEsperadaSCO === 'number' && versionEsperadaSCO !== existente.version) {
+          return {
+            ok: false,
+            conflicto: true,
+            versionRemota: existente.version,
+            error: 'el registro de la SCo ' + usable + ' cambió (versión ' + existente.version +
+              ' en disco, usted tenía la ' + versionEsperadaSCO + '). No se guardó nada.'
+          };
+        }
+        if (existente.expedientes.indexOf(id) !== -1) {
+          return { ok: true, sinCambios: true };
+        }
+        var fuera = fueraDeSolicitud(existente.expedientes);
+        if (fuera.length > 0) {
+          return {
+            ok: false,
+            error: 'no se puede sumar a la SCo ' + usable + ' porque ya avanzó: ' +
+              nombresDe(fuera) + '. Una SCo avanza junta, así que el requerimiento tiene ' +
+              'que entrar antes de que la SCo se mueva, o volver por su propio circuito.'
+          };
+        }
+      }
+      return { ok: true, numero: usable, existente: existente || null };
+    }
+
+    function aplicarRegistro(id, plan, numeroAnterior, contexto) {
+      if (plan.sinCambios) {
+        return;
+      }
+      if (numeroAnterior !== null && numeroAnterior !== plan.numero) {
+        var viejo = scoRegistros[numeroAnterior];
+        if (viejo) {
+          viejo.expedientes = viejo.expedientes.filter(function (otro) { return otro !== id; });
+          viejo.auditoria.push(entradaAuditoria(contexto, 'salir', { expediente: id }));
+          tocar(viejo, contexto);
+          if (viejo.expedientes.length === 0) {
+            delete scoRegistros[numeroAnterior];
+          }
+        }
+      }
+      var registro = plan.existente;
+      if (!registro) {
+        var anio = id.slice(0, 4);
+        registro = {
+          numeroSCo: plan.numero,
+          anio: anio,
+          expedientes: [],
+          entregables: [],
+          version: 1,
+          creado: (contexto && contexto.timestamp) || null,
+          creadoPor: (contexto && contexto.email) || null,
+          actualizado: (contexto && contexto.timestamp) || null,
+          actualizadoPor: (contexto && contexto.email) || null,
+          auditoria: [entradaAuditoria(contexto, 'crearSCo', { anio: anio })]
+        };
+        scoRegistros[plan.numero] = registro;
+      } else {
+        registro.auditoria.push(entradaAuditoria(contexto, 'sumarse', { expediente: id }));
+        tocar(registro, contexto);
+      }
+      registro.expedientes.push(id);
+    }
 
     function siguienteNumero(anio) {
       var actual = contadorPorAnio[anio] || 0;
@@ -174,7 +357,7 @@ function registroDe(id) {
         });
       },
 
-      guardarExpediente: function (id, expedienteNuevo, versionEsperada, contexto) {
+      guardarExpediente: function (id, expedienteNuevo, versionEsperada, contexto, versionEsperadaSCO) {
         try {
           var registro = registroDe(id);
           if (registro.version !== versionEsperada) {
@@ -185,6 +368,25 @@ function registroDe(id) {
               ultimoUsuario: registro.contexto && registro.contexto.email ? registro.contexto.email : null,
               ultimaModificacion: registro.contexto && registro.contexto.timestamp ? registro.contexto.timestamp : null
             });
+          }
+          // ORDEN-RONDA-27 §3: si el número de SCo cambia, el registro se
+          // actualiza con las mismas reglas del servidor (sumarse sólo a una
+          // SCo que no avanzó, salir sólo mientras no avanzó). El plan se
+          // calcula y se valida entero antes de tocar el expediente, para que
+          // un rechazo no deje el expediente a medio guardar.
+          var numeroAnterior = numeroSCoUtil(repo.numeroSCoDe(registro.expediente));
+          var numeroNuevo = numeroSCoUtil(repo.numeroSCoDe(expedienteNuevo));
+          var plan = null;
+          if (numeroNuevo !== null && numeroNuevo !== numeroAnterior) {
+            plan = planRegistro(id, numeroNuevo, numeroAnterior, contexto, versionEsperadaSCO);
+            if (!plan.ok) {
+              return Promise.resolve({
+                ok: false,
+                conflicto: !!plan.conflicto,
+                versionRemota: plan.versionRemota === undefined ? null : plan.versionRemota,
+                error: plan.error
+              });
+            }
           }
           var snapshot = JSON.parse(JSON.stringify(registro.expediente));
           historico[id].push({
@@ -201,10 +403,23 @@ function registroDe(id) {
           registro.expediente = actualizado;
           registro.version = registro.version + 1;
           registro.contexto = contexto || {};
+          if (plan !== null) {
+            aplicarRegistro(id, plan, numeroAnterior, contexto || {});
+          }
           return Promise.resolve({ ok: true, version: registro.version });
         } catch (e) {
           return Promise.reject(e);
         }
+      },
+
+      // ORDEN-RONDA-27 §3: el registro de la SCo, o null si todavía no existe.
+      leerSCo: function (numeroSCo) {
+        var usable = numeroSCoUtil(numeroSCo);
+        if (usable === null) {
+          return Promise.resolve(null);
+        }
+        var registro = scoRegistros[usable];
+        return Promise.resolve(registro ? JSON.parse(JSON.stringify(registro)) : null);
       },
 
       // Archivo Histórico (ORDEN-RONDA-08 §2.2): lista los expedientes archivados

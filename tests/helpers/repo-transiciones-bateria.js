@@ -171,6 +171,126 @@ function correrTransiciones(etiqueta, crearContexto) {
       await ctx.limpiar();
     }
   });
+  // ORDEN-RONDA-27 pieza 3: el registro de SCo es parte del contrato de
+  // persistencia, así que estos casos corren contra LAS DOS implementaciones
+  // (repo.memoria y repo.http). Si una acepta algo que la otra rechaza, el
+  // contrato no está bien definido y hay que arreglarlo, no eligiendo una.
+  async function enSolicitudConNumero(ctx, numero) {
+    const creado = await crearConEntregable(ctx);
+    const r = await ctx.repo.avanzar(creado.id, 2, destinoInicial, contextoPadron('generador'));
+    assert.equal(r.ok, true, 'llega a ' + destinoInicial);
+    const expediente = JSON.parse(JSON.stringify(r.expediente));
+    expediente.campos = expediente.campos || {};
+    if (typeof numero === 'string') {
+      expediente.campos.numeroSCo = numero;
+    }
+    return { id: creado.id, version: r.version, expediente: expediente };
+  }
+
+  test(titulo('leerSCo devuelve null antes de que exista el registro'), async () => {
+    const ctx = await crearContexto();
+    try {
+      assert.equal(await ctx.repo.leerSCo('14/2026'), null);
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('dos expedientes con el mismo número dejan un registro con los dos'), async () => {
+    const ctx = await crearContexto();
+    try {
+      const a = await enSolicitudConNumero(ctx, '14/2026');
+      const ra = await ctx.repo.guardarExpediente(a.id, a.expediente, a.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(ra.ok, true, 'el primero carga el número: ' + JSON.stringify(ra));
+
+      const b = await enSolicitudConNumero(ctx, '14/2026');
+      const rb = await ctx.repo.guardarExpediente(b.id, b.expediente, b.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(rb.ok, true, 'el segundo se suma: ' + JSON.stringify(rb));
+
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.ok(registro, 'el registro existe');
+      assert.equal(registro.numeroSCo, '14/2026', 'con el número tal cual');
+      assert.deepEqual(registro.expedientes.slice().sort(), [a.id, b.id].sort(),
+        'y con los dos expedientes');
+      assert.equal(typeof registro.version, 'number', 'y con versión');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('cambiar el número saca al expediente de la SCo anterior'), async () => {
+    const ctx = await crearContexto();
+    try {
+      const a = await enSolicitudConNumero(ctx, '14/2026');
+      await ctx.repo.guardarExpediente(a.id, a.expediente, a.version, contextoPadron('abastecimiento'));
+      const b = await enSolicitudConNumero(ctx, '14/2026');
+      const guardadoB = await ctx.repo.guardarExpediente(b.id, b.expediente, b.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(guardadoB.ok, true, 'B se suma primero');
+
+      // Se relee porque el guardado de arriba ya subió la versión de B.
+      const Actual = await ctx.repo.leerExpediente(b.id);
+      Actual.expediente.campos.numeroSCo = '15/2026';
+      const r = await ctx.repo.guardarExpediente(b.id, Actual.expediente, Actual.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(r.ok, true, 'cambiar de número se guarda: ' + JSON.stringify(r));
+
+      const de14 = await ctx.repo.leerSCo('14/2026');
+      const de15 = await ctx.repo.leerSCo('15/2026');
+      assert.deepEqual(de14.expedientes, [a.id], 'el 14/2026 se quedó con A');
+      assert.deepEqual(de15.expedientes, [b.id], 'el 15/2026 tiene a B');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('sumarse a una SCo que ya avanzó se rechaza sin escribir nada'), async () => {
+    const ctx = await crearContexto();
+    try {
+      const a = await enSolicitudConNumero(ctx, '14/2026');
+      await ctx.repo.guardarExpediente(a.id, a.expediente, a.version, contextoPadron('abastecimiento'));
+      // A sale de SOLICITUD_CONTRATACION: la SCo ya se movió.
+      const leidoA = await ctx.repo.leerExpediente(a.id);
+      const rA = await ctx.repo.avanzar(a.id, leidoA.version, 'ANALISIS_SCo',
+        contextoPadron('abastecimiento'));
+      assert.equal(rA.ok, true, 'A avanza a ANALISIS_SCo: ' + JSON.stringify(rA));
+
+      const b = await enSolicitudConNumero(ctx, '14/2026');
+      const rb = await ctx.repo.guardarExpediente(b.id, b.expediente, b.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(rb.ok, false, 'B no se puede sumar');
+      assert.equal(rb.conflicto, false, 'y no es un conflicto de versión');
+      assert.match(rb.error, /no se puede sumar a la SCo 14\/2026/,
+        'el motivo va en castellano');
+      assert.ok(rb.error.indexOf(a.id) !== -1, 'y nombra a quien ya avanzó');
+
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.deepEqual(registro.expedientes, [a.id], 'el registro no se agrandó');
+      const bDespues = await ctx.repo.leerExpediente(b.id);
+      assert.notEqual((bDespues.expediente.campos || {}).numeroSCo, '14/2026',
+        'y el número de B no se guardó');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('guardar el mismo número dos veces no duplica al expediente'), async () => {
+    const ctx = await crearContexto();
+    try {
+      const a = await enSolicitudConNumero(ctx, '14/2026');
+      await ctx.repo.guardarExpediente(a.id, a.expediente, a.version, contextoPadron('abastecimiento'));
+      const leido = await ctx.repo.leerExpediente(a.id);
+      const otra = await ctx.repo.guardarExpediente(a.id, leido.expediente, leido.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(otra.ok, true, 'guardar el mismo número no es un error');
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.deepEqual(registro.expedientes, [a.id], 'y el expediente está una sola vez');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
 }
 
 module.exports = { correrTransiciones };

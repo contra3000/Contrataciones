@@ -47,6 +47,7 @@ const base = require('./base.js');
 const sugerencias = require('./sugerencias.js');
 const { crearPadronVivo } = require('./padron-vivo.js');
 const padronInicial = require('./padron-inicial.js'); const padronAdmin = require('./padron-administracion.js');
+const scoApi = require('./sco.js');
 const sesion = require('./sesion.js');
 // El orden de carga importa: los core se registran en globalThis.SGC (ADR-029).
 const APP_CORE = [
@@ -157,6 +158,7 @@ function crearServidor(datosDir, configuracion) {
   const eventosApi = eventos.crearManejadoresEventos(entorno);
   const plantillasApiMod = plantillasApi.crearManejadoresPlantillas(entorno);
   const padronAdminMod = padronAdmin.crearManejadoresPadron(entorno);
+  const scoMod = scoApi.crearManejadoresSco(entorno);
   const api = Object.assign(
     manejadoresApi,
     expedientes.crearManejadoresExpedientes(entorno),
@@ -165,8 +167,28 @@ function crearServidor(datosDir, configuracion) {
     sugerencias.crearManejadoresSugerencias(entorno),
     plantillasApiMod,
     padronAdminMod,
+    scoMod,
     { apiEventos: eventosApi.apiEventos }
   );
+  // Los manejadores se componen con Object.assign, que pisa en silencio: si dos
+  // módulos exportan el mismo nombre, el que llega último gana y el router
+  // empieza a responder 404 o 500 en rutas que nada tienen que ver, mucho
+  // después del error real. Este control convierte ese silencio en un fallo
+  // ruidoso al arrancar.
+  const CONTROL_ROUTER = [
+    'apiSalud', 'apiIndice', 'apiCrear', 'apiCrearBase', 'apiLeer', 'apiLeerBase',
+    'apiGuardar', 'apiAvanzar', 'apiDevolver', 'apiGuardarEntregable',
+    'apiLeerEntregable', 'apiGuardarPresupuestoBinario', 'apiValidarCodigos',
+    'apiListarSugerencias', 'apiCrearSugerencia', 'apiAtenderSugerencia',
+    'apiLeerSco', 'apiSumarseSco', 'apiEventos', 'servirConfig', 'servirEstatico'
+  ];
+  const faltantes = CONTROL_ROUTER.filter((nombre) => typeof api[nombre] !== 'function');
+  if (faltantes.length > 0) {
+    throw new Error('servidor: el router quedó incompleto, falta(n): ' + faltantes.join(', ') +
+      '. Suele ser que dos manejadores exportan el mismo nombre y Object.assign ' +
+      'se quedó con el último.');
+  }
+
   const {
     apiSalud,
     apiIndice,
@@ -184,6 +206,8 @@ function crearServidor(datosDir, configuracion) {
     apiListarSugerencias,
     apiCrearSugerencia,
     apiAtenderSugerencia,
+    apiLeerSco,
+    apiSumarseSco,
     apiEventos,
     servirConfig,
     servirEstatico
@@ -363,6 +387,27 @@ function crearServidor(datosDir, configuracion) {
           if (desglose !== null) {
             return conCuerpo((r, s, texto) => apiAtenderSugerencia(r, s, desglose.id, texto), desglose.id);
           }
+        }
+
+        // Registro de SCo (ORDEN-RONDA-27 §3): GET lee el registro de esa SCo
+        // (de ahí salen los hermanos, sin barrer el índice) y POST suma el
+        // expediente del cuerpo. El número es texto libre y viaja codificado.
+        if (ruta === '/api/sco' || ruta.startsWith('/api/sco/')) {
+          const desgloseSco = ayudantes.scoDeRuta(req);
+          if (desgloseSco === null) {
+            return ayudantes.responderJson(res, 404, {
+              error: 'ruta de SCo no reconocida: ' + req.method + ' ' + ruta
+            });
+          }
+          if (req.method === 'GET' && desgloseSco.accion === null) {
+            return apiLeerSco(req, res, desgloseSco.numero);
+          }
+          if (req.method === 'POST' && desgloseSco.accion === 'sumarse') {
+            return conCuerpo((r, s, texto) => apiSumarseSco(r, s, desgloseSco.numero, texto));
+          }
+          return ayudantes.responderJson(res, 405, {
+            error: 'método no permitido en la ruta de SCo: use GET para leer o POST .../sumarse para sumar'
+          });
         }
 
         if (esRutaApi) {

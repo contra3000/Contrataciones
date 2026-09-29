@@ -110,7 +110,13 @@ test('RONDA-26 pieza 4 · sin el número, Avanzar deshabilitado; guardado, se ha
   assert.strictEqual(conNumero.ok, true, 'con el número, el motor avanza a ANÁLISIS de SCo');
 });
 
-test('RONDA-26 pieza 4 · dos expedientes con la misma SCo se señalan entre sí por el índice', async () => {
+// ORDEN-RONDA-27 pieza 3 cambió el mecanismo: los hermanos ya NO salen de
+// barrer el índice buscando el mismo `numeroSCo`, sino del registro de la SCo
+// (`datos/sco/<año>/<n>.json`). El caso que este test cubría sigue siendo
+// importante —dos expedientes de la misma SCo se señalan entre sí— pero ahora
+// la respuesta sale de `leerSCo`, y además se guarda la versión del registro
+// para poder mandarla en el siguiente guardado.
+test('RONDA-26 pieza 4 / RONDA-27 pieza 3 · los hermanos de una SCo salen del registro, no del índice', async () => {
   globalThis.document = documento;
   globalThis.sessionStorage = crearStoragePlano();
 
@@ -122,10 +128,23 @@ test('RONDA-26 pieza 4 · dos expedientes con la misma SCo se señalan entre sí
   const repo = repoFalso({
     guardar: () => Promise.resolve({ ok: true, version: 2 })
   });
+  let pedidoElRegistro = null;
+  repo.leerSCo = (numero) => {
+    pedidoElRegistro = numero;
+    return Promise.resolve({
+      numeroSCo: '2026-00001',
+      anio: '2026',
+      // 2026-001 no está: no coincide el número. 2026-72 es el propio.
+      expedientes: ['2026-002', '2026-72'],
+      entregables: [],
+      version: 4
+    });
+  };
+  // Si la vista volviera a barrer el índice, encontraría 2026-001 y 2026-002.
+  // El registro no lo tiene, así que el texto no debe nombrarlos.
   repo.listarIndice = () => Promise.resolve([
-    { id: '2026-001', numeroSCo: '' },
-    { id: '2026-002', numeroSCo: '2026-00001' },
-    { id: '2026-72', numeroSCo: '2026-00001' }
+    { id: '2026-001', numeroSCo: '2026-00001' },
+    { id: '2026-002', numeroSCo: '2026-00001' }
   ]);
 
   montar(raiz, repo, actual);
@@ -133,10 +152,49 @@ test('RONDA-26 pieza 4 · dos expedientes con la misma SCo se señalan entre sí
   await esperarCondicion(() => !nodos['sgc-sco-incluye'].hidden,
     'el aviso de hermanos por SCo quedó a la vista');
 
+  assert.strictEqual(pedidoElRegistro, '2026-00001',
+    'la pantalla le pregunta al registro por su número, no al índice');
   const texto = nodos['sgc-sco-incluye'].textContent;
   assert.match(texto, /incluye también: 2026-002/, 'lista el otro expediente de la misma SCo');
   assert.ok(texto.indexOf('2026-001') === -1,
-    'no lista expedientes con otra SCo (o sin número)');
+    'no lista a quien sólo coincidía en el índice y no está en el registro');
   assert.ok(texto.indexOf('2026-72') === -1,
     'no se lista a sí mismo');
+});
+
+test('RONDA-27 pieza 3 · la pantalla manda la versión del registro al guardar el número', async () => {
+  globalThis.document = documento;
+  globalThis.sessionStorage = crearStoragePlano();
+
+  const { raiz } = armarExpediente();
+  raiz.appendChild(armarSeccionSco());
+
+  const actual = expedienteEnEstado('SOLICITUD_CONTRATACION', 72);
+  actual.campos = { numeroSCo: '2026-00001' };
+
+  let enviado = null;
+  const repo = repoFalso({ guardar: () => Promise.resolve({ ok: true, version: 2 }) });
+  repo.leerSCo = () => Promise.resolve({
+    numeroSCo: '2026-00001',
+    expedientes: ['2026-001', '2026-72'],
+    entregables: [],
+    version: 7
+  });
+  repo.guardarExpediente = (id, expediente, version, contexto, versionEsperadaSCO) => {
+    enviado = { id: id, version: version, versionEsperadaSCO: versionEsperadaSCO };
+    return Promise.resolve({ ok: true, version: 2 });
+  };
+
+  montar(raiz, repo, actual);
+  await SGC.views.expediente.abrir(actual.expedienteId);
+  // Se espera a que el registro haya llegado: la versión se guarda ahí.
+  await esperarCondicion(() => {
+    raiz.querySelector('#sgc-sco-numero').value = '2026-00001';
+    raiz.querySelector('#sgc-sco-guardar').click();
+    return enviado !== null;
+  }, 'el número se guardó');
+
+  assert.strictEqual(enviado.versionEsperadaSCO, 7,
+    'viaja la versión del registro que leyó la pantalla, para que el servidor detecte ' +
+    'si otro operador se sumó o salió en el medio');
 });

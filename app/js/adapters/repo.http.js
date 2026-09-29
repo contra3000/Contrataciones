@@ -163,22 +163,57 @@
         });
       },
 
-      guardarExpediente: function (id, expediente, versionEsperada, contexto) {
-        return pedirConErrorRed('PUT', ruta(['expedientes', id]), {
+      guardarExpediente: function (id, expediente, versionEsperada, contexto, versionEsperadaSCO) {
+        var cuerpo = {
           expediente: expediente,
           versionEsperada: versionEsperada,
           contexto: contexto
-        }).then(function (respuesta) {
+        };
+        // ORDEN-RONDA-27 §3: la versión del registro de SCo viaja sólo si el
+        // cliente la leyó. El servidor la usa para detectar que otro operador
+        // se sumó o salió entre la lectura y este guardado.
+        if (typeof versionEsperadaSCO === 'number') {
+          cuerpo.versionEsperadaSCO = versionEsperadaSCO;
+        }
+        return pedirConErrorRed('PUT', ruta(['expedientes', id]), cuerpo).then(function (respuesta) {
           if (respuesta.status === 200) {
             return { ok: true, version: respuesta.cuerpo.version };
           }
           if (respuesta.status === 409) {
-            return {
+            // Un 409 es una de dos cosas y hay que distinguirlas. Con
+            // `versionRemota` es el conflicto de siempre: el expediente cambió
+            // de versión. Sin ella es el rechazo de una regla de SCo (no se
+            // puede sumar a una SCo que ya avanzó): no es un conflicto de
+            // versión, así que no se marca como `conflicto` o la pantalla
+            // le diría que otro operador lo modificó.
+            if (respuesta.cuerpo.versionRemota === undefined ||
+                respuesta.cuerpo.versionRemota === null) {
+              return {
+                ok: false,
+                conflicto: false,
+                error: respuesta.cuerpo.error || 'no se pudo guardar: la SCo no lo permite'
+              };
+            }
+            // `error` sólo aparece cuando el 409 trae motivo (regla de SCo).
+            // Un conflicto de versión común conserva la forma de siempre: los
+            // tests comparan el objeto entero.
+            var conflicto = {
               ok: false,
               conflicto: true,
               versionRemota: respuesta.cuerpo.versionRemota,
               ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
               ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
+            };
+            if (respuesta.cuerpo.error) {
+              conflicto.error = respuesta.cuerpo.error;
+            }
+            return conflicto;
+          }
+          if (respuesta.status === 403) {
+            return {
+              ok: false,
+              conflicto: false,
+              error: respuesta.cuerpo.error || 'no tiene permiso para hacer ese cambio'
             };
           }
           if (respuesta.status === 404) {
@@ -186,6 +221,23 @@
           }
           throw errorDeRespuesta(respuesta, 'no se pudo guardar el expediente ' + id);
         });
+      },
+
+      // ORDEN-RONDA-27 §3: el registro de la SCo. Un 404 no es un error: la
+      // SCo todavía no existe (es el caso normal de quien carga el número por
+      // primera vez), así que se resuelve con null y la pantalla no muestra
+      // hermanos.
+      leerSCo: function (numeroSCo) {
+        return pedirConErrorRed('GET', ruta(['sco', encodeURIComponent(String(numeroSCo))]))
+          .then(function (respuesta) {
+            if (respuesta.status === 404) {
+              return null;
+            }
+            if (respuesta.status !== 200) {
+              throw errorDeRespuesta(respuesta, 'no se pudo leer el registro de la SCo ' + numeroSCo);
+            }
+            return respuesta.cuerpo.registro || null;
+          });
       },
 
       // Transiciones por intención (ADR-021): un 403 por rol/destino/validación

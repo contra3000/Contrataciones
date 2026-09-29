@@ -18,6 +18,14 @@
  * Los métodos que crean o modifican estado reciben `contexto` con los datos
  * que la implementación necesita para registrar identidad declarada y origen
  * (ADR-017): timestamp, email, rol, equipo, observacion.
+ *
+ * ORDEN-RONDA-27 §3: `leerSCo(numeroSCo)` devuelve el registro de esa SCo
+ * (`{numeroSCo, expedientes, entregables, version, auditoria}`) o `null` si no
+ * existe todavía. Los hermanos de una SCo salen de acá y no de barrer el
+ * índice. `guardarExpediente` acepta un quinto argumento,
+ * `versionEsperadaSCO`: es la versión del registro que el cliente leyó, y si
+ * no coincide con la de disco otro operador se sumó o salió en el medio, así
+ * que el guardado se rechaza con 409 sin escribir nada.
  */
 (function (root) {
   'use strict';
@@ -36,7 +44,8 @@
     'archivar',
     'guardarEntregable',
     'avanzar',
-    'devolver'
+    'devolver',
+    'leerSCo'
   ];
 
   var activa = null;

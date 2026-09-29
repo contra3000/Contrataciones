@@ -14,6 +14,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const archivo = require('./archivo.js');
+const sco = require('./sco.js');
 
 function crearManejadoresExpedientes(entorno) {
   const {
@@ -404,6 +405,58 @@ function crearManejadoresExpedientes(entorno) {
       }
     } else if (cambiaImputacion) {
       autorizadoImputacion = false;
+    }
+    // ORDEN-RONDA-27 pieza 3: la SCo es un registro propio, no un texto suelto.
+    // Si el PUT cambia `campos.numeroSCo`, el servidor suma o saca el
+    // expediente del registro correspondiente. Todas las validaciones (que el
+    // número sirva como nombre de archivo, que se pueda sumar a esa SCo, que se
+    // pueda salir de la anterior) pasan ANTES de que se escriba nada: un 409
+    // aquí no deja ni el expediente a medio guardar ni el registro a medio
+    // tocar. Cambiar el número de SCo es una operación del estado en curso y
+    // lleva la misma guardia que los renglones (ORDEN-RONDA-25 §6).
+    const numeroAnterior = sco.numeroUtil(repo.numeroSCoDe(actual));
+    const numeroNuevo = sco.numeroUtil(repo.numeroSCoDe(expedienteNuevo));
+    if (numeroNuevo !== null && numeroNuevo !== numeroAnterior) {
+      const autorizacionDeSCo = SGC.core.autorizacion.autorizarRolDelEstado(
+        entorno.padronVivo.usuarios(), contexto, actual.estado ? actual.estado.id : null);
+      if (!autorizacionDeSCo.ok) {
+        return responderJson(res, 403, { error: autorizacionDeSCo.error });
+      }
+      // Simulación de las dos operaciones: son las mismas funciones que van a
+      // escribir después, pero sin escribir, para no dejar el registro
+      // adelantado si la suma va a ser rechazada.
+      const pruebaSalida = numeroAnterior === null
+        ? { ok: true }
+        : sco.sinEscribir(() => sco.salir(datosDir, {
+          idExpediente: id, numeroSCo: numeroAnterior, contexto: contexto
+        }));
+      if (!pruebaSalida.ok) {
+        return responderJson(res, pruebaSalida.codigo, { error: pruebaSalida.error });
+      }
+      const pruebaSuma = sco.sinEscribir(() => sco.sumarse(datosDir, {
+        idExpediente: id,
+        numeroSCo: numeroNuevo,
+        contexto: contexto,
+        versionEsperadaSCO: typeof cuerpo.versionEsperadaSCO === 'number'
+          ? cuerpo.versionEsperadaSCO : undefined
+      }));
+      if (!pruebaSuma.ok) {
+        return responderJson(res, pruebaSuma.codigo, {
+          error: pruebaSuma.error,
+          conflicto: pruebaSuma.conflicto || false,
+          versionRemota: pruebaSuma.versionRemota === undefined ? null : pruebaSuma.versionRemota
+        });
+      }
+      if (numeroAnterior !== null) {
+        sco.salir(datosDir, { idExpediente: id, numeroSCo: numeroAnterior, contexto: contexto });
+      }
+      sco.sumarse(datosDir, {
+        idExpediente: id,
+        numeroSCo: numeroNuevo,
+        contexto: contexto,
+        versionEsperadaSCO: typeof cuerpo.versionEsperadaSCO === 'number'
+          ? cuerpo.versionEsperadaSCO : undefined
+      });
     }
     const nuevaVersion = actual.version + 1;
     fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });

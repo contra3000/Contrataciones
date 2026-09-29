@@ -6,8 +6,10 @@
  * por SCo, y juntar los expedientes por SCo es la ronda 27: acá nada agrupa.
  *
  * El número se guarda en `campos.numeroSCo` (forma plana del expediente, por
- * donde `validacion.campoPresente` lo exige para avanzar). Si otros
- * expedientes cargaron el mismo número, se enumeran abajo.
+ * donde `validacion.campoPresente` lo exige para avanzar) y, al guardarlo, el
+ * servidor suma o saca el expediente del registro de la SCo
+ * (`datos/sco/<año>/<n>.json`, ORDEN-RONDA-27 §3). Los hermanos de abajo salen
+ * de ese registro, no de barrer el índice.
  */
 (function (root) {
   'use strict';
@@ -24,7 +26,8 @@
     operador: null,
     dom: {},
     expedienteId: null,
-    version: null
+    version: null,
+    versionSCo: null
   };
 
   function qs(raiz, sel) { return raiz.querySelector(sel); }
@@ -91,15 +94,22 @@
     return roles.indexOf(rolEjecutor) !== -1;
   }
 
-  // "Esta SCo incluye también: ..." — hermanos en el índice con el mismo
-  // número. El índice queda a nombre del repo (el contrato lo expone según la
-  // implementación); si la implementación no lo tiene, no se muestra nada.
+  // "Esta SCo incluye también: ..." — hermanos según el REGISTRO de la SCo
+  // (ORDEN-RONDA-27 §3). Antes salían de barrer el índice entero buscando
+  // coincidencias de `numeroSCo`: cualquier expediente con el mismo texto
+  // contaba como hermano, aunque nunca se hubiera sumado, y había que
+  // traer el índice entero para mostrar una línea. Ahora la lista sale del
+  // registro, que es el que sabe quiénes son.
+  // De paso se guarda la versión del registro: es la que viaja al guardar, para
+  // que el servidor detecte si otro operador se sumó o salió en el medio.
   function actualizarIncluidos(expediente) {
     var nodo = estado.dom.incluye;
-    if (!nodo) return;
-    nodo.hidden = true;
-    nodo.textContent = '';
-    if (!estado.repo || typeof estado.repo.listarIndice !== 'function') {
+    if (nodo) {
+      nodo.hidden = true;
+      nodo.textContent = '';
+    }
+    estado.versionSCo = null;
+    if (!estado.repo || typeof estado.repo.leerSCo !== 'function') {
       return;
     }
     var numero = numeroSCoDe(expediente);
@@ -107,21 +117,24 @@
       return;
     }
     var idActual = expediente.expedienteId || expediente.id;
-    estado.repo.listarIndice().then(function (indice) {
-      var entradas = Array.isArray(indice) ? indice : [];
+    estado.repo.leerSCo(numero).then(function (registro) {
+      if (!registro) {
+        return;
+      }
+      estado.versionSCo = typeof registro.version === 'number' ? registro.version : null;
+      var miembros = Array.isArray(registro.expedientes) ? registro.expedientes : [];
       var hermanos = [];
-      for (var i = 0; i < entradas.length; i++) {
-        var entry = entradas[i];
-        if (entry && entry.id !== idActual && entry.numeroSCo === numero) {
-          hermanos.push(entry.id);
+      for (var i = 0; i < miembros.length; i++) {
+        if (miembros[i] !== idActual) {
+          hermanos.push(miembros[i]);
         }
       }
-      if (hermanos.length > 0) {
+      if (nodo && hermanos.length > 0) {
         nodo.textContent = 'Esta SCo incluye también: ' + hermanos.join(', ') + '.';
         nodo.hidden = false;
       }
     }).catch(function () {
-      // sin índice disponible no se muestra el listado; el número ya quedó
+      // sin registro disponible no se muestra el listado; el número ya quedó
       // guardado y el motor valida como siempre.
     });
   }
@@ -199,9 +212,17 @@
       copia.campos = {};
     }
     copia.campos.numeroSCo = numero;
-    estado.repo.guardarExpediente(estado.expedienteId, copia, estado.version, contextoActual())
+    // La versión del registro que se leyó al abrir la pantalla viaja con el
+    // guardado: si otro operador se sumó o salió de esta SCo entre la lectura y
+    // este guardado, el servidor responde 409 y no escribe nada.
+    estado.repo.guardarExpediente(estado.expedienteId, copia, estado.version, contextoActual(),
+      estado.versionSCo)
       .then(function (resp) {
         if (resp.conflicto) {
+          if (resp.versionRemota === null || resp.versionRemota === undefined) {
+            avisar(resp.error || 'No se pudo guardar el número de SCo.', true);
+            return;
+          }
           var op = estado.operador || {};
           var esOtroOperador = !!resp.ultimoUsuario && resp.ultimoUsuario !== op.email;
           var texto = esOtroOperador
@@ -212,7 +233,10 @@
           return;
         }
         if (!resp.ok) {
-          avisar('No se pudo guardar el número de SCo: ' + (resp.error || 'error desconocido'), true);
+          // Regla de SCo del servidor (no se puede sumar a una SCo que ya
+          // avanzó, no se puede salir de una que ya avanzó): el motivo llega
+          // en castellano y se muestra tal cual.
+          avisar(resp.error || 'No se pudo guardar el número de SCo: error desconocido', true);
           return;
         }
         estado.version = resp.version;

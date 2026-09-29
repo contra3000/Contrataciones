@@ -397,6 +397,43 @@ function responderErrorPeticion(res, e) {
   responderJson(res, codigoEstado, { error: 'no se pudo procesar la petición' });
 }
 
+// Número de SCo de las rutas del registro (ORDEN-RONDA-27 §3):
+//   GET  /api/sco/<numero>
+//   POST /api/sco/<numero>/sumarse
+// El número es texto libre (ronda 26), así que viaja codificado con
+// encodeURIComponent y se decodifica acá. Un "%2F" (/) no parte la ruta, pero
+// un "/" crudo sí, y en ese caso la ruta no encaja y devuelve null: el número
+// nunca decide qué archivo se abre. El registro además compara por el campo
+// `numeroSCo` del JSON, no por el nombre del archivo.
+function scoDeRuta(req) {
+  const ruta = (req.url || '').split('?')[0];
+  const partes = ruta.split('/').filter((p) => p.length > 0);
+  if (partes[0] !== 'api' || partes[1] !== 'sco') {
+    return null;
+  }
+  //   /api/sco/<numero>             → {numero, accion: null}   (GET)
+  //   /api/sco/<numero>/sumarse     → {numero, accion:'sumarse'} (POST)
+  let accion = null;
+  if (partes.length === 4) {
+    accion = partes[3];
+  } else if (partes.length !== 3) {
+    return null;
+  }
+  if (accion !== null && accion !== 'sumarse') {
+    return null;
+  }
+  let numero = null;
+  try {
+    numero = decodeURIComponent(partes[2]);
+  } catch (e) {
+    return null;
+  }
+  if (typeof numero !== 'string' || numero.trim() === '') {
+    return null;
+  }
+  return { numero: numero.trim(), accion: accion };
+}
+
 module.exports = {
   LIMITE_CUERPO,
   MIME,
@@ -414,6 +451,7 @@ module.exports = {
   entregableDeRuta,
   archivoBaseDeRuta,
   sugerenciaDeRuta,
+  scoDeRuta,
   rutaExpediente,
   leerCuerpo,
   recibirEnArchivo,
