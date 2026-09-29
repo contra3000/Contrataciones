@@ -90,12 +90,19 @@ test('RONDA-26 pieza 6 · candado abandonado: arranca, lo reemplaza y avisa', as
   }
 });
 
+// ORDEN-RONDA-27 pieza 2: este test cierra el servidor en `finally`. Antes lo
+// cerraba en el camino feliz: si la primera aserción fallaba, el servidor
+// seguía vivo y la corrida no terminaba nunca.
 test('RONDA-26 pieza 6 · cierre normal: el candado desaparece', async () => {
   const datos = crearDirDatos('sgc-p6-cierre-');
   const servidor = await arrancarServidor(datos, 0);
-  assert.ok(leerCandado(datos), 'al arrancar hay candado');
-  await detenerServidor(servidor);
-  assert.equal(leerCandado(datos), null,
-    'un cierre normal borra el candado de la carpeta de datos');
-  fs.rmSync(datos, { recursive: true, force: true });
+  try {
+    assert.ok(leerCandado(datos), 'al arrancar hay candado');
+    await detenerServidor(servidor);
+    assert.equal(leerCandado(datos), null,
+      'un cierre normal borra el candado de la carpeta de datos');
+  } finally {
+    await detenerServidor(servidor);
+    fs.rmSync(datos, { recursive: true, force: true });
+  }
 });
