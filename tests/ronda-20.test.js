@@ -142,6 +142,18 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
     assert.match(d.getElementById('sgc-requerimiento-msj').textContent, /Presupuesto guardado:/,
       'H1: la pantalla avisa que el presupuesto quedó guardado');
 
+    // ORDEN-RONDA-26 pieza 5: cada renglón exige dos valores de referencia y
+    // el requerimiento se guarda por botón antes de avanzar de EETT.
+    const filasPorRenglon = [];
+    for (let i = 0; i < 3; i++) {
+      filasPorRenglon.push([
+        { presupuestoId: 'presupuesto-1', base: 'unitario', valor: '100' },
+        { presupuestoId: 'presupuesto-2', base: 'unitario', valor: '150' }
+      ]);
+    }
+    m.cargarValores(filasPorRenglon);
+    await m.guardarRequerimiento();
+
     // C3 (parcial) · el documento del estado (especificación técnica) se
     // guarda como entregable por botón; sin eso no se puede avanzar.
     d.getElementById('sgc-expediente-documento-guardar').click();

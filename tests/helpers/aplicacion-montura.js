@@ -546,6 +546,45 @@ function montura(servidor) {
     return nodo;
   };
 
+  // ORDEN-RONDA-26 pieza 5: los campos de valores de referencia no tienen
+  // listener propio: el formulario atiende por delegación un único listener
+  // 'input' en #sgc-requerimiento-seccion. El stub no burbujea eventos, así
+  // que acá se setea el valor del elemento y se emite DIRECTAMENTE en la
+  // sección con `target` apuntando a ese elemento (como haría el navegador).
+  // filasPorRenglon[i] = [{presupuestoId, base, valor}, ...].
+  m.cargarValores = function (filasPorRenglon) {
+    const seccion = documento.getElementById('sgc-requerimiento-seccion');
+    filasPorRenglon.forEach(function (filas, i) {
+      filas.forEach(function (fila, j) {
+        const escribir = function (atributo, valor) {
+          const elemento = seccion.querySelector('[data-' + atributo + '="' + i + ':' + j + '"]');
+          if (!elemento) {
+            throw new Error('cargarValores: no existe la fila ' + i + ':' + j + ' (atributo data-' + atributo + ')');
+          }
+          elemento.value = String(valor);
+          seccion.emit('input', { target: elemento });
+        };
+        escribir('presupuesto', fila.presupuestoId);
+        escribir('base', fila.base);
+        escribir('valor', fila.valor);
+      });
+    });
+  };
+
+  // ORDEN-RONDA-26 pieza 5: guarda el requerimiento por su botón y espera la
+  // recarga automática (expediente.abrir) que renueva la versión; sin esa
+  // espera el avance que sigue iría con la versión vieja → 409.
+  m.guardarRequerimiento = async function () {
+    const d = documento;
+    d.getElementById('sgc-requerimiento-guardar').click();
+    await m.esperar(() => (d.getElementById('sgc-requerimiento-msj').textContent || '')
+      .indexOf('Requerimiento guardado') !== -1, 30000, 'requerimiento guardado');
+    const hitos = d.getElementById('sgc-expediente-auditoria');
+    const previoHito = hitos.children[0];
+    await m.esperar(() => hitos.children[0] !== previoHito, 30000,
+      'el expediente se recargó tras guardar el requerimiento');
+  };
+
   return m;
 }
 

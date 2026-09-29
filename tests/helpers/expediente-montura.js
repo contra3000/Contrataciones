@@ -163,6 +163,21 @@ function expedienteEnEstado(idEstado, numero) {
       expediente.campos[campo] = 'Valor de prueba';
     }
   }
+  // ORDEN-RONDA-26 pieza 5: un expediente en ESPECIFICACIONES_TECNICAS ya
+  // adjuntó dos presupuestos y cargó sus dos valores de referencia; sin
+  // ellos, el motor no lo deja avanzar.
+  if (idEstado === 'ESPECIFICACIONES_TECNICAS') {
+    expediente.presupuestos = [
+      { id: 'presupuesto-1', nombreOriginal: 'presupuesto-uno.png', archivo: 'presupuesto-1.png' },
+      { id: 'presupuesto-2', nombreOriginal: 'presupuesto-dos.png', archivo: 'presupuesto-2.png' }
+    ];
+    for (const renglon of expediente.renglones || []) {
+      renglon.valoresReferencia = [
+        { presupuestoId: 'presupuesto-1', base: 'unitario', valor: 100 },
+        { presupuestoId: 'presupuesto-2', base: 'unitario', valor: 200 }
+      ];
+    }
+  }
   return expediente;
 }
 

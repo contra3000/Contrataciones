@@ -68,6 +68,45 @@
     return false;
   }
 
+  // ORDEN-RONDA-26 pieza 5: un valor de referencia (ADR-022) es completo cuando
+  // trae el presupuesto que cita, la base normalizable y el valor numérico. Es
+  // el mismo criterio que aplica validarRenglon al guardar (requerimiento.js),
+  // así lo que llegó persistido siempre está completo.
+  function valorCompleto(v) {
+    return v && typeof v === 'object' &&
+      typeof v.presupuestoId === 'string' && v.presupuestoId.trim() !== '' &&
+      (v.base === 'unitario' || v.base === 'total') &&
+      typeof v.valor === 'number' && isFinite(v.valor) && v.valor >= 0;
+  }
+
+  // ORDEN-RONDA-26 pieza 5: en ESPECIFICACIONES_TECNICAS cada renglón exige al
+  // menos dos valores de referencia. La lista de faltantes se construye en
+  // palabras por el texto de la pieza 2 (itemsFaltantes), que pone
+  // "2 valores de referencia en Renglón N"; la clave `renglones` sólo aparece
+  // si algún renglón las tiene (así los tests que no esperan la clave siguen
+  // con la forma exacta).
+  function renglonesSinValores(expediente) {
+    if (!SGC.core.requerimiento) {
+      throw new Error('validacion.js (valoresDelRequerimiento) requiere que core/requerimiento.js se cargue primero');
+    }
+    var info = SGC.core.requerimiento.requerimientoDe(expediente);
+    var deficientes = [];
+    for (var i = 0; i < info.renglones.length; i++) {
+      var lista = Array.isArray(info.renglones[i].valoresReferencia)
+        ? info.renglones[i].valoresReferencia : [];
+      var completos = 0;
+      for (var j = 0; j < lista.length; j++) {
+        if (valorCompleto(lista[j])) {
+          completos += 1;
+        }
+      }
+      if (completos < 2) {
+        deficientes.push('Renglón ' + (i + 1));
+      }
+    }
+    return deficientes;
+  }
+
   function validarParaAvanzar(expediente) {
     var faltantes = { campos: [], entregables: [] };
     var estado = obtenerEstado(expediente);
@@ -95,8 +134,19 @@
         !entregablePresente(expediente, 'anexo-eett')) {
       faltantes.entregables.push('anexo-eett');
     }
+    // ORDEN-RONDA-26 pieza 5: dos valores de referencia por renglón en
+    // ESPECIFICACIONES_TECNICAS (mismo código en cliente y servidor). Sólo se
+    // crea la clave `renglones` si hay deficiencias, para no inventar una
+    // forma que los otros estados no tienen.
+    if (estado.id === 'ESPECIFICACIONES_TECNICAS') {
+      var renglonesDeficientes = renglonesSinValores(expediente);
+      if (renglonesDeficientes.length > 0) {
+        faltantes.renglones = renglonesDeficientes;
+      }
+    }
     return {
-      valido: faltantes.campos.length === 0 && faltantes.entregables.length === 0,
+      valido: faltantes.campos.length === 0 && faltantes.entregables.length === 0 &&
+        (faltantes.renglones === undefined || faltantes.renglones.length === 0),
       faltantes: faltantes
     };
   }

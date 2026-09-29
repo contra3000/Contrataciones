@@ -54,7 +54,8 @@
 
   // fijarDatos(renglones, presupuestos, valoresGuardados, cantidadesGuardadas,
   // opciones): (re)construye el bloque. Los guardados son los que trae el
-  // expediente o el borrador local; si no hay, arranca con una fila vacía.
+  // expediente o el borrador local; si no hay, arranca con dos lugares por
+  // defecto (ORDEN-RONDA-26 pieza 5: cada renglón pide al menos dos valores).
   // Las cantidades de la OCA las guarda su propio módulo (requerimiento-oca.js).
   function fijarDatos(renglones, presupuestos, valoresGuardados, cantidadesGuardadas, opciones) {
     var op = opciones || {};
@@ -65,7 +66,7 @@
       if (Array.isArray(g) && g.length > 0) {
         return g.map(copiarFila);
       }
-      return [filaVacia()];
+      return [filaVacia(), filaVacia()];
     });
     estado.mostrarOca = op.mostrarOca === true;
     estado.editable = op.editable === true;

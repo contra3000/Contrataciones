@@ -113,6 +113,43 @@ function caminoHasta(idEstado) {
   return pasos;
 }
 
+// ORDEN-RONDA-26 pieza 5: para avanzar de ESPECIFICACIONES_TECNICAS el motor
+// exige dos valores de referencia por renglón, y cada uno cita un presupuesto
+// que de verdad existe (el PUT que guarda los valores los valida contra los
+// presupuestos, server/expedientes.js erroresDeRenglones). Se suben los dos
+// archivos (PNG válido, ORDEN-RONDA-23 §3) y después se actualizan los
+// valores. Cada subida versiona; la versión devuelta es la del PUT final.
+async function cargarValoresEett(base, id, version, ctx, assert) {
+  const firmaPng = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  for (let n = 1; n <= 2; n += 1) {
+    const subida = await enviarBytes(base, '/api/expedientes/' + id + '/presupuestos', firmaPng, {
+      'Content-Type': 'image/png',
+      'X-SGC-Nombre-Original': encodeURIComponent('presupuesto-' + n + '.png'),
+      'X-SGC-Contexto': encodeURIComponent(JSON.stringify(ctx))
+    });
+    assert.equal(subida.status, 201, 'se sube el presupuesto ' + n);
+    assert.equal(subida.body.id, 'presupuesto-' + n);
+    version = subida.body.version;
+  }
+  const leido = await pedir(base, 'GET', '/api/expedientes/' + id);
+  assert.equal(leido.status, 200, 'se lee el expediente para cargar los valores');
+  const exp = leido.body.expediente;
+  exp.presupuestos = exp.presupuestos || [];
+  for (const renglon of Array.isArray(exp.renglones) ? exp.renglones : []) {
+    renglon.valoresReferencia = [
+      { presupuestoId: 'presupuesto-1', base: 'unitario', valor: 100 },
+      { presupuestoId: 'presupuesto-2', base: 'unitario', valor: 200 }
+    ];
+  }
+  const c = await pedir(base, 'PUT', '/api/expedientes/' + id, {
+    expediente: exp,
+    versionEsperada: version,
+    contexto: ctx
+  });
+  assert.equal(c.status, 200, 'se guardan los dos valores de referencia');
+  return c.body.version;
+}
+
 async function crearEnEstado(base, datosDir, idEstado, assert) {
   const creado = await pedir(base, 'POST', '/api/expedientes', {
     datosIniciales: datosIniciales(),
@@ -135,6 +172,11 @@ async function crearEnEstado(base, datosDir, idEstado, assert) {
       });
       assert.equal(g.status, 201, 'se guarda el entregable ' + entrega.id);
       version = g.body.version;
+    }
+    // ORDEN-RONDA-26 pieza 5: para abandonar ESPECIFICACIONES_TECNICAS hay
+    // que dejar cargados los dos valores de referencia por renglón.
+    if (paso.desde === 'ESPECIFICACIONES_TECNICAS') {
+      version = await cargarValoresEett(base, id, version, contexto(paso.rol), assert);
     }
     // ORDEN-RONDA-26 pieza 4: un estado con campos requeridos (SOLICITUD_
     // CONTRATACION exige `numeroSCo`) ya los completó antes de abandonarlo.
@@ -193,6 +235,7 @@ module.exports = {
   estadoEnDisco,
   caminoHasta,
   crearEnEstado,
+  cargarValoresEett,
   arrancarEntorno,
   limpiarEntorno,
   pedir,

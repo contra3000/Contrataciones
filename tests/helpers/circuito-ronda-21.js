@@ -132,6 +132,32 @@ async function avanzarEstado(m, proximoTitulo) {
     .indexOf(proximoTitulo) !== -1, 30000, 'avanzó a "' + proximoTitulo + '"');
 }
 
+// ORDEN-RONDA-26 pieza 5: para abandonar ESPECIFICACIONES_TECNICAS hay que
+// subir dos presupuestos por la pantalla, llenar los dos valores de referencia
+// del renglón y guardar el requerimiento por su botón antes de avanzar.
+async function cargarRequerimientoEett(m) {
+  const d = m.documento;
+  await m.esperar(() => d.getElementById('sgc-requerimiento-seccion').hidden === false, 30000,
+    'sección del requerimiento visible');
+  const entrada = d.getElementById('sgc-req-presupuesto-archivo');
+  entrada.files = [
+    { name: 'presupuesto-uno.pdf', type: 'application/pdf', size: 1024 },
+    { name: 'presupuesto-dos.png', type: 'image/png', size: 2048 }
+  ];
+  entrada.emit('change');
+  await m.esperar(() => (d.getElementById('sgc-req-presupuestos-lista').textContent || '')
+    .indexOf('presupuesto-dos.png') !== -1 &&
+    (d.getElementById('sgc-req-presupuestos-lista').textContent || '').indexOf('id asignado:') !== -1,
+    30000, 'presupuestos subidos por la pantalla');
+  m.cargarValores([
+    [
+      { presupuestoId: 'presupuesto-1', base: 'unitario', valor: '100' },
+      { presupuestoId: 'presupuesto-2', base: 'unitario', valor: '150' }
+    ]
+  ]);
+  await m.guardarRequerimiento();
+}
+
 async function guardarDocumentoYAvanzar(m, expId, proximoTitulo) {
   await irAlExpediente(m, expId);
   await guardarDocumento(m);
@@ -145,6 +171,7 @@ module.exports = {
   irAlExpediente,
   guardarDocumento,
   cargarNumeroSCo,
+  cargarRequerimientoEett,
   avanzarEstado,
   guardarDocumentoYAvanzar,
   botonAbrirDelTablero,

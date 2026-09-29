@@ -19,7 +19,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
 const am = require('./helpers/aplicacion-montura.js');
-const { importarPadron, cambiarSesion, irAlExpediente, guardarDocumento, cargarNumeroSCo, avanzarEstado } = require('./helpers/circuito-ronda-21.js');
+const { importarPadron, cambiarSesion, irAlExpediente, guardarDocumento, cargarNumeroSCo, cargarRequerimientoEett, avanzarEstado } = require('./helpers/circuito-ronda-21.js');
 
 const MODELO_FASTTRACK = JSON.stringify({
   titulo: 'Adquisición de termostatos para calefactores',
@@ -105,6 +105,7 @@ test('C6: la cadena de roles hasta la firma por la montura real', async function
 
     // El generador guarda la especificación técnica (obligatoria) y avanza.
     await irAlExpediente(m, expId);
+    await cargarRequerimientoEett(m);
     await guardarDocumento(m);
     await avanzarEstado(m, TITULO.SOLICITUD);
 

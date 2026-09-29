@@ -169,6 +169,39 @@ async function cargarCamposDelEstado(repo, expediente, version, idEstado, rol) {
   return guardado.version;
 }
 
+// ORDEN-RONDA-26 pieza 5: para abandonar ESPECIFICACIONES_TECNICAS hay que
+  // dejar los dos presupuestos y los dos valores de referencia por renglón
+  // (el PUT que los guarda los valida contra los presupuestos del expediente).
+  // Se parte SIEMPRE de lo que el servidor tiene (no de la copia en memoria):
+  // el guardado del entregable ya corrió y no debe perderse al volcar.
+  async function cargarValoresEett(repo, expediente, version, rol) {
+    const archivo = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from('recorrido-completo')
+    ]);
+    for (let n = 1; n <= 2; n += 1) {
+      const subida = await repo.guardarPresupuesto(expediente.expedienteId, {
+        nombreOriginal: 'presupuesto-' + n + '.png',
+        tipo: 'image/png',
+        archivo
+      }, contexto(rol));
+      version = subida.version;
+    }
+    const leido = await repo.leerExpediente(expediente.expedienteId);
+    for (const renglon of Array.isArray(leido.expediente.renglones) ? leido.expediente.renglones : []) {
+      renglon.valoresReferencia = [
+        { presupuestoId: 'presupuesto-1', base: 'unitario', valor: 100 },
+        { presupuestoId: 'presupuesto-2', base: 'unitario', valor: 200 }
+      ];
+    }
+    const guardado = await repo.guardarExpediente(expediente.expedienteId, leido.expediente, version, contexto(rol));
+    if (!guardado.ok) {
+      throw new Error('recorrido: no se pudieron cargar los dos valores de referencia: ' +
+        (guardado.error || 'error desconocido'));
+    }
+    return guardado.version;
+  }
+
 async function recorrer(baseUrl) {
   if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
     throw new Error('recorrer() requiere la base del servidor');
@@ -207,6 +240,9 @@ async function recorrer(baseUrl) {
     const paso = plan[i];
     if (paso.accion === 'avanzar') {
       version = await guardarEntregableDelEstado(repo, expediente, version, paso.desde, paso.rol);
+      if (paso.desde === 'ESPECIFICACIONES_TECNICAS') {
+        version = await cargarValoresEett(repo, expediente, version, paso.rol);
+      }
       version = await cargarCamposDelEstado(repo, expediente, version, paso.desde, paso.rol);
     }
     const resultado = await aplicar(repo, expediente, version, paso);

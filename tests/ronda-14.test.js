@@ -18,7 +18,7 @@ const fs = require('node:fs');
 const RAIZ = path.resolve(__dirname, '..');
 const SGC_RU = require('./helpers/transiciones-servidor-util.js');
 require(path.join(RAIZ, 'app', 'js', 'core', 'indicadores.js'));
-const { crearDirDatos, arrancarServidor, detenerServidor, pedir } =
+const { crearDirDatos, arrancarServidor, detenerServidor, pedir, enviarBytes } =
   require('./helpers/servidor-util.js');
 
 const padronTool = require('../tools/padron.js');
@@ -104,6 +104,36 @@ async function guardarEntregable(base, id, version, idEntregable, cookie) {
     { id: idEntregable, nombre: idEntregable + '.html', contenido: '<p>Documento ' + idEntregable + '</p>' },
     cookie);
   assert.equal(r.status, 201, 'entregable ' + idEntregable);
+  return r.body.version;
+}
+
+// ORDEN-RONDA-26 pieza 5: para abandonar ESPECIFICACIONES_TECNICAS hay que
+// dejar los dos presupuestos y los dos valores de referencia por renglón (el
+// PUT que los guarda los valida contra los presupuestos del expediente). En
+// modo autenticado la autorización sale de la sesión, no de cabeceras.
+async function cargarValoresEett(base, id, version, cookie) {
+  const firmaPng = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  for (let n = 1; n <= 2; n += 1) {
+    const subida = await enviarBytes(base, '/api/expedientes/' + id + '/presupuestos', firmaPng, {
+      'Content-Type': 'image/png',
+      'X-SGC-Nombre-Original': encodeURIComponent('presupuesto-' + n + '.png'),
+      Cookie: cookie
+    });
+    assert.equal(subida.status, 201, 'se sube el presupuesto ' + n);
+    version = subida.body.version;
+  }
+  const leido = await pedirCon(base, 'GET', '/api/expedientes/' + id, null, cookie);
+  assert.equal(leido.status, 200, 'se lee el expediente para cargar los valores');
+  const expediente = leido.body.expediente;
+  for (const renglon of Array.isArray(expediente.renglones) ? expediente.renglones : []) {
+    renglon.valoresReferencia = [
+      { presupuestoId: 'presupuesto-1', base: 'unitario', valor: 100 },
+      { presupuestoId: 'presupuesto-2', base: 'unitario', valor: 200 }
+    ];
+  }
+  const r = await pedirCon(base, 'PUT', '/api/expedientes/' + id,
+    { expediente, versionEsperada: version }, cookie);
+  assert.equal(r.status, 200, 'carga de los dos valores de referencia');
   return r.body.version;
 }
 
@@ -217,6 +247,7 @@ test('4.3-4.5 jerarquía de roles y rol efectivo en la traza', async () => {
       'la creación registró el rol de la sesión');
 
     version = await guardarEntregable(e.base, id, version, 'especificacion-tecnica', cookie[GENERADOR.email]);
+    version = await cargarValoresEett(e.base, id, version, cookie[GENERADOR.email]);
     let paso = await avanzarAuth(e.base, id, version, 'SOLICITUD_CONTRATACION', cookie[GENERADOR.email]);
     assert.equal(paso.status, 200);
     version = paso.version;

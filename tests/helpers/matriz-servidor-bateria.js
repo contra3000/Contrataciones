@@ -24,6 +24,7 @@ const {
   docEnDisco,
   estadoEnDisco,
   crearEnEstado,
+  cargarValoresEett,
   arrancarEntorno,
   limpiarEntorno,
   pedir
@@ -106,6 +107,13 @@ function correrMatriz(estados) {
           assert.equal(c.status, 200,
             estadoDef.id + ' completa sus campos requeridos');
           versionFinal = c.body.version;
+        }
+
+        // ORDEN-RONDA-26 pieza 5: para abandonar ESPECIFICACIONES_TECNICAS
+        // hay que dejar los dos presupuestos y los dos valores de referencia.
+        if (estadoDef.id === 'ESPECIFICACIONES_TECNICAS') {
+          versionFinal = await cargarValoresEett(base, id, versionFinal,
+            contexto(estadoDef.rolEjecutor), assert);
         }
 
         const ok = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {

@@ -29,6 +29,7 @@ const {
   docEnDisco,
   estadoEnDisco,
   crearEnEstado,
+  cargarValoresEett,
   arrancarEntorno,
   limpiarEntorno,
   pedir
@@ -164,8 +165,13 @@ test('la auditoría de una transición la escribe el servidor y registra el orig
   assert.equal(entregable.status, 201);
   assert.equal(entregable.body.version, 2);
 
+  // ORDEN-RONDA-26 pieza 5: para abandonar ESPECIFICACIONES_TECNICAS hay que
+  // dejar los dos presupuestos y los dos valores de referencia por renglón.
+  const conValores = await cargarValoresEett(base, id, entregable.body.version,
+    contexto('generador', { timestamp: '2026-08-18T11:04:00.000Z' }), assert);
+
   const r = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {
-    versionEsperada: entregable.body.version,
+    versionEsperada: conValores,
     destino: 'SOLICITUD_CONTRATACION',
     contexto: contexto('generador', { timestamp: '2026-08-18T11:05:00.000Z' })
   });
