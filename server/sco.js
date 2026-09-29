@@ -29,7 +29,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { escribirAtomico } = require('./ayudantes.js');
+const { escribirAtomico, adquirirLock, liberarLock } = require('./ayudantes.js');
 
 const ESTADO_SOLICITUD = 'SOLICITUD_CONTRATACION';
 const ANIO_RE = /^\d{4}$/;
@@ -142,6 +142,76 @@ function estadoDeExpediente(datosDir, id) {
   return expediente && expediente.estado && typeof expediente.estado.id === 'string'
     ? expediente.estado.id
     : null;
+}
+
+// ORDEN-RONDA-27 pieza 4: qué SCo manda sobre este expediente, si es que
+// alguna. Devuelve null cuando el expediente no tiene número, así la pantalla
+// y el servidor siguen tratando el caso de siempre.
+// `contiene` en false significa que el expediente dice un número pero el
+// registro no lo lista: es una inconsistencia y el servidor se niega a mover
+// en lugar de partir la SCo en dos.
+function grupoDeExpediente(datosDir, expediente) {
+  const campos = expediente && expediente.campos ? expediente.campos : null;
+  const numero = campos && typeof campos.numeroSCo === 'string' ? campos.numeroSCo : null;
+  if (numero === null || numero.trim() === '') {
+    return null;
+  }
+  // El identificador del expediente va en `expedienteId`, no en `id`: el `id`
+  // de la respuesta HTTP es de la envolvente, no del documento guardado.
+  const id = expediente.expedienteId;
+  if (typeof id !== 'string') {
+    return null;
+  }
+  const registro = buscar(datosDir, numero);
+  if (!registro) {
+    return null;
+  }
+  const ids = Array.isArray(registro.expedientes)
+    ? registro.expedientes.filter((otro) => typeof otro === 'string')
+    : [];
+  return {
+    numeroSCo: numero,
+    registro: registro,
+    ids: ids,
+    contiene: ids.indexOf(id) !== -1
+  };
+}
+
+// Los miembros de la SCo con el estado en que están, para el texto de "Avanzar"
+// que dice a quién falta volver. Orden estable por id.
+function miembrosConEstado(datosDir, registro) {
+  const ids = registro && Array.isArray(registro.expedientes) ? registro.expedientes : [];
+  return ids
+    .filter((id) => typeof id === 'string')
+    .map((id) => ({ id: id, estado: estadoDeExpediente(datosDir, id) }))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+// ORDEN-RONDA-27 pieza 4 §2: la escritura de todos los miembros va bajo un
+// candado propio de la SCo, para que dos operadores que mueven SCo distintas no
+// se pisen y para que un movimiento en bloque no se entrelace con otro.
+// El candado vive al lado de los registros; `registros()` sólo lee `.json`, así
+// que el `.lock` no lo confunde con una SCo.
+function rutaCandadoGrupo(datosDir, registro) {
+  return path.join(directorioSco(datosDir), registro.anio, nombreDeArchivo(registro.numeroSCo) + '.lock');
+}
+
+function conCandadoGrupo(datosDir, registro, fn) {
+  const ruta = rutaCandadoGrupo(datosDir, registro);
+  fs.mkdirSync(path.dirname(ruta), { recursive: true });
+  const REINTENTOS = 40;
+  const ESPERA_MS = 25;
+  const tomado = adquirirLock(ruta, REINTENTOS, ESPERA_MS);
+  if (!tomado) {
+    const e = new Error('otro movimiento de esta SCo está en curso; reintente en un momento');
+    e.codigo = 409;
+    throw e;
+  }
+  try {
+    return fn();
+  } finally {
+    liberarLock(ruta);
+  }
 }
 
 // Expedientes de la SCo que ya no están en SOLICITUD_CONTRATACION. Es lo que
@@ -445,8 +515,11 @@ module.exports = {
   ESTADO_SOLICITUD,
   anioDeExpediente,
   buscar,
+  conCandadoGrupo,
   crearManejadoresSco,
+  grupoDeExpediente,
   hermanos,
+  miembrosConEstado,
   nombreDeArchivo,
   numeroUtil,
   registros,

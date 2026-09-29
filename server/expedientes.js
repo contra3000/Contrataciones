@@ -135,6 +135,263 @@ function crearManejadoresExpedientes(entorno) {
       a.id === b.id && a.fase === b.fase && a.desde === b.desde;
   }
 
+  // Estado de la Fase 1. ORDEN-RONDA-27 pieza 4: la SCo no se rehace en bloque
+  // acá, cada generador corrige y avanza el suyo.
+  const ESTADO_FASE1 = 'ESPECIFICACIONES_TECNICAS';
+
+  // Pieza 5 engancha acá el requisito de ANEXO I por SCo. En la pieza 4 la SCo
+  // no exige nada más allá de lo que exige cada expediente.
+  function requisitosDeSCo(nuevo, contexto, anterior) {
+    return { ok: true };
+  }
+
+  function estadoIdDe(expediente) {
+    return expediente && expediente.estado && typeof expediente.estado.id === 'string'
+      ? expediente.estado.id
+      : null;
+  }
+
+  // ORDEN-RONDA-27 pieza 4: con SCo, decidir si el movimiento es del grupo o de
+  // uno solo, antes de tocar nada.
+  //  - sin número: como siempre, uno solo.
+  //  - el registro no lista al expediente: inconsistencia. Se niega, porque
+  //    moverlo solo partiría la SCo en dos sin que nadie lo pidiera.
+  //  - en Fase 1: uno solo, es individual por decisión de la ronda 27.
+  //  - `avanzar` con los miembros en estados distintos: no se mueve nadie. La
+  //    SCo no sale de SOLICITUD_CONTRATACION hasta que estén todos de vuelta.
+  //  - en cualquier otro caso: se mueven todos.
+  function planDeMovimiento(datosDirLocal, actual, accion) {
+    const grupo = sco.grupoDeExpediente(datosDirLocal, actual);
+    if (!grupo) {
+      return { modo: 'sinGrupo' };
+    }
+    if (!grupo.contiene) {
+      return { modo: 'inconsistente', grupo: grupo };
+    }
+    if (estadoIdDe(actual) === ESTADO_FASE1) {
+      return { modo: 'individual', grupo: grupo };
+    }
+    if (accion === 'avanzar') {
+      const miembros = sco.miembrosConEstado(datosDirLocal, grupo.registro);
+      const propios = miembros.filter((m) => m.estado === estadoIdDe(actual));
+      if (propios.length !== miembros.length) {
+        const atrados = miembros.filter((m) => m.estado !== estadoIdDe(actual));
+        return { modo: 'mixto', grupo: grupo, atrados: atrados };
+      }
+    }
+    return { modo: 'grupo', grupo: grupo };
+  }
+
+  // Texto para la pantalla de "Avanzar": a quién falta volver.
+  function textoEsperando(grupo, id) {
+    if (!grupo) {
+      return null;
+    }
+    const miembros = sco.miembrosConEstado(datosDir, grupo.registro);
+    const atrados = miembros.filter((m) => m.estado !== sco.ESTADO_SOLICITUD && m.id !== id);
+    const mismos = miembros.filter((m) => m.estado === sco.ESTADO_SOLICITUD && m.id !== id);
+    return {
+      numeroSCo: grupo.numeroSCo,
+      atrados: atrados.map((m) => m.id),
+      esperando: mismos.map((m) => m.id),
+      texto: atrados.length > 0
+        ? 'la SCo ' + grupo.numeroSCo + ' no sale de ' + sco.ESTADO_SOLICITUD +
+          ' hasta que vuelvan: ' + atrados.map((m) => m.id).join(', ')
+        : ''
+    };
+  }
+
+  // Paso 1 de la pieza 4: correr el motor sobre UN expediente y decir a dónde
+  // se llega, sin escribir nada. Así se valida a todos los miembros antes de
+  // tocar el primer archivo.
+  function calcular(actual, cuerpo, contexto, accion, grupoTexto) {
+    const motor = SGC.core.estados;
+    const resultado = accion === 'avanzar'
+      ? motor.avanzar(actual, contexto.rol, cuerpo.destino, contexto)
+      : motor.devolver(actual, contexto.rol, cuerpo.destino, cuerpo.idMotivo,
+        cuerpo.observacion === undefined ? null : cuerpo.observacion, contexto);
+    if (!resultado.ok) {
+      return { ok: false, status: 403, cuerpo: { error: resultado.error } };
+    }
+    const nuevo = resultado.expediente;
+    // ADR-033 (§3.5): el motor dejó rolEfectivo cuando un rol heredado ejecutó
+    // el paso; se propaga al contexto para que el evento de ADR-024 lo copie.
+    const entradas = Array.isArray(nuevo.auditoria) ? nuevo.auditoria : [];
+    const ultimaEntrada = entradas.length > 0 ? entradas[entradas.length - 1] : null;
+    if (ultimaEntrada && typeof ultimaEntrada.rolEfectivo === 'string') {
+      contexto.rolEfectivo = ultimaEntrada.rolEfectivo;
+    }
+    // Pieza 4 §3: la auditoría de cada expediente dice en qué grupo se movió.
+    if (grupoTexto) {
+      if (ultimaEntrada) {
+        ultimaEntrada.grupo = grupoTexto;
+      }
+      contexto.grupo = grupoTexto;
+    }
+    const requisitos = requisitosDeSCo(nuevo, contexto, actual);
+    if (!requisitos.ok) {
+      return { ok: false, status: 409, cuerpo: { error: requisitos.error } };
+    }
+    if (typeof contexto.timestamp === 'string') { nuevo.ultimaModificacion = contexto.timestamp; }
+    if (typeof contexto.email === 'string') { nuevo.ultimoUsuario = contexto.email; }
+    return { ok: true, nuevo: nuevo, nuevaVersion: actual.version + 1 };
+  }
+
+  // Paso 2: persistir UN expediente ya calculado. Deja el `hist/` de la versión
+  // anterior, que es de donde se restaura si después falla otro del grupo. El
+  // archivado (ORDEN-RONDA-08 §2.2) y los eventos (ADR-024) los hace el
+  // llamador, para que ocurran una sola vez y sólo si el grupo entero quedó
+  // escrito.
+  function escribirUno(exp, id, actual, plan, contexto) {
+    fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
+    escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'), JSON.stringify(actual, null, 2));
+    escribirAtomico(exp.datos, JSON.stringify(plan.nuevo, null, 2));
+    escribirIndice(id, plan.nuevo, contexto);
+  }
+
+  function escribirIndice(id, expediente, contexto) {
+    const entrada = repo.entradaIndice(id, expediente, contexto);
+    fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true });
+    escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
+  }
+
+  // Pieza 4 §2: si una escritura falla a la mitad, se restauran las anteriores
+  // desde `hist/`, que es la copia de la versión previa que se acaba de dejar.
+  function restaurarUno(exp, id, versionPrevia, contextoPrevio) {
+    const hist = path.join(exp.dir, 'hist', 'v' + versionPrevia + '.json');
+    const previo = JSON.parse(fs.readFileSync(hist, 'utf8'));
+    escribirAtomico(exp.datos, JSON.stringify(previo, null, 2));
+    escribirIndice(id, previo, contextoPrevio);
+    return previo;
+  }
+
+  function archivarSiCorresponde(id, plan, contexto) {
+    if (plan.nuevo.estado && plan.nuevo.estado.id === SGC.core.config.ESTADO_FINAL) {
+      return archivo.archivarExpediente(datosDir, id, contexto);
+    }
+    return plan.nuevo;
+  }
+
+  // ORDEN-RONDA-12 §3.1: el registro de eventos va después de escribir, para no
+  // perder la línea si la escritura falla.
+  function registrarEvento(id, actual, plan, cuerpo, contexto, accion) {
+    if (!eventos || typeof eventos.registrarTransicion !== 'function') {
+      return;
+    }
+    if (accion === 'devolver') {
+      eventos.registrarDevolucion(datosDir, id, estadoIdDe(actual), estadoIdDe(plan.nuevo),
+        cuerpo.idMotivo, cuerpo.observacion === undefined ? null : cuerpo.observacion, contexto);
+    } else {
+      eventos.registrarTransicion(datosDir, id, estadoIdDe(actual), estadoIdDe(plan.nuevo), contexto);
+    }
+  }
+
+  // Movimiento de un expediente solo: el camino de siempre.
+  function moverSolo(res, id, actual, cuerpo, contexto, accion, extra) {
+    const plan = calcular(actual, cuerpo, contexto, accion, null);
+    if (!plan.ok) {
+      return responderJson(res, plan.status, plan.cuerpo);
+    }
+    escribirUno(rutaExpediente(datosDir, id), id, actual, plan, contexto);
+    const contestado = archivarSiCorresponde(id, plan, contexto);
+    registrarEvento(id, actual, plan, cuerpo, contexto, accion);
+    return responderJson(res, 200,
+      Object.assign({ version: plan.nuevaVersion, expediente: contestado }, extra || {}));
+  }
+
+  // ORDEN-RONDA-27 pieza 4: la SCo se mueve en bloque, todo o nada. Valida a
+  // todos primero, recién después escribe, y si una escritura falla deshace las
+  // anteriores desde `hist/`. El candado de la SCo cubre lectura, validación y
+  // escritura, para que dos operadores no se entrelacen.
+  function moverEnBloque(res, id, cuerpo, contextoBase, accion, grupo) {
+    const grupoTexto = 'SCo ' + grupo.numeroSCo;
+    const verbo = accion === 'avanzar' ? 'avanzar' : 'devolver';
+    let salida;
+    try {
+      salida = sco.conCandadoGrupo(datosDir, grupo.registro, function () {
+        const miembros = [];
+        const ausentes = [];
+        for (const idMiembro of grupo.ids) {
+          const exp = rutaExpediente(datosDir, idMiembro);
+          if (!fs.existsSync(exp.datos)) {
+            ausentes.push(idMiembro);
+            continue;
+          }
+          miembros.push({
+            id: idMiembro,
+            exp: exp,
+            actual: JSON.parse(fs.readFileSync(exp.datos, 'utf8'))
+          });
+        }
+        if (ausentes.length > 0) {
+          return { status: 409, cuerpo: { error: 'no se puede ' + verbo + ' la ' + grupoTexto +
+            ': el registro nombra ' + ausentes.join(', ') + ' y no está(n) en la carpeta. ' +
+            'Sacá esos expedientes del número de SCo antes de moverla.' } };
+        }
+
+        // Paso 1: validar a todos, sin escribir nada.
+        const planes = [];
+        for (let i = 0; i < miembros.length; i++) {
+          const contexto = Object.assign({}, contextoBase);
+          const plan = calcular(miembros[i].actual, cuerpo, contexto, accion, grupoTexto);
+          planes.push({ plan: plan, contexto: contexto });
+          if (!plan.ok) {
+            return { status: plan.status, cuerpo: { error: 'no se puede ' + verbo + ' la ' +
+              grupoTexto + ' (' + miembros.length + ' expedientes): el ' + miembros[i].id +
+              ' no cumple. ' + plan.cuerpo.error + '. No se movió ninguno.' } };
+          }
+        }
+
+        // Paso 2: escribir a todos. Si algo falla, se deshace lo ya escrito.
+        const escritos = [];
+        try {
+          for (let i = 0; i < miembros.length; i++) {
+            escribirUno(miembros[i].exp, miembros[i].id, miembros[i].actual,
+              planes[i].plan, planes[i].contexto);
+            escritos.push(i);
+          }
+        } catch (e) {
+          const restaurados = [];
+          for (const i of escritos) {
+            try {
+              restaurarUno(miembros[i].exp, miembros[i].id, miembros[i].actual.version,
+                { email: miembros[i].actual.ultimoUsuario, timestamp: miembros[i].actual.ultimaModificacion });
+              restaurados.push(miembros[i].id);
+            } catch (e2) {
+              restaurados.push(miembros[i].id + ' (NO se pudo restaurar: ' + e2.message + ')');
+            }
+          }
+          return { status: 500, cuerpo: { error: 'falló la escritura de la ' + grupoTexto +
+            ' a mitad de camino (' + e.message + '). Se restauraron ' + restaurados.length +
+            ' de ' + miembros.length + ': ' + (restaurados.join(', ') || '—') +
+            '. La SCo quedó como estaba.' } };
+        }
+
+        // Todo el grupo quedó escrito: recién ahora se archiva y se registra.
+        let propio = null;
+        let versionPropia = 0;
+        for (let i = 0; i < miembros.length; i++) {
+          const contestado = archivarSiCorresponde(miembros[i].id, planes[i].plan, planes[i].contexto);
+          registrarEvento(miembros[i].id, miembros[i].actual, planes[i].plan, cuerpo,
+            planes[i].contexto, accion);
+          if (miembros[i].id === id) {
+            propio = contestado;
+            versionPropia = planes[i].plan.nuevaVersion;
+          }
+        }
+        return { status: 200, cuerpo: {
+          version: versionPropia,
+          expediente: propio,
+          grupo: { numeroSCo: grupo.numeroSCo, movidos: miembros.map((m) => m.id) }
+        } };
+      });
+    } catch (e) {
+      // El candado no se pudo tomar: otro movimiento de esta SCo está en curso.
+      return responderJson(res, e.codigo === 409 ? 409 : 500, { error: e.message });
+    }
+    return responderJson(res, salida.status, salida.cuerpo);
+  }
+
   // Transición por intención (ADR-021): el servidor ejecuta el motor con el
   // rol del contexto y persiste el resultado, nunca lo que mandó el cliente;
   // si el motor devuelve ok:false responde 403 con su motivo (ADR-017).
@@ -160,47 +417,25 @@ function crearManejadoresExpedientes(entorno) {
     const actual = JSON.parse(fs.readFileSync(exp.datos, 'utf8'));
     if (actual.version !== cuerpo.versionEsperada) { return responderJson(res, 409, { conflicto: true, versionRemota: actual.version, ultimoUsuario: actual.ultimoUsuario || null, ultimaModificacion: actual.ultimaModificacion || null }); }
     const contexto = Object.assign({}, cuerpo.contexto, { origen });
-    const motor = SGC.core.estados;
-    const resultado = accion === 'avanzar'
-      ? motor.avanzar(actual, contexto.rol, cuerpo.destino, contexto)
-      : motor.devolver(actual, contexto.rol, cuerpo.destino, cuerpo.idMotivo,
-        cuerpo.observacion === undefined ? null : cuerpo.observacion, contexto);
-    if (!resultado.ok) {
-      return responderJson(res, 403, { error: resultado.error });
+    const plan = planDeMovimiento(datosDir, actual, accion);
+    if (plan.modo === 'inconsistente') {
+      return responderJson(res, 409, { error: 'el expediente dice el número de SCo ' +
+        plan.grupo.numeroSCo + ' pero el registro de esa SCo no lo lista. ' +
+        'Guardá otra vez el número para volver a incorporarlo: moverlo sólo partiría la SCo.' });
     }
-    const nuevo = resultado.expediente;
-    // ADR-033 (§3.5): el motor dejó rolEfectivo cuando un rol heredado ejecutó
-    // el paso; se propaga al contexto para que el evento de ADR-024 lo copie.
-    const entradas = Array.isArray(nuevo.auditoria) ? nuevo.auditoria : [];
-    const ultimaEntrada = entradas.length > 0 ? entradas[entradas.length - 1] : null;
-    if (ultimaEntrada && typeof ultimaEntrada.rolEfectivo === 'string') {
-      contexto.rolEfectivo = ultimaEntrada.rolEfectivo;
+    if (plan.modo === 'mixto') {
+      const nombres = plan.atrados.map((m) => m.id + ' (en ' + (m.estado || 'un estado desconocido') + ')');
+      return responderJson(res, 409, { error: 'no se puede ' +
+        (accion === 'avanzar' ? 'avanzar' : 'devolver') + ' la SCo ' + plan.grupo.numeroSCo +
+        ' en bloque: ' + nombres.join(', ') + ' está(n) en otro estado. ' +
+        'La SCo no sale de ' + sco.ESTADO_SOLICITUD + ' hasta que estén todos de vuelta.',
+        sco: textoEsperando(plan.grupo, id) });
     }
-    const nuevaVersion = actual.version + 1;
-    if (typeof contexto.timestamp === 'string') { nuevo.ultimaModificacion = contexto.timestamp; }
-    if (typeof contexto.email === 'string') { nuevo.ultimoUsuario = contexto.email; }
-    fs.mkdirSync(path.join(exp.dir, 'hist'), { recursive: true });
-    escribirAtomico(path.join(exp.dir, 'hist', 'v' + actual.version + '.json'), JSON.stringify(actual, null, 2));
-    escribirAtomico(exp.datos, JSON.stringify(nuevo, null, 2));
-    const entrada = repo.entradaIndice(id, nuevo, contexto);
-    fs.mkdirSync(path.join(datosDir, 'idx'), { recursive: true }); escribirAtomico(path.join(datosDir, 'idx', id + '.json'), JSON.stringify(entrada, null, 2));
-    // ORDEN-RONDA-08 §2.2: al llegar al estado final el servidor archiva en el
-    // mismo ciclo (copia al Archivo, entrada `archivar`, purga del índice); la versión no sube.
-    let respondido = nuevo;
-    if (nuevo.estado && nuevo.estado.id === SGC.core.config.ESTADO_FINAL) { respondido = archivo.archivarExpediente(datosDir, id, contexto); }
-    // ORDEN-RONDA-12 §3.1: registro de eventos (ADR-024). Se registra después
-    // de escribir para no perder la línea si la escritura falla.
-    if (eventos && typeof eventos.registrarTransicion === 'function') {
-      if (accion === 'devolver') {
-        eventos.registrarDevolucion(datosDir, id, actual.estado ? actual.estado.id : null,
-          nuevo.estado ? nuevo.estado.id : null, cuerpo.idMotivo,
-          cuerpo.observacion === undefined ? null : cuerpo.observacion, contexto);
-      } else {
-        eventos.registrarTransicion(datosDir, id, actual.estado ? actual.estado.id : null,
-          nuevo.estado ? nuevo.estado.id : null, contexto);
-      }
+    if (plan.modo === 'grupo') {
+      return moverEnBloque(res, id, cuerpo, contexto, accion, plan.grupo);
     }
-    return responderJson(res, 200, { version: nuevaVersion, expediente: respondido });
+    return moverSolo(res, id, actual, cuerpo, contexto, accion,
+      plan.grupo ? { sco: textoEsperando(plan.grupo, id) } : null);
   }
 
   function apiAvanzar(req, res, id, contextoCuerpo, origen) {
