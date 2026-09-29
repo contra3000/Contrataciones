@@ -155,8 +155,11 @@
     limpiar(dl);
     var datos = (expediente && expediente.datos) || {};
     var identificacion = datos.identificacion || {};
-    agregarCampo(dl, 'Expediente', expediente.id);
-    agregarCampo(dl, 'Número', identificacion.numero || expediente.id);
+    // ORDEN-RONDA-26 pieza 1: el expediente guarda `expedienteId` y `numero`
+    // (repo.construirExpediente), no `id` ni `identificacion.numero`. Antes el
+    // panel "Datos" mostraba "—" en los expedientes reales.
+    agregarCampo(dl, 'Expediente', expediente.expedienteId || expediente.id);
+    agregarCampo(dl, 'Número', expediente.numero || identificacion.numero || expediente.expedienteId || expediente.id);
     for (var k in identificacion) {
       if (k === 'numero' || k === 'operador') {
         continue;
@@ -234,7 +237,7 @@
     var fase = faseDe(def ? def.fase : null);
     var rolEj = rolDe(def ? def.rolEjecutor : null);
 
-    estado.dom.titulo.textContent = (expediente.titulo) || 'Expediente ' + expediente.id;
+    estado.dom.titulo.textContent = (expediente.titulo) || 'Expediente ' + (expediente.expedienteId || expediente.id);
     var resumen = 'Estado: ' + (def ? def.titulo : idEstado) +
       ' · Fase: ' + (fase ? fase.titulo : '—') +
       ' · Ejecutor del estado: ' + (rolEj ? rolEj.nombre : '—');

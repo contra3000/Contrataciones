@@ -81,7 +81,8 @@
 
   function expedienteAbierto() {
     var actual = SGC.views.expediente.obtener();
-    return actual && actual.expediente ? actual.expediente.id : '';
+    // ORDEN-RONDA-26 pieza 1: el expediente guarda `expedienteId` (no `id`).
+    return actual && actual.expediente ? (actual.expediente.expedienteId || actual.expediente.id) : '';
   }
 
   function catalogoVersion() {
