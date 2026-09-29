@@ -61,6 +61,22 @@ function vivosAhora(candado) {
   return estaVivo(candado, Date.now());
 }
 
+// Un candado de ESTA máquina cuyo proceso ya no existe está abandonado aunque
+// tenga menos de 2 minutos: es el caso de cerrar la ventana negra en Windows,
+// que no deja correr código de salida, y volver a abrir enseguida.
+function abandonadoEnEstaMaquina(candado) {
+  if (!candado || candado.maquina !== os.hostname() || !Number.isInteger(candado.pid) ||
+      candado.pid === process.pid) {
+    return false;
+  }
+  try {
+    process.kill(candado.pid, 0);
+    return false;
+  } catch (e) {
+    return !!e && e.code === 'ESRCH';
+  }
+}
+
 let liberarActual = null;
 
 function vigilarSalida() {
@@ -71,13 +87,15 @@ function vigilarSalida() {
   };
   process.on('SIGINT', () => { limpiar(); process.exit(0); });
   process.on('SIGTERM', () => { limpiar(); process.exit(0); });
+  // Windows emite SIGHUP al cerrar la ventana de consola.
+  process.on('SIGHUP', () => { limpiar(); process.exit(0); });
   process.on('exit', limpiar);
 }
 
 function tomar(datosDir) {
   const ruta = rutaCandado(datosDir);
   const existente = leer(datosDir);
-  if (estaVivo(existente, Date.now())) {
+  if (estaVivo(existente, Date.now()) && !abandonadoEnEstaMaquina(existente)) {
     const maquina = existente && existente.maquina
       ? existente.maquina
       : 'desconocida';
