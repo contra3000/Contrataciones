@@ -180,12 +180,20 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
       (d.getElementById('sgc-expediente-resumen').textContent || '').indexOf('Solicitud de Contratación') !== -1,
       30000, 'expediente abierto por abastecimiento (estado Solicitud de Contratación)');
 
-    // El documento del estado (solicitud de contratación) se guarda antes de
-    // avanzar: es el entregable obligatorio del paso.
-    d.getElementById('sgc-expediente-documento-guardar').click();
-    await m.esperar(() => (d.getElementById('sgc-expediente-documento-msj').textContent || '')
-      .indexOf('Documento guardado') !== -1, 30000, 'solicitud de contratación guardada');
-    await esperarDocumentoRemontado();
+    // El número de SCo (ORDEN-RONDA-26 pieza 4) se carga por su sección antes
+    // de avanzar: la SCo ya no produce documento acá (se arma en COMPR.AR).
+    await m.esperar(() => d.getElementById('sgc-sco-numero-seccion').hidden === false, 20000,
+      'la sección del número de SCo se muestra en Solicitud de Contratación');
+    m.escribir('sgc-sco-numero', '2026-00001');
+    d.getElementById('sgc-sco-guardar').click();
+    await m.esperar(() => (d.getElementById('sgc-sco-msj').textContent || '')
+      .indexOf('Número de SCo guardado') !== -1, 30000, 'número de SCo guardado');
+    // La recarga automática (expediente.abrir) renueva la versión antes del
+    // avance; sin esta espera el avance iría con la versión vieja → 409.
+    const hitosAuditoria = d.getElementById('sgc-expediente-auditoria');
+    const previoHito = hitosAuditoria.children[0];
+    await m.esperar(() => hitosAuditoria.children[0] !== previoHito, 30000,
+      'el expediente se recargó tras guardar el número de SCo');
     d.getElementById('sgc-expediente-avanzar').click();
     await m.esperar(() => (d.getElementById('sgc-expediente-resumen').textContent || '')
       .indexOf('Análisis de SCo') !== -1, 30000, 'C4: el expediente avanzó a Análisis de SCo');

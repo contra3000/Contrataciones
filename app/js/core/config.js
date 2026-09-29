@@ -60,8 +60,8 @@
       rolEjecutor: 'abastecimiento',
       estadosSiguientes: ['ANALISIS_SCo'],
       estadosDevolucion: ['ESPECIFICACIONES_TECNICAS'],
-      camposRequeridos: [],
-      entregablesObligatorios: ['solicitud-contratacion']
+      camposRequeridos: ['numeroSCo'],
+      entregablesObligatorios: []
     },
     {
       id: 'ANALISIS_SCo',
@@ -333,13 +333,6 @@
       fase: 1,
       archivo: 'anexo-eett.html',
       titulo: 'Anexo de Especificaciones Técnicas'
-    },
-    {
-      id: 'solicitud-contratacion',
-      estado: 'SOLICITUD_CONTRATACION',
-      fase: 2,
-      archivo: 'solicitud-contratacion.html',
-      titulo: 'Solicitud de Contratación (SCo)'
     },
     {
       id: 'yaml-pliego',

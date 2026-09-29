@@ -190,6 +190,20 @@ test('8. recorrido completo con devolución: 18 estados, cadena íntegra', () =>
       }
     }
 
+    // Un expediente que está en un estado con campos requeridos (ORDEN-RONDA-26
+    // pieza 4: SOLICITUD_CONTRATACION exige `numeroSCo`) ya los completó.
+    const requeridos = estado.camposRequeridos || [];
+    if (requeridos.length > 0) {
+      if (!ex.campos) {
+        ex.campos = {};
+      }
+      for (const campo of requeridos) {
+        if (!ex.campos[campo]) {
+          ex.campos[campo] = 'Valor de prueba';
+        }
+      }
+    }
+
     const destino = estado.estadosSiguientes[0];
     const r = estados.avanzar(ex, rol, destino, ctx);
     assert.equal(r.ok, true, 'al avanzar de ' + actual + ' a ' + destino + ': ' + r.error);

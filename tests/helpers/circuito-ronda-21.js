@@ -107,6 +107,24 @@ async function guardarDocumento(m) {
   }, 30000, 'el documento se re-montó tras guardar');
 }
 
+// ORDEN-RONDA-26 pieza 4: la SCo ya no produce documento; el paso exige el
+// número de SCo, que se carga por su sección propia y se guarda por botón.
+async function cargarNumeroSCo(m) {
+  const d = m.documento;
+  await m.esperar(() => d.getElementById('sgc-sco-numero-seccion').hidden === false, 30000,
+    'sección del número de SCo visible');
+  m.escribir('sgc-sco-numero', '2026-0000' + String(Math.floor(Math.random() * 9000) + 1000));
+  d.getElementById('sgc-sco-guardar').click();
+  await m.esperar(() => (d.getElementById('sgc-sco-msj').textContent || '')
+    .indexOf('Número de SCo guardado') !== -1, 30000, 'número de SCo guardado');
+  // La recarga automática (expediente.abrir) renueva la versión antes del
+  // avance; sin esta espera el avance iría con la versión vieja → 409.
+  const hitos = d.getElementById('sgc-expediente-auditoria');
+  const previoHito = hitos.children[0];
+  await m.esperar(() => hitos.children[0] !== previoHito, 30000,
+    'el expediente se recargó tras guardar el número de SCo');
+}
+
 async function avanzarEstado(m, proximoTitulo) {
   const d = m.documento;
   d.getElementById('sgc-expediente-avanzar').click();
@@ -126,6 +144,7 @@ module.exports = {
   cambiarSesion,
   irAlExpediente,
   guardarDocumento,
+  cargarNumeroSCo,
   avanzarEstado,
   guardarDocumentoYAvanzar,
   botonAbrirDelTablero,

@@ -33,11 +33,12 @@ require(path.join(RAIZ, 'app', 'js', 'core', 'estados.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.http.js'));
 // Plantillas del circuito (ORDEN-RONDA-08 §2.1): el recorrido compone y guarda
-// el documento de cada fase antes de poder avanzar.
+// el documento de cada fase antes de poder avanzar. Desde la RONDA-26 (pieza 4)
+// la SCo se arma en COMPR.AR: ese estado ya no produce documento y exige el
+// campo `numeroSCo`, que el recorrido carga antes de salir de él.
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
-require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'vista-previa-pliego.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
@@ -145,6 +146,29 @@ async function guardarEntregableDelEstado(repo, expediente, version, idEstado, r
   return guardado.version;
 }
 
+// ORDEN-RONDA-26 pieza 4: un estado con camposRequeridos (SOLICITUD exige
+// `numeroSCo`) se completa por PUT (como lo hace la sección propia de la SCo)
+// antes de poder avanzar. Devuelve la versión que el guardado deja en disco.
+async function cargarCamposDelEstado(repo, expediente, version, idEstado, rol) {
+  const def = definirEstado(idEstado);
+  if (!def || !def.camposRequeridos || def.camposRequeridos.length === 0) {
+    return version;
+  }
+  const copia = JSON.parse(JSON.stringify(expediente));
+  if (typeof copia.campos !== 'object' || copia.campos === null) {
+    copia.campos = {};
+  }
+  for (const campo of def.camposRequeridos) {
+    copia.campos[campo] = campo === 'numeroSCo' ? 'SCo-2026-0001' : 'Valor de prueba';
+  }
+  const guardado = await repo.guardarExpediente(expediente.expedienteId, copia, version, contexto(rol));
+  if (!guardado.ok) {
+    throw new Error('recorrido: no se pudieron cargar los campos de ' + idEstado +
+      ': ' + (guardado.error || 'error desconocido'));
+  }
+  return guardado.version;
+}
+
 async function recorrer(baseUrl) {
   if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
     throw new Error('recorrer() requiere la base del servidor');
@@ -183,6 +207,7 @@ async function recorrer(baseUrl) {
     const paso = plan[i];
     if (paso.accion === 'avanzar') {
       version = await guardarEntregableDelEstado(repo, expediente, version, paso.desde, paso.rol);
+      version = await cargarCamposDelEstado(repo, expediente, version, paso.desde, paso.rol);
     }
     const resultado = await aplicar(repo, expediente, version, paso);
     if (resultado.conflicto) {

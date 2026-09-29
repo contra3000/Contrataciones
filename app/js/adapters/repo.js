@@ -163,6 +163,26 @@
     return SGC.core.utils.idEstado(expediente);
   }
 
+  // Número de SCo (ORDEN-RONDA-26 §P4): el expediente lo guarda en
+  // `campos.numeroSCo` (forma plana) o, si alguna vez se persistió anidado,
+  // en `datos.campos.numeroSCo`. null mientras no se cargó.
+  function numeroSCoDe(expediente) {
+    if (!expediente) {
+      return null;
+    }
+    var fuentes = [
+      expediente.campos && expediente.campos.numeroSCo,
+      expediente.datos && expediente.datos.campos && expediente.datos.campos.numeroSCo
+    ];
+    for (var i = 0; i < fuentes.length; i++) {
+      var v = fuentes[i];
+      if (v !== undefined && v !== null && v !== '') {
+        return v;
+      }
+    }
+    return null;
+  }
+
   function definicionEstado(idEstado) {
     var estados = SGC.core.config.ESTADOS;
     for (var i = 0; i < estados.length; i++) {
@@ -200,6 +220,7 @@
     return {
       id: id,
       titulo: expediente && typeof expediente.titulo === 'string' ? expediente.titulo : '',
+      numeroSCo: numeroSCoDe(expediente),
       estado: estado,
       fase: def ? def.fase : null,
       sector: sectorDeRol(rolEjecutor),
@@ -229,6 +250,7 @@
   api.anioDe = anioDe;
   api.rellenar = rellenar;
   api.entradaIndice = entradaIndice;
+  api.numeroSCoDe = numeroSCoDe;
 
   SGC.adapters.repo = api;
 })(typeof window !== 'undefined' ? window : globalThis);

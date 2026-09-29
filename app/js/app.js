@@ -134,6 +134,7 @@ var estadoConfig = null;
     SGC.views.exportar.seleccionarOperador(operador);
     SGC.views.requerimientoFormulario.seleccionarOperador(operador);
     if (SGC.views.anexoUno) { SGC.views.anexoUno.seleccionarOperador(operador); }
+    if (SGC.views.scoNumero) { SGC.views.scoNumero.seleccionarOperador(operador); }
     if (SGC.views.renglonesEditor) { SGC.views.renglonesEditor.seleccionarOperador(operador); }
     SGC.views.usarBase.fijarOperador(operador);
     SGC.views.sugerencias.fijarOperador(operador);
@@ -278,6 +279,12 @@ var estadoConfig = null;
     // detalle mal montado sobre la raíz escondió la app entera durante ciclos.
     SGC.views.anexoUno.montar(document.getElementById('sgc-anexo1-seccion'));
     SGC.views.anexoUno.fijarRepo(repo);
+
+    // Número de SCo (ORDEN-RONDA-26 pieza 4): carga del número que COMPR.AR
+    // asignó, en SOLICITUD_CONTRATACION. Vista con sección propia (como
+    // anexoUno); la vista de expediente la avisa en cada render.
+    SGC.views.scoNumero.montar(document.getElementById('sgc-sco-numero-seccion'));
+    SGC.views.scoNumero.fijarRepo(repo);
 
     // Corrección de renglones (ORDEN-RONDA-25 §6): editor para quien ejecuta el
     // estado actual mientras el requerimiento no se firmó. Recibe SU PROPIA

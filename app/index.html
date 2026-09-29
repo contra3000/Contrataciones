@@ -510,6 +510,20 @@
         <p id="sgc-anexo1-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
       </section>
 
+      <section class="expediente-seccion" id="sgc-sco-numero-seccion"
+               aria-labelledby="sgc-sco-numero-titulo" hidden>
+        <h3 id="sgc-sco-numero-titulo">Número de SCo</h3>
+        <p class="req-ayuda">La Solicitud de Contratación (SCo) se inicia y se numera en COMPR.AR;
+          acá se carga sólo el número que COMPR.AR asignó. Si dos expedientes llevan el mismo
+          número, abajo se listan el uno al otro.</p>
+        <label for="sgc-sco-numero">Número de SCo
+          <input id="sgc-sco-numero" type="text" maxlength="30" size="30"
+                 aria-label="Número de SCo" placeholder="Ej.: 2026-00001"></label>
+        <button id="sgc-sco-guardar" type="button" class="primario">Guardar número de SCo</button>
+        <p id="sgc-sco-incluye" class="detalle" role="status" hidden></p>
+        <p id="sgc-sco-msj" class="exp-mensaje" role="status" aria-live="polite" hidden></p>
+      </section>
+
       <section class="expediente-seccion" id="sgc-expediente-documento-seccion" aria-labelledby="sgc-expediente-documento-titulo">
         <h3 id="sgc-expediente-documento-titulo">Documento del estado</h3>
         <div class="documento-acciones" aria-label="Acciones del documento">
@@ -588,7 +602,6 @@
   <script src="js/renders/especificacion-tecnica.js"></script>
   <script src="js/renders/requerimiento.js"></script>
   <script src="js/renders/anexo-eett.js"></script>
-  <script src="js/renders/solicitud-contratacion.js"></script>
   <script src="js/renders/vista-previa-pliego.js"></script>
   <script src="js/renders/disposicion-adjudicacion.js"></script>
   <script src="js/renders/orden-compra.js"></script>
@@ -617,6 +630,7 @@
   <script src="js/views/requerimiento-borrador.js"></script>
   <script src="js/views/requerimiento-formulario.js"></script>
   <script src="js/views/anexo-uno.js"></script>
+  <script src="js/views/sco-numero.js"></script>
   <script src="js/views/tablero.js"></script>
   <script src="js/views/exploracion.js"></script>
   <script src="js/views/archivo.js"></script>

@@ -2,12 +2,14 @@
 
 /*
  * plantillas.test.js
- * ORDEN-RONDA-08 §2.1: los cinco estados que producen documento tienen su
+ * ORDEN-RONDA-08 §2.1: los estados que producen documento tienen su
  * entregable registrado en config (id estable) y su plantilla en
  * renders/documento.js; cada plantilla compone su documento con renglones y
  * aclaraciones y lo monta como nodos DOM sin innerHTML (ADR-011); la
  * superficie de inyección queda escapada en el archivo y como texto en la
- * página; fijarTituloImpresion no rompe sin document.head.
+ * página; fijarTituloImpresion no rompe sin document.head. ORDEN-RONDA-26
+ * pieza 4: SOLICITUD_CONTRATACION ya no produce documento (la SCo se arma en
+ * COMPR.AR y acá sólo se carga su número), así que no figura acá.
  */
 
 const { test, before } = require('node:test');
@@ -35,7 +37,6 @@ require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
-require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'vista-previa-pliego.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
@@ -97,9 +98,12 @@ function textoDelContenedor(contenedor) {
   return nodos.join(' ');
 }
 
+// ORDEN-RONDA-08 §2.1: los estados que producen documento tienen su entregable
+// registrado... (ORDEN-RONDA-26 pieza 4: SOLICITUD_CONTRATACION ya no produce
+// documento: la SCo se arma en COMPR.AR y acá sólo se carga su número).
+
 const ESTADOS_CON_DOCUMENTO = [
   'ESPECIFICACIONES_TECNICAS',
-  'SOLICITUD_CONTRATACION',
   'FIRMA_DISPOSICION',
   'GENERACION_ORDEN_COMPRA'
 ];
@@ -165,13 +169,12 @@ test('las cuatro plantillas componen con renglones y aclaraciones y montan DOM s
   assert.equal(obtenerConteoInnerHTML(), 0, 'la app no inyecta HTML');
 });
 
-test('la superficie de inyección queda escapada en las cuatro plantillas nuevas', () => {
+test('la superficie de inyección queda escapada en las plantillas nuevas', () => {
   const renglones = [
     { codigo: '2.1.1-439.101', cantidad: 1, unidad: 'UN',
       aclaracion: '<img src=x onerror="window.pwned()">' }
   ];
   const nuevas = [
-    'SOLICITUD_CONTRATACION',
     'FIRMA_DISPOSICION',
     'GENERACION_ORDEN_COMPRA'
   ];

@@ -28,15 +28,17 @@ function expedienteEn(idEstado) {
   };
 }
 
-test('1. sin requisitos todo es válido; con entregablesObligatorios los exige (ORDEN-RONDA-08 §2.1)', () => {
+test('1. sin requisitos todo es válido; con campos y entregables los exige (ORDEN-RONDA-08 §2.1, RONDA-26 pieza 4)', () => {
   for (const estado of config.ESTADOS) {
     const r = validacion.validarParaAvanzar(expedienteEn(estado.id));
+    const campos = estado.camposRequeridos || [];
     const obligatorios = estado.entregablesObligatorios || [];
-    if (obligatorios.length === 0) {
+    if (campos.length === 0 && obligatorios.length === 0) {
       assert.deepEqual(r, { valido: true, faltantes: { campos: [], entregables: [] } },
         'en ' + estado.id);
     } else {
-      assert.equal(r.valido, false, 'en ' + estado.id + ' sin su documento no se avanza');
+      assert.equal(r.valido, false, 'en ' + estado.id + ' sin sus requisitos no se avanza');
+      assert.deepEqual(r.faltantes.campos, campos, 'en ' + estado.id);
       assert.deepEqual(r.faltantes.entregables, obligatorios, 'en ' + estado.id);
     }
   }

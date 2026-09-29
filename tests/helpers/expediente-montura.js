@@ -29,7 +29,6 @@ require(path.join(RAIZ, 'app', 'js', 'adapters', 'repo.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
-require(path.join(RAIZ, 'app', 'js', 'renders', 'solicitud-contratacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'vista-previa-pliego.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
@@ -156,6 +155,14 @@ function expedienteEnEstado(idEstado, numero) {
   // ORDEN-RONDA-08 §2.1: un expediente que está en un estado productor ya
   // generó su documento; sin él, el motor no lo deja avanzar.
   expediente.entregables = (def && def.entregablesObligatorios || []).slice();
+  // ORDEN-RONDA-26 pieza 4: un estado con campos requeridos (SOLICITUD_
+  // CONTRATACION exige `numeroSCo`) ya los completó al llegar ahí.
+  if (def && def.camposRequeridos && def.camposRequeridos.length > 0) {
+    expediente.campos = {};
+    for (const campo of def.camposRequeridos) {
+      expediente.campos[campo] = 'Valor de prueba';
+    }
+  }
   return expediente;
 }
 

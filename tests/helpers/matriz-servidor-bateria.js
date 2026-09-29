@@ -86,6 +86,28 @@ function correrMatriz(estados) {
           versionFinal = g.body.version;
         }
 
+        // ORDEN-RONDA-26 pieza 4: un estado con campos requeridos (SOLICITUD_
+        // CONTRATACION exige `numeroSCo`) debe tenerlos completos para avanzar.
+        const requeridos = estadoDef.camposRequeridos || [];
+        if (requeridos.length > 0) {
+          const leido = await pedir(base, 'GET', '/api/expedientes/' + id);
+          assert.equal(leido.status, 200,
+            estadoDef.id + ' se lee para completar sus campos');
+          const exp = leido.body.expediente;
+          exp.campos = exp.campos || {};
+          for (const campo of requeridos) {
+            exp.campos[campo] = 'Campo de prueba';
+          }
+          const c = await pedir(base, 'PUT', '/api/expedientes/' + id, {
+            expediente: exp,
+            versionEsperada: versionFinal,
+            contexto: contexto(estadoDef.rolEjecutor)
+          });
+          assert.equal(c.status, 200,
+            estadoDef.id + ' completa sus campos requeridos');
+          versionFinal = c.body.version;
+        }
+
         const ok = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {
           versionEsperada: versionFinal,
           destino,

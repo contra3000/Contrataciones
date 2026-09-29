@@ -125,16 +125,36 @@ async function crearEnEstado(base, datosDir, idEstado, assert) {
   for (const paso of pasos) {
     // ORDEN-RONDA-08 §2.1: el estado que se abandona ya produjo su documento;
     // se guarda antes de avanzar usando la versión que el guardado devuelve.
-    const entregable = config.entregableDelEstado(paso.desde);
-    if (entregable) {
+    const entrega = config.entregableDelEstado(paso.desde);
+    if (entrega) {
       const g = await pedir(base, 'POST', '/api/expedientes/' + id + '/entregables', {
-        id: entregable.id,
-        nombre: entregable.archivo,
-        contenido: '<p>Documento de ' + entregable.id + '</p>',
+        id: entrega.id,
+        nombre: entrega.archivo,
+        contenido: '<p>Documento de ' + entrega.id + '</p>',
         contexto: contexto(paso.rol)
       });
-      assert.equal(g.status, 201, 'se guarda el entregable ' + entregable.id);
+      assert.equal(g.status, 201, 'se guarda el entregable ' + entrega.id);
       version = g.body.version;
+    }
+    // ORDEN-RONDA-26 pieza 4: un estado con campos requeridos (SOLICITUD_
+    // CONTRATACION exige `numeroSCo`) ya los completó antes de abandonarlo.
+    const defPaso = config.ESTADOS.find((e) => e.id === paso.desde);
+    const requeridos = (defPaso && defPaso.camposRequeridos) || [];
+    if (requeridos.length > 0) {
+      const leido = await pedir(base, 'GET', '/api/expedientes/' + id);
+      assert.equal(leido.status, 200, 'se lee el expediente en ' + paso.desde);
+      const exp = leido.body.expediente;
+      exp.campos = exp.campos || {};
+      for (const campo of requeridos) {
+        exp.campos[campo] = 'Campo de prueba';
+      }
+      const c = await pedir(base, 'PUT', '/api/expedientes/' + id, {
+        expediente: exp,
+        versionEsperada: version,
+        contexto: contexto(paso.rol)
+      });
+      assert.equal(c.status, 200, 'se completan los campos de ' + paso.desde);
+      version = c.body.version;
     }
     const r = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {
       versionEsperada: version,

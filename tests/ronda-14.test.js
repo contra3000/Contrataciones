@@ -107,6 +107,20 @@ async function guardarEntregable(base, id, version, idEntregable, cookie) {
   return r.body.version;
 }
 
+// ORDEN-RONDA-26 pieza 4: el número de SCo se carga en `campos.numeroSCo`
+// (PUT del expediente; el servidor inyecta el contexto de la sesión).
+async function cargarNumeroSCo(base, id, version, numero, cookie) {
+  const leido = await pedirCon(base, 'GET', '/api/expedientes/' + id, null, cookie);
+  assert.equal(leido.status, 200, 'se lee el expediente para cargar la SCo');
+  const expediente = leido.body.expediente;
+  expediente.campos = expediente.campos || {};
+  expediente.campos.numeroSCo = numero;
+  const r = await pedirCon(base, 'PUT', '/api/expedientes/' + id,
+    { expediente, versionEsperada: version }, cookie);
+  assert.equal(r.status, 200, 'carga del número de SCo');
+  return r.body.version;
+}
+
 // El avanzar NO declara contexto: ese rol lo fabrica la sesión en el servidor.
 async function avanzarAuth(base, id, version, destino, cookie) {
   const r = await pedirCon(base, 'POST', '/api/expedientes/' + id + '/avanzar',
@@ -210,7 +224,8 @@ test('4.3-4.5 jerarquía de roles y rol efectivo en la traza', async () => {
 
     // La supervisora de abastecimiento ejecuta el paso de su supervisado
     // (SOLICITUD -> ANALISIS es de abastecimiento): permitido y rol efectivo.
-    version = await guardarEntregable(e.base, id, version, 'solicitud-contratacion', cookie[ABAST_SUP.email]);
+    // El paso exige el número de SCo (ORDEN-RONDA-26 pieza 4): lo carga ella.
+    version = await cargarNumeroSCo(e.base, id, version, '2026-00001', cookie[ABAST_SUP.email]);
     paso = await avanzarAuth(e.base, id, version, 'ANALISIS_SCo', cookie[ABAST_SUP.email]);
     assert.equal(paso.status, 200, 'abastecimiento_supervisor avanza el paso de abastecimiento');
     version = paso.version;
