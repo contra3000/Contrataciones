@@ -268,6 +268,6 @@ para poder avanzar de SOLICITUD ahora cargan `campos.numeroSCo`:
 ---
 
 ```
-git -C ..\auditoria\ciclo-26 log --oneline -1   →  14e33ed Ronda 26 · un servidor por carpeta
-git log --oneline -1 (en dev\)                  →  14e33ed Ronda 26 · un servidor por carpeta
+git -C ..\auditoria\ciclo-26 log --oneline -1   →  75737cf Ronda 26 · informe
+git log --oneline -1 (en dev\)                  →  75737cf Ronda 26 · informe
 ```
