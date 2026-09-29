@@ -15,10 +15,16 @@ const PREFIJO_TEMP = '.tmp-respaldo-';
 const LOCK = '.respaldo.lock';
 
 // Copia recursiva de una carpeta (los datos del SGC son carpetas y JSON).
+// ORDEN-RONDA-26 pieza 6: el candado del servidor (`candado.json`) no viaja en
+// el respaldo; es un archivo de una instancia viva, y un candado restaurado
+// acusaría a una máquina que quizás ya no existe.
 function copiarCarpeta(origen, destino) {
   fs.mkdirSync(destino, { recursive: true });
   const entradas = fs.readdirSync(origen, { withFileTypes: true });
   for (const entrada of entradas) {
+    if (entrada.isFile() && entrada.name === 'candado.json') {
+      continue;
+    }
     const desde = path.join(origen, entrada.name);
     const hasta = path.join(destino, entrada.name);
     if (entrada.isDirectory()) {

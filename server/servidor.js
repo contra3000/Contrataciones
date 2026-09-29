@@ -388,19 +388,29 @@ function crearServidor(datosDir, configuracion) {
   return servidor;
 }
 
-const { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto, anunciarAdministrador } = require('./arranque.js');
+const { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto, tomarCandado, vigilarSalida, anunciarAdministrador } = require('./arranque.js');
 
 async function main() {
   const opciones = leerArgumentos(process.argv.slice(2));
+  let candado = null;
   try {
     cargarConfig(opciones);
     verificarArranque(opciones, NODE_MIN_VERSION, ayudantes);
+    // ORDEN-RONDA-26 pieza 6: antes de abrir el puerto se toma el candado de
+    // la carpeta de datos. Si otro servidor está vivo sobre la misma carpeta,
+    // no se arranca y se nombra su máquina; un candado abandonado se reemplaza
+    // y se avisa. Si algo falla después de tomarlo, se deja la carpeta limpia.
+    candado = tomarCandado(opciones.datos);
     await verificarPuerto(opciones.puerto);
   } catch (e) {
+    if (candado) {
+      candado.liberar();
+    }
     console.error('servidor: no se pudo arrancar.');
     console.error('servidor: ' + e.constructor.name + ': ' + e.message);
     process.exit(1);
   }
+  vigilarSalida();
 
   const servidor = crearServidor(opciones.datos, {
     declarado: opciones.declarado,

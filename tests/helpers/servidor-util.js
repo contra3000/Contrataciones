@@ -124,16 +124,40 @@ async function arrancarServidor(datosDir, puerto, opciones) {
     try { proc.kill('SIGKILL'); } catch (ign) { /* ya terminó */ }
     throw new Error('el servidor no imprimió un puerto válido: "' + salida + '"');
   }
-  return { proc, puerto: puertoReal, salida };
+  return { proc, puerto: puertoReal, salida, datosDir };
+}
+
+// ORDEN-RONDA-26 pieza 6: un cierre normal deja la carpeta de datos sin
+// candado. En un sistema operativo donde el proceso puede reaccionar a SIGTERM
+// (los despliegues reales) lo borra el propio servidor; en Windows la señal
+// termina el proceso sin correr código, así que quien detiene el servidor
+// borra el candado si el proceso que terminó era su dueño.
+function limpiarCandado(ctx) {
+  if (!ctx || !ctx.datosDir || !ctx.proc || !ctx.proc.pid) {
+    return;
+  }
+  try {
+    const ruta = path.join(ctx.datosDir, 'candado.json');
+    const candado = JSON.parse(fs.readFileSync(ruta, 'utf8'));
+    if (candado && candado.pid === ctx.proc.pid) {
+      fs.unlinkSync(ruta);
+    }
+  } catch (e) {
+    // Sin candado o de otro proceso: no se toca nada.
+  }
 }
 
 function detenerServidor(ctx) {
   return new Promise((resolve) => {
+    function cerrar() {
+      limpiarCandado(ctx);
+      resolve();
+    }
     if (!ctx.proc) {
       return resolve();
     }
     if (ctx.proc.exitCode !== null || ctx.proc.signalCode !== null) {
-      return resolve();
+      return cerrar();
     }
     const terminador = setTimeout(() => {
       try {
@@ -141,17 +165,17 @@ function detenerServidor(ctx) {
       } catch (e) {
         // ya terminó
       }
-      resolve();
+      cerrar();
     }, 2000);
     ctx.proc.on('exit', () => {
       clearTimeout(terminador);
-      resolve();
+      cerrar();
     });
     try {
       ctx.proc.kill();
     } catch (e) {
       clearTimeout(terminador);
-      resolve();
+      cerrar();
     }
   });
 }

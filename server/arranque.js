@@ -5,6 +5,7 @@ const path = require('node:path');
 const net = require('node:net');
 
 const padronInicial = require('./padron-inicial.js');
+const candado = require('./candado.js');
 
 const RAIZ = path.resolve(__dirname, '..');
 const DIR_APP = path.join(RAIZ, 'app');
@@ -160,4 +161,24 @@ function anunciarAdministrador(bootstrap) {
   console.log('SGC-SERVIDOR-ADMINISTRADOR-TEXTO La clave se muestra una sola vez. Si no la anotás, se repone desde la aplicación con la cuenta del administrador.');
 }
 
-module.exports = { leerArgumentos, cargarConfig, verificarArranque, verificarPuerto, anunciarAdministrador };
+// ORDEN-RONDA-26 pieza 6: un solo servidor por carpeta de datos. El candado
+// vive en server/candado.js (máquina, proceso y hora; renovación cada 30 s);
+// esta fachada lo deja a disposición de servidor.js con el resto de la
+// verificación de arranque.
+function tomarCandado(datosDir) {
+  return candado.tomar(datosDir);
+}
+
+function vigilarSalida() {
+  candado.vigilarSalida();
+}
+
+module.exports = {
+  leerArgumentos,
+  cargarConfig,
+  verificarArranque,
+  verificarPuerto,
+  tomarCandado,
+  vigilarSalida,
+  anunciarAdministrador
+};
