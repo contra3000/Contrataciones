@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-09-29** · ciclo 25 evaluado (6 de 6) · ronda 26 lista · H26 agrupamiento definido · `TABLERO_AVANCE.html` retirado: el estado vive sólo acá · **la tabla de §0 es la única fuente del estado del proyecto**
+Última actualización: **2026-09-29** · ciclo 26 evaluado (6 de 6) · ronda 27 lista (SCo en bloque) · ADR-043 aceptado · la tabla §0 es la única fuente del estado
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -35,9 +35,9 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H21 | Padrón desde la aplicación | ✅ **Terminado** — rondas 17 y 18. La entrada no se encontraba; arreglado el 23/09 (botón "Usuarios", barra fija) | H18 |
 | H22 | El código dice lo que hace | ✅ **Terminado** — rondas 18 y 19 | — |
 | H23 | El circuito de la persona llega hasta el final | ✅ **Terminado** — ronda 21, 9 de 9 caminos | H22 |
-| H24 | Lo que apareció al usarlo de verdad | 🟡 **Ronda 25: 6 de 6** (ver documentos, acciones arriba, sesión viva, impresión limpia, descripción del ítem R58, corregir renglones + guardia PUT de renglones R53-parcial). **Ronda 26**: datos sin guiones, Avanzar explica qué falta, tope al `python`, **SCo = número de COMPR.AR y ANEXO I firmable** (decisión del Jefe 29/09), dos valores por renglón obligatorios, un servidor por carpeta (R57) | H9 |
+| H24 | Lo que apareció al usarlo de verdad | ✅ **Cerrado en lo que frenaba al Jefe** (rondas 22-26): creación por rol, 20 MB, ayudas, botones y usuarios visibles, descripción del ítem, corregir renglones, sesión viva, impresión, Avanzar explica, dos valores obligatorios, tope al `python`, un servidor por carpeta. Lo que queda (matriz de permisos, topes B2, bitácora) sigue en H25 | H9 |
 | H25 | **Controles automáticos y entorno de prueba** | ⬜ **Nuevo, 2026-09-23** — aprobado por el Jefe: entorno de prueba con siete roles, matriz de permisos como test, `estado-ciclo` | H24 |
-| H26 | **Del requerimiento al trámite: SCo y proceso** | ⬜ **Nuevo, 2026-09-29** — definición del Jefe: una SCo junta requerimientos y desde ahí corren juntos (ANEXO I por SCo, renglones iguales sumados, devolución en bloque); Contrataciones junta SCo en un proceso en Confección de proyectos. `ordenes/ADR-PROPUESTA-AGRUPAMIENTO.md`. Rondas 26 (número), 27 (SCo), 28 (proceso) | H24 |
+| H26 | **Del requerimiento al trámite: SCo y proceso** | 🟡 **Ronda 26 hecha**: número de SCo (COMPR.AR) requerido y hermanos visibles. **Ronda 27**: registro de SCo, movimiento en bloque todo-o-nada, devolución en bloque, ANEXO I por SCo con renglones sumados y desglose, tablero por SCo. **Ronda 28**: proceso (nº de procedimiento COMPR.AR) en Confección de proyectos y pliego consolidado. ADR-043 aceptado 29/09 | H24 |
 | H10 | **Puesta en uso, por hitos** | 🟡 Paquete, servicio y respaldo hechos (ciclo 15). **Etapas definidas por el Jefe el 2026-09-23**, ver H10 | H9 |
 
 > **Cómo leer este plan.** Esta tabla es **la única fuente del estado**. Las casillas `[ ]` de cada sección son el plan original: la mayoría no se marcó al terminar y **no se mantienen**. Si una casilla contradice la tabla, vale la tabla.

@@ -1,6 +1,6 @@
 # ADR-043 (propuesta) — Del requerimiento al trámite: agrupamiento por SCo y por proceso
 
-SGC · 2026-09-29 · revisor · **Estado: propuesta.** Se asienta en `BITACORA_DECISIONES.md` cuando se implemente (ronda 27).
+SGC · 2026-09-29 · revisor · **Estado: aceptada por el Jefe el 2026-09-29.** Se asienta en `BITACORA_DECISIONES.md` cuando se implemente (ronda 27).
 
 ---
 
@@ -65,10 +65,10 @@ Y tres reglas que dio el mismo día:
 - **Todo o nada.** Un grupo a medio avanzar deja expedientes en estados distintos para el mismo trámite, y eso es peor que no avanzar.
 - **El registro del grupo guarda lo que es del grupo**: el ANEXO I y el pliego. Así no hay que copiarlo en cada expediente y que después diverja.
 
-## A confirmar por el Jefe
+## Confirmado por el Jefe (2026-09-29)
 
-1. **¿Qué identifica al proceso?** Propuesta: el **número de procedimiento de COMPR.AR**, el mismo que va al pliego como `nro_procedimiento`.
-2. **¿En el pliego también se suman los renglones iguales de distintas SCo?** Propuesta: sí, con la misma regla del ANEXO I.
+1. **Al proceso lo identifica el número de procedimiento de COMPR.AR**, el mismo que va al pliego como `nro_procedimiento`.
+2. **En el pliego también se suman los renglones iguales que vienen de SCo distintas**, con la misma regla del ANEXO I: un renglón con la cantidad total y el desglose por unidad.
 
 ## Rondas
 
