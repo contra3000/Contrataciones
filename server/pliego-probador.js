@@ -26,6 +26,15 @@ const GENERADOR_DEFAULT = path.join(
   RAIZ, '..', 'EjemplosProcesoActual', 'DocUOC', 'Generador de Pliegos'
 );
 
+// ORDEN-RONDA-26 pieza 3: nadie espera para siempre (R57). Si el generador se
+// cuelga, la prueba se corta y se matan los procesos abiertos en vez de dejar
+// al pedido colgado o al python huérfano.
+const TOPE_PLIEGO_MS = 60000;
+
+// Procesos del generador abiertos en este momento (para saber que la prueba no
+// deja nada vivo; lo usa la suite de la pieza 3).
+const procesos = new Set();
+
 function rutaGenerador() {
   return process.env.SGC_GENERADOR_PLIEGOS || GENERADOR_DEFAULT;
 }
@@ -108,21 +117,44 @@ function emitirYaml(datos) {
   return SGC.descargas.pliegoYaml.emitir(datos);
 }
 
-function ejecutarPython(script, yamlPath, tempDir) {
+// ORDEN-RONDA-26 pieza 3: tope duro. Si el generador no contesta dentro de
+// `topeMs`, la prueba se corta, se mata el python y la respuesta (en
+// castellano) dice que se canceló. El proceso queda fuera de `procesos`
+// (procesosActivos) en cualquier camino: término normal, error o tope.
+function ejecutarPython(script, yamlPath, tempDir, topeMs) {
+  const topems = typeof topeMs === 'number' && topeMs > 0 ? topeMs : TOPE_PLIEGO_MS;
   return new Promise((resolver, rechazar) => {
     const args = ['"' + script + '"', '"' + yamlPath + '"'];
     const cmd = 'python ' + args.join(' ');
     const hijo = spawn('python', [script, yamlPath], { cwd: tempDir });
+    procesos.add(hijo);
     let salida = '';
+    let zanjado = false;
+    let temporizador = null;
+    function zanjar(fn, valor) {
+      if (zanjado) { return; }
+      zanjado = true;
+      if (temporizador) { clearTimeout(temporizador); }
+      procesos.delete(hijo);
+      fn(valor);
+    }
+    temporizador = setTimeout(() => {
+      const e = new Error('el generador de pliegos tardó demasiado y se canceló la prueba (tope de ' + topems + ' ms)');
+      e.mensajeSeguro = true;
+      try {
+        if (!hijo.killed) { hijo.kill(); }
+      } catch (e2) { /* el proceso ya terminó */ }
+      zanjar(rechazar, e);
+    }, topems);
     hijo.stdout.on('data', (d) => { salida += d.toString(); });
     hijo.stderr.on('data', (d) => { salida += d.toString(); });
     hijo.on('close', (codigo) => {
       if (codigo === 0) {
-        resolver(salida);
+        zanjar(resolver, salida);
       } else {
         const e = new Error('el generador de pliego falló (código ' + codigo + '): ' + salida.trim().slice(0, 800));
         e.mensajeSeguro = true;
-        rechazar(e);
+        zanjar(rechazar, e);
       }
     });
     // Nada del error de la máquina llega al usuario: se detecta el caso
@@ -131,11 +163,11 @@ function ejecutarPython(script, yamlPath, tempDir) {
       if (e && e.code === 'ENOENT') {
         const falta = new Error('no se encontró "python" en el sistema: instalelo o póngalo en el PATH para poder probar el pliego');
         falta.mensajeSeguro = true;
-        return rechazar(falta);
+        return zanjar(rechazar, falta);
       }
       const otror = new Error('no se pudo ejecutar el generador (' + (e && e.constructor ? e.constructor.name : 'Error') + ')');
       otror.mensajeSeguro = true;
-      rechazar(otror);
+      zanjar(rechazar, otror);
     });
   });
 }
@@ -155,7 +187,10 @@ function copiarRecursivo(origen, destino) {
 }
 
 // Genera el pliego de prueba y devuelve { ok, salida } o lanza.
-function generarPliegoPrueba(tipoContrato) {
+// `opciones.topeMs` acorta el tope (los tests lo usan para no esperar el de
+// producción); sin él rige TOPE_PLIEGO_MS.
+function generarPliegoPrueba(tipoContrato, opciones) {
+  const topeMs = opciones && typeof opciones.topeMs === 'number' ? opciones.topeMs : undefined;
   const generador = rutaGenerador();
   if (!fs.existsSync(path.join(generador, 'scripts', 'generar_pliego.py'))) {
     const e = new Error('no se encontró el generador de pliegos en: ' + generador);
@@ -179,7 +214,7 @@ function generarPliegoPrueba(tipoContrato) {
     const yamlPath = path.join(datosDir, 'prueba.yaml');
     fs.writeFileSync(yamlPath, yaml, 'utf8');
     const script = path.join(scripts, 'generar_pliego.py');
-    return ejecutarPython(script, yamlPath, temp).then((salida) => {
+    return ejecutarPython(script, yamlPath, temp, topeMs).then((salida) => {
       fs.rmSync(temp, { recursive: true, force: true });
       return { ok: true, salida, yaml };
     });
@@ -230,9 +265,11 @@ function probar(req, res, textoCuerpo, id, entorno) {
 }
 
 module.exports = {
+  TOPE_PLIEGO_MS,
   construirDatosEjemplo,
   emitirYaml,
   generarPliegoPrueba,
   probar,
+  procesosActivos: () => procesos.size,
   rutaGenerador
 };
