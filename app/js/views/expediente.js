@@ -227,6 +227,23 @@
     }
   }
 
+  // ORDEN-RONDA-26 pieza 2: a partir de la MISMA validación que usa el
+  // servidor (validarParaAvanzar), dice qué falta y cómo resolverlo, con el
+  // título del entregable o del campo, nunca el id técnico. Frases ejemplo:
+  // "Falta: guardar el ANEXO 1 (botón 'Guardar documento generado', más abajo)".
+  function textoRequisitosFaltantes(revision) {
+    var items = SGC.core.validacion.itemsFaltantes(revision);
+    var partes = [];
+    for (var i = 0; i < items.length; i++) {
+      var texto = items[i];
+      if (texto.indexOf('guardar ') === 0) {
+        texto += " (botón 'Guardar documento generado', más abajo)";
+      }
+      partes.push('Falta: ' + texto);
+    }
+    return partes.join(' ');
+  }
+
   function render() {
     var expediente = estado.expediente;
     if (!expediente) {
@@ -281,9 +298,20 @@
 
     var avance = rolPara(expediente, 'puedeAvanzar');
     var devolucion = rolPara(expediente, 'puedeDevolver');
-    estado.dom.avanzar.disabled = archivado || !avance.permiso.permitido;
+    // ORDEN-RONDA-26 pieza 2: si el rol habilita avanzar, la vista llama a la
+    // misma validación que usa el servidor y lo dice ANTES de apretar. Si falta
+    // algo, el botón se deshabilita y el texto explica qué falta: el título del
+    // entregable o del campo, nunca el id.
+    var faltaRequisito = false;
+    if (avance.permiso.permitido && !archivado) {
+      var revision = SGC.core.validacion.validarParaAvanzar(expediente);
+      faltaRequisito = !revision.valido;
+      estado.dom.avanzarPorque.textContent = faltaRequisito ? textoRequisitosFaltantes(revision) : '';
+    } else {
+      estado.dom.avanzarPorque.textContent = archivado ? 'El expediente está archivado.' : (avance.permiso.permitido ? '' : avance.permiso.motivo);
+    }
+    estado.dom.avanzar.disabled = archivado || !avance.permiso.permitido || faltaRequisito;
     estado.dom.devolver.disabled = archivado || !devolucion.permiso.permitido;
-    estado.dom.avanzarPorque.textContent = archivado ? 'El expediente está archivado.' : (avance.permiso.permitido ? '' : avance.permiso.motivo);
     estado.dom.devolverPorque.textContent = archivado ? 'El expediente está archivado.' : (devolucion.permiso.permitido ? '' : devolucion.permiso.motivo);
 
     // Las acciones de exportación (exportar.js) adaptan documento, nombre e id

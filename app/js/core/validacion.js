@@ -101,6 +101,48 @@
     };
   }
 
+  // ORDEN-RONDA-26 pieza 2: los requisitos que faltan, en palabras, con el
+  // TÍTULO del entregable (ENTREGABLES[].titulo) o del campo (TITULOS_CAMPOS),
+  // nunca el id técnico. Es el mismo texto que usa la vista (para deshabilitar
+  // "Avanzar" y decir qué falta) y el servidor (mensaje de la transición).
+  function tituloCampo(nombre) {
+    var mapa = SGC.core.config.TITULOS_CAMPOS || {};
+    return mapa[nombre] || nombre;
+  }
+
+  function tituloEntregable(id) {
+    var lista = SGC.core.config.ENTREGABLES || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].id === id) {
+        return lista[i].titulo;
+      }
+    }
+    return id;
+  }
+
+  // Arreglo de frases (una por falto), sin el prefijo "Falta: " (lo pone cada
+  // superficie). Para entregables: "guardar <título>". Para renglones (pieza
+  // 5): "2 valores de referencia en <renglón>".
+  function itemsFaltantes(revision) {
+    var items = [];
+    if (!revision || !revision.faltantes) {
+      return items;
+    }
+    var campos = revision.faltantes.campos || [];
+    var entregables = revision.faltantes.entregables || [];
+    var renglones = revision.faltantes.renglones || [];
+    for (var i = 0; i < campos.length; i++) {
+      items.push(tituloCampo(campos[i]));
+    }
+    for (var j = 0; j < entregables.length; j++) {
+      items.push('guardar ' + tituloEntregable(entregables[j]));
+    }
+    for (var k = 0; k < renglones.length; k++) {
+      items.push('2 valores de referencia en ' + String(renglones[k]));
+    }
+    return items;
+  }
+
   function validarRenglon(renglon) {
     var errores = [];
     if (!renglon || typeof renglon !== 'object') {
@@ -250,6 +292,7 @@
 
   SGC.core.validacion = {
     validarParaAvanzar: validarParaAvanzar,
+    itemsFaltantes: itemsFaltantes,
     validarRenglon: validarRenglon,
     validarIdentificacion: validarIdentificacion,
     validarFundamentacion: validarFundamentacion,

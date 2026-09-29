@@ -286,6 +286,16 @@
   var MAX_JUSTIFICACION = 20000;
 
   // ---------------------------------------------------------------------------
+  // Títulos legibles de los campos que un estado exige en `camposRequeridos`
+  // (ORDEN-RONDA-26 pieza 2). La vista y el servidor los usan para decir qué
+  // falta, nunca el id técnico. Los entregables no entran acá: usan
+  // `ENTREGABLES[].titulo`. La definición ÚNICA vive en config.js.
+  // ---------------------------------------------------------------------------
+  var TITULOS_CAMPOS = {
+    numeroSCo: 'número de SCo'
+  };
+
+  // ---------------------------------------------------------------------------
   // Entregables del circuito (ORDEN-RONDA-08 §2.1). Cada documento que una fase
   // produce queda registrado con un id estable: el mismo id es el que
   // `validacion.validarParaAvanzar` exige en `entregablesObligatorios`, el que
@@ -387,6 +397,7 @@
     ROLES: ROLES,
     ESTADOS: ESTADOS,
     ENTREGABLES: ENTREGABLES,
+    TITULOS_CAMPOS: TITULOS_CAMPOS,
     MOTIVOS_DEVOLUCION: MOTIVOS_DEVOLUCION,
     FASES: FASES,
     ESTADO_INICIAL: ESTADO_INICIAL,

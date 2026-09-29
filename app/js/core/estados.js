@@ -186,17 +186,12 @@
     }
     var revision = validacion.validarParaAvanzar(expediente);
     if (!revision.valido) {
-      var detalle = [];
-      if (revision.faltantes.campos.length > 0) {
-        detalle.push('campos: ' + revision.faltantes.campos.join(', '));
-      }
-      if (revision.faltantes.entregables.length > 0) {
-        detalle.push('entregables: ' + revision.faltantes.entregables.join(', '));
-      }
+      // ORDEN-RONDA-26 pieza 2: el mensaje usa los TÍTULOS (nunca el id
+      // técnico), la misma lista legible que la vista muestra antes de apretar.
       return {
         ok: false,
         expediente: null,
-        error: 'Faltan requisitos para avanzar (' + detalle.join('; ') + ')'
+        error: 'Faltan requisitos para avanzar: ' + validacion.itemsFaltantes(revision).join('; ')
       };
     }
     var estadoDestino = obtener(idDestino);
