@@ -178,12 +178,16 @@ test('Fast-Track rechaza códigos inexistentes y aclaraciones largas; el <script
     const d = m.documento;
 
     // El Fast-Track se usa desde su lugar real: el campo de la identificación.
+    // La espera es de 60 s y no de 30: para mirar los códigos tiene que cargar y
+    // recorrer el catálogo de verdad, que son 40 MB, y con la suite completa
+    // corriendo en paralelo los 30 s originales quedaban al borde (este test dio
+    // falso rojo dos veces). Un tope corto que miente no es un tope.
     async function importarArchivo(objeto) {
       const entrada = d.getElementById('sgc-archivo-modelo');
       entrada.files = [{ contenido: JSON.stringify(objeto) }];
       entrada.emit('change');
       await m.esperar(() => d.getElementById('sgc-fasttrack-msj').hidden === false,
-        30000, 'el Fast-Track respondió');
+        60000, 'el Fast-Track respondió');
       return d.getElementById('sgc-fasttrack-msj').textContent;
     }
 
