@@ -162,11 +162,20 @@ function crearManejadoresExpedientes(entorno) {
       return { ok: true };
     }
     const anexo1 = sco.anexo1DeSCo(datosDir, registro);
-    if (anexo1.anexo1 === null) {
+    // Lo que vale es el ANEXO I **de la SCo**, o sea el que está en el REGISTRO.
+    // Un `anexo1.*` propio de un expediente es sólo el punto de partida que la
+    // pantalla pre-carga: si alcanzara para avanzar, la SCo saldría de
+    // ANALISIS_SCo sin que nadie guardara nunca el documento de la SCo, que es
+    // justo lo firmable. La pantalla avisa "todavía no tiene ANEXO I propio"
+    // (views/anexo-uno.js); acá se hace que sea verdad.
+    if (anexo1.anexo1 === null || anexo1.origen !== 'sco') {
       const ids = (registro.expedientes || []).join(', ');
+      const haciaAdelante = anexo1.origen === 'migracion'
+        ? ' Está precargado desde el ' + anexo1.puntoDePartida + ': hay que guardarlo ' +
+          'desde cualquiera de sus expedientes (' + ids + ') para que sea el de la SCo.'
+        : ' Se edita desde cualquiera de sus expedientes (' + ids + ').';
       return { ok: false, status: 409, error: 'no se puede avanzar la SCo ' + numero +
-        ' desde ' + estadoOrigen + ': falta el ANEXO I de la SCo. Se edita desde ' +
-        'cualquiera de sus expedientes (' + ids + ').',
+        ' desde ' + estadoOrigen + ': falta el ANEXO I de la SCo.' + haciaAdelante,
         sco: { numeroSCo: numero, faltaAnexo1: true } };
     }
     return { ok: true };

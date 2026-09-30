@@ -200,6 +200,38 @@ test('RONDA-27 pieza 5 · sin ANEXO I de la SCo no se sale de ANALISIS_SCo, y el
   }
 });
 
+test('RONDA-27 pieza 5 · el ANEXO I heredado de un expediente no alcanza: hay que guardarlo en la SCo', async () => {
+  // El caso que aparece con los expedientes que ya traían `anexo1.*` de antes de
+  // esta ronda: hay contenido, la pantalla lo muestra como punto de partida, y
+  // sin embargo el ANEXO I **de la SCo** todavía no existe.
+  const solo = await miembro(ENTORNO.base, ENTORNO.datosDir, '18/2026', [COMPARTIDO]);
+  const conAnexo1 = await poner(ENTORNO.base, solo.id, solo.version, (exp) => {
+    exp.anexo1 = { objeto: 'Análisis de la oficina que ya lo tenía' };
+  });
+  assert.equal(conAnexo1.status, 200, 'el expediente guarda su ANEXO I propio');
+
+  await avanzar(ENTORNO.base, solo.id, ANALISIS, 'abastecimiento');
+  const bloqueado = await avanzar(ENTORNO.base, solo.id, 'AUTORIZACION_SCo', 'abastecimiento');
+  assert.equal(bloqueado.status, 409,
+    'con el ANEXO I heredado tampoco se avanza: lo que vale es el de la SCo');
+  assert.match(bloqueado.body.error, /falta el ANEXO I de la SCo/, 'el mensaje dice qué falta');
+  assert.match(bloqueado.body.error, /precargado desde el/,
+    'y aclara que lo que hay está precargado desde el expediente que lo tenía');
+  assert.ok(bloqueado.body.error.indexOf(solo.id) !== -1,
+    'y dice desde cuál se guarda, nombrándolo');
+  assert.equal((await leer(ENTORNO.base, solo.id)).expediente.estado.id, ANALISIS,
+    'el expediente no se movió de lugar');
+
+  // Guardado en el registro de la SCo, ahora sí sale.
+  const s = await leerSco(ENTORNO.base, '18/2026');
+  assert.equal(s.body.anexo1Origen, 'migracion', 'lo que hay sigue siendo punto de partida');
+  const g = await guardarAnexo1(ENTORNO.base, '18/2026',
+    { objeto: 'Análisis de la SCo' }, s.body.registro.version);
+  assert.equal(g.status, 200, 'guardado el ANEXO I de la SCo: ' + JSON.stringify(g.body));
+  const r = await avanzar(ENTORNO.base, solo.id, 'AUTORIZACION_SCo', 'abastecimiento');
+  assert.equal(r.status, 200, 'con el de la SCo guardado, avanza: ' + JSON.stringify(r.body));
+});
+
 test('RONDA-27 pieza 5 · guardado desde un miembro, es el mismo ANEXO I para todos', async () => {
   const a = await miembro(ENTORNO.base, ENTORNO.datosDir, NUMERO, [COMPARTIDO]);
   const b = await miembro(ENTORNO.base, ENTORNO.datosDir, NUMERO, [COMPARTIDO]);
