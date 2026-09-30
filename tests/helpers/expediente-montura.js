@@ -58,6 +58,10 @@ function armarExpediente() {
   const cab = nodo('header', 'sgc-expediente-cabecera');
   cab.appendChild(nodo('button', 'sgc-expediente-volver'));
   cab.appendChild(nodo('h2', 'sgc-expediente-titulo'));
+  // ORDEN-RONDA-27 pieza 6: la línea de la SCo, arriba del resumen.
+  const lineaSco = nodo('p', 'sgc-expediente-sco');
+  lineaSco.hidden = true;
+  cab.appendChild(lineaSco);
   cab.appendChild(nodo('p', 'sgc-expediente-resumen'));
   exp.appendChild(cab);
   exp.appendChild(nodo('p', 'sgc-expediente-mensaje'));

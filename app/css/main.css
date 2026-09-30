@@ -697,6 +697,36 @@ mark {
   background-color: var(--color-fondo-panel);
 }
 
+/* ORDEN-RONDA-27 pieza 6: una tarjeta por SCo, con sus requerimientos dentro.
+   La SCo se distingue con el fondo del panel y una línea de color propio, para
+   que a simple vista se vea que ese bloque se mueve entero. */
+.kanban-tarjeta-sco {
+  background-color: var(--color-fondo-panel);
+  border-left: 4px solid var(--color-primario);
+}
+
+.kanban-sco-miembros {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--color-borde);
+}
+
+.kanban-sco-miembro {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kanban-sco-titulo {
+  font-size: 0.9rem;
+  flex: 1 1 auto;
+}
+
 /* -------------------------------------------------------------------------
    Tablero de indicadores del administrador (tablero.js)
 --------------------------------------------------------------------------- */

@@ -265,6 +265,51 @@
     }
   }
 
+  // ORDEN-RONDA-27 pieza 6: arriba del expediente dice de qué SCo parte y con
+  // qué requerimientos va: la frase exacta es "Parte de la SCo 123/2026, con
+  // 2026-003 y 2026-007", o sea TODOS los que van en la SCo, incluido el que se
+  // está mirando. El número de SCo ya está en el expediente (`campos.numeroSCo`,
+  // ORDEN-RONDA-26 pieza 4) y la lista sale del REGISTRO de la SCo. Si todavía no
+  // hay registro (los requerimientos todavía no salieron de
+  // SOLICITUD_CONTRATACION), se avisa que comparte número y nada más: no se
+  // inventa la lista.
+  function renderSco(expediente) {
+    var linea = estado.dom.sco;
+    if (!linea) {
+      return;
+    }
+    var numero = (typeof expediente.campos === 'object' && expediente.campos !== null &&
+      typeof expediente.campos.numeroSCo === 'string' && expediente.campos.numeroSCo.trim() !== '')
+      ? expediente.campos.numeroSCo.trim() : null;
+    if (numero === null) {
+      linea.hidden = true;
+      linea.textContent = '';
+      return;
+    }
+    // Primero lo que se sabe seguro, y de paso se borra lo de otro expediente:
+    // hasta que llegue el REGISTRO, la línea no puede quedar mostrando la SCo
+    // anterior.
+    linea.hidden = false;
+    linea.textContent = 'Parte de la SCo ' + numero;
+    if (!estado.repo || typeof estado.repo.leerSCo !== 'function') {
+      return;
+    }
+    estado.repo.leerSCo(numero).then(function (registro) {
+      // Si se abrió otro expediente mientras llegaba, la respuesta vieja no se pinta:
+      // sólo vale si sigue siendo el expediente en pantalla.
+      if (estado.expediente !== expediente) {
+        return;
+      }
+      if (!registro || !Array.isArray(registro.expedientes) || registro.expedientes.length === 0) {
+        return;
+      }
+      linea.textContent = 'Parte de la SCo ' + numero + ', con ' + registro.expedientes.join(' y ');
+    }).catch(function () {
+      // La línea de la SCo es una comodidad: si el REGISTRO no se puede leer,
+      // queda lo que se sabe seguro, que ya está puesto.
+    });
+  }
+
   function render() {
     var expediente = estado.expediente;
     if (!expediente) {
@@ -284,6 +329,7 @@
     }
     resumen += ' · Último operador: ' + ultimoOperadorDe(expediente);
     estado.dom.resumen.textContent = resumen;
+    renderSco(expediente);
 
     renderDatos(estado.dom.datos, expediente);
     renderRenglones(estado.dom.renglones, expediente);
@@ -405,6 +451,7 @@
     estado.dom.raiz = raiz;
     dialogo.montar(raiz);
     estado.dom.titulo = qs(raiz, '#sgc-expediente-titulo');
+    estado.dom.sco = qs(raiz, '#sgc-expediente-sco');
     estado.dom.resumen = qs(raiz, '#sgc-expediente-resumen');
     estado.dom.datos = qs(raiz, '#sgc-expediente-datos');
     estado.dom.renglones = qs(raiz, '#sgc-expediente-renglones');
