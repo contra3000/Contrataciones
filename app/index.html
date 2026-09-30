@@ -435,6 +435,31 @@
         <p class="req-ayuda">Se precarga desde el requerimiento. Los campos con asterisco son
           editables; los demás se completan según corresponda.</p>
 
+        <!-- ORDEN-RONDA-27 pieza 5: con SCo, el ANEXO I es de la SCo entera. Este
+             bloque avisa de eso y muestra el renglón consolidado, con el desglose
+             por debajo. Sin SCo queda oculto y el ANEXO I sigue siendo del
+             expediente, como siempre. -->
+        <div id="sgc-anexo1-sco" hidden>
+          <p class="req-ayuda" id="sgc-anexo1-sco-nota"></p>
+          <h4>Renglones de la SCo (consolidados)</h4>
+          <p class="req-ayuda">El mismo código de catálogo va en un solo renglón con la
+            cantidad sumada de todos los requerimientos, y abajo de qué expediente
+            sale cada parte.</p>
+          <table class="sgc-tabla" id="sgc-anexo1-sco-renglones">
+            <caption class="req-ayuda" id="sgc-anexo1-sco-capitulo"></caption>
+            <thead>
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Descripción</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Unidad</th>
+                <th scope="col">Desglose por expediente</th>
+              </tr>
+            </thead>
+            <tbody id="sgc-anexo1-sco-cuerpo"></tbody>
+          </table>
+        </div>
+
         <h4>§1 Objeto y justificación</h4>
         <label>Objeto <input id="sgc-anexo1-objeto" type="text" size="80" aria-label="Objeto"></label>
         <label>Justificación <textarea id="sgc-anexo1-justificacion" rows="3"

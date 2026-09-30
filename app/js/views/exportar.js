@@ -182,7 +182,20 @@
       return;
     }
     var contenido = plantilla.componer(expediente);
-    if (!estado.repo || typeof estado.repo.guardarEntregable !== 'function') {
+    if (!estado.repo) {
+      avisar('No hay repositorio configurado para guardar el documento.', true);
+      return;
+    }
+    // ORDEN-RONDA-27 pieza 5: el ANEXO I pertenece a la SCo, así que su
+    // documento se guarda en la carpeta de la SCo y contra la versión del
+    // REGISTRO. Un documento por expediente haría que cada requerimiento de la
+    // SCo tuviera el suyo, que es justo lo que la ronda viene a evitar.
+    var numeroSCo = numeroSCoDe(expediente);
+    if (numeroSCo && plantilla.id === 'anexo-1' && estado.repo.guardarEntregableSco) {
+      guardarDocumentoDeLaSco(numeroSCo, plantilla, contenido);
+      return;
+    }
+    if (typeof estado.repo.guardarEntregable !== 'function') {
       avisar('No hay repositorio configurado para guardar el documento.', true);
       return;
     }
@@ -198,6 +211,77 @@
     }).catch(function (err) {
       avisar('No se pudo guardar el documento: ' + err.message, true);
     });
+  }
+
+  // La versión del REGISTRO la tiene la vista del ANEXO I, que es la que leyó el
+  // registro. Si todavía no lo leyó, se avisa en vez de guardar con una versión
+  // inventada: un 409 recién ahí sería confuso.
+  function versionDelRegistroSco() {
+    if (!SGC.views.anexoUno) {
+      return null;
+    }
+    if (typeof SGC.views.anexoUno.versionSco === 'function') {
+      return SGC.views.anexoUno.versionSco();
+    }
+    var registro = typeof SGC.views.anexoUno.registroSco === 'function'
+      ? SGC.views.anexoUno.registroSco() : null;
+    return registro && typeof registro.version === 'number' ? registro.version : null;
+  }
+
+  function guardarDocumentoDeLaSco(numeroSCo, plantilla, contenido) {
+    var version = versionDelRegistroSco();
+    if (typeof version !== 'number') {
+      avisar('Todavía se está leyendo el registro de la SCo ' + numeroSCo +
+        '. Espere un momento y vuelva a guardar el documento.', true);
+      return;
+    }
+    estado.repo.guardarEntregableSco(numeroSCo, plantilla.nombre, contenido, version,
+      contextoActual(), plantilla.id).then(function (respuesta) {
+      if (respuesta && respuesta.conflicto) {
+        avisar('El registro de la SCo ' + numeroSCo + ' cambió después de que usted lo abrió ' +
+          '(versión ' + respuesta.versionRemota + '). No se guardó nada.', true);
+        return;
+      }
+      if (!respuesta || !respuesta.ok) {
+        avisar('No se pudo guardar el documento de la SCo: ' +
+          ((respuesta && respuesta.error) || 'error desconocido'), true);
+        return;
+      }
+      avisar('Documento guardado en la carpeta de la SCo ' + numeroSCo + ' (' +
+        respuesta.ruta + ', versión ' + respuesta.version +
+        '). Es el documento de toda la SCo, no sólo de este requerimiento.', false);
+      enlazarDocumento('api/sco/' + encodeURIComponent(numeroSCo) +
+        '/entregables/' + plantilla.nombre, plantilla);
+    }).catch(function (err) {
+      avisar('No se pudo guardar el documento de la SCo: ' + err.message, true);
+    });
+  }
+
+  // El número de SCo del expediente. Va por el lector compartido
+  // `SGC.adapters.repo.numeroSCoDe`, que es el que sabe dónde lo guarda el
+  // expediente (`campos.numeroSCo`, ORDEN-RONDA-26 §P4); el plan B cubre un repo
+  // sin esa función.
+  function numeroSCoDe(expediente) {
+    if (!expediente) {
+      return null;
+    }
+    if (SGC.adapters && SGC.adapters.repo &&
+        typeof SGC.adapters.repo.numeroSCoDe === 'function') {
+      var compartido = SGC.adapters.repo.numeroSCoDe(expediente);
+      return compartido === null || compartido === undefined || compartido === ''
+        ? null : String(compartido).trim();
+    }
+    var fuentes = [
+      expediente.campos && expediente.campos.numeroSCo,
+      expediente.datos && expediente.datos.campos && expediente.datos.campos.numeroSCo
+    ];
+    for (var i = 0; i < fuentes.length; i++) {
+      var v = fuentes[i];
+      if (v !== undefined && v !== null && v !== '') {
+        return String(v).trim();
+      }
+    }
+    return null;
   }
 
   function imprimir() {
@@ -220,6 +304,12 @@
   // apertura de la ruta detrás del modal de advertencia (mismo flujo que
   // enlazarDocumento). Los nombres se escriben con textContent, nunca
   // innerHTML (ADR-011).
+  //
+  // RONDA-27 pieza 5: el ANEXO I ya no está entre los del expediente —está en el
+  // registro de la SCo—, así que la lista también muestra los documentos de la
+  // SCo y su "Ver" apunta al GET de la SCo. Si la vista del ANEXO I no llegó a
+  // leer el registro, no se inventa nada: no se listan y se ve igual el estado
+  // que había.
   function pintarEntregables() {
     var contenedor = estado.dom.entregables;
     var bloque = estado.dom.entregablesBloque;
@@ -232,37 +322,58 @@
     var expediente = expedienteActual();
     var lista = expediente && Array.isArray(expediente.entregables)
       ? expediente.entregables : [];
-    bloque.hidden = lista.length === 0;
     var id = expediente ? (expediente.expedienteId || expediente.id) : null;
-    if (!id) {
+    var numeroSCo = numeroSCoDe(expediente);
+    if (id) {
+      for (var i = 0; i < lista.length; i++) {
+        agregarFilaDeDocumento(contenedor, lista[i],
+          'api/expedientes/' + id + '/entregables/', id);
+      }
+    }
+    var registro = registroScoEnPantalla();
+    if (registro && numeroSCo && Array.isArray(registro.entregables)) {
+      for (var j = 0; j < registro.entregables.length; j++) {
+        agregarFilaDeDocumento(contenedor, registro.entregables[j],
+          'api/sco/' + encodeURIComponent(numeroSCo) + '/entregables/', 'la SCo ' + numeroSCo);
+      }
+    }
+    bloque.hidden = contenedor.children.length === 0;
+  }
+
+  function agregarFilaDeDocumento(contenedor, entrada, prefijoRuta, deQuien) {
+    if (!entrada || typeof entrada.nombre !== 'string' || entrada.nombre.length === 0) {
       return;
     }
-    for (var i = 0; i < lista.length; i++) {
-      var entrada = lista[i];
-      if (!entrada || typeof entrada.nombre !== 'string' || entrada.nombre.length === 0) {
-        continue;
-      }
-      var fila = document.createElement('li');
-      fila.setAttribute('data-documento', entrada.nombre);
-      var etiqueta = document.createElement('span');
-      etiqueta.textContent = entrada.nombre;
-      fila.appendChild(etiqueta);
-      var ver = document.createElement('button');
-      ver.type = 'button';
-      ver.className = 'doc-ver';
-      ver.textContent = 'Ver';
-      ver.setAttribute('data-ruta', 'api/expedientes/' + id + '/entregables/' + entrada.nombre);
-      (function (boton, nombreArchivo) {
-        boton.addEventListener('click', function () {
-          estado.pendiente = { tipo: 'abrir', url: boton.getAttribute('data-ruta') };
-          abrirModal('Va a abrir el documento "' + nombreArchivo + '" del expediente ' +
-            id + '. Es información de un sistema aislado; su manejo queda bajo su ' +
-            'responsabilidad. ¿Confirma?');
-        });
-      })(ver, entrada.nombre);
-      fila.appendChild(ver);
-      contenedor.appendChild(fila);
+    var fila = document.createElement('li');
+    fila.setAttribute('data-documento', entrada.nombre);
+    var etiqueta = document.createElement('span');
+    etiqueta.textContent = entrada.nombre;
+    fila.appendChild(etiqueta);
+    var ver = document.createElement('button');
+    ver.type = 'button';
+    ver.className = 'doc-ver';
+    ver.textContent = 'Ver';
+    ver.setAttribute('data-ruta', prefijoRuta + entrada.nombre);
+    (function (boton, nombreArchivo) {
+      boton.addEventListener('click', function () {
+        estado.pendiente = { tipo: 'abrir', url: boton.getAttribute('data-ruta') };
+        abrirModal('Va a abrir el documento "' + nombreArchivo + '" de ' + deQuien +
+          '. Es información de un sistema aislado; su manejo queda bajo su ' +
+          'responsabilidad. ¿Confirma?');
+      });
+    })(ver, entrada.nombre);
+    fila.appendChild(ver);
+    contenedor.appendChild(fila);
+  }
+
+  // El registro de la SCo que ya está leído en la pantalla, si es que la vista
+  // del ANEXO I lo leyó. Es el mismo dato del que sale la versión al guardar.
+  function registroScoEnPantalla() {
+    if (!SGC.views || !SGC.views.anexoUno ||
+        typeof SGC.views.anexoUno.registroSco !== 'function') {
+      return null;
     }
+    return SGC.views.anexoUno.registroSco();
   }
 
   function montar(raiz) {

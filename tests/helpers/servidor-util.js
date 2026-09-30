@@ -102,6 +102,12 @@ async function arrancarServidor(datosDir, puerto, opciones) {
   proc.stdout.on('data', (d) => {
     salida += String(d);
   });
+  // Lo que el servidor escribe en stderr se guarda en la salida acumulada: si
+  // el hijo revienta al atender una petición, el error tiene que quedar escrito
+  // para que el fallo se pueda entender.
+  proc.stderr.on('data', (d) => {
+    salida += String(d);
+  });
   // En cualquier fallo se mata el hijo para no dejar huérfanos (ronda-18).
   try {
     // Marcas a esperar con UN solo listener, armado antes de cualquier salida:

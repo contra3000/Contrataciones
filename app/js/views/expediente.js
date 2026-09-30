@@ -244,6 +244,27 @@
     return partes.join(' ');
   }
 
+  // Composición del documento del estado (ORDEN-RONDA-08 §2.1). Vive suelta
+  // porque ORDEN-RONDA-27 pieza 5 la necesita volver a correr: el ANEXO I se
+  // arma con el registro de la SCo, que llega de la red después de este render.
+  // El nodo del documento es de ESTA vista, así que quien lo pide es esta vista
+  // y no la del ANEXO I (que no lo tiene en su raíz).
+  function componerDocumento(expediente, idEstado) {
+    var plantilla = SGC.renders.documento.paraEstado(idEstado);
+    if (estado.dom.documentoSeccion) {
+      estado.dom.documentoSeccion.hidden = !plantilla;
+    }
+    if (plantilla) {
+      if (estado.dom.documentoTitulo) {
+        estado.dom.documentoTitulo.textContent = plantilla.titulo;
+      }
+      if (estado.dom.documento) {
+        limpiar(estado.dom.documento);
+        plantilla.montar(estado.dom.documento, expediente);
+      }
+    }
+  }
+
   function render() {
     var expediente = estado.expediente;
     if (!expediente) {
@@ -277,18 +298,7 @@
     // Documento del estado (ORDEN-RONDA-08 §2.1): se compone con la plantilla
     // que produce el estado actual (nodos DOM, nunca innerHTML). Si el estado
     // no produce documento, la sección se oculta.
-    var plantilla = SGC.renders.documento.paraEstado(idEstado);
-    if (estado.dom.documentoSeccion) {
-      estado.dom.documentoSeccion.hidden = !plantilla;
-    }
-    if (plantilla) {
-      if (estado.dom.documentoTitulo) {
-        estado.dom.documentoTitulo.textContent = plantilla.titulo;
-      }
-      if (estado.dom.documento) {
-        plantilla.montar(estado.dom.documento, expediente);
-      }
-    }
+    componerDocumento(expediente, idEstado);
 
     // ORDEN-RONDA-08 §2.2: un expediente archivado es sólo lectura.
     var archivado = expediente.archivado === true;
@@ -438,6 +448,13 @@
     },
     obtener: function () {
       return { expediente: estado.expediente, version: estado.version };
+    },
+    // Pieza 5: la vista del ANEXO I avisa que el registro de la SCo llegó y el
+    // documento se vuelve a componer con él.
+    recomponerDocumento: function (expediente) {
+      var exp = expediente || estado.expediente;
+      if (!exp) return;
+      componerDocumento(exp, SGC.core.utils.idEstado(exp));
     },
     abrir: abrir
   };

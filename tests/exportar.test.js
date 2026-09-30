@@ -47,6 +47,8 @@ require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'especificacion-tecnica.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'requerimiento.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'resumen.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'documento.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-1.js'));
 require(path.join(RAIZ, 'app', 'js', 'views', 'exportar.js'));
 
 const SGC = globalThis.SGC;
@@ -291,4 +293,157 @@ test('RONDA-25 pieza 1 · sin documentos guardados el bloque no ocupa lugar', ()
     'sin entregables el bloque queda oculto');
   assert.equal(nodos['sgc-expediente-entregables'].children.length, 0,
     'la lista queda vacía');
+});
+
+// ---------------------------------------------------------------------------
+// RONDA-27 pieza 5: el documento del ANEXO I es de la SCo
+// ---------------------------------------------------------------------------
+
+// Una vista de la SCo fingida, como la que deja `views/anexo-uno.js` cuando
+// llega el registro por la red: de ahí salen la versión con que se guarda y la
+// lista de documentos de la SCo.
+function fingirVistaAnexoUno(registro) {
+  SGC.views.anexoUno = {
+    registroSco: function () { return registro; },
+    versionSco: function () {
+      return registro && typeof registro.version === 'number' ? registro.version : null;
+    }
+  };
+}
+
+function borrarVistaAnexoUno() {
+  delete SGC.views.anexoUno;
+}
+
+function expedienteEnAnalisisSco(numeroSCo) {
+  const expediente = expedientePrueba();
+  expediente.expedienteId = '2026-011';
+  expediente.estado = { id: 'ANALISIS_SCo' };
+  expediente.campos = { numeroSCo: numeroSCo };
+  expediente.entregables = [];
+  return expediente;
+}
+
+function repoConSCo(respuesta) {
+  const enSCo = [];
+  const enExpediente = [];
+  return {
+    _enSCo: enSCo,
+    _enExpediente: enExpediente,
+    guardarEntregable: (id, nombre, contenido, contexto, idCat) => {
+      enExpediente.push({ id, nombre, contenido, contexto, id: idCat });
+      return Promise.resolve({ ruta: 'entregables/' + nombre, version: 2 });
+    },
+    guardarEntregableSco: (numero, nombre, contenido, version, contexto, idCat) => {
+      enSCo.push({ numero, nombre, contenido, version, contexto, id: idCat });
+      return Promise.resolve(respuesta || {
+        ok: true, ruta: 'entregables/' + nombre, version: version + 1
+      });
+    }
+  };
+}
+
+function montarConSCo(numeroSCo, registro, respuesta) {
+  const montaje = armarMontaje();
+  const repo = repoConSCo(respuesta);
+  const aperturas = [];
+  fingirVistaAnexoUno(registro);
+  SGC.views.exportar.montar(montaje.raiz);
+  SGC.views.exportar.fijarRepo(repo);
+  SGC.views.exportar.seleccionarOperador(MARIA);
+  SGC.views.exportar.fijarProveedor(() => ({
+    expediente: expedienteEnAnalisisSco(numeroSCo), version: 3
+  }));
+  SGC.views.exportar.fijarDescargador(() => {});
+  SGC.views.exportar.fijarNavegador((url) => { aperturas.push(url); });
+  return { montaje, repo, aperturas };
+}
+
+test('RONDA-27 pieza 5 · el documento del ANEXO I se guarda en la SCo, contra la versión del registro', async () => {
+  const { montaje, repo } = montarConSCo('14/2026', { numeroSCo: '14/2026', version: 7 });
+  const nodos = montaje.nodos;
+
+  nodos['sgc-expediente-documento-guardar'].click();
+  await nuevaVuelta();
+
+  assert.equal(repo._enExpediente.length, 0,
+    'NO se guarda como entregable del expediente: el documento es de la SCo');
+  assert.equal(repo._enSCo.length, 1, 'se guarda una sola vez, en la SCo');
+  const guardado = repo._enSCo[0];
+  assert.equal(guardado.numero, '14/2026', 'con el número de la SCo');
+  assert.equal(guardado.nombre, 'anexo-1.html', 'y el nombre del documento');
+  assert.equal(guardado.id, 'anexo-1', 'con el id del catálogo');
+  assert.equal(guardado.version, 7,
+    'y contra la versión del REGISTRO, que es la que se está mostrando');
+  assert.ok(guardado.contenido.includes('<!DOCTYPE html>'), 'con el HTML compuesto');
+  assert.equal(guardado.contexto.email, 'maria.gonzalez@faa.mil.ar', 'y con quién lo guarda');
+
+  assert.equal(nodos['sgc-expediente-documento-enlace'].hidden, false, 'el documento queda enlazado');
+  assert.equal(nodos['sgc-expediente-documento-enlace'].href,
+    'api/sco/14%2F2026/entregables/anexo-1.html',
+    'y el enlace es al GET de la SCo, no al del expediente');
+  assert.ok(nodos['sgc-expediente-documento-msj'].textContent.includes('carpeta de la SCo 14/2026'),
+    'y el mensaje dice dónde quedó, para que no se busque en el expediente');
+  borrarVistaAnexoUno();
+});
+
+test('RONDA-27 pieza 5 · si el registro todavía no llegó, el documento no se guarda con una versión inventada', async () => {
+  const { montaje, repo } = montarConSCo('14/2026', null);
+  const nodos = montaje.nodos;
+
+  nodos['sgc-expediente-documento-guardar'].click();
+  await nuevaVuelta();
+
+  assert.equal(repo._enSCo.length, 0, 'no se llama al repositorio');
+  assert.equal(nodos['sgc-expediente-documento-enlace'].hidden, true, 'ni se enlaza nada');
+  assert.ok(nodos['sgc-expediente-documento-msj'].textContent.includes('Espere un momento'),
+    'el mensaje dice que hay que esperar, no que falló');
+  borrarVistaAnexoUno();
+});
+
+test('RONDA-27 pieza 5 · si el registro cambió después, se avisa el conflicto y no se enlaza', async () => {
+  const { montaje, repo } = montarConSCo('14/2026', { numeroSCo: '14/2026', version: 7 }, {
+    ok: false,
+    conflicto: true,
+    versionRemota: 8
+  });
+  const nodos = montaje.nodos;
+
+  nodos['sgc-expediente-documento-guardar'].click();
+  await nuevaVuelta();
+
+  assert.equal(repo._enSCo.length, 1, 'el intento se hizo con la versión que se tenía');
+  assert.equal(nodos['sgc-expediente-documento-enlace'].hidden, true,
+    'con el registro cambiado no queda un enlace a un documento que no se guardó');
+  const msj = nodos['sgc-expediente-documento-msj'].textContent;
+  assert.ok(msj.includes('cambió') && msj.includes('8'),
+    'y el mensaje dice que cambió y en qué versión quedó: ' + msj);
+  borrarVistaAnexoUno();
+});
+
+test('RONDA-27 pieza 5 · la lista muestra el documento de la SCo y su "Ver" va al GET de la SCo', () => {
+  const { montaje, aperturas } = montarConSCo('14/2026', {
+    numeroSCo: '14/2026',
+    version: 7,
+    entregables: [{ nombre: 'anexo-1.html', ruta: 'entregables/anexo-1.html' }]
+  });
+  const nodos = montaje.nodos;
+  SGC.views.exportar.actualizar();
+
+  const lista = nodos['sgc-expediente-entregables'];
+  assert.equal(nodos['sgc-expediente-entregables-bloque'].hidden, false,
+    'con un documento en la SCo el bloque se muestra');
+  const fila = lista.querySelector('[data-documento="anexo-1.html"]');
+  assert.ok(fila, 'el ANEXO I figura en la lista aunque no sea del expediente');
+  const ver = fila.querySelector('button');
+  assert.equal(ver.getAttribute('data-ruta'), 'api/sco/14%2F2026/entregables/anexo-1.html',
+    'y su "Ver" apunta a la ruta que ya sirve el servidor');
+
+  ver.click();
+  assert.equal(nodos['sgc-modal-advertencia'].hidden, false,
+    'abrir un documento de la SCo también pasa por el modal');
+  nodos['sgc-modal-advertencia-confirmar'].click();
+  assert.deepEqual(aperturas, ['api/sco/14%2F2026/entregables/anexo-1.html'],
+    'y confirmar abre la ruta de la SCo');
+  borrarVistaAnexoUno();
 });

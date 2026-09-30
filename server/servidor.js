@@ -180,7 +180,8 @@ function crearServidor(datosDir, configuracion) {
     'apiGuardar', 'apiAvanzar', 'apiDevolver', 'apiGuardarEntregable',
     'apiLeerEntregable', 'apiGuardarPresupuestoBinario', 'apiValidarCodigos',
     'apiListarSugerencias', 'apiCrearSugerencia', 'apiAtenderSugerencia',
-    'apiLeerSco', 'apiSumarseSco', 'apiEventos', 'servirConfig', 'servirEstatico'
+    'apiLeerSco', 'apiSumarseSco', 'apiGuardarAnexo1Sco', 'apiGuardarEntregableSco',
+    'apiLeerEntregableSco', 'apiEventos', 'servirConfig', 'servirEstatico'
   ];
   const faltantes = CONTROL_ROUTER.filter((nombre) => typeof api[nombre] !== 'function');
   if (faltantes.length > 0) {
@@ -208,6 +209,9 @@ function crearServidor(datosDir, configuracion) {
     apiAtenderSugerencia,
     apiLeerSco,
     apiSumarseSco,
+    apiGuardarAnexo1Sco,
+    apiGuardarEntregableSco,
+    apiLeerEntregableSco,
     apiEventos,
     servirConfig,
     servirEstatico
@@ -405,8 +409,22 @@ function crearServidor(datosDir, configuracion) {
           if (req.method === 'POST' && desgloseSco.accion === 'sumarse') {
             return conCuerpo((r, s, texto) => apiSumarseSco(r, s, desgloseSco.numero, texto));
           }
+          // ORDEN-RONDA-27 pieza 5: el ANEXO I es de la SCo y se edita desde
+          // cualquier expediente miembro, con la versión del REGISTRO.
+          if (req.method === 'PUT' && desgloseSco.accion === 'anexo1') {
+            return conCuerpo((r, s, texto) => apiGuardarAnexo1Sco(r, s, desgloseSco.numero, texto));
+          }
+          // El documento del ANEXO I se guarda en la carpeta de la SCo, no en la
+          // del expediente abierto: es uno solo para toda la SCo.
+          if (req.method === 'POST' && desgloseSco.accion === 'entregables') {
+            return conCuerpo((r, s, texto) => apiGuardarEntregableSco(r, s, desgloseSco.numero, texto));
+          }
+          // Y se abre desde la vista por la misma ruta que lo guardó (ADR-016).
+          if (req.method === 'GET' && desgloseSco.accion === 'entregables') {
+            return apiLeerEntregableSco(req, res, desgloseSco.numero, desgloseSco.nombre);
+          }
           return ayudantes.responderJson(res, 405, {
-            error: 'método no permitido en la ruta de SCo: use GET para leer o POST .../sumarse para sumar'
+            error: 'método no permitido en la ruta de SCo: use GET para leer, POST .../sumarse para sumar, PUT .../anexo1 para guardar el ANEXO I o POST .../entregables para guardar su documento'
           });
         }
 

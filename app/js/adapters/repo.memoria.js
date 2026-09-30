@@ -61,6 +61,7 @@
     var expedientes = {};   // id -> { expediente, version, contexto }
     var historico = {};     // id -> [ {version, expediente, contexto} ]
     var entregables = {};   // id -> { nombre -> contenido }
+    var entregablesSco = {}; // 'numeroSCo/nombre' -> contenido (pieza 5)
     var orden = [];         // ids en orden de creación
     var contadorPorAnio = {}; // anio -> último número asignado
     // ORDEN-RONDA-27 §3: registro de SCo, en memoria como el servidor lo
@@ -112,6 +113,109 @@
         textos.push(fuera[i].id + ' (en ' + (fuera[i].estado || 'un estado desconocido') + ')');
       }
       return textos.join(', ');
+    }
+
+    // ORDEN-RONDA-27 pieza 5: un renglón del ANEXO I por código de catálogo,
+    // con la cantidad SUMADA y abajo el desglose por expediente. Dos
+    // requerimientos que piden el mismo código dejan un solo renglón.
+    //Es la misma regla que server/sco.js, calculada del lado del cliente.
+    function renglonesConsolidados(registro) {
+      var ids = Array.isArray(registro.expedientes) ? registro.expedientes : [];
+      var porCodigo = {};
+      var claves = [];
+      for (var i = 0; i < ids.length; i++) {
+        var fila = expedientes[ids[i]];
+        if (!fila) {
+          continue;
+        }
+        var datos = fila.expediente.datos && typeof fila.expediente.datos === 'object' ?
+          fila.expediente.datos : fila.expediente;
+        var renglones = Array.isArray(datos.renglones) ? datos.renglones : [];
+        for (var j = 0; j < renglones.length; j++) {
+          var r = renglones[j];
+          if (!r || typeof r.codigo !== 'string' || r.codigo.trim() === '') {
+            continue;
+          }
+          var unidad = typeof r.unidad === 'string' ? r.unidad : '';
+          var clave = r.codigo + '|' + unidad;
+          if (!porCodigo[clave]) {
+            porCodigo[clave] = {
+              codigo: r.codigo,
+              descripcion: typeof r.descripcion === 'string' ? r.descripcion : '',
+              unidad: unidad,
+              cantidad: 0,
+              desglose: []
+            };
+            claves.push(clave);
+          }
+          var cantidad = typeof r.cantidad === 'number' && isFinite(r.cantidad) ? r.cantidad : 0;
+          porCodigo[clave].cantidad += cantidad;
+          porCodigo[clave].desglose.push({ expediente: ids[i], cantidad: cantidad });
+        }
+      }
+      claves.sort(function (a, b) {
+        if (porCodigo[a].codigo === porCodigo[b].codigo) {
+          return porCodigo[a].unidad < porCodigo[b].unidad ? -1 :
+            (porCodigo[a].unidad > porCodigo[b].unidad ? 1 : 0);
+        }
+        return porCodigo[a].codigo < porCodigo[b].codigo ? -1 : 1;
+      });
+      var salida = [];
+      for (var k = 0; k < claves.length; k++) {
+        salida.push(porCodigo[claves[k]]);
+      }
+      return salida;
+    }
+
+    // El ANEXO I de la SCo. Si la SCo no tiene, pero tiene UN solo miembro con
+    // `anexo1` propio, ese es el punto de partida (ORDEN-RONDA-27 pieza 5).
+    function anexo1DeSCo(registro) {
+      if (registro.anexo1 && typeof registro.anexo1 === 'object') {
+        return { anexo1: registro.anexo1, origen: 'sco', puntoDePartida: null, legacy: [] };
+      }
+      var ids = Array.isArray(registro.expedientes) ? registro.expedientes : [];
+      var legacy = [];
+      for (var i = 0; i < ids.length; i++) {
+        var fila = expedientes[ids[i]];
+        if (!fila) {
+          continue;
+        }
+        var datos = fila.expediente.datos && typeof fila.expediente.datos === 'object' ?
+          fila.expediente.datos : fila.expediente;
+        if (datos.anexo1 && typeof datos.anexo1 === 'object') {
+          legacy.push({ expediente: ids[i], anexo1: datos.anexo1 });
+        }
+      }
+      if (legacy.length === 1) {
+        return {
+          anexo1: legacy[0].anexo1,
+          origen: 'migracion',
+          puntoDePartida: legacy[0].expediente,
+          legacy: legacy
+        };
+      }
+      return { anexo1: null, origen: 'vacio', puntoDePartida: null, legacy: legacy };
+    }
+
+    // La misma Ceuta de nombres que `nombreEntregableValido` del servidor
+    // (server/ayudantes.js): letras, números, punto, guion y espacio; nada de
+    // recorridos ni de nombres que empiece por punto.
+    function nombreEntregableUtil(nombre) {
+      return typeof nombre === 'string' && nombre.length > 0 &&
+        /^[A-Za-z0-9._\- ]+$/.test(nombre) &&
+        nombre.indexOf('..') === -1 && nombre.charAt(0) !== '.';
+    }
+
+    // El id del documento tiene que existir en el catálogo de entregables, como
+    // en el servidor: es lo que hace que la validación del estado lo dé por
+    // cumplido.
+    function idEnCatalogo(id) {
+      if (!SGC.core || !SGC.core.config || !Array.isArray(SGC.core.config.ENTREGABLES)) {
+        return true;
+      }
+      return SGC.core.config.ENTREGABLES.some(function (e) {
+        return e && e.id === id;
+      });
     }
 
     function entradaAuditoria(contexto, accion, detalle) {
@@ -413,13 +517,233 @@ function registroDe(id) {
       },
 
       // ORDEN-RONDA-27 §3: el registro de la SCo, o null si todavía no existe.
+      // Pieza 5: además del registro, el ANEXO I de la SCo y los renglones
+      // consolidados de todos los miembros, con el desglose por expediente. Es
+      // la misma forma que devuelve repo.http, para que las dos implementaciones
+      // sean intercambiables (ADR-002).
       leerSCo: function (numeroSCo) {
         var usable = numeroSCoUtil(numeroSCo);
         if (usable === null) {
           return Promise.resolve(null);
         }
         var registro = scoRegistros[usable];
-        return Promise.resolve(registro ? JSON.parse(JSON.stringify(registro)) : null);
+        if (!registro) {
+          return Promise.resolve(null);
+        }
+        var copia = JSON.parse(JSON.stringify(registro));
+        var anexo1 = anexo1DeSCo(registro);
+        copia.anexo1 = anexo1.anexo1;
+        copia.anexo1Origen = anexo1.origen;
+        copia.anexo1PuntoDePartida = anexo1.puntoDePartida;
+        // Sólo los ids, igual que el servidor: el anexo1 en crudo no sale por
+        // la API. Así las dos implementaciones devuelven la misma forma.
+        copia.anexos1Propios = anexo1.legacy.map(function (l) { return l.expediente; });
+        copia.renglones = renglonesConsolidados(registro);
+        return Promise.resolve(copia);
+      },
+
+      // ORDEN-RONDA-27 pieza 5: el ANEXO I se guarda contra la versión del
+      // REGISTRO, no del expediente, porque el documento es de la SCo entera.
+      guardarAnexo1Sco: function (numeroSCo, anexo1, versionEsperada, contexto) {
+        var usable = numeroSCoUtil(numeroSCo);
+        if (usable === null) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'el número de SCo no es válido'
+          });
+        }
+        // ADR-021: el rol no se lo elige el cliente, se cruza contra el padrón
+        // igual que en una transición. El servidor hace lo mismo antes de
+        // escribir, así que las dos caras rechazan lo mismo.
+        if (SGC.core && SGC.core.autorizacion) {
+          var verificado = SGC.core.autorizacion.verificar(PADRON, contexto || {});
+          if (!verificado.ok) {
+            return Promise.resolve({ ok: false, conflicto: false, error: verificado.error });
+          }
+        }
+        if (!anexo1 || typeof anexo1 !== 'object' || Array.isArray(anexo1)) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'el ANEXO I de la SCo tiene que ser un objeto'
+          });
+        }
+        var registro = scoRegistros[usable];
+        if (!registro) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'no existe una SCo con el número ' + usable
+          });
+        }
+        if (typeof versionEsperada !== 'number') {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'falta la versión esperada del registro de la SCo'
+          });
+        }
+        if (registro.version !== versionEsperada) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: true,
+            versionRemota: registro.version,
+            ultimoUsuario: registro.actualizadoPor || null,
+            ultimaModificacion: registro.actualizado || null,
+            error: 'el ANEXO I de la SCo ' + usable + ' cambió mientras se editaba (está en la ' +
+              'versión ' + registro.version + ' y usted editaba la ' + versionEsperada +
+              '). Vuelva a abrirlo.'
+          });
+        }
+        registro.anexo1 = JSON.parse(JSON.stringify(anexo1));
+        registro.version = registro.version + 1;
+        if (contexto) {
+          if (typeof contexto.timestamp === 'string') {
+            registro.actualizado = contexto.timestamp;
+          }
+          if (typeof contexto.email === 'string') {
+            registro.actualizadoPor = contexto.email;
+          }
+        }
+        if (!Array.isArray(registro.auditoria)) {
+          registro.auditoria = [];
+        }
+        // Misma forma de entrada que arma el servidor: se usa `entradaAuditoria`
+        // para que la paridad de la batería no dependa de este archivo.
+        registro.auditoria.push(entradaAuditoria(contexto, 'guardarAnexo1'));
+        return Promise.resolve({
+          ok: true,
+          version: registro.version,
+          registro: JSON.parse(JSON.stringify(registro)),
+          renglones: renglonesConsolidados(registro)
+        });
+      },
+
+      // Pieza 5: el documento del ANEXO I es de la SCo, no del expediente que
+      // esté abierto. El contenido vive acá, en el mismo lugar donde el
+      // expediente guarda los suyos, pero bajo la SCo.
+      guardarEntregableSco: function (numeroSCo, nombre, contenido, versionEsperada, contexto, id) {
+        var usable = numeroSCoUtil(numeroSCo);
+        if (usable === null) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'el número de SCo no es válido'
+          });
+        }
+        if (SGC.core && SGC.core.autorizacion) {
+          var verificado = SGC.core.autorizacion.verificar(PADRON, contexto || {});
+          if (!verificado.ok) {
+            return Promise.resolve({ ok: false, conflicto: false, error: verificado.error });
+          }
+        }
+        // Mismo nombre y mismo catálogo que el servidor: el navegador no es la
+        // puerta, pero la demo no puede aceptar lo que el servidor rechaza, o los
+        // dos adaptadores mentirían distinto sobre el mismo dato.
+        if (!nombreEntregableUtil(nombre)) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'el nombre del entregable no es válido (sin rutas, ni puntos de recorrido)'
+          });
+        }
+        if (id !== undefined && id !== null &&
+            (typeof id !== 'string' || id.length === 0)) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'el id del entregable debe ser una cadena no vacía'
+          });
+        }
+        if (id !== undefined && id !== null && !idEnCatalogo(id)) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'el id del entregable no existe en el catálogo: ' + id
+          });
+        }
+        if (typeof contenido !== 'string') {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'el contenido del entregable tiene que ser texto'
+          });
+        }
+        var registro = scoRegistros[usable];
+        if (!registro) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'no existe una SCo con el número ' + usable
+          });
+        }
+        if (typeof versionEsperada !== 'number') {
+          return Promise.resolve({
+            ok: false,
+            conflicto: false,
+            error: 'falta la versión esperada del registro de la SCo'
+          });
+        }
+        if (registro.version !== versionEsperada) {
+          return Promise.resolve({
+            ok: false,
+            conflicto: true,
+            versionRemota: registro.version,
+            ultimoUsuario: registro.actualizadoPor || null,
+            ultimaModificacion: registro.actualizado || null,
+            error: 'el registro de la SCo ' + usable + ' cambió mientras se guardaba el documento ' +
+              '(está en la versión ' + registro.version + ' y usted tenía la ' + versionEsperada +
+              '). Vuelva a abrirlo.'
+          });
+        }
+        if (!Array.isArray(registro.entregables)) {
+          registro.entregables = [];
+        }
+        var entrada = {
+          nombre: nombre,
+          ruta: 'entregables/' + nombre,
+          id: id === undefined ? null : id,
+          guardado: contexto && typeof contexto.timestamp === 'string' ? contexto.timestamp : null,
+          email: contexto && typeof contexto.email === 'string' ? contexto.email : null,
+          equipo: contexto && typeof contexto.equipo === 'string' ? contexto.equipo : null
+        };
+        // Un entregable por nombre, como en el servidor.
+        registro.entregables = registro.entregables.filter(function (e) {
+          return !(e && typeof e === 'object' && e.nombre === nombre);
+        }).concat([entrada]);
+        if (!Array.isArray(registro.auditoria)) {
+          registro.auditoria = [];
+        }
+        registro.auditoria.push(entradaAuditoria(contexto, 'guardarEntregable', {
+          entregable: nombre,
+          deLaSCo: true
+        }));
+        registro.version = registro.version + 1;
+        if (contexto) {
+          if (typeof contexto.timestamp === 'string') {
+            registro.actualizado = contexto.timestamp;
+          }
+          if (typeof contexto.email === 'string') {
+            registro.actualizadoPor = contexto.email;
+          }
+        }
+        entregablesSco[usable + '/' + nombre] = contenido;
+        return Promise.resolve({
+          ok: true,
+          ruta: entrada.ruta,
+          version: registro.version,
+          registro: JSON.parse(JSON.stringify(registro))
+        });
+      },
+
+      leerEntregableSco: function (numeroSCo, nombre) {
+        var usable = numeroSCoUtil(numeroSCo);
+        if (usable === null) {
+          return Promise.resolve(null);
+        }
+        var contenido = entregablesSco[usable + '/' + String(nombre)];
+        return Promise.resolve(contenido === undefined ? null : contenido);
       },
 
       // Archivo Histórico (ORDEN-RONDA-08 §2.2): lista los expedientes archivados

@@ -291,6 +291,223 @@ function correrTransiciones(etiqueta, crearContexto) {
       await ctx.limpiar();
     }
   });
+
+  // ORDEN-RONDA-27 pieza 5: el ANEXO I es del REGISTRO de la SCo, así que
+  // guardarAnexo1Sco y el ANEXO I en leerSCo también son parte del contrato y
+  // corren contra las dos implementaciones. Las dos tienen que devolver la misma
+  // forma, incluido el `anexo1Origen`, que es lo que la pantalla usa para
+  // explicar de dónde salió lo que se está mostrando.
+  async function scoConMiembros(ctx, numero, quantias) {
+    const ids = [];
+    for (let i = 0; i < quantias.length; i += 1) {
+      const m = await enSolicitudConNumero(ctx, numero);
+      const guardado = await ctx.repo.guardarExpediente(m.id, m.expediente, m.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(guardado.ok, true, 'el miembro ' + m.id + ' carga el número');
+      const leido = await ctx.repo.leerExpediente(m.id);
+      leido.expediente.renglones = [
+        // Sin descripción: la del catálogo la trae el ítem, no el test
+        // (ORDEN-RONDA-25 §5.2).
+        { codigo: '2.1.1-439.102', cantidad: quantias[i], unidad: 'UN' }
+      ];
+      const conRenglones = await ctx.repo.guardarExpediente(m.id, leido.expediente, leido.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(conRenglones.ok, true, 'y sus renglones');
+      ids.push(m.id);
+    }
+    return ids;
+  }
+
+  test(titulo('leerSCo trae el ANEXO I vacío y los renglones consolidados de la SCo'), async () => {
+    const ctx = await crearContexto();
+    try {
+      await scoConMiembros(ctx, '14/2026', [2, 2]);
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.equal(registro.anexo1, null, 'todavía no hay ANEXO I de la SCo');
+      assert.equal(registro.anexo1Origen, 'vacio', 'y el origen lo dice');
+      assert.deepEqual(registro.anexos1Propios, [], 'nadie lo tenía propio');
+      assert.equal(registro.renglones.length, 1,
+        'el mismo código de los dos queda en un renglón: ' + JSON.stringify(registro.renglones));
+      assert.equal(registro.renglones[0].cantidad, 4, 'con la cantidad sumada');
+      assert.equal(registro.renglones[0].desglose.length, 2, 'y el desglose de los dos');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('guardarAnexo1Sco guarda contra la versión del registro y lo deja ahí'), async () => {
+    const ctx = await crearContexto();
+    try {
+      const ids = await scoConMiembros(ctx, '14/2026', [2, 2]);
+      const antes = await ctx.repo.leerSCo('14/2026');
+      const anexo1 = { objeto: 'Análisis de la SCo', requisitosMinimos: 'Resma A4' };
+
+      const g = await ctx.repo.guardarAnexo1Sco('14/2026', anexo1, antes.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(g.ok, true, 'guarda: ' + JSON.stringify(g));
+      assert.equal(g.version, antes.version + 1, 'y sube la versión del REGISTRO');
+
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.deepEqual(registro.anexo1, anexo1, 'el ANEXO I queda en el registro');
+      assert.equal(registro.anexo1Origen, 'sco', 'y ahora es de la SCo');
+      assert.equal(registro.anexo1PuntoDePartida, null, 'sin punto de partida');
+      assert.equal(registro.renglones.length, 1, 'los renglones siguen consolidados');
+      assert.ok(ids.length === 2, 'la SCo tiene los dos expedientes');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('guardarAnexo1Sco con versión vieja devuelve conflicto con la remota'), async () => {
+    const ctx = await crearContexto();
+    try {
+      await scoConMiembros(ctx, '14/2026', [2, 2]);
+      const antes = await ctx.repo.leerSCo('14/2026');
+      const primero = await ctx.repo.guardarAnexo1Sco('14/2026', { objeto: 'A' }, antes.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(primero.ok, true, 'el primero guarda');
+
+      const segundo = await ctx.repo.guardarAnexo1Sco('14/2026', { objeto: 'B' }, antes.version,
+        contextoPadron('abastecimiento'));
+      assert.equal(segundo.ok, false, 'el segundo no pisa lo del primero');
+      assert.equal(segundo.conflicto, true, 'y es un conflicto de versión');
+      assert.equal(segundo.versionRemota, antes.version + 1, 'con la versión que quedó');
+
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.equal(registro.anexo1.objeto, 'A', 'lo que quedó es lo del primero');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('guardarAnexo1Sco sin versión, contra una SCo inexistente o sin rol, se rechaza sin escribir'), async () => {
+    const ctx = await crearContexto();
+    try {
+      const sinVersion = await ctx.repo.guardarAnexo1Sco('14/2026', { objeto: 'x' }, undefined,
+        contextoPadron('abastecimiento'));
+      assert.equal(sinVersion.ok, false, 'sin versión no se guarda');
+      assert.equal(sinVersion.conflicto, false, 'y no es conflicto: es un error de la pantalla');
+
+      const inexistente = await ctx.repo.guardarAnexo1Sco('99/2026', { objeto: 'x' }, 1,
+        contextoPadron('abastecimiento'));
+      assert.equal(inexistente.ok, false, 'ni de una SCo que no existe');
+
+      await scoConMiembros(ctx, '14/2026', [2]);
+      const version = (await ctx.repo.leerSCo('14/2026')).version;
+      const rolPrestado = await ctx.repo.guardarAnexo1Sco('14/2026', { objeto: 'x' }, version, {
+        email: 'juan.perez@faa.mil.ar',
+        rol: 'juridica',
+        equipo: 'PC-BATERIA'
+      });
+      assert.equal(rolPrestado.ok, false, 'un rol que no corresponde al correo no escribe');
+      assert.match(rolPrestado.error, /no corresponde al correo/);
+
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.equal(registro.anexo1, null, 'ninguno de los rechazos escribió algo');
+      assert.equal(registro.version, version, 'ni subió la versión');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  // El documento del ANEXO I es de la SCo: se guarda contra la versión del
+  // REGISTRO, queda en `registro.entregables` y se vuelve a leer por su nombre.
+  // Corre contra las dos implementaciones porque las dos tienen que rechazar lo
+  // mismo (nombres con rutas, ids que no están en el catálogo) y devolver la
+  // misma forma.
+  test(titulo('guardarEntregableSco guarda el documento de la SCo y lo deja en el registro'), async () => {
+    const ctx = await crearContexto();
+    try {
+      await scoConMiembros(ctx, '14/2026', [2, 2]);
+      const antes = await ctx.repo.leerSCo('14/2026');
+      const g = await ctx.repo.guardarEntregableSco('14/2026', 'anexo-1.html',
+        '<html><body>ANEXO I de la SCo</body></html>', antes.version,
+        contextoPadron('abastecimiento'), 'anexo-1');
+      assert.equal(g.ok, true, 'guarda el documento: ' + JSON.stringify(g));
+      assert.equal(g.ruta, 'entregables/anexo-1.html', 'con la ruta dentro de la SCo');
+      assert.equal(g.version, antes.version + 1, 'y sube la versión del REGISTRO');
+
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.equal(registro.entregables.length, 1, 'el registro lista un entregable');
+      assert.equal(registro.entregables[0].nombre, 'anexo-1.html', 'con su nombre');
+      assert.equal(registro.entregables[0].id, 'anexo-1', 'y con el id del catálogo');
+      assert.equal(registro.entregables[0].email, 'juan.perez@faa.mil.ar', 'con quién lo guardó');
+      const ultima = registro.auditoria[registro.auditoria.length - 1];
+      assert.equal(ultima.accion, 'guardarEntregable', 'la auditoría lo anota');
+      assert.equal(ultima.entregable, 'anexo-1.html', 'diciendo qué documento es');
+      assert.equal(ultima.deLaSCo, true, 'y que es de la SCo, no del expediente');
+
+      const leido = await ctx.repo.leerEntregableSco('14/2026', 'anexo-1.html');
+      assert.ok(leido && leido.indexOf('ANEXO I de la SCo') !== -1, 'y el documento se vuelve a leer');
+      assert.equal(await ctx.repo.leerEntregableSco('14/2026', 'planilla.html'), null,
+        'un documento que no se guardó no aparece');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('guardarEntregableSco con versión vieja no guarda, y se releen sin duplicar el mismo nombre'), async () => {
+    const ctx = await crearContexto();
+    try {
+      await scoConMiembros(ctx, '14/2026', [2]);
+      const antes = await ctx.repo.leerSCo('14/2026');
+      const primero = await ctx.repo.guardarEntregableSco('14/2026', 'anexo-1.html', '<p>primero</p>',
+        antes.version, contextoPadron('abastecimiento'), 'anexo-1');
+      assert.equal(primero.ok, true, 'el primero guarda');
+
+      const segundo = await ctx.repo.guardarEntregableSco('14/2026', 'anexo-1.html', '<p>segundo</p>',
+        antes.version, contextoPadron('abastecimiento'), 'anexo-1');
+      assert.equal(segundo.ok, false, 'el segundo, con la versión vieja, no pisa lo del primero');
+      assert.equal(segundo.conflicto, true, 'y es un conflicto de versión');
+      assert.equal(segundo.versionRemota, antes.version + 1, 'con la versión que quedó');
+
+      const tercero = await ctx.repo.guardarEntregableSco('14/2026', 'anexo-1.html', '<p>segundo</p>',
+        primero.version, contextoPadron('abastecimiento'), 'anexo-1');
+      assert.equal(tercero.ok, true, 'con la versión al día se vuelve a guardar');
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.equal(registro.entregables.length, 1,
+        'sigue habiendo un solo entregable del mismo documento, no dos');
+      const leido = await ctx.repo.leerEntregableSco('14/2026', 'anexo-1.html');
+      assert.ok(leido.indexOf('segundo') !== -1, 'y el que quedó es el último');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
+
+  test(titulo('guardarEntregableSco rechaza rutas, ids ajenos al catálogo, SCo inexistente y rol prestado'), async () => {
+    const ctx = await crearContexto();
+    try {
+      await scoConMiembros(ctx, '14/2026', [2]);
+      const version = (await ctx.repo.leerSCo('14/2026')).version;
+
+      const ruta = await ctx.repo.guardarEntregableSco('14/2026', '../datos.json', '{}', version,
+        contextoPadron('abastecimiento'));
+      assert.equal(ruta.ok, false, 'un nombre con recorrido de rutas se rechaza');
+      assert.match(ruta.error, /nombre del entregable no es v.lido/);
+
+      const idFalso = await ctx.repo.guardarEntregableSco('14/2026', 'otro.html', 'x', version,
+        contextoPadron('abastecimiento'), 'no-existe-en-el-catalogo');
+      assert.equal(idFalso.ok, false, 'un id que no está en el catálogo también');
+
+      const inexistente = await ctx.repo.guardarEntregableSco('99/2026', 'anexo-1.html', 'x', 1,
+        contextoPadron('abastecimiento'));
+      assert.equal(inexistente.ok, false, 'ni de una SCo que no existe');
+
+      const rolPrestado = await ctx.repo.guardarEntregableSco('14/2026', 'anexo-1.html', 'x', version, {
+        email: 'juan.perez@faa.mil.ar',
+        rol: 'juridica',
+        equipo: 'PC-BATERIA'
+      });
+      assert.equal(rolPrestado.ok, false, 'un rol que no corresponde al correo no escribe');
+      assert.match(rolPrestado.error, /no corresponde al correo/);
+
+      const registro = await ctx.repo.leerSCo('14/2026');
+      assert.deepEqual(registro.entregables, [], 'ninguno de los rechazos dejó entregables');
+      assert.equal(registro.version, version, 'ni movió la versión del registro');
+    } finally {
+      await ctx.limpiar();
+    }
+  });
 }
 
 module.exports = { correrTransiciones };

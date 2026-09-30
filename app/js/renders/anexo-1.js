@@ -26,7 +26,31 @@
     partes.push('<dl class="doc-datos">');
     partes.push(d.campo('Expediente', a.expediente));
     partes.push(d.campo('Título', a.titulo));
+    // Pieza 5: cuando el documento es el de una SCo, dice de qué SCo es, para
+    // que no parezca el análisis de un solo expediente.
+    if (a.numeroSCo) {
+      partes.push(d.campo('SCo', a.numeroSCo));
+    }
     partes.push('</dl>');
+
+    // Pieza 5: los renglones van consolidados por código de catálogo, con el
+    // desglose de qué expediente aporta cada parte. La tabla es de la SCo: sin
+    // SCo el documento es el de siempre y no lleva esta sección.
+    if (a.numeroSCo && Array.isArray(a.renglones) && a.renglones.length > 0) {
+      partes.push('<h2>Renglones de la SCo</h2>');
+      partes.push('<table class="doc-tabla"><thead><tr><th>Código</th>' +
+        '<th>Descripción</th><th>Cantidad</th><th>Unidad</th>' +
+        '<th>Desglose por expediente</th></tr></thead><tbody>');
+      for (var g = 0; g < a.renglones.length; g++) {
+        var r = a.renglones[g];
+        partes.push('<tr><td>' + d.esc(r.codigo) + '</td>' +
+          '<td>' + d.esc(r.descripcion) + '</td>' +
+          '<td>' + d.esc(r.cantidad) + '</td>' +
+          '<td>' + d.esc(r.unidad) + '</td>' +
+          '<td>' + d.esc(r.desglose) + '</td></tr>');
+      }
+      partes.push('</tbody></table>');
+    }
 
     partes.push('<h2>§1 Objeto y justificación</h2>');
     partes.push('<p>' + d.esc(a.objeto) + '</p>');
@@ -120,10 +144,63 @@
     return partes;
   }
 
+  // ORDEN-RONDA-27 pieza 5: si el expediente pertenece a una SCo, el ANEXO I que
+  // se imprime es el de la SCo (el documento es de la SCo, no del expediente) y
+  // los renglones son los consolidados de todos los miembros, con el desglose por
+  // debajo. Sin ese dato, se sigue usando el `anexo1` del expediente como antes.
+  // `sco` llega en `expediente.anexo1Sco`, que es lo que le pasa la vista.
+  function anexo1DeImpresion(datos) {
+    var deSco = datos.anexo1Sco;
+    if (deSco && typeof deSco === 'object' && deSco.anexo1 &&
+        typeof deSco.anexo1 === 'object') {
+      return deSco.anexo1;
+    }
+    return (datos.anexo1 && typeof datos.anexo1 === 'object') ? datos.anexo1 : {};
+  }
+
+  // Un renglón por código de catálogo, con la cantidad sumada y el desglose por
+  // expediente debajo. Con SCo, los renglones son los consolidados de la SCo; sin
+  // SCo, los del propio expediente, que es lo de siempre.
+  function renglonesDeImpresion(datos) {
+    var deSco = datos.anexo1Sco;
+    if (deSco && Array.isArray(deSco.renglones)) {
+      var salida = [];
+      for (var i = 0; i < deSco.renglones.length; i++) {
+        var r = deSco.renglones[i];
+        var partes = [];
+        if (Array.isArray(r.desglose)) {
+          for (var j = 0; j < r.desglose.length; j++) {
+            partes.push(r.desglose[j].expediente + ': ' + r.desglose[j].cantidad);
+          }
+        }
+        salida.push({
+          codigo: r.codigo,
+          descripcion: r.descripcion,
+          cantidad: r.cantidad,
+          unidad: r.unidad,
+          desglose: partes.join(' · ')
+        });
+      }
+      return salida;
+    }
+    var renglones = Array.isArray(datos.renglones) ? datos.renglones : [];
+    var propios = [];
+    for (var k = 0; k < renglones.length; k++) {
+      propios.push({
+        codigo: renglones[k].codigo,
+        descripcion: renglones[k].descripcion || '',
+        cantidad: renglones[k].cantidad,
+        unidad: renglones[k].unidad,
+        desglose: ''
+      });
+    }
+    return propios;
+  }
+
   function modelo(expediente) {
     var datos = (expediente && typeof expediente.datos === 'object' && expediente.datos) ||
       expediente || {};
-    var a = (datos.anexo1 && typeof datos.anexo1 === 'object') ? datos.anexo1 : {};
+    var a = anexo1DeImpresion(datos);
     var identificacion = (datos.identificacion && typeof datos.identificacion === 'object') ?
       datos.identificacion : {};
     return {
@@ -153,7 +230,15 @@
       hardwareSoftware: a.hardwareSoftware || '',
       reparacionesInfra: a.reparacionesInfra || '',
       documentacionObligatoria: a.documentacionObligatoria || '',
-      criterioEvaluacion: a.criterioEvaluacion || ''
+      criterioEvaluacion: a.criterioEvaluacion || '',
+      // Pieza 5: el renglón consolidado de la SCo y de qué SCo es, para que el
+      // documento impreso diga de qué SCo habla y no parezca el de un solo
+      // expediente. Con SCo pero sin ANEXO I guardado, el documento igual dice
+      // de qué SCo es: el que se está por aprobar se tiene que ver.
+      renglones: renglonesDeImpresion(datos),
+      numeroSCo: (datos.anexo1Sco && typeof datos.anexo1Sco === 'object')
+        ? (datos.anexo1Sco.numeroSCo || null)
+        : null
     };
   }
 

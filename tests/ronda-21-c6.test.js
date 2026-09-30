@@ -19,7 +19,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
 const am = require('./helpers/aplicacion-montura.js');
-const { importarPadron, cambiarSesion, irAlExpediente, guardarDocumento, cargarNumeroSCo, cargarRequerimientoEett, avanzarEstado } = require('./helpers/circuito-ronda-21.js');
+const { importarPadron, cambiarSesion, irAlExpediente, guardarDocumento, cargarNumeroSCo, guardarAnexoUnoDeSco, cargarRequerimientoEett, avanzarEstado } = require('./helpers/circuito-ronda-21.js');
 
 const MODELO_FASTTRACK = JSON.stringify({
   titulo: 'Adquisición de termostatos para calefactores',
@@ -85,7 +85,9 @@ test('C6: la cadena de roles hasta la firma por la montura real', async function
     ];
     archivoModelo.emit('change');
     await m.esperar(() => (d.getElementById('sgc-fasttrack-msj').textContent || '')
-      .indexOf('Modelo importado correctamente') !== -1, 30000, 'modelo importado por el archivo');
+      .indexOf('Modelo importado correctamente') !== -1, 90000,
+    'modelo importado por el archivo: el paso valida el modelo entero contra el' +
+      ' catálogo del servidor y, con la suite entera corriendo en paralelo, 30 s quedaban justos');
     await m.esperar(() => !d.getElementById('sgc-paso-renglones').hidden, 20000,
       'paso de renglones visible con el modelo importado');
     await m.esperar(() => (d.getElementById('sgc-resumen').textContent || '').indexOf('0 con error') !== -1,
@@ -115,6 +117,7 @@ test('C6: la cadena de roles hasta la firma por la montura real', async function
     assert.match(d.getElementById('sgc-operador-actual').textContent, /abastecimiento\.c21@test\.local/);
     await cargarNumeroSCo(m);
     await avanzarEstado(m, TITULO.ANALISIS);
+    await guardarAnexoUnoDeSco(m);
     await avanzarEstado(m, TITULO.AUTORIZACION);
 
     // Abastecimiento supervisor: AUTORIZACION_SCo → REVISION_SCo.

@@ -26,6 +26,18 @@
  * `versionEsperadaSCO`: es la versión del registro que el cliente leyó, y si
  * no coincide con la de disco otro operador se sumó o salió en el medio, así
  * que el guardado se rechaza con 409 sin escribir nada.
+ *
+ * ORDEN-RONDA-27 pieza 5: `leerSCo` además trae `anexo1`, `renglones` (los
+ * consolidados de todos los miembros, con el desglose por expediente) y de qué
+ * lugar salió el ANEXO I. `guardarAnexo1Sco(numeroSCo, anexo1, versionEsperada,
+ * contexto)` lo guarda contra la versión del REGISTRO, no del expediente: el
+ * documento es de la SCo entera.
+ *
+ * El documento del ANEXO I se guarda con
+ * `guardarEntregableSco(numeroSCo, nombre, contenido, versionEsperada, contexto,
+ * id)`: va a la carpeta de la SCo, no a la del expediente que esté abierto, y
+ * contra la misma versión del registro. `leerEntregableSco(numeroSCo, nombre)`
+ * devuelve el texto del documento guardado.
  */
 (function (root) {
   'use strict';
@@ -45,7 +57,10 @@
     'guardarEntregable',
     'avanzar',
     'devolver',
-    'leerSCo'
+    'leerSCo',
+    'guardarAnexo1Sco',
+    'guardarEntregableSco',
+    'leerEntregableSco'
   ];
 
   var activa = null;

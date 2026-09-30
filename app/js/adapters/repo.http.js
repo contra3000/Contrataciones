@@ -129,6 +129,31 @@
       });
     }
 
+    // Igual que `pedir`, pero para respuestas que NO son JSON: el documento
+    // guardado se sirve como `text/html` y `respuesta.json()` fallaría siempre,
+    // dejando el cuerpo en null.
+    function pedirTexto(metodo, url) {
+      return fetch(url, { method: metodo }).then(function (respuesta) {
+        if (respuesta.status === 401 && typeof al401 === 'function') {
+          al401();
+        }
+        return respuesta.text().then(function (texto) {
+          return { status: respuesta.status, cuerpo: texto };
+        });
+      });
+    }
+
+    // Igual que `pedirTexto`, pero un corte de conexión también llega como error
+    // de red con su código (`RED`), como en el resto del adaptador: un 404 es un
+    // documento que no está, y un `fetch` que se cae es otra cosa.
+    function pedirTextoConErrorRed(metodo, url) {
+      return pedirTexto(metodo, url).catch(function (e) {
+        var error = new Error('repo.http: error de red al conectar con el servidor: ' + e.message);
+        error.codigo = 'RED';
+        throw error;
+      });
+    }
+
     return {
       listarIndice: function () {
         return pedirConErrorRed('GET', ruta(['indice'])).then(function (respuesta) {
@@ -227,6 +252,8 @@
       // SCo todavía no existe (es el caso normal de quien carga el número por
       // primera vez), así que se resuelve con null y la pantalla no muestra
       // hermanos.
+      // Pieza 5: además del registro, el ANEXO I de la SCo y los renglones
+      // consolidados de todos los miembros, con el desglose por expediente.
       leerSCo: function (numeroSCo) {
         return pedirConErrorRed('GET', ruta(['sco', encodeURIComponent(String(numeroSCo))]))
           .then(function (respuesta) {
@@ -236,7 +263,117 @@
             if (respuesta.status !== 200) {
               throw errorDeRespuesta(respuesta, 'no se pudo leer el registro de la SCo ' + numeroSCo);
             }
-            return respuesta.cuerpo.registro || null;
+            if (!respuesta.cuerpo.registro) {
+              return null;
+            }
+            // Se devuelve el registro con los datos de la SCo pegados, para que
+            // quien ya usaba `leerSCo` no cambie y el ANEXO I llegue igual.
+            return Object.assign({}, respuesta.cuerpo.registro, {
+              anexo1: respuesta.cuerpo.anexo1 || null,
+              anexo1Origen: respuesta.cuerpo.anexo1Origen || 'vacio',
+              anexo1PuntoDePartida: respuesta.cuerpo.anexo1PuntoDePartida || null,
+              anexos1Propios: respuesta.cuerpo.anexos1Propios || [],
+              renglones: respuesta.cuerpo.renglones || []
+            });
+          });
+      },
+
+      // ORDEN-RONDA-27 pieza 5: el ANEXO I se guarda contra la versión del
+      // REGISTRO, no del expediente, porque el documento es de la SCo entera.
+      guardarAnexo1Sco: function (numeroSCo, anexo1, versionEsperada, contexto) {
+        return pedirConErrorRed('PUT',
+          ruta(['sco', encodeURIComponent(String(numeroSCo)), 'anexo1']),
+          { anexo1: anexo1, versionEsperada: versionEsperada, contexto: contexto })
+          .then(function (respuesta) {
+            if (respuesta.status === 200) {
+              return {
+                ok: true,
+                version: respuesta.cuerpo.registro.version,
+                registro: respuesta.cuerpo.registro,
+                renglones: respuesta.cuerpo.renglones || []
+              };
+            }
+            if (respuesta.status === 409) {
+              var porConflicto = {
+                ok: false,
+                conflicto: true,
+                versionRemota: respuesta.cuerpo.versionRemota,
+                ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
+                ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
+              };
+              if (respuesta.cuerpo.error) {
+                porConflicto.error = respuesta.cuerpo.error;
+              }
+              return porConflicto;
+            }
+            // 400 y 404 son rechazos esperados (cuerpo inválido, SCo que no
+            // existe), no una falla de red: se devuelven como valor, igual que
+            // repo.memoria, para que las dos caras del contrato coincidan y la
+            // pantalla pueda mostrar el motivo.
+            if (respuesta.status === 400 || respuesta.status === 403 || respuesta.status === 404) {
+              return { ok: false, conflicto: false, error: respuesta.cuerpo.error };
+            }
+            throw errorDeRespuesta(respuesta, 'no se pudo guardar el ANEXO I de la SCo ' + numeroSCo);
+          });
+      },
+
+      // Pieza 5: el documento del ANEXO I se guarda en la CARPETA DE LA SCo, no
+      // en la del expediente que esté abierto, y contra la versión del registro
+      // (la misma que los datos). Es el mismo control de concurrencia que
+      // guardarAnexo1Sco, así que el resultado se arma igual.
+      guardarEntregableSco: function (numeroSCo, nombre, contenido, versionEsperada, contexto, id) {
+        return pedirConErrorRed('POST',
+          ruta(['sco', encodeURIComponent(String(numeroSCo)), 'entregables']),
+          {
+            nombre: nombre,
+            contenido: contenido,
+            versionEsperada: versionEsperada,
+            contexto: contexto,
+            id: id === undefined ? null : id
+          })
+          .then(function (respuesta) {
+            if (respuesta.status === 201 || respuesta.status === 200) {
+              return {
+                ok: true,
+                ruta: respuesta.cuerpo.ruta,
+                version: respuesta.cuerpo.version,
+                registro: respuesta.cuerpo.registro
+              };
+            }
+            if (respuesta.status === 409) {
+              var porConflicto = {
+                ok: false,
+                conflicto: true,
+                versionRemota: respuesta.cuerpo.versionRemota,
+                ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
+                ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
+              };
+              if (respuesta.cuerpo.error) {
+                porConflicto.error = respuesta.cuerpo.error;
+              }
+              return porConflicto;
+            }
+            if (respuesta.status === 400 || respuesta.status === 403 || respuesta.status === 404) {
+              return { ok: false, conflicto: false, error: respuesta.cuerpo.error };
+            }
+            throw errorDeRespuesta(respuesta, 'no se pudo guardar el documento de la SCo ' + numeroSCo);
+          });
+      },
+
+      // El texto del documento guardado, como el GET del expediente (ADR-016).
+      leerEntregableSco: function (numeroSCo, nombre) {
+        return pedirTextoConErrorRed('GET',
+          ruta(['sco', encodeURIComponent(String(numeroSCo)), 'entregables',
+            encodeURIComponent(String(nombre))]))
+          .then(function (respuesta) {
+            if (respuesta.status === 404) {
+              return null;
+            }
+            if (respuesta.status !== 200) {
+              throw errorDeRespuesta(respuesta,
+                'no se pudo leer el documento de la SCo ' + numeroSCo);
+            }
+            return respuesta.cuerpo;
           });
       },
 
@@ -263,13 +400,20 @@
             };
           }
           if (respuesta.status === 409) {
-            return {
+            // Un 409 con motivo es una regla de la SCo (falta el ANEXO I, el
+            // número no coincide): se conserva la forma del conflicto de
+            // versión, pero el motivo llega, para que la pantalla diga por qué.
+            var porConflicto = {
               ok: false,
               conflicto: true,
               versionRemota: respuesta.cuerpo.versionRemota,
               ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
               ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
             };
+            if (respuesta.cuerpo.error) {
+              porConflicto.error = respuesta.cuerpo.error;
+            }
+            return porConflicto;
           }
           if (respuesta.status === 404) {
             throw errorNoEncontrado(id);
@@ -301,13 +445,19 @@
             };
           }
           if (respuesta.status === 409) {
-            return {
+            // Igual que en `avanzar`: el motivo de la SCo viaja en `error` cuando
+            // el servidor lo manda.
+            var porConflictoDevolver = {
               ok: false,
               conflicto: true,
               versionRemota: respuesta.cuerpo.versionRemota,
               ultimoUsuario: respuesta.cuerpo.ultimoUsuario || null,
               ultimaModificacion: respuesta.cuerpo.ultimaModificacion || null
             };
+            if (respuesta.cuerpo.error) {
+              porConflictoDevolver.error = respuesta.cuerpo.error;
+            }
+            return porConflictoDevolver;
           }
           if (respuesta.status === 404) {
             throw errorNoEncontrado(id);

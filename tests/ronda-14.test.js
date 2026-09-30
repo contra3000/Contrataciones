@@ -151,6 +151,21 @@ async function cargarNumeroSCo(base, id, version, numero, cookie) {
   return r.body.version;
 }
 
+// ORDEN-RONDA-27 pieza 5: para salir de ANALISIS_SCo la SCo necesita su ANEXO I,
+// que se guarda en el REGISTRO de la SCo (no en el expediente) y se controla
+// con la versión de ese registro.
+async function guardarAnexo1DeLaSCo(base, numero, cookie) {
+  const leido = await pedirCon(base, 'GET', '/api/sco/' + numero, null, cookie);
+  assert.equal(leido.status, 200, 'se lee el REGISTRO de la SCo ' + numero);
+  const versionRegistro = leido.body.registro.version;
+  const r = await pedirCon(base, 'PUT', '/api/sco/' + numero + '/anexo1', {
+    anexo1: { objeto: 'Análisis de compra conjunta de la SCo ' + numero, renglones: [] },
+    versionEsperada: versionRegistro
+  }, cookie);
+  assert.equal(r.status, 200, 'se guarda el ANEXO I de la SCo ' + numero);
+  return r.body.version;
+}
+
 // El avanzar NO declara contexto: ese rol lo fabrica la sesión en el servidor.
 async function avanzarAuth(base, id, version, destino, cookie) {
   const r = await pedirCon(base, 'POST', '/api/expedientes/' + id + '/avanzar',
@@ -269,6 +284,9 @@ test('4.3-4.5 jerarquía de roles y rol efectivo en la traza', async () => {
 
     // Un abastecimiento ejecuta su propio paso (ANALISIS -> AUTORIZACION) pero
     // NO el del supervisor (AUTORIZACION -> REVISION, de abastecimiento_supervisor).
+    // La salida de ANALISIS_SCo exige el ANEXO I de la SCo (ORDEN-RONDA-27
+    // pieza 5): lo guarda la persona que está en la pantalla, en el REGISTRO.
+    await guardarAnexo1DeLaSCo(e.base, '2026-00001', cookie[ABAST.email]);
     paso = await avanzarAuth(e.base, id, version, 'AUTORIZACION_SCo', cookie[ABAST.email]);
     assert.equal(paso.status, 200, 'ANALISIS -> AUTORIZACION es paso de abastecimiento');
     version = paso.version;

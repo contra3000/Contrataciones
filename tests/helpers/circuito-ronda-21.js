@@ -158,6 +158,23 @@ async function cargarRequerimientoEett(m) {
   await m.guardarRequerimiento();
 }
 
+// ORDEN-RONDA-27 pieza 5: en ANALISIS_SCo el ANEXO I es del REGISTRO de la SCo,
+// y el motor no deja avanzar a AUTORIZACION_SCo sin él. Se llena y se guarda por
+// pantalla, como haría el operador.
+async function guardarAnexoUnoDeSco(m) {
+  const d = m.documento;
+  await m.esperar(() => d.getElementById('sgc-anexo1-seccion').hidden === false, 30000,
+    'sección del ANEXO I visible en ANALISIS_SCo');
+  m.escribir('sgc-anexo1-objeto', 'Adquisición de insumos y servicios de oficina');
+  m.escribir('sgc-anexo1-justificacion', 'Cobertura de necesidades operativas del área.');
+  m.escribir('sgc-anexo1-unidad-resp', 'División Compras');
+  m.escribir('sgc-anexo1-usuario-gde', 'GDE-2026-001');
+  d.getElementById('sgc-anexo1-guardar').click();
+  await m.esperar(() => (d.getElementById('sgc-anexo1-msj').textContent || '')
+    .indexOf('ANEXO 1 guardado (versión ') !== -1, 30000,
+  'ANEXO I de la SCo guardado por pantalla');
+}
+
 async function guardarDocumentoYAvanzar(m, expId, proximoTitulo) {
   await irAlExpediente(m, expId);
   await guardarDocumento(m);
@@ -171,6 +188,7 @@ module.exports = {
   irAlExpediente,
   guardarDocumento,
   cargarNumeroSCo,
+  guardarAnexoUnoDeSco,
   cargarRequerimientoEett,
   avanzarEstado,
   guardarDocumentoYAvanzar,

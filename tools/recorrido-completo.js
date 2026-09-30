@@ -126,7 +126,10 @@ async function aplicar(repo, expediente, version, paso) {
     : await repo.devolver(expediente.expedienteId, version, paso.destino, MOTIVO_DEVOLUCION,
         'Devolución del recorrido completo', ctx);
   if (!respuesta.ok) {
-    throw new Error('recorrido: no se pudo ' + paso.accion + ' desde ' + paso.desde + ': ' + respuesta.error);
+    // El motivo del servidor cuando lo trae; si no, la respuesta entera, para
+    // que el fallo se pueda ubicar sin adivinar.
+    throw new Error('recorrido: no se pudo ' + paso.accion + ' desde ' + paso.desde + ': ' +
+      (respuesta.error || JSON.stringify(respuesta)));
   }
   return respuesta;
 }
@@ -202,6 +205,30 @@ async function cargarCamposDelEstado(repo, expediente, version, idEstado, rol) {
     return guardado.version;
   }
 
+// ORDEN-RONDA-27 pieza 5: para abandonar ANALISIS_SCo la SCo necesita su
+// ANEXO I, que vive en el REGISTRO de la SCo y se controla con la versión de ese
+// registro. Sólo se escribe si la SCo existe como registro (la puerta del
+// servidor también es así: sin registro de SCo no hay nada que exigir).
+let anexo1DeLaSCoGuardado = null;
+async function guardarAnexo1DeLaSCo(repo, numero, rol) {
+  if (anexo1DeLaSCoGuardado === numero) {
+    return;
+  }
+  const registro = await repo.leerSCo(numero);
+  if (!registro) {
+    return;
+  }
+  const guardado = await repo.guardarAnexo1Sco(numero, {
+    objeto: 'Análisis de compra conjunta ' + numero,
+    renglones: []
+  }, registro.version, contexto(rol));
+  if (!guardado || !guardado.ok) {
+    throw new Error('recorrido: no se pudo guardar el ANEXO I de la SCo ' + numero +
+      ': ' + ((guardado && guardado.error) || 'error desconocido'));
+  }
+  anexo1DeLaSCoGuardado = numero;
+}
+
 async function recorrer(baseUrl) {
   if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
     throw new Error('recorrer() requiere la base del servidor');
@@ -244,6 +271,11 @@ async function recorrer(baseUrl) {
         version = await cargarValoresEett(repo, expediente, version, paso.rol);
       }
       version = await cargarCamposDelEstado(repo, expediente, version, paso.desde, paso.rol);
+      if (paso.desde === 'ANALISIS_SCo' &&
+          typeof expediente.campos === 'object' && expediente.campos !== null &&
+          typeof expediente.campos.numeroSCo === 'string' && expediente.campos.numeroSCo !== '') {
+        await guardarAnexo1DeLaSCo(repo, expediente.campos.numeroSCo, paso.rol);
+      }
     }
     const resultado = await aplicar(repo, expediente, version, paso);
     if (resultado.conflicto) {

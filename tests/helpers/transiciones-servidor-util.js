@@ -33,6 +33,7 @@ const { crearDirDatos, arrancarServidor, detenerServidor, pedir, enviarBytes } =
 
 const SGC = globalThis.SGC;
 const config = SGC.core.config;
+const repo = SGC.adapters.repo;
 const ROLES = config.ROLES.map((r) => r.id);
 
 // Correo del padrón (config/usuarios.ejemplo.json) para cada rol: el servidor
@@ -78,6 +79,16 @@ function datosIniciales() {
       { codigo: '2.1.1-439.102', cantidad: 2, unidad: 'UN', rubro: '4210' }
     ]
   };
+}
+
+// Un número de SCo por expediente, tomado del id: el número es el nombre de la
+// carpeta del REGISTRO, así que tiene que servir de nombre de archivo y dos
+// expedientes de la misma corrida no pueden compartirlo.
+function numeroDePruebaDeSco(id) {
+  const partes = String(id).split('-');
+  const anio = /^[0-9]{4}$/.test(partes[0]) ? partes[0] : '2026';
+  const numero = /^[0-9]+$/.test(partes[1] || '') ? partes[1] : '1';
+  return anio + '-' + numero;
 }
 
 function rutaDatos(datosDir, id) {
@@ -150,6 +161,25 @@ async function cargarValoresEett(base, id, version, ctx, assert) {
   return c.body.version;
 }
 
+// ORDEN-RONDA-27 pieza 5: para abandonar ANALISIS_SCo el motor exige que el
+// REGISTRO de la SCo tenga su ANEXO I. El ANEXO I es del registro, no del
+// expediente: se lee el registro para tener su versión y se guarda contra ella.
+async function guardarAnexo1DeSco(base, id, version, rol, assert) {
+  const leido = await pedir(base, 'GET', '/api/expedientes/' + id);
+  assert.equal(leido.status, 200, 'se lee el expediente para su número de SCo');
+  const numero = repo.numeroSCoDe(leido.body.expediente);
+  assert.ok(numero, 'el expediente en ANALISIS_SCo tiene número de SCo');
+  const registro = await pedir(base, 'GET', '/api/sco/' + encodeURIComponent(numero));
+  assert.equal(registro.status, 200, 'se lee el registro de la SCo ' + numero);
+  const guardado = await pedir(base, 'PUT', '/api/sco/' + encodeURIComponent(numero) + '/anexo1', {
+    anexo1: { objeto: 'ANEXO I de la SCo ' + numero },
+    versionEsperada: registro.body.registro.version,
+    contexto: contexto(rol)
+  });
+  assert.equal(guardado.status, 200, 'se guarda el ANEXO I del registro de la SCo ' + numero);
+  return version;
+}
+
 async function crearEnEstado(base, datosDir, idEstado, assert) {
   const creado = await pedir(base, 'POST', '/api/expedientes', {
     datosIniciales: datosIniciales(),
@@ -179,7 +209,9 @@ async function crearEnEstado(base, datosDir, idEstado, assert) {
       version = await cargarValoresEett(base, id, version, contexto(paso.rol), assert);
     }
     // ORDEN-RONDA-26 pieza 4: un estado con campos requeridos (SOLICITUD_
-    // CONTRATACION exige `numeroSCo`) ya los completó antes de abandonarlo.
+    // CONTRATACION exige `numeroSCo`) ya los completó antes de abandonarlo. El
+    // número de SCo va con valor de verdad: es el nombre de la carpeta del
+    // REGISTRO y con uno de relleno el servidor lo rechaza.
     const defPaso = config.ESTADOS.find((e) => e.id === paso.desde);
     const requeridos = (defPaso && defPaso.camposRequeridos) || [];
     if (requeridos.length > 0) {
@@ -188,7 +220,7 @@ async function crearEnEstado(base, datosDir, idEstado, assert) {
       const exp = leido.body.expediente;
       exp.campos = exp.campos || {};
       for (const campo of requeridos) {
-        exp.campos[campo] = 'Campo de prueba';
+        exp.campos[campo] = campo === 'numeroSCo' ? numeroDePruebaDeSco(id) : 'Campo de prueba';
       }
       const c = await pedir(base, 'PUT', '/api/expedientes/' + id, {
         expediente: exp,
@@ -198,6 +230,9 @@ async function crearEnEstado(base, datosDir, idEstado, assert) {
       assert.equal(c.status, 200, 'se completan los campos de ' + paso.desde);
       version = c.body.version;
     }
+    if (paso.desde === 'ANALISIS_SCo') {
+      version = await guardarAnexo1DeSco(base, id, version, paso.rol, assert);
+    }
     const r = await pedir(base, 'POST', '/api/expedientes/' + id + '/avanzar', {
       versionEsperada: version,
       destino: paso.destino,
@@ -206,6 +241,15 @@ async function crearEnEstado(base, datosDir, idEstado, assert) {
     assert.equal(r.status, 200, 'camino hacia ' + idEstado + ': ' + paso.desde + ' -> ' + paso.destino);
     version = r.body.version;
     assert.equal(estadoEnDisco(datosDir, id), paso.destino, 'el servidor persiste el paso');
+  }
+  // El estado en el que queda el expediente también tiene que cumplir sus
+  // requisitos: se llega a ANALISIS_SCo con el ANEXO I de la SCo ya guardado,
+  // para que el intento de avance que hace el test reciba la respuesta del
+  // gate y no un 409 por un requisito que el camino no cubrió.
+  if (idEstado === 'ANALISIS_SCo') {
+    const def = config.ESTADOS.find((e) => e.id === idEstado);
+    version = await guardarAnexo1DeSco(base, id, version,
+      (def && def.rolEjecutor) || 'abastecimiento', assert);
   }
   return { id, version };
 }

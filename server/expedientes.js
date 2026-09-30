@@ -26,6 +26,7 @@ function crearManejadoresExpedientes(entorno) {
   const {
     escribirAtomico,
     estaDentro,
+    nombreEntregableValido,
     rutaExpediente,
     parsearCuerpo,
     responderJson
@@ -139,9 +140,35 @@ function crearManejadoresExpedientes(entorno) {
   // acá, cada generador corrige y avanza el suyo.
   const ESTADO_FASE1 = 'ESPECIFICACIONES_TECNICAS';
 
-  // Pieza 5 engancha acá el requisito de ANEXO I por SCo. En la pieza 4 la SCo
-  // no exige nada más allá de lo que exige cada expediente.
+  // ORDEN-RONDA-27 pieza 4 §1 "más los requisitos de la SCo (pieza 5)", y
+  // pieza 5 "sin ANEXO I de la SCo → no se avanza de ANALISIS_SCo": la SCo
+  // puede exigir cosas que ningún expediente exige solo. Sale de ANALISIS_SCo
+  // sin ANEXO I de la SCo guardado, no se mueve nada.
+  // Un expediente sin SCo no pasa por acá: se llama sólo desde `calcular`, que
+  // la pieza 4 invoca siempre, así que se pregunta por el número y, si no hay,
+  // no hay requisito de grupo que cumplir.
   function requisitosDeSCo(nuevo, contexto, anterior) {
+    const estadoOrigen = estadoIdDe(anterior);
+    if (estadoOrigen !== 'ANALISIS_SCo') {
+      return { ok: true };
+    }
+    const campos = anterior && anterior.campos ? anterior.campos : null;
+    const numero = campos && typeof campos.numeroSCo === 'string' ? campos.numeroSCo : null;
+    if (numero === null || numero.trim() === '') {
+      return { ok: true };
+    }
+    const registro = sco.buscar(datosDir, numero);
+    if (!registro) {
+      return { ok: true };
+    }
+    const anexo1 = sco.anexo1DeSCo(datosDir, registro);
+    if (anexo1.anexo1 === null) {
+      const ids = (registro.expedientes || []).join(', ');
+      return { ok: false, status: 409, error: 'no se puede avanzar la SCo ' + numero +
+        ' desde ' + estadoOrigen + ': falta el ANEXO I de la SCo. Se edita desde ' +
+        'cualquiera de sus expedientes (' + ids + ').',
+        sco: { numeroSCo: numero, faltaAnexo1: true } };
+    }
     return { ok: true };
   }
 
@@ -230,7 +257,11 @@ function crearManejadoresExpedientes(entorno) {
     }
     const requisitos = requisitosDeSCo(nuevo, contexto, actual);
     if (!requisitos.ok) {
-      return { ok: false, status: 409, cuerpo: { error: requisitos.error } };
+      const cuerpoError = { error: requisitos.error };
+      if (requisitos.sco) {
+        cuerpoError.sco = requisitos.sco;
+      }
+      return { ok: false, status: requisitos.status || 409, cuerpo: cuerpoError };
     }
     if (typeof contexto.timestamp === 'string') { nuevo.ultimaModificacion = contexto.timestamp; }
     if (typeof contexto.email === 'string') { nuevo.ultimoUsuario = contexto.email; }
@@ -336,9 +367,16 @@ function crearManejadoresExpedientes(entorno) {
           const plan = calcular(miembros[i].actual, cuerpo, contexto, accion, grupoTexto);
           planes.push({ plan: plan, contexto: contexto });
           if (!plan.ok) {
-            return { status: plan.status, cuerpo: { error: 'no se puede ' + verbo + ' la ' +
-              grupoTexto + ' (' + miembros.length + ' expedientes): el ' + miembros[i].id +
-              ' no cumple. ' + plan.cuerpo.error + '. No se movió ninguno.' } };
+            const cuerpoError = { error: 'no se puede ' + verbo + ' la ' + grupoTexto +
+              ' (' + miembros.length + ' expedientes): el ' + miembros[i].id +
+              ' no cumple. ' + plan.cuerpo.error + '. No se movió ninguno.' };
+            // Pieza 5: si lo que falta es el ANEXO I de la SCo, el detalle
+            // (`sco`) viaja con el error para que la pantalla sepa qué SCo es
+            // y no tenga que adivinarlo del texto.
+            if (plan.cuerpo.sco) {
+              cuerpoError.sco = plan.cuerpo.sco;
+            }
+            return { status: plan.status, cuerpo: cuerpoError };
           }
         }
 
@@ -358,12 +396,18 @@ function crearManejadoresExpedientes(entorno) {
                 { email: miembros[i].actual.ultimoUsuario, timestamp: miembros[i].actual.ultimaModificacion });
               restaurados.push(miembros[i].id);
             } catch (e2) {
-              restaurados.push(miembros[i].id + ' (NO se pudo restaurar: ' + e2.message + ')');
+              restaurados.push(miembros[i].id + ' (no se pudo restaurar)');
+              console.error('expedientes: no se pudo restaurar ' + miembros[i].id +
+                ' tras un movimiento de grupo a medias: ' + e2.message);
             }
           }
+          // El motivo de la máquina queda en el registro del operador: al que
+          // pidió el avance se le dice qué pasó sin por qué se rompió por dentro
+          // (ORDEN-RONDA-17 §20).
+          console.error('expedientes: falló la escritura de la ' + grupoTexto + ' a mitad de camino: ' + e.message);
           return { status: 500, cuerpo: { error: 'falló la escritura de la ' + grupoTexto +
-            ' a mitad de camino (' + e.message + '). Se restauraron ' + restaurados.length +
-            ' de ' + miembros.length + ': ' + (restaurados.join(', ') || '—') +
+            ' a mitad de camino. Se restauraron ' + restaurados.length +
+            ' de ' + miembros.length + ': ' + (restaurados.join(', ') || 'ninguno') +
             '. La SCo quedó como estaba.' } };
         }
 
@@ -387,7 +431,15 @@ function crearManejadoresExpedientes(entorno) {
       });
     } catch (e) {
       // El candado no se pudo tomar: otro movimiento de esta SCo está en curso.
-      return responderJson(res, e.codigo === 409 ? 409 : 500, { error: e.message });
+      // Ese motivo es nuestro y va al operador; cualquier otro fallo se
+      // registra y se responde con la clase, nunca con el mensaje de la máquina
+      // (ORDEN-RONDA-17 §20).
+      if (e && e.mensajeSeguro === true && e.codigo === 409) {
+        return responderJson(res, 409, { error: e.message });
+      }
+      console.error('expedientes: no se pudo mover la SCo en bloque: ' + e.message);
+      const clase = e && e.constructor && e.constructor.name ? e.constructor.name : 'Error';
+      return responderJson(res, 500, { error: 'no se pudo mover la SCo en bloque (' + clase + ')' });
     }
     return responderJson(res, salida.status, salida.cuerpo);
   }
@@ -446,13 +498,9 @@ function crearManejadoresExpedientes(entorno) {
     return transicionPorMotor(req, res, id, contextoCuerpo, origen, 'devolver');
   }
 
-  // Nombre de entregable válido: plano, sin separadores de ruta ni ".." ni
-  // punto inicial. Compartido por el POST (guardar) y el GET (enlazar).
-  function nombreEntregableValido(nombre) {
-    return typeof nombre === 'string' && nombre.length > 0 &&
-      /^[A-Za-z0-9._\- ]+$/.test(nombre) &&
-      nombre.indexOf('..') === -1 && nombre.charAt(0) !== '.';
-  }
+  // El nombre de entregable se valida en ayudantes.nombreEntregableValido, que
+  // comparte el POST (guardar), el GET (enlazar) y el entregable de la SCo
+  // (ORDEN-RONDA-27 pieza 5): una sola regla para los tres caminos.
 
   // Guardar el entregable generado en la carpeta del expediente (ORDEN-RONDA-07
   // §3.3, ADR-016). El nombre se valida para que no sea una ruta; la escritura

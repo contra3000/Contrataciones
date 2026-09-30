@@ -144,6 +144,16 @@ function estaDentro(ruta, raiz) {
   return objetivo === base || objetivo.startsWith(base + path.sep);
 }
 
+// Nombre de archivo de un entregable: no puede ser una ruta ni un recorrido.
+// Vive acá porque lo usan dos destinos con la MISMA regla —la carpeta del
+// expediente (§3.3) y la carpeta de la SCo (ORDEN-RONDA-27 pieza 5)— y dos
+// copias de una validación de seguridad es una forma de que se desincronicen.
+function nombreEntregableValido(nombre) {
+  return typeof nombre === 'string' && nombre.length > 0 &&
+    /^[A-Za-z0-9._\- ]+$/.test(nombre) &&
+    nombre.indexOf('..') === -1 && nombre.charAt(0) !== '.';
+}
+
 function idDeRuta(req) {
   const ruta = (req.url || '').split('?')[0];
   const partes = ruta.split('/').filter((p) => p.length > 0);
@@ -411,15 +421,27 @@ function scoDeRuta(req) {
   if (partes[0] !== 'api' || partes[1] !== 'sco') {
     return null;
   }
-  //   /api/sco/<numero>             → {numero, accion: null}   (GET)
-  //   /api/sco/<numero>/sumarse     → {numero, accion:'sumarse'} (POST)
+  //   /api/sco/<numero>             → {numero, accion: null}        (GET)
+  //   /api/sco/<numero>/sumarse     → {numero, accion:'sumarse'}    (POST)
+  //   /api/sco/<numero>/anexo1      → {numero, accion:'anexo1'}     (PUT)
+  //   /api/sco/<numero>/entregables → {numero, accion:'entregables', nombre} (POST)
+  //   /api/sco/<numero>/entregables/<nombre> → lo mismo, con el nombre (GET)
   let accion = null;
-  if (partes.length === 4) {
+  let nombre = null;
+  if (partes.length === 5) {
+    accion = 'entregables';
+    try {
+      nombre = decodeURIComponent(partes[4]);
+    } catch (e) {
+      return null;
+    }
+  } else if (partes.length === 4) {
     accion = partes[3];
   } else if (partes.length !== 3) {
     return null;
   }
-  if (accion !== null && accion !== 'sumarse') {
+  if (accion !== null && accion !== 'sumarse' && accion !== 'anexo1' &&
+      accion !== 'entregables') {
     return null;
   }
   let numero = null;
@@ -431,7 +453,7 @@ function scoDeRuta(req) {
   if (typeof numero !== 'string' || numero.trim() === '') {
     return null;
   }
-  return { numero: numero.trim(), accion: accion };
+  return { numero: numero.trim(), accion: accion, nombre: nombre };
 }
 
 module.exports = {
@@ -446,6 +468,7 @@ module.exports = {
   resolverOrigen,
   registrarOrigen,
   estaDentro,
+  nombreEntregableValido,
   idDeRuta,
   accionDeRuta,
   entregableDeRuta,

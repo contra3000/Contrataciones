@@ -29,7 +29,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { escribirAtomico, adquirirLock, liberarLock } = require('./ayudantes.js');
+const { escribirAtomico, adquirirLock, liberarLock, estaDentro, nombreEntregableValido } =
+  require('./ayudantes.js');
 
 const ESTADO_SOLICITUD = 'SOLICITUD_CONTRATACION';
 const ANIO_RE = /^\d{4}$/;
@@ -205,6 +206,9 @@ function conCandadoGrupo(datosDir, registro, fn) {
   if (!tomado) {
     const e = new Error('otro movimiento de esta SCo está en curso; reintente en un momento');
     e.codigo = 409;
+    // Es un motivo nuestro, escrito para el operador: se puede mostrar
+    // (ORDEN-RONDA-17 §20, la puerta `mensajeSeguro`).
+    e.mensajeSeguro = true;
     throw e;
   }
   try {
@@ -387,6 +391,112 @@ function sumarse(datosDir, opciones) {
 }
 
 // ---------------------------------------------------------------------------
+// ORDEN-RONDA-27 pieza 5 · el ANEXO I se guarda como entregable de la SCo
+// ---------------------------------------------------------------------------
+// El archivo va a la carpeta de la SCo, NO a la del expediente que está abierto:
+// toda la SCo, así que guardarlo por expediente lo multiplicaría y cada
+// requerimiento tendría un documento distinto del mismo grupo.
+//
+// La concurrencia es la del REGISTRO, como en `guardarAnexo1`: el documento y los
+// datos se escriben contra la misma versión, así que o entran los dos o no entra
+// ninguno. La lectura del registro, el cotejo de la versión y las dos escrituras
+// (el archivo y el registro) van dentro del candado de la SCo —el mismo que
+// serializa el movimiento en bloque—, y la versión se vuelve a mirar adentro: si
+// entre la espera y la escritura alguien guardó, el 409 es el correcto. El archivo
+// va antes que el registro y, si el registro no llegara a escribirse, lo que sobra
+// es un archivo, que el siguiente guardado vuelve a pisar.
+function guardarEntregableSco(datosDir, numeroSCo, opciones) {
+  const nombre = opciones.nombre;
+  if (!nombreEntregableValido(nombre)) {
+    return fallo(400, 'el nombre del entregable no es válido (sin rutas, ni puntos de recorrido)');
+  }
+  if (typeof opciones.contenido !== 'string') {
+    return fallo(400, 'el contenido del entregable tiene que ser texto');
+  }
+  if (opciones.id !== null && opciones.id !== undefined &&
+      (typeof opciones.id !== 'string' || opciones.id.length === 0)) {
+    return fallo(400, 'el id del entregable debe ser una cadena no vacía');
+  }
+  const registro = buscar(datosDir, numeroSCo);
+  if (!registro) {
+    return fallo(404, 'no existe una SCo con el número ' + numeroSCo);
+  }
+  if (typeof opciones.versionEsperada !== 'number') {
+    return fallo(400, 'falta la versión esperada del registro de la SCo');
+  }
+  const contexto = opciones.contexto || {};
+  let resultado;
+  try {
+    resultado = conCandadoGrupo(datosDir, registro, function () {
+      // Adentro del candado se relee: la versión que se coteja es la de ahora.
+      const actual = buscar(datosDir, numeroSCo);
+      if (!actual) {
+        return fallo(404, 'no existe una SCo con el número ' + numeroSCo);
+      }
+      if (actual.version !== opciones.versionEsperada) {
+        return fallo(409, 'el registro de la SCo ' + numeroSCo + ' cambió mientras se guardaba el ' +
+          'documento (está en la versión ' + actual.version + ' y usted tenía la ' +
+          opciones.versionEsperada + '). Vuelva a abrirlo.', {
+            conflicto: true,
+            versionRemota: actual.version,
+            ultimoUsuario: actual.actualizadoPor || null,
+            ultimaModificacion: actual.actualizado || null
+          });
+      }
+      const carpeta = rutaCarpetaSco(datosDir, actual);
+      const destino = rutaEntregableSco(datosDir, actual, nombre);
+      if (!estaDentro(destino, carpeta)) {
+        return fallo(400, 'el nombre del entregable no es válido (recorrido de rutas no permitido)');
+      }
+      const actualizado = JSON.parse(JSON.stringify(actual));
+      if (!Array.isArray(actualizado.entregables)) {
+        actualizado.entregables = [];
+      }
+      if (!Array.isArray(actualizado.auditoria)) {
+        actualizado.auditoria = [];
+      }
+      // Un entregable por nombre: volver a guardar el ANEXO I de la SCo lo actualiza
+      // en el lugar, en vez de dejar dos entradas del mismo documento.
+      const entrada = {
+        nombre: nombre,
+        ruta: 'entregables/' + nombre,
+        id: opciones.id === undefined ? null : opciones.id,
+        guardado: typeof contexto.timestamp === 'string' ? contexto.timestamp : null,
+        email: typeof contexto.email === 'string' ? contexto.email : null,
+        equipo: typeof contexto.equipo === 'string' ? contexto.equipo : null
+      };
+      actualizado.entregables = actualizado.entregables
+        .filter((e) => !(e && typeof e === 'object' && e.nombre === nombre))
+        .concat([entrada]);
+      actualizado.auditoria.push(entradaAuditoria(contexto, 'guardarEntregable', {
+        entregable: nombre,
+        deLaSCo: true
+      }));
+      tocar(actualizado, contexto);
+      if (!simulando()) {
+        fs.mkdirSync(path.join(carpeta, 'entregables'), { recursive: true });
+        escribirAtomico(destino, opciones.contenido);
+      }
+      guardar(datosDir, actualizado);
+      return { ok: true, registro: actualizado, ruta: entrada.ruta, version: actualizado.version };
+    });
+  } catch (e) {
+    if (e && e.codigo) {
+      // ORDEN-RONDA-17 §20: de un error de la máquina sólo se muestra el motivo
+      // que el propio servidor escribió para el operador (`mensajeSeguro`); el
+      // resto queda en el registro del operador.
+      if (e.mensajeSeguro === true) {
+        return fallo(e.codigo, e.message);
+      }
+      console.error('sco: fallo al guardar el entregable de la SCo ' + numeroSCo + ': ' + e.message);
+      return fallo(e.codigo, 'no se pudo guardar el documento de la SCo ' + numeroSCo);
+    }
+    throw e;
+  }
+  return resultado;
+}
+
+// ---------------------------------------------------------------------------
 // Salir
 // ---------------------------------------------------------------------------
 function salir(datosDir, opciones) {
@@ -440,7 +550,8 @@ function crearManejadoresSco(entorno) {
   const { responderJson, parsearCuerpo } = ayudantes;
   const SGC = globalThis.SGC;
 
-  // GET /api/sco/<numero> — el registro de esa SCo (o 404 si no existe).
+  // GET /api/sco/<numero> — el registro de esa SCo (o 404 si no existe), con el
+  // ANEXO I y los renglones consolidados de todos los miembros (pieza 5).
   // Los hermanos salen de acá, no de barrer el índice.
   // El nombre lleva el prefijo SCo a propósito: `servidor.js` compone los
   // manejadores con Object.assign, así que un `apiLeer` acá pisaría en silencio
@@ -454,7 +565,116 @@ function crearManejadoresSco(entorno) {
     if (!registro) {
       return responderJson(res, 404, { error: 'no existe una SCo con el número ' + numero });
     }
-    return responderJson(res, 200, { registro: registro });
+    const anexo1 = anexo1DeSCo(datosDir, registro);
+    return responderJson(res, 200, {
+      registro: registro,
+      anexo1: anexo1.anexo1,
+      anexo1Origen: anexo1.origen,
+      anexo1PuntoDePartida: anexo1.puntoDePartida,
+      anexos1Propios: anexo1.legacy.map((l) => l.expediente),
+      renglones: renglonesConsolidados(datosDir, registro)
+    });
+  }
+
+  // PUT /api/sco/<numero>/anexo1 — el ANEXO I es de la SCo, se edita desde
+  // cualquier expediente miembro y el control de concurrencia es la versión del
+  // REGISTRO (pieza 5).
+  function apiGuardarAnexo1Sco(req, res, numeroDeUrl, contextoCuerpo) {
+    const cuerpo = parsearCuerpo(contextoCuerpo);
+    if (!cuerpo || typeof cuerpo !== 'object' ||
+        !cuerpo.anexo1 || typeof cuerpo.anexo1 !== 'object' ||
+        typeof cuerpo.versionEsperada !== 'number' ||
+        !cuerpo.contexto || typeof cuerpo.contexto !== 'object') {
+      return responderJson(res, 400, {
+        error: 'cuerpo inválido: se espera {anexo1, versionEsperada, contexto}'
+      });
+    }
+    const numero = numeroUtil(numeroDeUrl);
+    if (numero === null) {
+      return responderJson(res, 400, { error: 'el número de SCo de la URL no es válido' });
+    }
+    // Se cruza el contexto contra el padrón (ADR-021) igual que en cualquier
+    // escritura del servidor: el rol no se lo elige el cliente.
+    const autorizacion = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), cuerpo.contexto);
+    if (!autorizacion.ok) {
+      return responderJson(res, 403, { error: autorizacion.error });
+    }
+    const resultado = guardarAnexo1(datosDir, numero, cuerpo.anexo1,
+      cuerpo.versionEsperada, cuerpo.contexto);
+    if (!resultado.ok) {
+      const cuerpoRespuesta = { error: resultado.error };
+      for (const clave of Object.keys(resultado)) {
+        if (clave !== 'ok' && clave !== 'codigo' && clave !== 'error') {
+          cuerpoRespuesta[clave] = resultado[clave];
+        }
+      }
+      return responderJson(res, resultado.codigo, cuerpoRespuesta);
+    }
+  return responderJson(res, 200, {
+    registro: resultado.registro,
+    renglones: renglonesConsolidados(datosDir, resultado.registro)
+  });
+  }
+
+  // POST /api/sco/<numero>/entregables — el documento del ANEXO I se guarda en
+  // la carpeta de la SCo (pieza 5). Mismo cuerpo y misma autorización que el PUT
+  // del ANEXO I, más `versionEsperada` del REGISTRO: los datos y el documento se
+  // escriben contra la misma versión del mismo registro.
+  function apiGuardarEntregableSco(req, res, numeroDeUrl, contextoCuerpo) {
+    const cuerpo = parsearCuerpo(contextoCuerpo);
+    if (!cuerpo || typeof cuerpo !== 'object' ||
+        typeof cuerpo.nombre !== 'string' || cuerpo.nombre.length === 0 ||
+        typeof cuerpo.contenido !== 'string' ||
+        typeof cuerpo.versionEsperada !== 'number' ||
+        !cuerpo.contexto || typeof cuerpo.contexto !== 'object') {
+      return responderJson(res, 400, {
+        error: 'cuerpo inválido: se espera {nombre, contenido, versionEsperada, contexto}'
+      });
+    }
+    const numero = numeroUtil(numeroDeUrl);
+    if (numero === null) {
+      return responderJson(res, 400, { error: 'el número de SCo de la URL no es válido' });
+    }
+    const autorizacion = SGC.core.autorizacion.verificar(entorno.padronVivo.usuarios(), cuerpo.contexto);
+    if (!autorizacion.ok) {
+      return responderJson(res, 403, { error: autorizacion.error });
+    }
+    // El id del documento, si viene, tiene que existir en el catálogo: es lo que
+    // permite que la validación del estado lo dé por cumplido (mismo criterio
+    // que el POST de entregables del expediente).
+    const idEntregable = cuerpo.id === undefined || cuerpo.id === null ? null : cuerpo.id;
+    if (idEntregable !== null) {
+      if (typeof idEntregable !== 'string' || idEntregable.length === 0) {
+        return responderJson(res, 400, { error: 'el id del entregable debe ser una cadena no vacía' });
+      }
+      const catalogo = SGC.core.config.ENTREGABLES;
+      if (!catalogo || !catalogo.some((e) => e.id === idEntregable)) {
+        return responderJson(res, 400, {
+          error: 'el id del entregable no existe en el catálogo: ' + idEntregable
+        });
+      }
+    }
+    const resultado = guardarEntregableSco(datosDir, numero, {
+      nombre: cuerpo.nombre,
+      contenido: cuerpo.contenido,
+      id: idEntregable,
+      versionEsperada: cuerpo.versionEsperada,
+      contexto: cuerpo.contexto
+    });
+    if (!resultado.ok) {
+      const cuerpoRespuesta = { error: resultado.error };
+      for (const clave of Object.keys(resultado)) {
+        if (clave !== 'ok' && clave !== 'codigo' && clave !== 'error') {
+          cuerpoRespuesta[clave] = resultado[clave];
+        }
+      }
+      return responderJson(res, resultado.codigo, cuerpoRespuesta);
+    }
+    return responderJson(res, 201, {
+      registro: resultado.registro,
+      ruta: resultado.ruta,
+      version: resultado.version
+    });
   }
 
   // POST /api/sco/<numero>/sumarse — suma el expediente que manda el cuerpo.
@@ -501,6 +721,37 @@ function crearManejadoresSco(entorno) {
     return responderJson(res, 200, { registro: resultado.registro, yaEstaba: !!resultado.yaEstaba });
   }
 
+  // GET /api/sco/<numero>/entregables/<nombre> — el documento guardado de la
+  // SCo, con la misma Ceuta de nombres que el del expediente (ADR-016): nada de
+  // rutas, nada fuera de la carpeta de la SCo.
+  function apiLeerEntregableSco(req, res, numeroDeUrl, nombreDeUrl) {
+    const numero = numeroUtil(numeroDeUrl);
+    if (numero === null) {
+      return responderJson(res, 400, { error: 'el número de SCo de la URL no es válido' });
+    }
+    const nombre = nombreDeUrl === undefined || nombreDeUrl === null ? null : nombreDeUrl;
+    if (!nombreEntregableValido(nombre)) {
+      return responderJson(res, 400, { error: 'el nombre del entregable no es válido (recorrido de rutas no permitido)' });
+    }
+    const registro = buscar(datosDir, numero);
+    if (!registro) {
+      return responderJson(res, 404, { error: 'no existe una SCo con el número ' + numero });
+    }
+    const carpeta = rutaCarpetaSco(datosDir, registro);
+    const archivo = rutaEntregableSco(datosDir, registro, nombre);
+    if (!estaDentro(archivo, carpeta)) {
+      return responderJson(res, 400, { error: 'el nombre del entregable no es válido (recorrido de rutas no permitido)' });
+    }
+    if (!fs.existsSync(archivo)) {
+      return responderJson(res, 404, { error: 'entregable no encontrado en la SCo ' + numero + ': ' + nombre });
+    }
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Disposition': 'inline; filename="' + nombre + '"'
+    });
+    res.end(fs.readFileSync(archivo, 'utf8'));
+  }
+
   function rutaDeExpediente(datosDirLocal, id) {
     return {
       dir: path.join(datosDirLocal, id.slice(0, 4), id.slice(5) + '_Expediente'),
@@ -508,21 +759,175 @@ function crearManejadoresSco(entorno) {
     };
   }
 
-  return { apiLeerSco, apiSumarseSco };
+  return {
+    apiLeerSco,
+    apiSumarseSco,
+    apiGuardarAnexo1Sco,
+    apiGuardarEntregableSco,
+    apiLeerEntregableSco
+  };
+}
+
+// ---------------------------------------------------------------------------
+// ORDEN-RONDA-27 pieza 5 · el ANEXO I es de la SCo
+// ---------------------------------------------------------------------------
+
+// Carpeta de entregables de una SCo: al lado del registro, `<anio>/<nombre>/`.
+// `registros()` sólo lee archivos `.json` del año, así que una carpeta con el
+// nombre de la SCo no se confunde con un registro.
+function rutaCarpetaSco(datosDir, registro) {
+  return path.join(directorioSco(datosDir), registro.anio, nombreDeArchivo(registro.numeroSCo));
+}
+
+function rutaEntregableSco(datosDir, registro, nombre) {
+  return path.join(rutaCarpetaSco(datosDir, registro), 'entregables', nombre);
+}
+
+function renglonesDeExpediente(datosDir, id) {
+  const archivo = path.join(datosDir, id.slice(0, 4), id.slice(5) + '_Expediente', 'datos.json');
+  const expediente = leerJson(archivo);
+  if (!expediente) {
+    return [];
+  }
+  const datos = expediente.datos && typeof expediente.datos === 'object' ? expediente.datos : expediente;
+  return Array.isArray(datos.renglones) ? datos.renglones : [];
+}
+
+// Un renglón del ANEXO I por código de catálogo, con la cantidad SUMADA y abajo
+// el desglose por expediente. Dos requerimientos que piden el mismo código
+// dejan un solo renglón, no dos: es el punto de agrupar por SCo (ADR-043).
+function renglonesConsolidados(datosDir, registro) {
+  const ids = registro && Array.isArray(registro.expedientes) ? registro.expedientes : [];
+  const porCodigo = new Map();
+  for (const id of ids) {
+    const renglones = renglonesDeExpediente(datosDir, id);
+    for (const r of renglones) {
+      if (!r || typeof r.codigo !== 'string' || r.codigo.trim() === '') {
+        continue;
+      }
+      const unidad = typeof r.unidad === 'string' ? r.unidad : '';
+      const clave = r.codigo + '|' + unidad;
+      let fila = porCodigo.get(clave);
+      if (!fila) {
+        fila = {
+          codigo: r.codigo,
+          descripcion: typeof r.descripcion === 'string' ? r.descripcion : '',
+          unidad: unidad,
+          cantidad: 0,
+          desglose: []
+        };
+        porCodigo.set(clave, fila);
+      }
+      const cantidad = typeof r.cantidad === 'number' && isFinite(r.cantidad) ? r.cantidad : 0;
+      fila.cantidad += cantidad;
+      fila.desglose.push({ expediente: id, cantidad: cantidad });
+    }
+  }
+  const salida = Array.from(porCodigo.values());
+  salida.sort((a, b) => (a.codigo === b.codigo
+    ? (a.unidad < b.unidad ? -1 : a.unidad > b.unidad ? 1 : 0)
+    : a.codigo < b.codigo ? -1 : 1));
+  return salida;
+}
+
+// Los `anexo1.*` que el expediente tenía guardados, para el punto de partida.
+// ORDEN-RONDA-27 pieza 5: si la SCo tiene UN solo miembro, su ANEXO I es el
+// punto de partida del de la SCo. Si tiene varios, no se elige uno detrás de
+// otro: se avisa y queda para la decisión del informe.
+function anexo1DeExpediente(datosDir, id) {
+  const archivo = path.join(datosDir, id.slice(0, 4), id.slice(5) + '_Expediente', 'datos.json');
+  const expediente = leerJson(archivo);
+  if (!expediente) {
+    return null;
+  }
+  const datos = expediente.datos && typeof expediente.datos === 'object' ? expediente.datos : expediente;
+  return datos.anexo1 && typeof datos.anexo1 === 'object' ? datos.anexo1 : null;
+}
+
+// El ANEXO I de la SCo, más el punto de partida que ofrecen los expedientes que
+// todavía lo tienen propio. `origen` dice de dónde sale lo que se está mostrando.
+function anexo1DeSCo(datosDir, registro) {
+  const guardado = registro && registro.anexo1 && typeof registro.anexo1 === 'object'
+    ? registro.anexo1
+    : null;
+  if (guardado) {
+    return { anexo1: guardado, origen: 'sco', puntoDePartida: null, legacy: [] };
+  }
+  const ids = registro && Array.isArray(registro.expedientes) ? registro.expedientes : [];
+  const legacy = [];
+  for (const id of ids) {
+    const propio = anexo1DeExpediente(datosDir, id);
+    if (propio) {
+      legacy.push({ expediente: id, anexo1: propio });
+    }
+  }
+  if (legacy.length === 1) {
+    return {
+      anexo1: legacy[0].anexo1,
+      origen: 'migracion',
+      puntoDePartida: legacy[0].expediente,
+      legacy: legacy
+    };
+  }
+  return { anexo1: null, origen: 'vacio', puntoDePartida: null, legacy: legacy };
+}
+
+// Guardar el ANEXO I de la SCo. `versionEsperada` es la del REGISTRO, no la
+// del expediente: el documento es de la SCo, así que el control de concurrencia
+// es el del registro. Si otro operador lo guardó mientras tanto, 409.
+function guardarAnexo1(datosDir, numeroSCo, anexo1, versionEsperada, contexto) {
+  const registro = buscar(datosDir, numeroSCo);
+  if (!registro) {
+    return fallo(404, 'no existe una SCo con el número ' + numeroSCo);
+  }
+  if (typeof versionEsperada !== 'number') {
+    return fallo(400, 'falta la versión esperada del registro de la SCo');
+  }
+  if (!anexo1 || typeof anexo1 !== 'object' || Array.isArray(anexo1)) {
+    return fallo(400, 'el ANEXO I de la SCo tiene que ser un objeto');
+  }
+  if (registro.version !== versionEsperada) {
+    return fallo(409, 'el ANEXO I de la SCo ' + numeroSCo + ' cambió mientras se editaba ' +
+      '(está en la versión ' + registro.version + ' y usted editaba la ' + versionEsperada +
+      '). Vuelva a abrirlo.', {
+      conflicto: true,
+      versionRemota: registro.version,
+      // El registro de la SCo lleva `actualizadoPor`/`actualizado`, no los
+      // `ultimoUsuario`/`ultimaModificacion` del expediente. Se devuelven con
+      // los nombres que espera el cliente (repo.http) para que el 409 se vea
+      // igual en los dos adaptadores.
+      ultimoUsuario: registro.actualizadoPor || null,
+      ultimaModificacion: registro.actualizado || null
+    });
+  }
+  const actualizado = Object.assign({}, registro, { anexo1: anexo1 });
+  tocar(actualizado, contexto);
+  // La entrada no lleva detalle porque la acción ya dice qué se hizo y el
+  // registro ES la SCo: no hay otro dato que agregar (la `detalle` de
+  // `entradaAuditoria` es un objeto de campos, no un texto libre).
+  actualizado.auditoria = (registro.auditoria || []).concat([
+    entradaAuditoria(contexto, 'guardarAnexo1')
+  ]);
+  guardar(datosDir, actualizado);
+  return { ok: true, registro: actualizado };
 }
 
 module.exports = {
   ESTADO_SOLICITUD,
+  anexo1DeSCo,
   anioDeExpediente,
   buscar,
   conCandadoGrupo,
   crearManejadoresSco,
   grupoDeExpediente,
+  guardarAnexo1,
+  guardarEntregableSco,
   hermanos,
   miembrosConEstado,
   nombreDeArchivo,
   numeroUtil,
   registros,
+  renglonesConsolidados,
   salir,
   sinEscribir,
   sumarse
