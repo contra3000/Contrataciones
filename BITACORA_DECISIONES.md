@@ -44,6 +44,10 @@ Plantilla al final del archivo.
 | 035 | Destino de despliegue: máquina virtual Debian con el proceso propio y los datos en su disco | Aceptada | 2026-08-29 |
 | 036 | Nada se decide en el arranque: lo que se puede resolver al usarlo, se resuelve al usarlo | Aceptada | 2026-08-31 |
 | 037 | El padrón se administra desde la aplicación; el único usuario previo es el administrador | Aceptada | 2026-09-01 |
+| 038 | Un valor por omisión nunca inventa una identidad, una facultad ni una guardia | Aceptada | 2026-09-02 |
+| 039 · 041 | **No escritas** (decisiones de las rondas 19 a 23) | — | — |
+| 042 | **Citada, no escrita** (el 409 distingue "otro operador" de "otra pestaña") | — | — |
+| 043 | Del requerimiento al trámite: agrupamiento por SCo y por proceso | Aceptada | 2026-09-29 |
 
 *(ADR-012 pasó a Aceptada en la ronda 2; el circuito de firma es manual y sin retorno.)*
 
@@ -1405,6 +1409,107 @@ Lo que **sí** puede tener valor por omisión: presentación (el puerto 8123, el
 **Alternativas consideradas.** *(a)* Valores por omisión con una advertencia en la salida: descartada — es exactamente lo que hace hoy `padron-inicial.js`, y la advertencia se pierde entre las demás líneas de arranque. Una advertencia que no detiene, no detiene. *(b)* Un asistente que pregunte lo que falta: descartada por ADR-037 (obliga a una pantalla sin autenticar). *(c)* Distinguir por criticidad caso por caso: descartada — es el criterio que ya venía fallando; la clasificación en tres familias es la que se puede aplicar sin pensar.
 
 **Consecuencias.** Un arranque más estricto: instalaciones que hoy arrancarían, no van a arrancar, y eso es lo que se busca. Hay que revisar los valores por omisión existentes contra las tres familias —no sólo los tres casos conocidos— y el que sobreviva a la revisión queda documentado como decisión, no como descuido. Y aparece un requisito de forma: **el mensaje tiene que decir qué falta y dónde ponerlo**, no "configuración inválida".
+
+---
+
+## ADR-043 — Del requerimiento al trámite: agrupamiento por SCo y por proceso
+
+**Estado:** Aceptada — 2026-09-29 — *Confirmada por el Jefe de Contrataciones; implementada en las rondas 26 y 27. Texto de la propuesta: `ordenes/ADR-PROPUESTA-AGRUPAMIENTO.md`*
+
+**Contexto.** Cada expediente es un requerimiento y recorre solo los 18 estados, pero
+el circuito real tiene tres niveles, y el Jefe de Contrataciones los definió el
+29/09/2026:
+
+1. **Fase 1** es individual: cada requerimiento lo arma su generador.
+2. **La SCo** se arma en COMPR.AR. Abastecimiento carga en la aplicación el
+   **número de SCo**, que **puede juntar varios requerimientos**, y *"desde ahí en
+   adelante quedan juntados los requerimientos que queden asociados en una misma
+   SCo"*. Lo firmable es **el ANEXO I, uno por SCo**.
+3. **El proceso** —*"cuando Contrataciones recibe dos SCo similares las puede juntar
+   en un mismo proceso"* — se arma en **Confección de proyectos**, y se identifica
+   con el **número de procedimiento de COMPR.AR**, el mismo que va al pliego como
+   `nro_procedimiento`.
+
+Con tres reglas del mismo día: la **devolución** de un requerimiento de una SCo
+**vuelve toda la SCo**; el **mismo ítem en dos requerimientos** va en el ANEXO I
+como **un solo renglón con la cantidad sumada**, sabiendo qué parte pidió cada
+unidad; y el **pliego** suma igual los renglones que vienen de SCo distintas.
+
+**Decisión.** **El expediente sigue siendo la unidad que se guarda. Arriba de él
+aparecen dos agrupamientos que se mueven juntos.** No se cambia la matriz de
+18 × 7: cambia **quién se mueve** cuando alguien aprieta "Avanzar".
+
+### 1 · La SCo
+
+- **Registro propio:** `datos/sco/<año>/<numeroSCo>.json`, con `numeroSCo`,
+  `expedientes: [ids]`, `entregables`, `version` y `auditoria`. El servidor lo crea
+  o actualiza cuando se guarda el número.
+- **Se forma en `SOLICITUD_CONTRATACION`.** Un requerimiento sólo se suma a una SCo
+  que esté en ese estado; mientras la SCo no avanzó, **se puede sacar** un
+  requerimiento cambiándole el número. Pasado ese punto, sumarse da 409.
+- **Desde que la SCo avanza, se mueve en bloque:** avanzar o devolver cualquiera
+  de sus expedientes mueve a todos, con escritura **todo o nada** bajo un mismo
+  candado; si uno no cumple, no se mueve ninguno y el mensaje dice cuál y por qué;
+  cada expediente deja el evento con `grupo: "SCo <número>"`.
+- **Devolución en bloque, también a Fase 1.** Todos sus requerimientos vuelven,
+  **la SCo no se deshace**, cada generador corrige y avanza el suyo, y la SCo no
+  sale de `SOLICITUD_CONTRATACION` hasta que estén todos de vuelta ahí.
+- **ANEXO I por SCo:** se genera con los renglones de todos sus requerimientos,
+  **el mismo código de catálogo es un solo renglón con la cantidad sumada** y abajo
+  el desglose por unidad solicitante (*"GOE: 10 · Grupo Base: 5"*); se guarda como
+  entregable **de la SCo**, y `ANALISIS_SCo` **exige** ese ANEXO I.
+- Un `anexo1.*` que un expediente ya traía es **punto de partida**, no el documento
+  de la SCo: si la SCo tiene un solo miembro se precarga para que se edite y se
+  guarde en el registro; con varios no se elige uno detrás de otro. Mientras no esté
+  guardado en el registro, la SCo **no sale** de `ANALISIS_SCo`.
+
+### 2 · El proceso
+
+- **Mismo patrón, un nivel más arriba:** `datos/procesos/<año>/<id>.json`, con
+  `id`, `scos: [números]`, `entregables`, `version` y `auditoria`.
+- **Se forma en `CONFECCION_PROYECTOS`.** Desde que el proceso avanza, se mueven
+  en bloque todos los expedientes de todas sus SCo.
+- El pliego y el YAML se arman **por proceso**, con la misma regla de sumar renglones
+  iguales.
+
+### 3 · Lo que ve la gente
+
+- **El tablero:** hasta la SCo, una tarjeta por requerimiento; desde la SCo, **una
+  tarjeta por SCo**, con sus requerimientos adentro; desde el proceso, **una
+  tarjeta por proceso**.
+- **El expediente** dice arriba *"Parte de la SCo 123/2026, con 2026-003 y
+  2026-007"* y después *"Parte del proceso …"*.
+- **"Avanzar"** —con el aviso de la ronda 26— explica qué falta **en todo el grupo**.
+
+**Fundamento.**
+
+- **No se convierte la SCo en un expediente nuevo.** Todo lo que ya existe se apoya
+  en el expediente individual: la matriz, los permisos, las versiones, los eventos,
+  los 9 caminos y los 462 tests que había. Rehacerlo sería reescribir el sistema;
+  con el grupo arriba, **lo existente sigue valiendo** y sólo se agrega quién se
+  mueve junto.
+- **Todo o nada.** Un grupo a medio avanzar deja expedientes en estados distintos
+  para el mismo trámite, y eso es peor que no avanzar.
+- **El registro del grupo guarda lo que es del grupo:** el ANEXO I y el pliego. Así
+  no hay que copiarlos en cada expediente y que después diverjan.
+
+**Alternativas consideradas.** *(a)* Convertir la SCo en un expediente propio:
+descartada - duplica el estado, la matriz y los permisos, y obligaría a una
+migración de todo lo existente. *(b)* Un grupo de "movimiento" sin registro propio,
+armado barriendo el índice: descartada - el índice es una vista, no una fuente de
+verdad; sin registro no hay versión, ni auditoría, ni ANEXO I de la SCo.
+*(c)* Dejar que el ANEXO I heredado de un expediente alcance para salir de
+`ANALISIS_SCo`: descartada - es un relleno plausible en el sentido de ADR-038: la
+SCo avanzaría sin que nadie guardara nunca el documento que se firma.
+
+**Consecuencias.** Se gana: el tablero y la pantalla dicen lo mismo que el circuito
+real; una SCo no puede quedar a medio camino; el ANEXO I que se firma es uno solo y
+consolida lo que pidieron todas las unidades. Se pierde: el servidor tiene que
+escribir N expedientes bajo un candado, con restauración desde `hist/` si algo falla
+a la mitad, y eso se prueba con una simulación de falla. Queda pendiente de
+validar: **el proceso de la ronda 28** sigue sin registro, sin movimiento en bloque
+y sin pliego consolidado, y **la matriz de permisos de las operaciones de grupo**
+todavía no nombra las acciones nuevas.
 
 ---
 

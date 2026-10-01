@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-09-29** · ciclo 26 evaluado (6 de 6) · ronda 27 lista (SCo en bloque) · ADR-043 aceptado · la tabla §0 es la única fuente del estado
+Última actualización: **2026-09-30** · ronda 27 cerrada (6 de 6, más dos arreglos) · ADR-043 asentado · la tabla §0 es la única fuente del estado
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -37,7 +37,7 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H23 | El circuito de la persona llega hasta el final | ✅ **Terminado** — ronda 21, 9 de 9 caminos | H22 |
 | H24 | Lo que apareció al usarlo de verdad | ✅ **Cerrado en lo que frenaba al Jefe** (rondas 22-26): creación por rol, 20 MB, ayudas, botones y usuarios visibles, descripción del ítem, corregir renglones, sesión viva, impresión, Avanzar explica, dos valores obligatorios, tope al `python`, un servidor por carpeta. Lo que queda (matriz de permisos, topes B2, bitácora) sigue en H25 | H9 |
 | H25 | **Controles automáticos y entorno de prueba** | ⬜ **Nuevo, 2026-09-23** — aprobado por el Jefe: entorno de prueba con siete roles, matriz de permisos como test, `estado-ciclo` | H24 |
-| H26 | **Del requerimiento al trámite: SCo y proceso** | 🟡 **Ronda 26 hecha**: número de SCo (COMPR.AR) requerido y hermanos visibles. **Ronda 27**: registro de SCo, movimiento en bloque todo-o-nada, devolución en bloque, ANEXO I por SCo con renglones sumados y desglose, tablero por SCo. **Ronda 28**: proceso (nº de procedimiento COMPR.AR) en Confección de proyectos y pliego consolidado. ADR-043 aceptado 29/09 | H24 |
+| H26 | **Del requerimiento al trámite: SCo y proceso** | ✅ **Ronda 26 hecha**: número de SCo (COMPR.AR) requerido y hermanos visibles. **Ronda 27 hecha (30/09)**: registro de SCo en `datos/sco/`, movimiento en bloque todo-o-nada con restauración desde `hist/`, devolución en bloque a Fase 1 sin deshacer la SCo, ANEXO I por SCo con renglones sumados y desglose por unidad, `ANALISIS_SCo` exigiéndolo, y el tablero con una tarjeta por SCo desde que la SCo sale de `SOLICITUD_CONTRATACION`. **Ronda 28**: proceso (nº de procedimiento COMPR.AR) en Confección de proyectos y pliego consolidado. ADR-043 aceptada 29/09, asentada 30/09 | H24 |
 | H10 | **Puesta en uso, por hitos** | 🟡 Paquete, servicio y respaldo hechos (ciclo 15). **Etapas definidas por el Jefe el 2026-09-23**, ver H10 | H9 |
 
 > **Cómo leer este plan.** Esta tabla es **la única fuente del estado**. Las casillas `[ ]` de cada sección son el plan original: la mayoría no se marcó al terminar y **no se mantienen**. Si una casilla contradice la tabla, vale la tabla.
@@ -710,7 +710,7 @@ e2e por la montura real; los unitarios legítimos
 - [ ] H24-9 · **La suite corre igual en cualquier clon**: `SGC_GENERADOR_PLIEGOS` fijada en un solo lugar de `tests/helpers/` (hoy `ronda-23-c2` cae en el clon del auditor)
 - [ ] H24-10 · **Los tres topes desparejos de B2**: unidad de medida sin cota en el servidor, los 4000 de la sugerencia escritos dos veces, 280 contra 300 KB del fragmento de catálogo
 - [ ] H24-11 · **Nada del sistema espera para siempre**: el `python` del generador de pliegos se lanza sin tope de tiempo (`pliego-probador.js:115`)
-- [ ] H24-12 · **La bitácora al día**: termina en el ADR-038 (ronda 18); el ADR-042 está citado y nunca se escribió, y del 039 al 041 no hay nada. Faltan las decisiones de las rondas 19 a 23 —el presupuesto como bytes crudos, `core/limites.js`, las guardias por rol del estado y de administrador
+- [ ] H24-12 · **La bitácora al día**: el ADR-043 quedó asentado el 30/09 (ronda 27) y el índice de `BITACORA_DECISIONES.md` marca el hueco. Sigue debiendo: el ADR-042 está citado y nunca se escribió, y del 039 al 041 no hay nada. Faltan las decisiones de las rondas 19 a 23 —el presupuesto como bytes crudos, `core/limites.js`, las guardias por rol del estado y de administrador
 
 **Criterio de aceptación:** un `contrataciones_supervisor` no puede crear un expediente y un `generador` sí; un PDF de 20 MB sube con progreso a la vista sin que el servidor tome cien megas para hacerlo.
 

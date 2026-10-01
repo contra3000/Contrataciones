@@ -57,8 +57,14 @@ test('RONDA-26 pieza 3 · el generador que se cuelga se corta a tiempo, responde
 
     const inicio = Date.now();
     const demora = async () => Date.now() - inicio;
+    // El tope que se le pasa al probador son 5000 ms y no 1500: lo que se prueba
+    // es que el generador colgado se corta y muere, no que `python` arranque en un
+    // segundo y medio. Con la suite entera corriendo en paralelo, 1500 ms quedaban
+    // al borde y este test dio falso rojo (el `pid` del colgado todavía no estaba
+    // escrito). 5000 ms deja margen de sobra y sigue siendo un tope corto frente a
+    // los 60 s de producción.
     await assert.rejects(
-      probador.generarPliegoPrueba('bienes', { topeMs: 1500 }),
+      probador.generarPliegoPrueba('bienes', { topeMs: 5000 }),
       (e) => {
         assert.ok(e && e.mensajeSeguro === true, 'el error es de los que ven los usuarios');
         assert.match(e.message, /tardó demasiado y se canceló/,
