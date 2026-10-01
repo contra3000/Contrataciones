@@ -424,9 +424,31 @@ ADR-043 asentado en `BITACORA_DECISIONES.md`.**
 
 ---
 
-*Las dos líneas de HEAD, con el clon limpio, van después de correr el paso 3 del
-cierre (`git clone … ..\auditoria\ciclo-27` y comparar), porque dependen del
-commit final.*
-git -C ..\auditoria\ciclo-27 log --oneline -1   →  (se completa al cerrar)
-git log --oneline -1 (en dev\)                  →  (se completa al cerrar)
+## 10. Verificación del cierre (ejecutada)
+
+El clon de auditoría se creó desde el remoto, no desde `dev`, para que no herede
+nada local:
+
 ```
+$ git clone --branch main https://github.com/contra3000/Contrataciones.git ..\auditoria\ciclo-27
+$ git -C ..\auditoria\ciclo-27 log --oneline -1
+354ff05 Ronda 27 · informe
+$ git -C ..\auditoria\ciclo-27 status --short
+(sin salida: limpio)
+```
+
+El `datos-prueba/catalogo_incisos.json` (40 MB) está fuera del repositorio por
+`.gitignore`, así que se copió aparte al clon y se comparó por hash:
+
+```
+SHA256 origen y copia: 11FB20B090C2E51010595EAF5405F7B8348FD21FDE98941BD084B3E877238AD3
+git -C ..\auditoria\ciclo-27 status --short → (sin salida: los datos de prueba no ensucian el clon)
+```
+
+```
+git -C ..\auditoria\ciclo-27 log --oneline -1   →  354ff05 Ronda 27 · informe
+git log --oneline -1 (en dev)                   →  354ff05 Ronda 27 · informe
+```
+
+Los dos `HEAD` son `354ff05a0108240d18e9850aa184ee767f273a5c`, idéntico a
+`origin/main` en los dos lados.
