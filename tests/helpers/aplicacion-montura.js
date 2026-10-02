@@ -17,30 +17,28 @@
  *
  * La clave: los tests operan SOLO sobre el DOM y los eventos que la app
  * registra; ninguna función de vista se llama a mano (ORDEN-RONDA-19 §5.1).
+ *
+ * ORDEN-RONDA-28 §2: armar el árbol desde el HTML, poner los globales de
+ * navegador y las dos utilidades de espera viven en helpers/dom-desde-html.js,
+ * compartidas con la montura del generador (ADR-044). Acá queda lo propio de
+ * esta montura: el servidor de prueba y el fetch real contra él.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
-const { Nodo, documento, crearStoragePlano } = require('./dom-stub.js');
+const { documento } = require('./dom-stub.js');
+const dom = require('./dom-desde-html.js');
 const su = require('./servidor-util.js');
 
 const RAIZ = path.join(__dirname, '..', '..');
 const APP_DIR = path.join(RAIZ, 'app');
 const INDEX = fs.readFileSync(path.join(APP_DIR, 'index.html'), 'utf8');
-const VACIOS = new Set(['meta', 'link', 'input', 'img', 'br', 'hr', 'source']);
-const CUERPO_RE = /<body[^>]*>([\s\S]*?)<\/body>/i;
 const RE_CLAVE = /^[a-z][a-záéíóúüñ]*(-[a-z][a-záéíóúüñ]*){3}$/;
 const CORREO_ADMIN = 'administrador@sgc.local';
 
 function scriptsDelHtml() {
-  const lista = [];
-  const re = /<script\s+src="([^"]+)"\s*>/g;
-  let m;
-  while ((m = re.exec(INDEX))) {
-    lista.push(m[1]);
-  }
-  return lista;
+  return dom.scriptsDelHtml(INDEX);
 }
 
 function claveProvisoriaDe(salida) {
@@ -72,150 +70,24 @@ function compilarAppJs() {
 
 // ---------------------------------------------------------------- Entorno --
 function instalarEntorno() {
-  if (typeof globalThis.navigator === 'undefined') {
-    globalThis.navigator = {};
-  }
-  if (typeof globalThis.confirm !== 'function') {
-    globalThis.confirm = function () { return false; };
-  }
-  if (typeof globalThis.prompt !== 'function') {
-    globalThis.prompt = function () { return null; };
-  }
-  globalThis.sessionStorage = globalThis.sessionStorage || crearStoragePlano();
-  globalThis.localStorage = globalThis.localStorage || crearStoragePlano();
-  if (typeof globalThis.FileReader !== 'function') {
-    globalThis.FileReader = function () {};
-  }
-  if (!globalThis.FileReader.prototype.readAsText) {
-    globalThis.FileReader.prototype.readAsText = function (archivo) {
-      this.result = archivo && typeof archivo.contenido === 'string'
-        ? archivo.contenido : '';
-      if (typeof this.onload === 'function') { this.onload(); }
-    };
-  }
-  if (!globalThis.FileReader.prototype.readAsDataURL) {
-    globalThis.FileReader.prototype.readAsDataURL = function (archivo) {
-      var nombre = (archivo && archivo.name) || 'archivo';
-      var tipo = (archivo && archivo.type) || 'application/octet-stream';
-      this.result = 'data:' + tipo + ';base64,' +
-        Buffer.from('contenido-sintetico-' + nombre).toString('base64');
-      if (typeof this.onload === 'function') { this.onload(); }
-    };
-  }
-  if (typeof globalThis.URL.createObjectURL !== 'function') {
-    globalThis.URL.createObjectURL = function () { return 'blob:montura'; };
-    globalThis.URL.revokeObjectURL = function () {};
-  }
-  if (typeof globalThis.Blob !== 'function') {
-    // La app descarga documentos con `new Blob([...])` (exportar.js,
-    // descargadorGenerico). Sin Blob, el click del descargador explota.
-    globalThis.Blob = function (partes, opciones) {
-      this.partes = partes;
-      this.type = (opciones && opciones.type) || '';
-    };
-  }
-  globalThis.document = documento;
-}
-
-function buscarPorId(nodo, id) {
-  if (nodo.id === id) {
-    return nodo;
-  }
-  for (const hijo of nodo.children) {
-    const encontrado = buscarPorId(hijo, id);
-    if (encontrado) {
-      return encontrado;
-    }
-  }
-  return null;
-}
-
-// getElementById con búsqueda en árbol: los nodos creados con createElement
-// (formularios dinámicos, opciones, filas) no están en porId.
-function prepararDocumento() {
-  documento.getElementById = function (id) {
-    return documento.porId[id] || buscarPorId(documento.body, id);
-  };
+  dom.instalarGlobales(documento);
 }
 
 // ------------------------------------------------------------------ DOM ----------------
-function extraerAtributos(raw) {
-  const attrs = {};
-  const re = /([\w-]+)(?:="([^"]*)")?/g;
-  let m;
-  while ((m = re.exec(raw))) {
-    attrs[m[1]] = m[2] === undefined ? '' : m[2];
-  }
-  return attrs;
-}
-
-function aplicarAtributos(nodo, attrs) {
-  for (const nombre of Object.keys(attrs)) {
-    const valor = attrs[nombre];
-    nodo.setAttribute(nombre, valor);
-    if (nombre === 'id') {
-      nodo.id = valor;
-    } else if (nombre === 'type') {
-      nodo.type = valor;
-    } else if (nombre === 'hidden') {
-      nodo.hidden = true;
-    } else if (nombre === 'value') {
-      nodo.value = valor;
-    } else if (nombre === 'class') {
-      nodo.className = valor;
-    } else if (nombre === 'required') {
-      nodo.required = true;
-    } else if (nombre === 'maxlength') {
-      nodo.maxLength = parseInt(valor, 10);
-    } else if (nombre === 'rows') {
-      nodo.rows = parseInt(valor, 10);
-    } else if (nombre === 'min' || nombre === 'step' || nombre === 'placeholder' || nombre === 'href') {
-      nodo[nombre] = valor;
-    }
-  }
-}
-
-function registrarArbol(nodo) {
-  if (nodo.id) {
-    documento.porId[nodo.id] = nodo;
-  }
-  for (const hijo of nodo.children) {
-    registrarArbol(hijo);
-  }
+// Las dos monturas (la de esta aplicación con servidor y la del generador,
+// ORDEN-RONDA-28 §2) arman el árbol y buscan por id con el mismo código, que
+// vive en helpers/dom-desde-html.js.
+function prepararDocumento() {
+  dom.prepararBusquedaPorId(documento);
 }
 
 function construirDom() {
-  const cuerpoHtml = (CUERPO_RE.exec(INDEX) || ['', ''])[1]
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<script[\s\S]*?<\/script>/gi, '');
-  documento.porId = {};
-  const cuerpo = new Nodo('body');
-  documento.body = cuerpo;
-  const pila = [cuerpo];
-  const reTag = /<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^<>]*)?)\s*(\/?)\s*>/g;
-  let m;
-  while ((m = reTag.exec(cuerpoHtml))) {
-    const barra = m[1];
-    const tag = m[2];
-    if (barra === '/') {
-      while (pila.length > 1 && pila[pila.length - 1].tag !== tag.toLowerCase()) {
-        pila.pop();
-      }
-      if (pila.length > 1) {
-        pila.pop();
-      }
-      continue;
-    }
-    const tagLower = tag.toLowerCase();
-    const nodo = new Nodo(tagLower);
-    aplicarAtributos(nodo, extraerAtributos(m[3]));
-    pila[pila.length - 1].appendChild(nodo);
-    if (!VACIOS.has(tagLower) && m[4] !== '/') {
-      pila.push(nodo);
-    }
-  }
-  registrarArbol(cuerpo);
+  return dom.construir(documento, INDEX);
 }
+
+// ------------------------------------------------------------- Utilidades de test -----
+const esperar = dom.esperar;
+const botonEn = dom.botonEn;
 
 // --------------------------------------------------------------- Fetch ------------------
 // Bytes sintéticos de un archivo de la montura (los inputs de archivo se
@@ -308,32 +180,6 @@ function crearFetch(base) {
       req.end();
     });
   };
-}
-
-// ------------------------------------------------------------- Utilidades de test -----
-function esperar(condicion, plazo, mensaje) {
-  return new Promise((resolve, reject) => {
-    const limite = Date.now() + (plazo || 20000);
-    function paso() {
-      if (condicion()) {
-        return resolve();
-      }
-      if (Date.now() > limite) {
-        return reject(new Error(mensaje || 'no se cumplió la condición a tiempo'));
-      }
-      setTimeout(paso, 25);
-    }
-    setImmediate(paso);
-  });
-}
-
-function botonEn(raiz, texto) {
-  for (const b of raiz.querySelectorAll('button')) {
-    if (b.textContent === texto) {
-      return b;
-    }
-  }
-  return null;
 }
 
 // -------------------------------------------------------------- Montura ---------------

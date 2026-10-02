@@ -378,6 +378,19 @@ mark {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
+/* ORDEN-RONDA-28 §2 (ADR-044): la franja del generador. Dice, a la vista y en
+   todas las pantallas, que no hay servidor y que el trabajo vive en el archivo
+   que se exporta. Entra en el flujo (no es fija como el aviso de sesión): es
+   parte del encabezado, no una alerta. */
+.generador-franja {
+  margin: 12px 0 0;
+  padding: 0.6em 1em;
+  border-left: 4px solid var(--gold-500, #C9A14A);
+  background: var(--navy-800);
+  color: var(--white);
+  font-weight: 600;
+}
+
 .lista-operadores {
   list-style: none;
   display: grid;
