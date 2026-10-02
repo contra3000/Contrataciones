@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/187.js",[{"codigo":"3.2.2-9971.1","item":"ALQ. DE EQUIPO GASTRONONIMCO; DESCRIPCION: ALQ. DE EQUIPO GASTRONONIMCO"}]);

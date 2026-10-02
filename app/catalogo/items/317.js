@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/317.js",[{"codigo":"3.5.5-5407.1","item":"S. P/PAGO DE HABERES; DESCRIPCION: SERVICIO PARA PAGO DE HABERES"}]);

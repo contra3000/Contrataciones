@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4497.js",[{"codigo":"2.7.4-9141.1","item":"ECLISA P/RIEL; MATERIAL: ACERO, LONGITUD: 54,6 Cm, AGUJEROS: 4 UN"},{"codigo":"2.7.4-9141.2","item":"ECLISA P/RIEL; MATERIAL: ACERO, LONGITUD: 77,5 Cm, AGUJEROS: 6 UN"}]);

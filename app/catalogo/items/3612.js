@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3612.js",[{"codigo":"2.9.9-9527.1","item":"PIEDRAS SEMI PRECIOSAS; MATERIAL: SIMIL TOPACIO, FORMA: HEXADECAGONO, DIMENSION: 36 (ALT) X 19,5 (DIAM) mm"}]);

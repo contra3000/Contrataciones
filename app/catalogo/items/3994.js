@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3994.js",[{"codigo":"2.9.2-7024.1","item":"PLANTILLAS DE DIBUJO; TIPO: AMOBLAMIENTO"},{"codigo":"2.9.2-7024.2","item":"PLANTILLAS DE DIBUJO; TIPO: SANITARIOS"},{"codigo":"2.9.2-7024.3","item":"PLANTILLAS DE DIBUJO; TIPO: FIGURAS GEOMETRICAS"},{"codigo":"2.9.2-7024.5","item":"PLANTILLAS DE DIBUJO; TIPO: CONTROL DE COLOR"}]);

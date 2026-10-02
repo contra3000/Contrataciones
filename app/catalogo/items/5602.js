@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5602.js",[{"codigo":"2.6.1-9453.1","item":"ANILLO DE COLADA; MATERIAL: CERAMICA, DIAMETRO: 95 mm"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/173.js",[{"codigo":"3.2.1-6746.1","item":"ALQ. DE COMEDOR; DESCRIPCION: ALQUILER DE COMEDOR"}]);

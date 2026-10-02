@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6384.js",[{"codigo":"3.4.9-4668.1","item":"MONTAJE ESTRUCT. METALMECANICA; DESCRIPCION: MONTAJE DE ESTRUCTURA METALICA"}]);

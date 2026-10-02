@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/548.js",[{"codigo":"2.9.9-8000.1","item":"TABS DE EMPALME; USO: MICROFILMACION, MATERIAL: CARTON, PELICULA: 35 MM X 30 M"}]);

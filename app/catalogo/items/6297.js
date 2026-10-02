@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6297.js",[{"codigo":"3.4.6-3040.1","item":"INST. RED INFORMATICA; DESCRIPCION: INSTALACION DE RED INFORMATICA"}]);

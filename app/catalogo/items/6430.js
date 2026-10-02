@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6430.js",[{"codigo":"3.4.6-10053.1","item":"S. BASE DE DATOS ADMINISTRADAS; DESCRIPCION: S. BASE DE DATOS ADMINISTRADAS"}]);

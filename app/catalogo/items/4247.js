@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4247.js",[{"codigo":"3.3.9-2638.1","item":"MANT. Y REPAR. PLANTA VEGETAL; DESCRIPCION: MANT. DE PLANTAS"}]);

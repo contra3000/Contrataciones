@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1377.js",[{"codigo":"4.3.8-9451.2","item":"BANCO DE PRUEBA P/MOTOR; USO: BOMBAS INYECTORAS, POTENCIA: 500 HP"},{"codigo":"4.3.8-9451.3","item":"BANCO DE PRUEBA P/MOTOR; USO: AERONAUTICO, POTENCIA: 2000 HP"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6878.js",[{"codigo":"2.9.9-7729.1","item":"TIZAS P/POOL; PRESENTACION: PANES"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6188.js",[{"codigo":"3.4.9-4999.1","item":"ARMADO DE MAMPARA; DESCRIPCION: ARMADO DE MAMPARA"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5628.js",[{"codigo":"2.9.9-5616.1","item":"CINTAS MAGNETICAS; MEDIDA: 2400 ft, CAPACIDAD: 6400 DPI, USO: BULL DPS 9000"}]);

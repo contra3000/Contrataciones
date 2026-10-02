@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4766.js",[{"codigo":"2.9.5-6545.1","item":"CODOS DE CONEX P/OXICAPNOGRAFO; MATERIAL: PLASTICO DESCARTABLE, PRESENTACION: UNIDAD"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5175.js",[{"codigo":"4.3.9-7784.1","item":"PRESURIZADORES P/SUERO; MATERIAL: PLASTICO, USO: P/SACHET"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3016.js",[{"codigo":"2.7.9-2108.1","item":"LINGOTES P/CALAFATEAR; MATERIAL: PLOMO, PRESENTACION: 1 Kg"},{"codigo":"2.7.9-2108.2","item":"LINGOTES P/CALAFATEAR; MATERIAL: PLOMO, PRESENTACION: 5 Kg"}]);

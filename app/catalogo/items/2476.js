@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2476.js",[{"codigo":"4.3.9-7824.1","item":"PUNTAS ACCESOR. P/VOLTIMETROS; TENSION: 5000 V, RESISTENCIA: 100 MOhm, LARGO: 4,1/2 pulg"}]);

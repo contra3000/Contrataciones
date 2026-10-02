@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/243.js",[{"codigo":"3.2.2-9857.1","item":"ALQ. MARTILLO NEUMATICO; DESCRIPCION: ALQ. MARTILLO NEUMATICO"}]);

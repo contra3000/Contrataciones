@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5127.js",[{"codigo":"2.9.5-4302.1","item":"PIEDRAS DE DIAMANTE; PRESENTACION: CAJA X 1-100 UN"},{"codigo":"2.9.5-4302.2","item":"PIEDRAS DE DIAMANTE; PRESENTACION: CAJA X 2 UN"},{"codigo":"2.9.5-4302.3","item":"PIEDRAS DE DIAMANTE; PRESENTACION: UNIDAD"}]);

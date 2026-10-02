@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/495.js",[{"codigo":"2.9.9-8446.5","item":"SUJETADORES P/DISTINTIVO; MATERIAL: HIERRO NIQUELADO, DIMENSIONES: 170 X 10 mm, DIMENSION: 170 X 10 mm"}]);

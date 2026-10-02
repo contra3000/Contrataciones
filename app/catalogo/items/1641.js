@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1641.js",[{"codigo":"4.3.9-7167.1","item":"CORTADORAS DE FIAMBRE; TIPO: ELECTRICA"},{"codigo":"4.3.9-7167.2","item":"CORTADORAS DE FIAMBRE; TIPO: MANUAL"},{"codigo":"4.3.9-7167.3","item":"CORTADORAS DE FIAMBRE; TIPO: INDUSTRIAL"}]);

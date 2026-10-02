@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5002.js",[{"codigo":"2.9.9-7479.1","item":"JUEGO DE ESFERAS CONDUCTORAS; CANTIDAD: 2, DIAMETRO: 13 Cm, MATERIAL: ACERO, ALTO DE POSTE: 30 Cm"}]);

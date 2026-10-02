@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6397.js",[{"codigo":"3.4.9-10104.1","item":"PROVISION REPLICA OBRA DE ARTE; DESCRIPCION: PROVISION REPLICA OBRA DE ARTE"}]);

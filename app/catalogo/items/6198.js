@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6198.js",[{"codigo":"3.2.9-9986.1","item":"CANON; DESCRIPCION: CANON"}]);

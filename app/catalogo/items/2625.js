@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2625.js",[{"codigo":"4.3.3-7460.1","item":"SIST. D/DINAMICAS ROTACIONALES; CANT. COMPONENTES: 15, COMPONENTES: 15"}]);

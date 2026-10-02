@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1643.js",[{"codigo":"4.3.9-9980.1","item":"CORTADORAS DE PAPEL; VELOCIDAD DE CORTE: 20000 HOJA/HORA, POTENCIA: 220, FRECUENCIA: 60 Hz, ANCHO: 90 A 510 mm, TENSION: 220 V"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6780.js",[{"codigo":"3.4.9-8236.1","item":"RESTAURACION DE OBRAS DE ARTE; DESCRIPCION: RESTAURACION DE OBRA DE ARTE"}]);

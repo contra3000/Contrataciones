@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/319.js",[{"codigo":"3.5.4-5098.1","item":"SEGURO ACCIDENTE PERSONAL; DESCRIPCION: SEGURO ACCIDENTES PERSONALES"}]);

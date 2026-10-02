@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2531.js",[{"codigo":"4.3.1-9481.1","item":"RELEVADORES DE SUBSUELO; FRECUENCIA: 270 A 900 MHZ, ALIMENTACION: 12 - 220 V, CANT. DE CANALES: 1"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1923.js",[{"codigo":"4.3.2-8981.1","item":"EQUIPOS SALVA ESCALERAS; TIPO: RECTA, CAPACIDAD DE CARGA: 170 Kg, VELOCIDAD: 6 M/MIN"}]);

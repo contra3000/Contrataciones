@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1577.js",[{"codigo":"4.3.3-7524.1","item":"COLECTORES A VACIO; TAMAÑO PORO: 0.65 Mn, DIMENSIONES: SIN VALOR, USO: P/PLACAS MULTISCREEN, DIMENSION: SIN VALOR, PORO: 0.65 Mn"}]);

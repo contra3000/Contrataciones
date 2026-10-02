@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1851.js",[{"codigo":"4.3.3-8560.1","item":"EQUIPOS DE BRAQUITERAPIA; TIPO: DE ALTA TASA DE DOSIS"}]);

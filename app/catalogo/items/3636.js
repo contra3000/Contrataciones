@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3636.js",[{"codigo":"2.2.2-2723.1","item":"SALIDAS DE BAÑO; MATERIAL ALGODON - AFELPADO CON."},{"codigo":"2.2.2-2723.4","item":"SALIDAS DE BAÑO; MATERIAL: ALGODON, TALLE: SMALL, AFELPADO: SIN"}]);

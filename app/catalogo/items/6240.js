@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6240.js",[{"codigo":"3.4.9-5226.1","item":"DESMONTAJE DE EQUIPO; DESCRIPCION: DESMONTAJE DE EQUIPO"}]);

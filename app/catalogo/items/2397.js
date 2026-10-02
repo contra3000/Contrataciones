@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2397.js",[{"codigo":"4.3.8-3308.1","item":"PICANAS P/ANIMALES; USO: ARREADO DE GANADO, TIPO: BASTON, ALIMENTACION: 3 PILAS GRANDES"}]);

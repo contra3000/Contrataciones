@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/579.js",[{"codigo":"2.5.6-796.1","item":"NAFTA COMUN; TIPO: C/PLOMO, PRESENTACION: GRANEL"},{"codigo":"2.5.6-796.3","item":"NAFTA COMUN; TIPO: SIN PLOMO, PRESENTACION: GRANEL"},{"codigo":"2.5.6-796.5","item":"NAFTA COMUN; TIPO: SIN PLOMO, PRESENTACION: X LITRO"}]);

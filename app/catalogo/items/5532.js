@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5532.js",[{"codigo":"2.5.9-5640.1","item":"METILCELULOSA; BASE: CELULOSA, PRESENTACION: SUELTO, ESTADO: POLVO, TIPO: POLVO"}]);

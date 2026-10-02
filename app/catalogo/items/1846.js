@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1846.js",[{"codigo":"4.3.3-7371.1","item":"EQUIPOS CLAS. COLOR DE MIEL; TIPO: PFUND, ACCESORIO: FILTRO C/SOPORTE, OCULAR, REPUESTO: PORTA MUES VIDRIO, CUÑA AMBAR"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5206.js",[{"codigo":"2.9.5-2832.1","item":"REGLAS P/ENDODONCIA; ESCALA: MILIMETRICA"}]);

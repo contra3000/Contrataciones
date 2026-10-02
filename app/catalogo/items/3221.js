@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3221.js",[{"codigo":"4.3.8-4712.1","item":"ENGRAMPADORAS MANUALES; MATERIAL: ALUMINIO"},{"codigo":"4.3.8-4712.2","item":"ENGRAMPADORAS MANUALES; MATERIAL: ACERO"},{"codigo":"4.3.8-4712.3","item":"ENGRAMPADORAS MANUALES; MATERIAL: METAL Y PLASTICO"}]);

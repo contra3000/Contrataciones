@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6739.js",[{"codigo":"3.4.9-5434.1","item":"VALIDACION DE EQUIPO; DESCRIPCION: VALIDACION DE EQUIPO"}]);

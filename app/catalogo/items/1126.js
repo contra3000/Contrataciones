@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1126.js",[{"codigo":"4.3.7-51.16","item":"MESAS P/DIBUJO; TABLERO: MADERA, DIAGONAL: 180 Cm, INCLINACION: VARIABLE, MATERIAL ESTRUCTURA: METAL"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3341.js",[{"codigo":"2.7.5-2082.1","item":"PISTOLAS TERMICAS; MATERIAL: PVC"},{"codigo":"2.7.5-2082.2","item":"PISTOLAS TERMICAS; MATERIAL: POLIETILENO"}]);

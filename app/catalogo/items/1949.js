@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1949.js",[{"codigo":"4.3.3-9605.1","item":"ESTEREOSCOPIOS; TIPO: COMPACTO, DISTANCIA FOCAL: 12 Cm, MATERIAL: ALUMINIO, AUMENTO: 4X"}]);

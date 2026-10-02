@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1370.js",[{"codigo":"4.3.3-7382.2","item":"BALANZAS DE PLATILLO; CAPACIDAD: 15 Kg, MATERIAL: ACERO INOXIDABLE, PRECISION: 5 GR"}]);

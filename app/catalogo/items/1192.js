@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1192.js",[{"codigo":"4.4.0-9617.1","item":"ARIETES; MATERIAL: ACERO, DIAMETRO: 15 Cm, LARGO: 70 Cm, PESO: 15,5 Kg"}]);

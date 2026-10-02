@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1159.js",[{"codigo":"4.3.7-8862.1","item":"PORTA PANCARTAS; MATERIAL: METAL Y PLASTICO, ALTURA: 1 M, ANCHO: 0,5 M"},{"codigo":"4.3.7-8862.2","item":"PORTA PANCARTAS; MATERIAL: HIERRO, ALTURA: 3 M, ANCHO: 2 M"}]);

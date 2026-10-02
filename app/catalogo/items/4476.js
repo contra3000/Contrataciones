@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4476.js",[{"codigo":"2.7.2-8377.1","item":"MORCETOS; DIAMETRO: 1/2 pulg, USO: P/JABALINA"},{"codigo":"2.7.2-8377.2","item":"MORCETOS; USO: CABLE PREENSAMBLADO, DIAMETRO: 4 A 35 mm"}]);

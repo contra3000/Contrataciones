@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4869.js",[{"codigo":"4.3.3-6691.1","item":"EQ. P/TRANSFUSIONES; TIPO: ESTERIL, ACCESORIO: AGUJA, MATERIAL: DESCARTABLE, PRESENTACION: UNIDAD"}]);

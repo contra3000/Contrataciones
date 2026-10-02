@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/184.js",[{"codigo":"3.2.2-10059.1","item":"ALQ. DE EQUIPO DE ILUMINACION; DESCRIPCION: ALQ. DE EQUIPO DE ILUMINACION"}]);

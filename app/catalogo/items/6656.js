@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6656.js",[{"codigo":"3.4.9-4252.1","item":"SERV. ESTRAT.COMUNICACION; DESCRIPCION: SERV.ESRATEGIA DE COMUNICACION"}]);

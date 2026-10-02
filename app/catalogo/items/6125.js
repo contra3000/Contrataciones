@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6125.js",[{"codigo":"3.3.1-2149.6","item":"PLOMERIA; DESCRIPCION: PLOMERIA, CRITERIO SOCIAL: DECRETO 312/2010"},{"codigo":"3.3.1-2149.7","item":"PLOMERIA; DESCRIPCION: PLOMERIA, CRITERIO SOCIAL: SIN"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/256.js",[{"codigo":"3.2.2-9513.1","item":"ALQUILER MAQUINA PINTABANDAS; DESCRIPCION: ALQ. MAQUINA PINTABANDAS"}]);

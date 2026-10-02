@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2521.js",[{"codigo":"4.3.3-9156.1","item":"REFRIGERADORES BIOLOGICOS; TEMPERATURA MINIMA: -40 °C, CAPACIDAD: 6 X ENVASE X 1 L"}]);

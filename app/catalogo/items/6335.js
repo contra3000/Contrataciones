@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6335.js",[{"codigo":"3.3.1-6322.3","item":"MANT. Y REPAR. DE CHIMENEA; DESCRIPCION: MANT. Y REPAR. DE CHIMENEA, CRITERIO SOCIAL: DECRETO 312/2010"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2235.js",[{"codigo":"4.3.3-6390.3","item":"MEDIDORES DE GRASA SUBCUTANEA; TIPO: TEJIDO CELULAR , USO: MEDICINA, LECTURA: ANALOGICO, SISTEMA: MANUAL"}]);

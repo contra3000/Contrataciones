@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6522.js",[{"codigo":"3.5.3-4627.1","item":"S. DE TROQUELADO; DESCRIPCION: SERVICIO DE TROQUELADO"}]);

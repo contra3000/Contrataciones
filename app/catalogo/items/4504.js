@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4504.js",[{"codigo":"2.7.9-5561.1","item":"SEMIACABADO DE FUNDICION; MATERIAL: FERROSILICIO, PESO: 380 Kg, PRESENTACION: ESBOZO S/MECANIZAR"}]);

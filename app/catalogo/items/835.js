@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/835.js",[{"codigo":"2.9.3-7766.1","item":"LAMINA FUSIBLE; MATERIAL: METALICO, DIMENSION: 131 X 28 mm, CORRIENTE: 200 A, TENSION: 600 V"}]);

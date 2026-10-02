@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5.js",[{"codigo":"2.1.3-8136.1","item":"AVES DE CORRAL; TIPO: GALLINA PONEDORA"},{"codigo":"2.1.3-8136.2","item":"AVES DE CORRAL; TIPO: POLLO"}]);

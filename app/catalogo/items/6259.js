@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6259.js",[{"codigo":"3.4.9-7441.1","item":"ESTUDIO TECNICO DEL TURISMO; DESCRIPCION: ESTUDIO TECNICO DEL TURISMO"}]);

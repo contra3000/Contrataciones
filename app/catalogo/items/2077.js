@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2077.js",[{"codigo":"4.3.3-9173.1","item":"IMPRESORA DE PLACAS; VELOCIDAD DE IMPRESION: 50 PLACA/HORA, RESOLUCION: 320 PXL, TIPO: PLACAS SECAS"}]);

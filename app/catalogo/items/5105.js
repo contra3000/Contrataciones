@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5105.js",[{"codigo":"2.9.5-6797.4","item":"PASTAS DE KARAYA; PRESENTACION: ENVASE X 60 GR, USO: ADHESIVO P/ARO DE BOLSA"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1739.js",[{"codigo":"2.9.9-8487.1","item":"ELEMENTOS P/ASCENSION; MATERIAL: BANDA POLIAMIDA, CARGA MAXIMA: 200 Kg, PESO: 140 GR, TIPO: SIN VALOR"}]);

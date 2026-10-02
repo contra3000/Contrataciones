@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6209.js",[{"codigo":"3.3.1-9382.2","item":"CONST. DE ACCESO; DESCRIPCION: CONST. DE ACCESO, CRITERIO SOCIAL: DECRETO 312/2010"}]);

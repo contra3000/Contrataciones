@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6722.js",[{"codigo":"3.4.9-4270.1","item":"SERVICIO DE SOLDADURA; TIPO: DE PUNTO, ELEMENTO: BATERIA DE LITIO, DESCRIPCION: SERVICIO DE SOLDADURA"}]);

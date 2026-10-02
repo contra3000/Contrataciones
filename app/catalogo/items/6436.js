@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6436.js",[{"codigo":"3.4.9-9708.1","item":"S. CONSTRUCCION HORNO INDUST.; DESCRIPCION: S. CONSTRUCCION HORNO INDUST."}]);

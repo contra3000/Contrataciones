@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6441.js",[{"codigo":"3.4.9-10060.1","item":"S. CRIANZA MANT.Y MEJ. ANIMAL; DESCRIPCION: S. CRIANZA, MANT. Y MEJ ANIMAL"}]);

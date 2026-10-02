@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2866.js",[{"codigo":"2.7.2-7314.4","item":"ALAMBRES DE TUNGSTENO; DIAMETRO: 0,51 mm, PRESENTACION: ROLLO X 1 Kg"}]);

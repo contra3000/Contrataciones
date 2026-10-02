@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6006.js",[{"codigo":"2.9.6-4880.1","item":"ROTORES P/ALTERNADORES; TIPO: NASHVILLE"},{"codigo":"2.9.6-4880.2","item":"ROTORES P/ALTERNADORES; TIPO: INDIEL FORD 7000"}]);

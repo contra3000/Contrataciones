@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5619.js",[{"codigo":"2.9.6-7312.1","item":"CAPSULA MAGNETOFONICA; MODELO: SN37"},{"codigo":"2.9.6-7312.2","item":"CAPSULA MAGNETOFONICA; MODELO: DIAMETRO 47,5 MM"}]);

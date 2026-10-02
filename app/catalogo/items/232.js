@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/232.js",[{"codigo":"3.2.2-4364.1","item":"ALQ. EQ. INTERP. SIMULT.; DESCRIPCION: ALQ.EQUIPO P/INTERP.SIMULTANEA"}]);

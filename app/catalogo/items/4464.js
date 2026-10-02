@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4464.js",[{"codigo":"2.7.2-8544.4","item":"ALAMBRES DE PLOMO; TIPO: ALAMBRE, DIMENSION: 1 mm, USO: SOLDADURA"},{"codigo":"2.7.2-8544.6","item":"ALAMBRES DE PLOMO; TIPO: VARILLA, DIMENSION: 3 mm, USO: SOLDADURA"}]);

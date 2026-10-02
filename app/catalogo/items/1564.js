@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1564.js",[{"codigo":"4.3.9-2736.1","item":"CINTURONES DE BATERIA; MATERIAL: CUERO, TENSION: 12 V, Nº DE COMPARTIMIENTOS: 10"}]);

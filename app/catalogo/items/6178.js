@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6178.js",[{"codigo":"3.4.6-9325.1","item":"AMPLIACION DE BASE DE DATOS; DESCRIPCION: AMPLIACION DE BASE DE DATOS"}]);

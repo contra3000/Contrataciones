@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5518.js",[{"codigo":"2.5.9-7736.1","item":"HUMECTANTES P/FOTOGRAFIA; PRESENTACION: ENVASE X 473 mL"}]);

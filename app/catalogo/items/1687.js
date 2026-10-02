@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1687.js",[{"codigo":"4.3.3-8372.3","item":"DETECTORES DE FLUJOS; RANGO DE TEMPERATURA: 0 A 60 °C, PRESION MAXIMA: 2 Bar, METODO: MECANICO, RANGO DE VELOCIDAD: 0 A 50 L/MIN"}]);

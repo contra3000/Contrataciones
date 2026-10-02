@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3910.js",[{"codigo":"2.9.2-8798.2","item":"ENTINTADORA; TIPO: RODILLO, DIMENSION: SIN DEFINIR, MATERIAL: CAUCHO"},{"codigo":"2.9.2-8798.4","item":"ENTINTADORA; TIPO: RODILLO, DIMENSION: 8 Cm, MATERIAL: CAUCHO"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3255.js",[{"codigo":"2.7.5-7945.1","item":"HERRAMIENTAS DE EYECCION; MATERIAL: ACERO, DIMENSIONES: 400 mm, USO: EYECCION DE SELLOS ESTANCOS, DIMENSION: 400 mm"}]);

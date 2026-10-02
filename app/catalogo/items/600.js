@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/600.js",[{"codigo":"4.2.1-8095.1","item":"CONST. DE CARCEL; DESCRIPCION: CONSTRUCCION DE CARCEL"}]);

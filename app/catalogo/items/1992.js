@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1992.js",[{"codigo":"4.3.7-9804.1","item":"FOTODUPLICADORAS; TIPO: DIGITAL, RESOLUCION: 300 X 300 DPI, VELOCIDAD DE IMPRESION: 90 CPM"}]);

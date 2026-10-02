@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1963.js",[{"codigo":"4.3.1-4969.1","item":"EXTRACTOR HELICOIDAL DE CEREAL; CAPACIDAD: 200 Kg, POTENCIA: 3 HP, COMANDO: ELECTRICO, MOTOR: TRIFASICO"}]);

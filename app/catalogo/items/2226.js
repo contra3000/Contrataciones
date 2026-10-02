@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2226.js",[{"codigo":"4.3.3-7089.1","item":"MEDIDORES DE AREAS FOLIARES; MAX. DIMENSION HOJA: 100 X 12,7 X 0,8 Cm, RESOLUCION: 1 mm², DIMENSION MAX. HOJA: 100 X 12,7 X 0,8 Cm"}]);

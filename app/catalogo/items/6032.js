@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6032.js",[{"codigo":"2.9.6-9748.1","item":"TRABAS P/VOLANTES; TIPO: VOLANTE-TABLERO, MATERIAL ESTRUCTURA: ACERO"}]);

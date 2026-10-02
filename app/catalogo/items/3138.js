@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3138.js",[{"codigo":"2.5.8-8267.2","item":"TUERCAS DE PLASTICO; TIPO: HEXAGONAL, MATERIAL: PVC, ROSCA: CANILLA PLASTICA, DIAMETRO: 1/2 pulg, PRESENTACION: UNIDAD"}]);

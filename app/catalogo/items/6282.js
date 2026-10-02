@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6282.js",[{"codigo":"3.4.9-9795.4","item":"INST PUESTA MARCHA SERVIDOR CM; PERFIL: TIPO D, SERVIDOR: ALMACENAMIENTO, DESCRIPCION: CAPACIDAD 20 A 100 Tbyte"}]);

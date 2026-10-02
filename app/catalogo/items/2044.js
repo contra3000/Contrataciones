@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2044.js",[{"codigo":"2.9.9-8488.1","item":"GRILLONES; LARGO: 2 M, PESO: 430 GR, USO: SEGURIDAD LABORAL"}]);

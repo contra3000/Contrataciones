@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5118.js",[{"codigo":"2.9.5-5623.1","item":"PEINES; MATERIAL: FINO METAL, USO: PEDICULOSIS"},{"codigo":"2.9.5-5623.2","item":"PEINES; USO: LABORATORIO, MATERIAL: METAL"}]);

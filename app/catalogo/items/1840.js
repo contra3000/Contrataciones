@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1840.js",[{"codigo":"4.3.9-8464.1","item":"EQUIPOS ALCOHOMETRICOS; USO: MEDICION VOLUMETRICA D/ALCOHOL, ALIMENTACION: BATERIA V"}]);

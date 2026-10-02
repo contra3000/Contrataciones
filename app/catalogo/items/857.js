@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/857.js",[{"codigo":"2.9.3-8591.2","item":"LLAVE CONMUTADORA P/TELEFONIA; POSICIONES: 2, TIPO: INTERRUPTORA"}]);

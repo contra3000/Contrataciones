@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4336.js",[{"codigo":"2.5.8-8662.1","item":"CAMARAS DE INSPECCION PLASTICA; MATERIAL: PVC, PROFUNDIDAD: 40 Cm, SECCION: 0,6 X 0,6 M"}]);

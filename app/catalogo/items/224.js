@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/224.js",[{"codigo":"3.2.2-8750.1","item":"ALQ. DE VENTILADORES; DESCRIPCION: ALQUILER DE VENTILADOR"}]);

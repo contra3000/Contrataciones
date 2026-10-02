@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6802.js",[{"codigo":"3.9.9-5417.1","item":"SERVICIO DE INTERNACION; DESCRIPCION: SERVICIO DE INTERNACION"}]);

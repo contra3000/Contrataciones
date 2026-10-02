@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/292.js",[{"codigo":"2.9.4-9116.1","item":"JUGUERAS MANUALES; CAPACIDAD: 500 CM3, MATERIAL: ACERO"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6213.js",[{"codigo":"3.4.9-7423.1","item":"CONST. DE REPUESTO; CONSTRUCCION DE REPUESTO"}]);

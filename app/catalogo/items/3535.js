@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3535.js",[{"codigo":"2.2.9-3105.1","item":"CUBRE ANTIPARRA; MATERIAL: ALGODON + POLIESTER, COLOR: MIMETIZADO, USO: P/ANTIPARRA FUERZA SEGURIDAD"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1444.js",[{"codigo":"4.3.9-8740.1","item":"CABEZAL DE DESTILACION; ACCESORIO: SIN, MATERIAL: VIDRIO BOROSILICATO, USO: P/ EQUIPO DE DESTILACION"}]);

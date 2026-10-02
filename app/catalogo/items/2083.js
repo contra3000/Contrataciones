@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2083.js",[{"codigo":"4.3.3-9926.1","item":"IMPRESORAS FLEXOGRAFICAS; TIPO: INKJET, AREA DE IMPRESION: SUSTRATOS, ACCESORIOS: CON"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2774.js",[{"codigo":"4.3.9-9914.1","item":"TRAMPAS DE RESINA; CAPACIDAD: 10 L, DIAMETRO: 30 Cm, ALTURA: 46 Cm, TEMPERATURA MAXIMA: 50 °C"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2183.js",[{"codigo":"4.3.1-7960.2","item":"MAQUINAS DE BORDAR; TIPO: FAMILIAR, CANT.DE CABEZAS: 1, CANT.DE AGUJAS: 1, VELOCIDAD: 650 punt./min"}]);

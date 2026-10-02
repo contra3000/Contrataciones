@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/895.js",[{"codigo":"2.9.3-2351.1","item":"PROTECTOR P/LINEA TELEFONICA; TIPO: VARIACION DE TENSION"},{"codigo":"2.9.3-2351.2","item":"PROTECTOR P/LINEA TELEFONICA; TIPO: P/PROTECCION SOBRECARGA"}]);

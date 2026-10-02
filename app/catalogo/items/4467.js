@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4467.js",[{"codigo":"2.9.9-7751.1","item":"ARROLLADORES DE MANGA; MATERIAL: METAL, USO: MANGA DE RIEGO"}]);

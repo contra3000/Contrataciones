@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6393.js",[{"codigo":"3.4.2-9987.1","item":"PRESTACION MEDICO ASISTENCIAL; DESCRIPCION: PRESTACION MEDICO ASISTENCIAL"}]);

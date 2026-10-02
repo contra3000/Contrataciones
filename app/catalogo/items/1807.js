@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1807.js",[{"codigo":"4.3.3-7993.1","item":"EQ.ENSAYO ESCURRIM.Y ENTURBAM.; CANT.DE BATEAS: 4, TEMPERATURA: HASTA -50 °C, ALIMENTACION: 220 V"}]);

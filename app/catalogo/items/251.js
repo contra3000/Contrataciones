@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/251.js",[{"codigo":"3.2.2-9463.1","item":"ALQUILER DE ALCOHOLIMETRO; DESCRIPCION: ALQUILER DE ALCOHOLIMETRO"}]);

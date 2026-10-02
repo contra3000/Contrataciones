@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4152.js",[{"codigo":"3.3.3-8979.1","item":"MANT Y REPAR MAQ COMPAGINADORA; DESCRIPCION: MANT Y REP MAQ. COMPAGINADORA"}]);

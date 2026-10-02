@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5059.js",[{"codigo":"2.9.5-6794.1","item":"MICROCAPILARES; USO: TRANSPORTE SUST. QUIMICAS, LONG.DE CUERPO: 75 mm, DIAMETRO: 1 mm, MATERIAL: VIDRIO, GRADUACION: CON"}]);

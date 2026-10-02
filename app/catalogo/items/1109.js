@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1109.js",[{"codigo":"4.3.7-58.1","item":"MAQUINAS DE ESCRIBIR MANUALES; TIPO CARRO: ANCHO, CARRO: ANCHO"},{"codigo":"4.3.7-58.2","item":"MAQUINAS DE ESCRIBIR MANUALES; CARRO: NORMAL, TIPO CARRO: NORMAL"}]);

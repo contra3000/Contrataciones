@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3826.js",[{"codigo":"2.7.3-4970.23","item":"COHETES; TIPO CABEZAL: EAP, TIPO: CP30"},{"codigo":"2.7.3-4970.7","item":"COHETES; TIPO CABEZAL: DE FRAGMENTACION, TIPO: PAMPERO"},{"codigo":"2.7.3-4970.9","item":"COHETES; TIPO CABEZAL: EJERCICIO, TIPO: PAMPERO"}]);

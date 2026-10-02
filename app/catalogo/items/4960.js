@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4960.js",[{"codigo":"2.9.5-6268.1","item":"HILOS DE SILICA GEL; INDICADOR: CON, USO: PARA DESECADORES"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2081.js",[{"codigo":"4.3.6-7680.3","item":"IMPRESORAS DE ROTULOS; TIPO: PORTATIL, INTERFAZ: SIN"},{"codigo":"4.3.6-7680.5","item":"IMPRESORAS DE ROTULOS; TIPO: ELECTRONICA P/PC, INTERFAZ: USB / PARALELO"}]);

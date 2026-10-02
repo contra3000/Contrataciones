@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3194.js",[{"codigo":"2.7.5-7336.1","item":"CLIPEADORAS TIPO REVOLVER; MATERIAL: ACERO INOXIDABLE, ALIMENTACION: BROCHES CLIPS"}]);

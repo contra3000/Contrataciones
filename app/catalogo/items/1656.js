@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1656.js",[{"codigo":"4.3.4-4248.1","item":"CUERNOS DE NIEBLA; MATERIAL: METALICO, LARGO: 17 Cm, DIAMETRO: 9,5 DE BOCA Cm"}]);

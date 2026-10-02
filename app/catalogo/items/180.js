@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/180.js",[{"codigo":"3.2.1-2527.1","item":"ALQ. DE EDIFICIO; DESCRIPCION: ALQUILER DE EDIFICIO"}]);

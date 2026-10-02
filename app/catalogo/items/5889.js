@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5889.js",[{"codigo":"2.9.6-8346.8","item":"REP. Y ACC. P/HIDROELEVADORA; REPUESTO: LANZA, MARCA EQUIPO: GENERICO, MODELO EQUIPO: GENERICO"}]);

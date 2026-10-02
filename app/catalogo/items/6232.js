@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6232.js",[{"codigo":"3.8.3-9954.1","item":"DERECHOS DE IMAGEN; DESCRIPCION: DERECHOS DE IMAGEN"}]);

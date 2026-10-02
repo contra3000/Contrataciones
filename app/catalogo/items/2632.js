@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2632.js",[{"codigo":"4.3.3-7417.1","item":"SIST. DE DINAMICAS LINEALES; CANT. COMPONENTES: 11, COMPONENTES: 11"}]);

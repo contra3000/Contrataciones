@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5075.js",[{"codigo":"2.9.5-6106.2","item":"MOLDES P/PLUG; VOLUMEN: 1,5 X 10 X 5 Cm, TIPO: DESCARTABLE, USO: BIOLOGIA MOLECULAR, PRESENTACION: BOLSA X 5 UN"}]);

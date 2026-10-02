@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3459.js",[{"codigo":"2.9.6-2063.1","item":"POTES CORRECTORES P/IMPRENTAS; USO: P/CHAPA PRESENSIBILIZADA, PRESENTACION: UNIDAD"}]);

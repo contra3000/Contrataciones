@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2418.js",[{"codigo":"4.3.5-9472.1","item":"PLANETARIO DIGITAL; TIPO: ALTA DEFINICION, RESOLUCION: 1920 X 1080"}]);

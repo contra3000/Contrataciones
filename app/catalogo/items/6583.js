@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6583.js",[{"codigo":"3.4.2-10150.1","item":"SERV DE CUIDADOS HOSPITALARIOS; DESCRIPCION: SERV DE CUIDADOS HOSPITALARIOS"}]);

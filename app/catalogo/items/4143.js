@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4143.js",[{"codigo":"3.3.5-9446.1","item":"MANEJO INTEGRADO DE PLAGAS; DESCRIPCION: MANEJO INTEGRADO DE PLAGAS"}]);

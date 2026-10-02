@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/906.js",[{"codigo":"2.9.3-1515.3","item":"REDUCCION P/PORTALAMPARA; ROSCA: E-40 A E-27, CRITERIO DE SEGURIDAD: SELLO DE SEGURIDAD"}]);

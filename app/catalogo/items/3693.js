@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3693.js",[{"codigo":"2.9.6-2058.1","item":"CABLES SCSI; TIPO: EXTERNO, CONECTOR: MINI - SCSI"},{"codigo":"2.9.6-2058.2","item":"CABLES SCSI; TIPO: INTERNO, CONECTOR: 50 PIN"}]);

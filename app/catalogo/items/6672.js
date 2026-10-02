@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6672.js",[{"codigo":"3.9.9-9782.1","item":"SERV. INTEGRAL DE ORG. EVENTOS; DESCRIPCION: SERV. INTEGRAL DE ORG. EVENTOS"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/535.js",[{"codigo":"2.5.9-8275.1","item":"PELICULAS P/DUPLICACION; DIMENSIONES: 16 MM X 0,004 \", DIMENSION: 16 MM X 0,004 \""}]);

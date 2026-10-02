@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6735.js",[{"codigo":"3.5.1-5656.1","item":"TRANSP. EXPLOSIVOS Y ARMAMENTO; TIPO: CLASE 1, DESCRIPCION: TRANSP. EXPLOSIVOS ARMAMENTO, PESO: HASTA 12,5 Ton"}]);

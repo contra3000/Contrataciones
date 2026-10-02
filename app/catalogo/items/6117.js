@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6117.js",[{"codigo":"2.7.1-7425.1","item":"NIPLES DE CUNIFE; DIAMETRO: 30 mm, ESPESOR: 1.5 mm"}]);

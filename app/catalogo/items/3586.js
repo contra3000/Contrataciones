@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3586.js",[{"codigo":"2.2.3-5355.1","item":"JUEGO DE TOALLAS; COMPONENTES: 2"},{"codigo":"2.2.3-5355.2","item":"JUEGO DE TOALLAS; COMPONENTES: 2"}]);

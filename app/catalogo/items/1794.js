@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1794.js",[{"codigo":"4.3.3-6427.1","item":"EQ. P/ENSAYO IMPACTO EN VIDRIO; ALTURA MAXIMA: 14 M, PESO MAXIMO: 10 Kg, ACCIONAMIENTO: ELECTROMECANICO"}]);

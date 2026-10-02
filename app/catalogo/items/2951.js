@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2951.js",[{"codigo":"2.7.9-7282.1","item":"CRIQUE TENSOR P/CINTA; USO: P/ATAR CARGAS"},{"codigo":"2.7.9-7282.2","item":"CRIQUE TENSOR P/CINTA; USO: CINTA P/PERSIANA"}]);

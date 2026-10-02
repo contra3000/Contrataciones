@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6222.js",[{"codigo":"3.4.9-7489.1","item":"CONTRATACION DE PERSONAL; DESCRIPCION: CONTRATACION DE PERSONAL"}]);

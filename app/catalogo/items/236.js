@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/236.js",[{"codigo":"3.2.2-10037.1","item":"ALQ. EQUIPOS P/ IMPRENTA; DESCRIPCION: ALQ. EQUIPOS P/ IMPRENTA"}]);

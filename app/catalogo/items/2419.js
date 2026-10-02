@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2419.js",[{"codigo":"4.3.9-7180.1","item":"PLANTAS DE EVAPORACION; TIPO: CLASE A, ELEMENTOS: 4 UN, CANT. DE ELEMENTOS: 4 UN"}]);

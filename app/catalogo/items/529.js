@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/529.js",[{"codigo":"2.9.9-7050.1","item":"HOJAS DIFUSORAS DE COLOR; USO: ILUMINACION ESTUDIO DE TV, MATERIAL: ACETONA, GELATINA, CORRECTOR"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2723.js",[{"codigo":"2.9.6-7493.1","item":"TACOGRAFOS; TIPO: ELECTRONICO DIGITAL, INTERFASE: USB, USO: VEHIC.TRANSPORTE DE PERSONAS, INTERFAZ: USB"}]);

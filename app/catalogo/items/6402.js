@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6402.js",[{"codigo":"3.9.9-7705.1","item":"RECARGA DE CARTUCHO; TIPO: RECARGA DE CARTUCHO, DESCRIPCION: RECARGA DE CARTUCHO"}]);

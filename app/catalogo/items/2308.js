@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2308.js",[{"codigo":"4.3.3-6541.3","item":"MOLINOS P/MUESTRAS DE SUELOS; POTENCIA: 160 W"}]);

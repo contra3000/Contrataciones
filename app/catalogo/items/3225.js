@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3225.js",[{"codigo":"2.7.5-7902.1","item":"ENRULADORES-DESENRULADORES; TIPO: MANUAL, PUNTAS: 2, PINES: 2, USO: CABLE DE TELEFONO, CANT.DE PUNTAS: 2, CANTIDAD PINES: 2"}]);

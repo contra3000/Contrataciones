@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6681.js",[{"codigo":"3.7.9-9999.1","item":"SERV. PAQUETE DE VIAJE; DESCRIPCION: SERV. PAQUETE DE VIAJE"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3398.js",[{"codigo":"2.7.9-6893.1","item":"ANILLAS P/SOLDAR; MATERIAL: ALEACION P/BRASADO AWS B AG 1, ESPESOR: 1,5 mm"},{"codigo":"2.7.9-6893.2","item":"ANILLAS P/SOLDAR; MATERIAL: ALEACION P/BRASADO AWS B AG 1, ESPESOR: 1 mm"}]);

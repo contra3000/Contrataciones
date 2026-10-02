@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5038.js",[{"codigo":"2.9.5-7591.1","item":"MANGOS DE KOLL; LARGO: 25 Cm, MATERIAL: ACERO INOXIDABLE, PRESENTACION: UNIDAD, USO: TOMA DE MUESTRAS"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4702.js",[{"codigo":"2.9.5-6312.1","item":"CABLES DE ELECTRODOS P/HOLTER; PRESENTACION: POR UNIDAD"}]);

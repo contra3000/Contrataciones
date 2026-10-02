@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6448.js",[{"codigo":"3.4.9-10036.1","item":"S. DE COMPACTACION VEHICULOS; DESCRIPCION: S. DE COMPACTACION VEHICULOS"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5185.js",[{"codigo":"2.9.5-9399.2","item":"PROTECCION P/CAMILLA; MATERIAL: PVC, ANCHO: 150 mm"}]);

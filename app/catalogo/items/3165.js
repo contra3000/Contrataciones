@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3165.js",[{"codigo":"2.9.9-8461.1","item":"ANILLAS DE ANCLAJE; TIPO: CLASE B, RESISTENCIA: 22 KN, DIMENSIONES: 18 X 800 mm, DIMENSION: 18 X 800 mm"}]);

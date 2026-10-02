@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1408.js",[{"codigo":"4.3.3-8300.1","item":"BICICLETAS P/ERGOMETRIA; VOLANTE DE INERCIA: 500 mm, ETAPA DE RESISTENCIA: 150 EN 150 Kgm, VOLANTE: DE INERCIA 500 mm"}]);

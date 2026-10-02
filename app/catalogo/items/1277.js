@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1277.js",[{"codigo":"4.3.9-2730.1","item":"ADAPTADORES P/ZOOM; USO: ARRIFLEX, ACCIONAMIENTO: MOTORIZADO, ZOOM: 35/140 - 25/250 mm"},{"codigo":"4.3.9-2730.2","item":"ADAPTADORES P/ZOOM; USO: MICROSCOPIO, ACCIONAMIENTO: MANUAL, ZOOM: 180X"}]);

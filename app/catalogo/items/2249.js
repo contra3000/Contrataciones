@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2249.js",[{"codigo":"4.3.3-7412.1","item":"MEDIDORES DE SALINIDAD; TIPO: DIGITAL, PRECISION: +/- 5 %, CANT. DE SONDAS: 2"},{"codigo":"4.3.3-7412.2","item":"MEDIDORES DE SALINIDAD; TIPO: DIGITAL, PRECISION: 0,002 PSU, CANT. DE SONDAS: SIN"}]);

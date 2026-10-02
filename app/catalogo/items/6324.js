@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6324.js",[{"codigo":"3.3.3-9190.1","item":"MANT. Y REP TORRE ENFRIAMIENTO; DESCRIPCION: MANT. Y REP TORRE ENFRIAMIENTO"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/521.js",[{"codigo":"2.9.9-7999.1","item":"CARRETES; MATERIAL: PLASTICO, PELICULA: 35 MM X 30,5 M, USO: ALMACENAMIENTO"}]);

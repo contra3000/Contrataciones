@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/230.js",[{"codigo":"3.2.2-4053.1","item":"ALQ. EQ. DE TRUNKING; DESCRIPCION: ALQUILER EQUIPO DE TRUNKING"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3218.js",[{"codigo":"2.7.5-6513.1","item":"DRAGAS; TIPO: EKMAN"},{"codigo":"2.7.5-6513.2","item":"DRAGAS; TIPO: TAMURA"},{"codigo":"2.7.5-6513.3","item":"DRAGAS; TIPO: VAN VEEN"}]);

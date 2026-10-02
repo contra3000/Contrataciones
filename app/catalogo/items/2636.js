@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2636.js",[{"codigo":"4.3.3-9210.1","item":"SIST. DE JAULAS AUTOMATICAS; TIPO: VENTILADO, MATERIAL: ACERO INOXIDABLE, VOLUMEN: 1,41 M3"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6579.js",[{"codigo":"3.5.4-7769.1","item":"SEGURO DE VESTUARIO Y ACC,; DESCRIPCION: SEGURO DE VESTUARIO Y ACC."}]);

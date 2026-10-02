@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1761.js",[{"codigo":"4.3.3-9824.1","item":"EQ DE ESFEROIDIZACION A PLASMA; USO: MEDICINA NUCLEAR, FRECUENCIA: 2,5 KHZ, POTENCIA: 15 KW, ALIMENTACION: 220/380 V"}]);

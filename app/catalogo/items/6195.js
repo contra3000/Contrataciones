@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6195.js",[{"codigo":"3.4.1-6231.1","item":"ASISTENCIA TECNICA; DESCRIPCION: ASISTENCIA TECNICA"}]);

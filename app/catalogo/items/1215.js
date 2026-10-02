@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1215.js",[{"codigo":"4.4.0-2940.1","item":"ESCOPETAS; TIPO: UN CAÑO, CALIBRE: 12/70"},{"codigo":"4.4.0-2940.5","item":"ESCOPETAS; TIPO: SEMIAUTOMATICA, CALIBRE: 12/76"}]);

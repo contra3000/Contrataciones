@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6124.js",[{"codigo":"2.5.8-6416.1","item":"PIPETAS DE VENTILACION; DIAMETRO: 5/8 pulg, MATERIAL: PVC"}]);

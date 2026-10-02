@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3307.js",[{"codigo":"4.3.8-6824.2","item":"MAQUINAS LIMADORAS; POTENCIA MOTOR: 1,5 CV, CANT. DE VELOCIDADES: 4, DIMENSION: 40 X 45 X 120 Cm, CAPACIDAD: 1800 Kg, LARGO DE TRABAJO: 400 mm"}]);

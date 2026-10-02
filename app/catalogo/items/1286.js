@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1286.js",[{"codigo":"4.3.9-8261.1","item":"ALARMA DETECCION DE CAMPO ELEC; ALIMENTACION: BATERIA, TIPO: PORTATIL, USO: INTEMPERIE, RANGO: 140 V/M"}]);

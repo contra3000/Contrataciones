@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1306.js",[{"codigo":"4.3.9-6713.2","item":"AMPLIFICADORES P/CELDA; ALIMENTACION: 15 V, GANANCIA: VARIABLE"},{"codigo":"4.3.9-6713.5","item":"AMPLIFICADORES P/CELDA; ALIMENTACION: 3000 µV, GANANCIA: VARIABLE"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2166.js",[{"codigo":"4.3.1-3582.1","item":"MAQ. DOBLADORAS DE PLIEGO; TIPO: AUTOMATICA, PLIEGO MAXIMO: 66 X 104 Cm, PLIEGO MINIMO: 14 X 18 Cm, VELOCIDAD: 180 M/MIN"}]);

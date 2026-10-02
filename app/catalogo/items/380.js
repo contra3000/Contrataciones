@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/380.js",[{"codigo":"2.9.4-1066.3","item":"CREMERAS; MATERIAL: PORCELANA, CAPACIDAD: 200 mL"},{"codigo":"2.9.4-1066.7","item":"CREMERAS; MATERIAL: PORCELANA, CAPACIDAD: 300 mL"}]);

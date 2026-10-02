@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6742.js",[{"codigo":"3.8.3-9595.1","item":"VERIFICACION TECNICA VEHICULAR; DESCRIPCION: VERIFICACION TECNICA VEHICULAR"}]);

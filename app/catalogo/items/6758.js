@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6758.js",[{"codigo":"3.8.3-10012.1","item":"CUOTAS SOCIALES; DESCRIPCION: CUOTAS SOCIALES"}]);

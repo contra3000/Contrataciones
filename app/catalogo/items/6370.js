@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6370.js",[{"codigo":"3.3.3-6175.1","item":"MANT. Y REPAR. MESA DE CIRUGIA; DESCRIPCION: REPARACION DE MESA DE CIRUGIA"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2200.js",[{"codigo":"4.3.8-5107.1","item":"MAQUINAS PERFORADORAS DE D.N.I; TENSION: 220 V, Nº DE DIGITOS: 8, ACCIONAMIENTO: MOTOR 1/2 HP, ALTURA DIGITO: 9 mm, POTENCIA MOTOR: MOTOR 1/2 HP"}]);

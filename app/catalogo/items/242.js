@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/242.js",[{"codigo":"3.2.2-9903.1","item":"ALQ. MAQUINARIA VIAL; DESCRIPCION: ALQ. MAQUINARIA VIAL"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1970.js",[{"codigo":"4.3.9-6826.1","item":"FASIMETROS; RANGO DE FRECUENCIA: 40 - 70 Hz, RANGO DE TENSION: 110 - 480 V"}]);

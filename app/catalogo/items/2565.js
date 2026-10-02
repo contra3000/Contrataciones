@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2565.js",[{"codigo":"4.3.3-6618.1","item":"SECADORES DE GELES; ALIMENTACION: 230/50 V/HZ, CLAMPS: 16, HOJAS CELOFAN: 50, CAMARA DE SECADO: CON, MARCOS SECADO: 2, CANT. DE HOJAS: 50"}]);

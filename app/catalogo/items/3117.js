@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3117.js",[{"codigo":"2.4.3-6972.2","item":"TAPONES DE GOMA ATOXICA; MATERIAL: GOMA, RANURADO: NO, ALA: SIN VALOR"},{"codigo":"2.4.3-6972.3","item":"TAPONES DE GOMA ATOXICA; MATERIAL: GOMA BUTILO, RANURADO: NO, ALA: 20 mm"}]);

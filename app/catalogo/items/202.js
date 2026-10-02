@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/202.js",[{"codigo":"3.2.2-7249.1","item":"ALQ. DE LAVADORA/DESINFECTADOR; DESCRIPCION: ALQ.DE LAVAD./DESINFECTADORA"}]);

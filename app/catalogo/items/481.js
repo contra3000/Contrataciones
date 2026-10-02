@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/481.js",[{"codigo":"4.3.7-5851.20","item":"TARIMAS; MATERIAL: MADERA, DIMENSION: 670 X 300 X 15 Cm"},{"codigo":"4.3.7-5851.5","item":"TARIMAS; MATERIAL: ACERO Y CEMENTO, DIMENSION: 60 X 60 X 3,2 Cm"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/451.js",[{"codigo":"2.6.9-2261.1","item":"VASIJAS DE BARRO; TAMAÑO: 20 Cm"}]);

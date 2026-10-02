@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1682.js",[{"codigo":"4.3.3-5998.2","item":"DETECTORES CADMIO/ZINC/TELERIO; ALIMENTACION: 500 V, TIPO: DIODO DE CDTE, VOLUMEN SENSIBLE: 23 mm³, AMPLIFICADOR: CON, RANGO: 5 A 100 Kev"}]);

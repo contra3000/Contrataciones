@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4292.js",[{"codigo":"3.3.5-2136.1","item":"SERV. CONTENEDOR HIGIENICO; DESCRIPCION: SERVICIO DE CONTENEDOR HIGIENI"}]);

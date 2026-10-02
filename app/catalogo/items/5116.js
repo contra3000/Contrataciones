@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5116.js",[{"codigo":"4.3.3-7819.1","item":"PEDIOMETROS; RANGO: 0 A 1 M, RESOLUCION: 0,5 Cm, MATERIAL: ALUMINIO Y PLASTICO"}]);

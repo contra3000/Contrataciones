@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2137.js",[{"codigo":"4.3.3-9629.1","item":"LECTORES DE HALOS; DIMENSION PLACAS: 90 A 100 mm, NORMA: US-FDA, USP, AOAC, EP, BP Y JP, ALIMENTACION: 220 V"}]);

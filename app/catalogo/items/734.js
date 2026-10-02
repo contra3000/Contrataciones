@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/734.js",[{"codigo":"2.9.3-8085.1","item":"CAZOLETA DE FERRITE; TIPO: P 36 X 22, MATERIAL: N 48, INDUCTANCIA: 400 NH/vuelta"}]);

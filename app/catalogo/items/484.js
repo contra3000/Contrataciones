@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/484.js",[{"codigo":"2.1.5-5835.1","item":"TRANQUILLAS; MATERIAL: CIPRE, DIAMETRO: 0,12 M, TIPO: CON PUNTA, LARGO: SIN VALOR M"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3689.js",[{"codigo":"4.8.1-7008.1","item":"BASES DE DATOS P/MAINFRAME; DESCRIPCION: IMS"}]);

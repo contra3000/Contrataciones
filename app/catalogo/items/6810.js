@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6810.js",[{"codigo":"3.1.4-8964.1","item":"TARJETAS DE TELEFONO; DESCRIPCION: TARJETA DE TELEFONO"}]);

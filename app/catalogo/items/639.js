@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/639.js",[{"codigo":"4.6.0-1881.4","item":"ESTATUAS; MATERIAL: BRONCE, BASE: MADERA, NOMBRE: CRISTO REDENTOR CON HOMBRE ALA, AUTOR: GATUSO Y PIANA"}]);

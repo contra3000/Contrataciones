@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6580.js",[{"codigo":"3.5.4-9380.1","item":"SEGURO INTEGRAL DE COMERCIO; DESCRIPCION: SEGURO INTEGRAL DE COMERCIO"}]);

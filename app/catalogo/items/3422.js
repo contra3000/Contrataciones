@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3422.js",[{"codigo":"2.3.5-6702.1","item":"BOLETINES; DESCRIPCION: BOLETIN"},{"codigo":"2.3.5-6702.5","item":"BOLETINES; DESCRIPCION: SUSCRIPCION ANUAL"}]);

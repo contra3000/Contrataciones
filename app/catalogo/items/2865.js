@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2865.js",[{"codigo":"2.7.2-7354.2","item":"ALAMBRES DE TITANIO; DIAMETRO: 0,508 mm, PRESENTACION: 25 ft"}]);

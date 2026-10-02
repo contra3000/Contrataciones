@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6600.js",[{"codigo":"3.4.9-6120.1","item":"SERV. CONFECCION DE PLANO; SERVICIO CONFECCION PLANO"}]);

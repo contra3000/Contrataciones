@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4941.js",[{"codigo":"2.9.5-6862.1","item":"FUNDAS P/MANGUERA; TIPO: ESTERIL, MATERIAL: FRISELINA"}]);

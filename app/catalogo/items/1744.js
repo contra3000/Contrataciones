@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1744.js",[{"codigo":"4.3.9-2719.1","item":"EMPALMADORAS DE FILM; TIPO DE CINTA: 35 mm"},{"codigo":"4.3.9-2719.2","item":"EMPALMADORAS DE FILM; TIPO DE CINTA: 10 mm"}]);

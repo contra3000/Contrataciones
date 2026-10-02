@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4349.js",[{"codigo":"2.6.9-6891.1","item":"CHAPAS CARTON FIBROASFALTICO; PESO: 3 Kg, DIMENSION: 160 X 60 Cm, DIMENSIONES: 160 X 60 Cm"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1326.js",[{"codigo":"4.3.3-9590.1","item":"ANALIZADORES DE TEXTURAS; FUERZA MAXIMA: 500 N, RANGO DE VELOCIDAD: 0,01 A 40 mm/SEG, RANGO DE TRABAJO: 1 A 295 mm, FRECUENCIA: 8 KHZ"}]);

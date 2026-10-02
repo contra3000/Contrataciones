@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/336.js",[{"codigo":"3.5.4-10148.1","item":"SEGURO MOTOVEHICULOS; DESCRIPCION: SEGURO MOTOVEHICULOS"}]);

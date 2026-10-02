@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/167.js",[{"codigo":"3.2.2-8916.1","item":"ALQ. DE BOMBA; DESCRIPCION: ALQUILER DE BOMBA"}]);

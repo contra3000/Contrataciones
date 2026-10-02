@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6312.js",[{"codigo":"3.3.9-5924.1","item":"LAVADO Y PLANCHADO DE PRENDAS; DESCRIPCION: LAVADO Y PLANCHADO PRENDAS"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1759.js",[{"codigo":"4.3.3-9115.1","item":"ENVASES DE SEGURIDAD; MATERIAL: ACERO INOXIDABLE, CAPACIDAD: 3 GAL, TIPO: LIQUIDO INFLAMABLE"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6197.js",[{"codigo":"3.9.9-9347.1","item":"CAMPAÑA DE SEGURIDAD VIAL; DESCRIPCION: CAMPAÑA DE SEGURIDAD VIAL"}]);

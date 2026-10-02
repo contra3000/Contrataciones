@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/518.js",[{"codigo":"2.9.6-2422.1","item":"AROS ADAPTADORES; DIAMETRO: 4,5 pulg"},{"codigo":"2.9.6-2422.2","item":"AROS ADAPTADORES; DIAMETRO: 95 mm"}]);

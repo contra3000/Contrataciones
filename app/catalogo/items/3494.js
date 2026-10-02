@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3494.js",[{"codigo":"2.2.3-8179.1","item":"BRAZALETES; TELA: POLIESTER, USO: FUERZA DE SEGURIDAD"},{"codigo":"2.2.3-8179.2","item":"BRAZALETES; TELA: ALGODON"},{"codigo":"2.2.3-8179.3","item":"BRAZALETES; TELA: ALGODON Y POLIESTER"},{"codigo":"2.2.3-8179.4","item":"BRAZALETES; TELA: ELASTANO"}]);

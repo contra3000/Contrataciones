@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/238.js",[{"codigo":"3.2.1-2024.1","item":"ALQ. GUARDERIA DE VEHICULOS; DESCRIPCION: ALQUILER GUARDERIA DE VEHICULO"}]);

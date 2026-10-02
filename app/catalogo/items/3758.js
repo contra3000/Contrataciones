@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3758.js",[{"codigo":"4.3.6-6232.1","item":"MODEMS P/FIBRA OPTICA; VELOCIDAD: 56 kb/seg"}]);

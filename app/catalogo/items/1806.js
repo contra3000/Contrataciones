@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1806.js",[{"codigo":"4.3.1-6705.1","item":"EQ. TRANSFERENCIA DE RESINA; FUERZA DE CIERRE: 40 Ton, POTENCIA ACTIVA: 5 KW"}]);

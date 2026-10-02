@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2806.js",[{"codigo":"4.3.9-8246.1","item":"UNIDAD CONTROL P/TURBIDMETRO; CONTROL: TURB,OD,CONDUCT,PH/ORP, SALIDAS: 2 ANALOGICAS, VISOR: LCD, ALARMA: 2"}]);

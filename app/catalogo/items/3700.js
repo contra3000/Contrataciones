@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3700.js",[{"codigo":"4.3.6-10100.1","item":"CLONADORES DE DISCOS; TIPO: SSD"},{"codigo":"4.3.6-10100.2","item":"CLONADORES DE DISCOS; TIPO: HDD/SSD"}]);

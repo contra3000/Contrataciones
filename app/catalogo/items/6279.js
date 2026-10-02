@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6279.js",[{"codigo":"4.2.1-9457.1","item":"INGENIERIA SISTEMAS ELECTRICOS; DESCRIPCION: INGENIERIA SISTEMAS ELECTRICOS"}]);

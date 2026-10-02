@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5575.js",[{"codigo":"2.5.9-7800.1","item":"SPRAY DETECTOR DE EXPLOSIVOS; REACTIVO: DETECTOR RESTO EXPLOSIVO, PRESENTACION: ENVASE X 100 mL"}]);

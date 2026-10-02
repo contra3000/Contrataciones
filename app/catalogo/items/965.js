@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/965.js",[{"codigo":"2.9.1-5253.1","item":"BALDES DE ZINC; CAPACIDAD: 15 L, COLOR: METALICO"},{"codigo":"2.9.1-5253.2","item":"BALDES DE ZINC; CAPACIDAD: 10 L"}]);

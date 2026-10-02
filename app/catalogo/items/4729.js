@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4729.js",[{"codigo":"2.9.5-7430.1","item":"CARILLAS; MATERIAL: PORCELANA, USO: ODONTOLOGICO"},{"codigo":"2.9.5-7430.2","item":"CARILLAS; MATERIAL: CROMASIT, USO: ODONTOLOGICO"}]);

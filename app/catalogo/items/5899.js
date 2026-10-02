@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5899.js",[{"codigo":"2.9.6-8713.1","item":"REP. Y ACC. P/INTERCOMUNICADOR; ELEMENTO: BOTONERA (10 MODULOS), MARCA: INTERCRON, MARCA EQUIPO: INTERCRON"}]);

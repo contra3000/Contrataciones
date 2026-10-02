@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6387.js",[{"codigo":"3.5.9-4679.1","item":"NOMINACION DE CRED. Y DIPLOMA; DESCRIPCION: NOMINACION DE CRED. Y DIPLOMAS"}]);

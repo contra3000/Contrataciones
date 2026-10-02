@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5227.js",[{"codigo":"2.9.5-6095.3","item":"SELLOS P/PIPETA; CAP. PIPETA: PIPETA 100/200 µL, USO: P/PIPETA TRANSFERPETTOR, CAPACIDAD: PIPETA 100/200 µL"}]);

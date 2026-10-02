@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/472.js",[{"codigo":"4.3.7-4526.1","item":"MUEBLE CUBRE CAÑERIA; MATERIAL: AGLOMERADO, Nº DE MODULOS: 6"},{"codigo":"4.3.7-4526.2","item":"MUEBLE CUBRE CAÑERIA; MATERIAL: AGLOMERADO, Nº DE MODULOS: 3"}]);

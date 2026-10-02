@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1805.js",[{"codigo":"4.3.3-9135.1","item":"EQ. TRANSFERENCIA AC. NUCLEICO; TIEMPO DE OPERACION: P/MENOS A 1500 PB = 30 MIN, TAMAÑO DE MUESTRA: 20 X 25 Cm"}]);

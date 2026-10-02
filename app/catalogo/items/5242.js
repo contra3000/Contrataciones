@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5242.js",[{"codigo":"2.9.5-5693.1","item":"SET P/CALIBRAR CONDUCTIMETRO; TIPO: KIT X 7 CALIBRADORES, USO: CONTROL DE CALIDAD, PRESENTACION: UNIDAD"}]);

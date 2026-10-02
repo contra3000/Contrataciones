@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5512.js",[{"codigo":"2.5.9-7217.1","item":"GOMA TRAGACANTO; PRESENTACION: ENVASE X 1 Kg"},{"codigo":"2.5.9-7217.2","item":"GOMA TRAGACANTO; PRESENTACION: ROLLO X 25 M"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2170.js",[{"codigo":"4.3.9-7817.1","item":"MAQ. P/ENSAYOS DE COMPRESION; CAPACIDAD: 1300 KN, DIAMETRO PISTON: 177 mm, CARERA PISTON: 90 mm, POTENCIA MOTOR: 1 HP, DIAMETRO: DE PISTON 177 mm"}]);

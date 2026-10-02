@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2513.js",[{"codigo":"4.3.8-9941.1","item":"RECUPERADORAS DE GASES; TIPO: GASES REFRIGERANTES, ALIMENTACION: 110/220 V, POTENCIA: 0,5 HP, PRESION DE TRABAJO: 17 A 38 Bar"}]);

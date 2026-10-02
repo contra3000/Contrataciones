@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6755.js",[{"codigo":"3.1.4-9659.1","item":"COMUN. MOVIL MAM P/CONV. MARCO; TIPO: PERFIL L, SERVICIO DATOS MOVILES: APN, DATOS: 5 MB MINIMO, COBERTURA: NACIONAL"}]);

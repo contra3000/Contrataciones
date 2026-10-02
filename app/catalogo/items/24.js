@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/24.js",[{"codigo":"3.9.9-8939.1","item":"S. DE COSECHA; DESCRIPCION: SERVICIO DE COSECHA"}]);

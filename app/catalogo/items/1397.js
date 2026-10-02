@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1397.js",[{"codigo":"2.9.9-8010.1","item":"BASES P/BALIZA AEROPORTUARIA; TIPO: CILINDRICA, DIMENSIONES: 8 pulg, ENTRADAS: 1, DIMENSION: 8 pulg, CANTIDAD ENTRADAS: 1"}]);

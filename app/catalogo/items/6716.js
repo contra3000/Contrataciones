@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6716.js",[{"codigo":"3.5.9-9454.1","item":"SERVICIO DE LOGISTICA; DESCRIPCION: SERVICIO DE LOGISTICA"}]);

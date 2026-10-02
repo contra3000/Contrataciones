@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2227.js",[{"codigo":"4.3.3-4157.1","item":"MEDIDORES DE BRILLO EN PAPELES; ALIMENTACION: 220 V, TIPO: MOVIL, RANGO DE MEDICION: 100º, LECTURA: DIGITAL"}]);

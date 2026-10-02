@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6420.js",[{"codigo":"3.4.9-9925.2","item":"RESTAUR. MONUMENTO HISTORICO; DESCRIPCION: RESTAUR. MONUMENTO HISTORICO, CRITERIO SOCIAL: SIN"}]);

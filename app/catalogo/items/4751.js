@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4751.js",[{"codigo":"2.9.5-8239.1","item":"CHATAS; MATERIAL: PVC"},{"codigo":"2.9.5-8239.2","item":"CHATAS; MATERIAL: POLIETILENO"}]);

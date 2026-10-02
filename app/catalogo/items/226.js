@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/226.js",[{"codigo":"3.2.1-1419.9","item":"ALQ. DE VIVIENDA; ALQUILER DE VIVIENDA"}]);

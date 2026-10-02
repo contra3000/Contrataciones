@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/589.js",[{"codigo":"4.2.2-9990.1","item":"BACHEO DE RUTA; DESCRIPCION: BACHEO DE RUTA"}]);

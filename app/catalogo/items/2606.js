@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2606.js",[{"codigo":"4.3.5-9255.1","item":"SIMULADORES DE AERODROMOS; PUESTO DE CONTROL: 3, PUESTOS PILOTOS: 2, GENERADOR DE VIDEO: 6, COBERTURA: 270 º"}]);

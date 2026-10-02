@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4385.js",[{"codigo":"2.5.9-2789.2","item":"JUNTAS ELASTICAS P/TECHOS; DIMENSION: 1,6 X 100 Cm, MATERIAL: POLIETILENO CELULAR EXPANDIDO, TIPO: FONDO DE JUNTA"}]);

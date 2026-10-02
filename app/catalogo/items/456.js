@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/456.js",[{"codigo":"2.9.4-5185.2","item":"YERBERA / AZUCARERA; MATERIAL: ACERO INOXIDABLE, CAPACIDAD: 500 GR"}]);

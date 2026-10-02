@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1852.js",[{"codigo":"4.3.3-7593.1","item":"EQUIPOS DE CAVITACION; TIPO: POR ULTRASONIDO, DIGITAL: SI, NIVELES DE POTENCIA: 4"}]);

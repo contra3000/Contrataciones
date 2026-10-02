@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3325.js",[{"codigo":"4.3.8-10020.1","item":"MULTIHERRAMIENTA; TIPO: OSCILANTE, ALIMENTACION: 220 V, POTENCIA: 320 W, VELOCIDAD: 6000 - 20000 RPM"}]);

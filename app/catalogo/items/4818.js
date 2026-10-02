@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4818.js",[{"codigo":"2.9.5-6880.1","item":"DESACOPLADORES HOJA DE BISTURI; CAPACIDAD: 50 UN"},{"codigo":"2.9.5-6880.2","item":"DESACOPLADORES HOJA DE BISTURI; CAPACIDAD: 200 UN"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6470.js",[{"codigo":"3.5.9-9257.1","item":"S. DE ENSOBRADO; DESCRIPCION: SERVICIO DE ENSOBRADO"}]);

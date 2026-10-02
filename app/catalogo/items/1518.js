@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1518.js",[{"codigo":"4.3.9-9264.1","item":"CARGADORES P/GASES; TIPO: GAS REFRIGERANTE, RANGO DE MEDICION: 0 A 200 lb/pulg2, PRECISION: 5 %, RESOLUCION: 0,01 lb/pulg2"}]);

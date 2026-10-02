@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/296.js",[{"codigo":"4.3.7-7844.1","item":"MOLINOS DOSIFICADORES DE CAFE; TIPO: A DISCO, POTENCIA: 1/4 HP, CAPACIDAD: 1 Kg"}]);

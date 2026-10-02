@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6906.js",[{"codigo":"4.3.9-8673.1","item":"SISTEMA ANTIRROBOS; TIPO: P/MATERIAL BIBLIOGRAFICO, COMPONENTES: TIRAS MAGNET., PANELES DETECT."}]);

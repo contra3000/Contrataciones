@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6724.js",[{"codigo":"3.9.9-10152.1","item":"SERVICIO DE TELEMETRIA; DESCRIPCION: SERVICIO DE TELEMETRIA"}]);

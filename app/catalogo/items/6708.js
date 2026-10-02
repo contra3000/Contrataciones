@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6708.js",[{"codigo":"3.4.2-10089.1","item":"SERVICIO DE DIALISIS; DESCRIPCION: SERVICIO DE DIALISIS"}]);

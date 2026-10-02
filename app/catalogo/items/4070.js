@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4070.js",[{"codigo":"3.3.1-3900.3","item":"FIJACION DE PLACAS PETREAS; DESCRIPCION: FIJACION DE PLACAS PETREAS, CRITERIO SOCIAL: SIN"}]);

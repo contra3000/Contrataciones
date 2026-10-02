@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/170.js",[{"codigo":"3.2.9-7011.1","item":"ALQ. DE CAMPO; UBICACION: BASE NAVAL PTO BELGRANO, SUPERFICIE: 770 Ha, DESCRIPCION: ALQUILER DE CAMPO"}]);

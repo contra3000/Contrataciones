@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1401.js",[{"codigo":"4.3.9-6266.1","item":"BASES P/TUBO DE GAS; MATERIAL: METALICO, TIPO: CON DOS RUEDAS, CAPACIDAD DEL TUBO: 35-40 L, USO: TRANSPORTE DE TUBO"}]);

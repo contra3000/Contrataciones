@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/591.js",[{"codigo":"4.2.1-9863.1","item":"CABLEADO ESTRUCTURADO; DESCRIPCION: CABLEADO ESTRUCTURADO"}]);

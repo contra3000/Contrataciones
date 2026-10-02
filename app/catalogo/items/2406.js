@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2406.js",[{"codigo":"4.3.4-9550.1","item":"PISTOLA DE SEÑALES LUMINOSAS; INTENSIDAD LUMINICA: 100000 CD, TIPO: AERODROMO, DIAMETRO: 120 mm, ALIMENTACION: 220 V"}]);

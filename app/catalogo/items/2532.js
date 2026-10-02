@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2532.js",[{"codigo":"4.3.5-6790.1","item":"RELOJES TANTEADORES; USO: BASQUET, TIPO: DIGITAL"}]);

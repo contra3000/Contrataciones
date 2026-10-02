@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3013.js",[{"codigo":"2.7.5-1245.1","item":"LAPIZ P/CORTAR AZULEJO; PUNTA: DIAMANTE, TIPO PUNTA: DIAMANTE"},{"codigo":"2.7.5-1245.2","item":"LAPIZ P/CORTAR AZULEJO; TIPO PUNTA: WIDIA"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5132.js",[{"codigo":"2.9.5-6306.1","item":"PINZAS P/ELECTRODO; MATERIAL: PVC, PRESENTACION: UNIDAD"},{"codigo":"2.9.5-6306.2","item":"PINZAS P/ELECTRODO; MATERIAL: BRONCE, PRESENTACION: UNIDAD"}]);

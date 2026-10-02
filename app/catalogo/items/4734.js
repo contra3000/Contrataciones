@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4734.js",[{"codigo":"2.9.5-7814.1","item":"CARTUCHOS P/EXTRACCION GRASA; DIMENSIONES : 33 X 80 mm, PRESENTACION: CAJA X 100 UN, DIMENSION: 33 X 80 mm"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3404.js",[{"codigo":"2.7.9-3117.1","item":"ESPUELAS; MATERIAL: BRONCE, TIPO: PIHUELO EN S C/REMACHES"},{"codigo":"2.7.9-3117.5","item":"ESPUELAS; MATERIAL: ACERO INOXIDABLE, TIPO: PIHUELO REDONDO PUNTA GOTA"}]);

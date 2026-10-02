@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2263.js",[{"codigo":"4.3.3-9465.1","item":"MESA DE ESTAMPADO P/LAB.; VELOCIDAD: 1 - 8 M/MIN, POTENCIA: 1,2 KW, LARGO DE ESTAMPA: 470 mm, ANCHO DE ESTAMPA: 460 mm"}]);

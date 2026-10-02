@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1395.js",[{"codigo":"4.3.1-145.3","item":"BASCULAS P/HACIENDA; CAPACIDAD: 6000 Kg, LARGO X ANCHO PLATAF: 5.30 X 2.60 M, ALTURA PUERTA: 2.40 M, CANT. ANIMALES: 12, LARGO X ANCHO: 5.30 X 2.60 M"}]);

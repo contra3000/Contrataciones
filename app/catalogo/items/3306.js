@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3306.js",[{"codigo":"4.3.8-6823.1","item":"MAQUINAS ENTALLADORAS; ALIMENTACION: 220/240 V, LARGO MAX. PROBETA: 110 mm, DIMENSION DE PROBETA: 110 mm"}]);

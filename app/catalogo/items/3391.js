@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3391.js",[{"codigo":"2.7.5-1983.1","item":"TROMPOS MECANICOS; USO: PARA ABOCANADO DE CAÑOS"},{"codigo":"2.7.5-1983.2","item":"TROMPOS MECANICOS; USO: CONSTRUCCION"}]);

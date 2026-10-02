@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6745.js",[{"codigo":"3.5.9-2039.1","item":"S. DE AGENCIA DE NOTICIAS; DESCRIPCION: SERVICIO DE AGENCIA NOTICIOSA"}]);

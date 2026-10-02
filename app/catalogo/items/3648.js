@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3648.js",[{"codigo":"2.2.1-2849.1","item":"TELA P/SABANAS TIPO GRAFA; COLOR: CRUDO, ANCHO: 1,5 M, LARGO: 100 M"},{"codigo":"2.2.1-2849.2","item":"TELA P/SABANAS TIPO GRAFA; COLOR: BLANCO, ANCHO: 1,5 M, LARGO: 50 M"}]);

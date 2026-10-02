@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2827.js",[{"codigo":"4.3.3-3959.1","item":"VIBROMETROS; TIPO: MOCHILA, ALIMENTACION: BATERIA RECARGABLE, INTERFASE: CON PC, INTERFAZ: CON PC"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/617.js",[{"codigo":"2.6.5-8423.2","item":"HORMIGON ANTIACIDO; TIPO: AISLANTE P/FUMISTERIA, PRESENTACION: ENVASE X 1 Kg"}]);

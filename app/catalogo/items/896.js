@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/896.js",[{"codigo":"2.9.3-9632.1","item":"PROTECTORES P/CABLES; CANTIDAD DE CANALES: 5, MATERIAL: POLIURETANO, TIPO: TRAMO RECTO"}]);

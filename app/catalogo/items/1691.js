@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1691.js",[{"codigo":"4.3.3-3532.1","item":"DETECTORES DE HELIO; METODO: CONTADOR ESFERICO, PRESION: 4 atm"},{"codigo":"4.3.3-3532.2","item":"DETECTORES DE HELIO; METODO: CONTADOR ESFERICO, PRESION: 8 atm"}]);

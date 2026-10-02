@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/460.js",[{"codigo":"2.1.5-951.1","item":"CORTINAS DE MADERA; ALTO/ANCHO: 1 X 1.8 M, TIPO: ENRROLLAR, TIPO DE MADERA: RAULI CHILENO, MADERA: RAULI CHILENO"}]);

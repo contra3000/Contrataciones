@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1828.js",[{"codigo":"4.3.3-10064.1","item":"EQUIPO GENERADOR DE AEROSOLES; TIPO: P/ CERTIFICAR FILTROS HEPA, POTENCIA: 1050 W, CAPACIDAD: 1,1 L"}]);

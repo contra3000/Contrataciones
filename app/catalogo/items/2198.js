@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2198.js",[{"codigo":"4.3.1-6708.1","item":"MAQUINAS P/TINTORERIA; FUNCIONAMIENTO: A MOLINETE, CAPACIDAD: 200 L, CAPACIDAD BATEA: 200 L"}]);

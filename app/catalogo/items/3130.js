@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3130.js",[{"codigo":"2.6.9-1679.1","item":"TIZAS INDUSTRIALES; ESTADO: POLVO, FORMA DE PRESENTACION: POLVO"},{"codigo":"2.6.9-1679.2","item":"TIZAS INDUSTRIALES; FORMA DE PRESENTACION: CAJA X 12 UN"}]);

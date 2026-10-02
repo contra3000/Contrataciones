@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5791.js",[{"codigo":"2.9.6-8598.6","item":"REP. Y ACC. MAQ.TERMOSELLADORA; ELEMENTO: CONJUNTO DE RECAMBIO, MARCA EQUIPO: PFAFF, MODELO EQUIPO: 8312"}]);

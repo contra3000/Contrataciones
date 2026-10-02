@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/171.js",[{"codigo":"3.2.9-8639.1","item":"ALQ. DE CARPA; DESCRIPCION: ALQUILER DE CARPA"}]);

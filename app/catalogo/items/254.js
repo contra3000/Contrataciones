@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/254.js",[{"codigo":"3.2.9-9645.1","item":"ALQUILER DE VALLAS; DESCRIPCION: ALQUILER DE VALLAS"}]);

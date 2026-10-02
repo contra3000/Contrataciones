@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2475.js",[{"codigo":"4.3.9-5054.3","item":"PULVERIZADORES TURBOSOPLANTES; ALCANCE: 12 M, TURBINA: 226 MPH, CAPACIDAD DEL TANQUE: 12 L"}]);

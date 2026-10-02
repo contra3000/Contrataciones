@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1668.js",[{"codigo":"4.3.3-9711.1","item":"DERMATOMOS; TIPO: ELECTRICO, CORTE: 2 A 6 pulg, ALIMENTACION: 220 V, ACCESORIOS: CON"}]);

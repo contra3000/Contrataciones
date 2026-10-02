@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4411.js",[{"codigo":"2.9.9-8934.1","item":"PANELES DE ABEJA; MATERIAL: ALUMINIO, FORMATO: CELDA HEXAGONAL, TAMAÑO CELDA: 0,591 X 48 X 96 pulg, DENSIDAD: 32 Kg/m3"}]);

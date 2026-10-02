@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/174.js",[{"codigo":"3.2.3-1427.5","item":"ALQ. DE COMPUTADORA; ALQUILER COMPUTADORA"}]);

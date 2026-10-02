@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6800.js",[{"codigo":"3.1.1-2390.1","item":"SERVICIO DE ENERGIA ELECTRICA; DESCRIPCION: SERVICIO DE ENERGIA ELECTRICA"}]);

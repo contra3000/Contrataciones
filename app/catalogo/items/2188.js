@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2188.js",[{"codigo":"4.3.1-9114.1","item":"MAQUINAS DE TEJER; TIPO: INDUSTRIAL, POTENCIA: 1/2 HP, CANT.DE AGUJAS: 100, VELOCIDAD: 10 PZ/H"}]);

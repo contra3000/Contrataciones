@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2773.js",[{"codigo":"4.3.3-8394.1","item":"TRAMPAS CAZA ESPORAS; CAUDAL: 10 L/MIN, TIEMPO MUESTREO: 7 DIAS, TIPO: POR BOMBA DE VACIO"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5661.js",[{"codigo":"2.9.6-4926.1","item":"FRENOS DE DIRECTA; USO: CAJA DE CAMBIO, MARCA: KENWORTH, CANT.DE VELOCIDADES: 13, TIPO: PARA CAMION, CANT. DE VELOCIDADES: 13"}]);

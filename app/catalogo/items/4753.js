@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4753.js",[{"codigo":"2.9.9-9244.1","item":"CHUPETES; MATERIAL: SILICONA, MEDIDA: Nº 1"},{"codigo":"2.9.9-9244.2","item":"CHUPETES; MATERIAL: SILICONA, MEDIDA: Nº 2"},{"codigo":"2.9.9-9244.3","item":"CHUPETES; MATERIAL: SILICONA, MEDIDA: Nº 3"}]);

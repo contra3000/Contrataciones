@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2392.js",[{"codigo":"4.3.9-7414.1","item":"PENDULOS DE IMPACTO; LECTURA: ANALOGICA, ACCIONAMIENTO: MANUAL, CAPACIDAD: 300 J"}]);

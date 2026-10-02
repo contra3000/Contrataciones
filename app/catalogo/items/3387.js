@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3387.js",[{"codigo":"2.9.6-6056.2","item":"TERMOSTATO P/PARED; TIPO: MANUAL Y AUTOMATICO, TENSION: 220 V, CORRIENTE: SIN VALOR, RANGO DE TEMPERATURA: 5 A 30 °C, RANGO DE TEMP.: 5 A 30 °C"}]);

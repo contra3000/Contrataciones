@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2753.js",[{"codigo":"4.3.1-8391.1","item":"TERMOGENERADORES; TIPO: SIN PARTES MOVILES, POTENCIA: 480 - 550 W, DIMENSIONES: 1549 X 1549 X 1016 mm, DIMENSION: 1549 X 1549 X 1016 mm"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4543.js",[{"codigo":"2.5.5-9430.1","item":"FONDO POLIURETANICO; CAPACIDAD: 4 L"},{"codigo":"2.5.5-9430.2","item":"FONDO POLIURETANICO; CAPACIDAD: 20 L"}]);

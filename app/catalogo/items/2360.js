@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2360.js",[{"codigo":"2.9.3-8205.1","item":"ONDULADORES DE POTENCIA; FRECUENCIA: 400 Hz, TENSION: 115 V"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4508.js",[{"codigo":"2.7.2-7771.1","item":"VARILLAS DE TUNGSTENO; TIPO: NO ROSCADA, LONG.DE CUERPO: 15 Cm, DIAMETRO: 16 mm"}]);

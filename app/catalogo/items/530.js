@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/530.js",[{"codigo":"2.9.9-6603.1","item":"MARCOS P/DIAPOSITIVAS; DIMENSION: 24 X 36 mm, PRESENTACION: CAJA X 100 UN"}]);

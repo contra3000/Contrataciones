@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5492.js",[{"codigo":"2.5.2-7474.1","item":"ENSANCHADORES DE CONDUCTO; PRESENTACION: ENVASE X 15 CM3"},{"codigo":"2.5.2-7474.2","item":"ENSANCHADORES DE CONDUCTO; PRESENTACION: ENVASE X 20 mL"}]);

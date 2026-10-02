@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/604.js",[{"codigo":"4.2.2-7707.1","item":"CONST. DE PUENTE; DESCRIPCION: CONSTRUCCION DE PUENTE"}]);

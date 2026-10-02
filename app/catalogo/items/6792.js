@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6792.js",[{"codigo":"3.1.4-2426.1","item":"SERV. RADIOTELECOMUNICACIONES; DESCRIPCION: SERV.DE RADIOTELECOMUNICACION"}]);

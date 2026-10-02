@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6199.js",[{"codigo":"3.4.9-2148.1","item":"CERTIFICACION; DESCRIPCION: CERTIFICACIONES"}]);

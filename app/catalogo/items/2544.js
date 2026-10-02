@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2544.js",[{"codigo":"2.9.6-9531.1","item":"REP. Y ACC. P/TUPI CARPINTERIA; MARCA EQUIPO: MEZ, MODELO EQUIPO: 21111832, ELEMENTO: JUEGO DE FRESAS"}]);

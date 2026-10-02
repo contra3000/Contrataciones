@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3414.js",[{"codigo":"2.7.9-8191.4","item":"SOPORTES P/DISCOS DE RUPTURA; ALTURA: 1 A 10 Cm, PESO: 1 A 10 Kg, MATERIAL: ACERO AL CARBONO, DIAMETRO: 2 pulg"}]);

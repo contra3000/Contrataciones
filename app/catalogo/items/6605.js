@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6605.js",[{"codigo":"3.5.2-9494.1","item":"SERV. DE ALMACENAMIENTO; DESCRIPCION: SERVICIO DE ALMACENAMIENTO"}]);

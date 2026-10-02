@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2478.js",[{"codigo":"4.3.5-1586.1","item":"PUNTEROS; TIPO: LASER, COLOR: DORADO, DISEÑO: ESTILOGRAFICO"},{"codigo":"4.3.5-1586.5","item":"PUNTEROS; TIPO: LASER, DISEÑO: INALAMBRICO"},{"codigo":"4.3.5-1586.6","item":"PUNTEROS; TIPO: PRESENTADOR INALAMBRICO, DISEÑO: LASER Y USB"}]);

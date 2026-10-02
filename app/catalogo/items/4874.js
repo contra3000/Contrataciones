@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4874.js",[{"codigo":"2.9.5-8559.1","item":"ESPARCIDORES DE CELULAS; TIPO: TRIANGULAR, MATERIAL: ACERO INOXIDABLE, LARGO: 200 mm"}]);

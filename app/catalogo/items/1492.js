@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1492.js",[{"codigo":"4.3.9-10086.1","item":"CAMARAS TRAMPA; USO: MONITOREO DE FAUNA, RESOLUCION: 1920 X 1080, ALIMENTACION: BATERIAS DE LITIO"}]);

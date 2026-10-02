@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/172.js",[{"codigo":"3.2.2-8958.1","item":"ALQ. DE CASILLA RODANTE; DESCRIPCION: ALQUILER DE CASILLA RODANTE"}]);

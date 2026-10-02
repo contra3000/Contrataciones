@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4243.js",[{"codigo":"3.3.9-6719.1","item":"MANT. Y REPAR. MESA ANESTESIA; DESCRIPCION: REP.Y MANTEN. MESA ANESTESIA"}]);

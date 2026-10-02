@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/488.js",[{"codigo":"2.9.9-8367.1","item":"BASTON CEREMONIAL; MATERIAL: MADERA Y BRONCE, LARGO: 50 Cm, USO: COMANDANTE GENERAL, ACCESORIO: CADENILLA"}]);

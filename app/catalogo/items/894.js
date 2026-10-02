@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/894.js",[{"codigo":"2.9.3-7409.1","item":"PROTECTOR P/EMPALME; MATERIAL: PLASTICO, PRESENTACION: UNIDAD"}]);

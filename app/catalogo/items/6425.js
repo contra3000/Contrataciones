@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6425.js",[{"codigo":"3.5.9-6582.1","item":"SERV.PROVISION PRECIOS MERCADO; DESCRIPCION : PRECIOS DE MERCADO, DESCRIPCION: PRECIOS DE MERCADO"}]);

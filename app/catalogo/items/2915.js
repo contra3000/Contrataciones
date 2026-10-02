@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2915.js",[{"codigo":"2.7.9-6964.1","item":"CARGAS P/SOLDAR; MATERIAL: COBRE/ALUMINIO, TIPO: CUPROALUMINOTERMICA N°90"}]);

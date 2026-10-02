@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/519.js",[{"codigo":"2.9.9-2781.1","item":"CAJAS P/PELICULAS; MATERIAL: ALUMINIO, DIAMETRO: 27 Cm, ALTURA: 4 mm, ESPESOR: 1 mm"}]);

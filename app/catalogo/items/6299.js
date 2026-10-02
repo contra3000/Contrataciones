@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6299.js",[{"codigo":"3.4.9-5289.1","item":"INST. SIST. COMUNIC. DE DATO; DESCRIPCION: INST.SIST.COMUNIC. DE DATOS"},{"codigo":"3.4.9-5289.1","item":"INST. SIST. COMUNIC. DE DATO; DESCRIPCION: INST.SIST.COMUNIC. DE DATOS"}]);

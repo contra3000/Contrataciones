@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4240.js",[{"codigo":"3.3.3-4588.1","item":"MANT. Y REPAR. MANG CONTRA INC; TAREA: PRUEBA HIDRAULICA, MEDIDA: 2 1/2 pulg, DESCRIPCION: MANT.MANGUERA CONTRA INCENDIO"}]);

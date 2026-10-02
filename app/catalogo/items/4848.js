@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4848.js",[{"codigo":"2.9.5-8403.2","item":"ELECTRODOS REDOX; MATERIAL: PLATINO, DIAMETRO: 12 mm"},{"codigo":"2.9.5-8403.4","item":"ELECTRODOS REDOX; MATERIAL: ION SELECTIVO, DIAMETRO: 10 mm"}]);

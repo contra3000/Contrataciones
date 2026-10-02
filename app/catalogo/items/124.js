@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/124.js",[{"codigo":"2.1.1-2430.1","item":"PREPIZZA; GUSTO: TOMATE, TAMAÑO: MEDIANO"},{"codigo":"2.1.1-2430.2","item":"PREPIZZA; GUSTO: TOMATE, TAMAÑO: CHICA"},{"codigo":"2.1.1-2430.3","item":"PREPIZZA; GUSTO: TOMATE, TAMAÑO: GRANDE"}]);

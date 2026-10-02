@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4759.js",[{"codigo":"2.9.5-8050.1","item":"CLAMPS UMBILICALES; MATERIAL: PLASTICO, PRESENTACION: UNIDAD"},{"codigo":"2.9.5-8050.2","item":"CLAMPS UMBILICALES; MATERIAL: PLASTICO, PRESENTACION: ENVASE X 5 UN"}]);

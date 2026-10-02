@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6632.js",[{"codigo":"3.4.9-5302.1","item":"SERV. DE INSPECCION TECNICA; DESCRIPCION: INSPECCION TECNICA"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1439.js",[{"codigo":"4.3.9-9837.1","item":"BUCLEADRORAS P/PELO; TIPO: PUNTA FRIA, DIAMETRO: 25 mm, MATERIAL: REVESTIMIENTO CERAMICO, USO: PROFESIONAL"}]);

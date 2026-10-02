@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4092.js",[{"codigo":"3.3.5-2643.1","item":"LIMPIEZA DE OBRAS DE ARTE; DESCRIPCION: LIMPIEZA DE O. DE ARTE"}]);

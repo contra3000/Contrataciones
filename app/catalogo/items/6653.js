@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6653.js",[{"codigo":"3.9.9-3748.1","item":"SERV. ENLACE DE CONECTIVIDAD; DESCRIPCION: SERV.ENLACE DE CONECTIVIDAD"}]);

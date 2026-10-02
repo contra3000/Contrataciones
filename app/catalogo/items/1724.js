@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1724.js",[{"codigo":"4.3.3-5217.1","item":"DUROMETROS DE COMPRIMIDOS; RANGO DE COMPRIMIDO: 0,8 A 3,2 mm, RANGO DE MEDICION: 2-400 N"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3915.js",[{"codigo":"2.3.4-7473.1","item":"ETIQUETAS COLGANTES; PAPEL: MANILA, GRAMAJE: 176 GR/M2, TAMAÑO: N° 5, TIPO DE PAPEL: MANILA"}]);

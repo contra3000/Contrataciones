@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3676.js",[{"codigo":"2.2.3-6065.1","item":"ZALEA; USO: SANITARIO, DESCRIPCION: TELA ENGOMADA, MEDIDA: 0,90 X 1,5 M"},{"codigo":"2.2.3-6065.2","item":"ZALEA; DESCRIPCION: DESCARTABLE, MEDIDA: 60 X 90 Cm, USO: SANITARIO"}]);

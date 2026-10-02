@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/632.js",[{"codigo":"4.2.1-9251.1","item":"TENDIDO ELECTRICO; DESCRIPCION: TENDIDO MEDIA TENSION"},{"codigo":"4.2.1-9251.2","item":"TENDIDO ELECTRICO; DESCRIPCION: TENDIDO BAJA TENSION"}]);

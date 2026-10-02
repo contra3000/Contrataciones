@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6529.js",[{"codigo":"3.4.9-9856.1","item":"S. DETECCION DE TORMENTAS; DESCRIPCION: S. DETECCION DE TORMENTAS"}]);

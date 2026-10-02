@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1714.js",[{"codigo":"4.3.9-9763.1","item":"DIVISOR DE TENSION; CAPACITANCIA ENTRADA: 96,3 pF, PRECISION: 0,5 %, RANGO DE TENSION: 1 A 150 Kv, RESISTENCIA ENTRADA: 715 MOhm"}]);

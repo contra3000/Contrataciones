@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6227.js",[{"codigo":"3.6.0-6401.1","item":"CREAT.Y PRODUC. PUBLICITARIA; DESCRIPCION: CREATIVIDAD Y PRODUCCION"}]);

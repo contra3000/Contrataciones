@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1524.js",[{"codigo":"4.3.8-9528.1","item":"CARROS ESPIGADOR; LONGITUD DE TRABAJO: 410 mm, MATERIAL: METAL"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2127.js",[{"codigo":"4.3.9-7422.15","item":"LANZAPROYECTILES; ALCANCE: 400 M, MATERIAL: PLASTICO"},{"codigo":"4.3.9-7422.16","item":"LANZAPROYECTILES; ALCANCE: VARIABLE, MATERIAL: ACERO Y PLASTICO"}]);

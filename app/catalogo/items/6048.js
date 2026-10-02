@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6048.js",[{"codigo":"2.7.1-7454.2","item":"ACOPLES DE HIERRO; MATERIAL: HIERRO GALVANIZADO, DIAMETRO: 1/2 pulg"},{"codigo":"2.7.1-7454.3","item":"ACOPLES DE HIERRO; MATERIAL: HIERRO GALVANIZADO, DIAMETRO: 1 pulg"},{"codigo":"2.7.1-7454.4","item":"ACOPLES DE HIERRO; MATERIAL: HIERRO GALVANIZADO, DIAMETRO: 3/4 pulg"}]);

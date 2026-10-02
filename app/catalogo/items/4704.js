@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4704.js",[{"codigo":"2.9.5-5507.1","item":"CADENAS P/BABEROS; MATERIAL : PLASTICO, USO: ODONTOLOGIA, MATERIAL: PLASTICO"},{"codigo":"2.9.5-5507.2","item":"CADENAS P/BABEROS; MATERIAL : 147 dBV/mPa , USO: ODONTOLOGIA, MATERIAL: METAL"}]);

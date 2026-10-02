@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1223.js",[{"codigo":"4.4.0-9684.1","item":"GABINETE SELECTOR DE ARMAS; MATERIAL: FIBRA DE VIDRIO, CANT. DE SALIDAS DE AIRE: 3, PRESION DE SALIDA DE AIRE: 8000 HPa"}]);

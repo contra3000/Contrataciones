@@ -13,6 +13,13 @@
  *   app/catalogo/items/<idClase>.json   ítems de cada clase (partido si pesa más
  *                                       del límite: <idClase>_p1.json, _p2.json...)
  *
+ * Y además, junto a cada .json, un .js hermano con los mismos datos que se
+ * entrega a SGC.catalogo.recibir (ORDEN-RONDA-28 §1, ADR-044). Motivo: Chrome no
+ * deja hacer fetch sobre file://, así que el generador sin servidor (generador.html,
+ * que se abre con doble clic) carga el catálogo inyectando <script> en vez de
+ * pedirlo por la red. El .json se sigue generando porque la aplicación con
+ * servidor lo sigue leyendo por fetch y no cambia de comportamiento.
+ *
  * La codificación del índice es compacta (ADR-004 estimaba ~200 KB): el rubro
  * va como índice a rubros.json y el idClase identifica al fragmento, para que
  * el índice inicial (rubros + clases) entre en el presupuesto de 300 KB de la
@@ -25,6 +32,7 @@
  *  - Determinista: dos corridas sobre la misma entrada producen archivos byte
  *    a byte idénticos. La fecha del manifiesto deriva del mtime del archivo de
  *    entrada (no del reloj) y catalogoVersion es un hash FNV-1a del contenido.
+ *    Los .js hermanos también son deterministas: llevan la misma cadena JSON.
  *  - Descarta el campo estado (ADR-014).
  *  - Ningún fragmento de ítems supera LIMITE_FRAGMENTO bytes; las clases grandes
  *    se parten en varios archivos. El manifiesto asienta cuántas partes tiene
@@ -108,8 +116,32 @@ function partirItems(items) {
   return partes;
 }
 
-function escribirJson(ruta, valor) {
-  fs.writeFileSync(ruta, JSON.stringify(valor), 'utf8');
+// Escribe el .json y su hermano .js. rutaLogica es la ruta que el documento
+// pide (catalogo/manifiesto.json), no la del disco: es la clave con la que el
+// cargador resuelve la promesa.
+function escribirJson(rutaDisco, rutaLogica, valor) {
+  const texto = JSON.stringify(valor);
+  fs.writeFileSync(rutaDisco, texto, 'utf8');
+  escribirJs(rutaDisco, rutaLogica, texto);
+  return texto;
+}
+
+/*
+ * El hermano .js de un .json: los mismos datos, entregados por código.
+ *
+ * El texto va como literal JSON embebido, no como una cadena: así el archivo es
+ * JS válido (Chrome lo evalúa sin problema) sin pasar por JSON.parse ni por
+ * eval. La clave entregada es la ruta lógica con extensión .js, que es
+ * exactamente el src del <script> que inyecta el cargador.
+ *
+ * Se usa SGC como global: el <script> se inyecta desde el documento, donde SGC
+ * ya está definido (carga.js se cargó antes).
+ */
+function escribirJs(rutaDisco, rutaLogica, texto) {
+  const rutaJs = rutaDisco.replace(/\.json$/, '.js');
+  const clave = rutaLogica.replace(/\.json$/, '.js');
+  const linea = 'SGC.catalogo.recibir(' + JSON.stringify(clave) + ',' + texto + ');\n';
+  fs.writeFileSync(rutaJs, linea, 'utf8');
 }
 
 function main() {
@@ -194,6 +226,7 @@ function main() {
       const ruta = path.join(dirItems, nombre);
       const contenidoParte = JSON.stringify(parte);
       fs.writeFileSync(ruta, contenidoParte, 'utf8');
+      escribirJs(ruta, 'catalogo/items/' + nombre, contenidoParte);
       const bytes = Buffer.byteLength(contenidoParte, 'utf8');
       totalFragmentos++;
       bytesTotal += bytes;
@@ -215,8 +248,8 @@ function main() {
     return { idRubro: indice + 1, rubro: rubro };
   });
 
-  escribirJson(path.join(opciones.salida, 'rubros.json'), rubros);
-  escribirJson(path.join(opciones.salida, 'clases.json'), clases);
+  escribirJson(path.join(opciones.salida, 'rubros.json'), 'catalogo/rubros.json', rubros);
+  escribirJson(path.join(opciones.salida, 'clases.json'), 'catalogo/clases.json', clases);
 
   const manifiesto = {
     catalogoVersion: catalogoVersion,
@@ -226,12 +259,13 @@ function main() {
     fragmentos: totalFragmentos,
     generado: new Date(fs.statSync(opciones.entrada).mtime).toISOString()
   };
-  escribirJson(path.join(opciones.salida, 'manifiesto.json'), manifiesto);
+  escribirJson(path.join(opciones.salida, 'manifiesto.json'), 'catalogo/manifiesto.json', manifiesto);
 
   const segundos = ((Date.now() - inicio) / 1000).toFixed(2);
   console.log('catalogo: ' + registros.length + ' registros en ' + clases.length + ' clases y ' + totalFragmentos + ' fragmentos');
   console.log('catalogo: fragmento más grande ' + (fragmentoMasGrande / 1024).toFixed(0) + ' KB, total ' + (bytesTotal / 1024).toFixed(0) + ' KB');
   console.log('catalogo: catalogoVersion ' + catalogoVersion + ', generado ' + manifiesto.generado);
+  console.log('catalogo: ' + (totalFragmentos + 3) + ' archivos .js hermanos para file:// (uno por .json)');
   console.log('catalogo: listo en ' + segundos + ' s -> ' + opciones.salida);
 }
 

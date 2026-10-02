@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1214.js",[{"codigo":"4.4.0-9584.2","item":"EQ. P/EXTRAER DATOS D/CELULAR; TIPO: PORTATIL, TECNOLOGIA: CELULARES Y TABLETAS, NORMA: CDMA, GSM, 3G, IDEN Y TDMA."}]);

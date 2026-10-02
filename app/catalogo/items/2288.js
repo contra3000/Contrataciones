@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2288.js",[{"codigo":"4.3.9-8955.1","item":"MODULOS DE ACELERACION; CANT. CADENAS DE CARGA: UNA, TENSION MAXIMA: 1,7 MV"}]);

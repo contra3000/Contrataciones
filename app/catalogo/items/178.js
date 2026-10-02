@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/178.js",[{"codigo":"3.2.2-5518.1","item":"ALQ. DE DESMALEZADORA; DESCRIPCION: ALQUILER DE DESMALEZADORA"}]);

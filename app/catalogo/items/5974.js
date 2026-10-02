@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5974.js",[{"codigo":"2.9.6-8605.2","item":"REP. Y ACC. P/TERMINAL REMOTA; REPUESTO: GABINETE ANTIVANDALICO, MARCA: GENERICO, MODELO: GENERICO"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6244.js",[{"codigo":"3.4.9-3048.1","item":"DESTRUCCION Y REC. DE PAPEL; DESCRIPCION: DESTRUCCION Y RECICL. DE PAPEL"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6278.js",[{"codigo":"4.2.1-9458.1","item":"INGENIERIA MECANICA; DESCRIPCION: INGENIERIA MECANICA"}]);

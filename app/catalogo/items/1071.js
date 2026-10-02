@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1071.js",[{"codigo":"4.3.7-9002.1","item":"ELASTICOS P/CAMAS; DIMENSION: 190 X 81 Cm, MATERIAL: HIERRO"},{"codigo":"4.3.7-9002.2","item":"ELASTICOS P/CAMAS; DIMENSION: 190 X 88 Cm, MATERIAL: HIERRO"}]);

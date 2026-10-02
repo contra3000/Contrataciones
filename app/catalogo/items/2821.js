@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2821.js",[{"codigo":"4.3.9-6937.1","item":"VARMETROS; CORRIENTE: 3 X 5 A, RANGO MEDICION: 0 A 150 VAR, TENSION: 3 X 380 V, RANGO DE MEDICION: 0 A 150 VAR"}]);

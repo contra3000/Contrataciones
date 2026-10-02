@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2348.js",[{"codigo":"4.3.3-8563.1","item":"NASOLARINGOSCOPIOS; RANGO DE OBSERVACION: 75 A 85 °C, LONGITUD DE TRABAJO: >26 Cm, USO: BIOPSIA"}]);

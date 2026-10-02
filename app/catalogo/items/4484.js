@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4484.js",[{"codigo":"2.7.1-7121.2","item":"REFUERZOS P/DERIVACION; DIAMETRO PRINCIPAL: 133 mm, DIAMETRO SECUNDARIO: 89 mm, MATERIAL: CUNIFE, DIAMETRO MENOR: 89 mm"}]);

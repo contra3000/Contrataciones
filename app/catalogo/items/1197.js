@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1197.js",[{"codigo":"2.9.6-8745.1","item":"BOCAS DE IMPULSION; DIAMETRO: 63,5 mm, DIMENSION TAPA: 40 X 60 Cm, ROSCA: HEMBRA, USO: INSTALACION CONTRA INCENDIO"}]);

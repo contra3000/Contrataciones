@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6520.js",[{"codigo":"3.4.9-2409.1","item":"S. DE TRADUCCION; DESCRIPCION: SERVICIO DE TRADUCCION"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6790.js",[{"codigo":"3.1.4-4694.1","item":"SERV. DE TELEFONIA CELULAR; DESCRIPCION: SERVICIO DE TELEFONIA CELULAR"}]);

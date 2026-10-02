@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3600.js",[{"codigo":"2.2.3-8052.2","item":"MOLETON; FORMA: RECTANGULAR, DIMENSION: 1,6 X 40 M, TELA: LANA"}]);

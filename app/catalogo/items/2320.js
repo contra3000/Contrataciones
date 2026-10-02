@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2320.js",[{"codigo":"2.9.9-8305.1","item":"MONOPATINES; TIPO: PLEGABLE, MATERIAL: ALUMINIO"}]);

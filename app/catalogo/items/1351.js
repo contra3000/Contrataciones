@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1351.js",[{"codigo":"4.3.5-2712.1","item":"ARROLLADORAS DE PELICULAS; ACCIONAMIENTO: MANUAL, TAMAÑO DE PELICULAS: 35 mm, TAMAÑO CINTA: 35 mm"}]);

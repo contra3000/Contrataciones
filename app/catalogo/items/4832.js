@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4832.js",[{"codigo":"2.9.5-6695.11","item":"DISECTORES; USO: QUIROFANO, MATERIAL: PLASTICO"},{"codigo":"2.9.5-6695.2","item":"DISECTORES; USO: RETROESTERNAL, MATERIAL: ACERO INOXIDABLE"}]);

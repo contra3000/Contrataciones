@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4202.js",[{"codigo":"3.3.4-7619.1","item":"MANT. Y REPAR. DE CARRETERA; DESCRIPCION: MANTENIMIENTO DE CARRETERA"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1386.js",[{"codigo":"4.3.9-3201.3","item":"BARANDAS P/PASARELA; MATERIAL ESTRUCTURA: 147 dBV/mPa , ALTURA: 110 Cm, LARGO: 200 Cm, MATERIAL: METAL"}]);

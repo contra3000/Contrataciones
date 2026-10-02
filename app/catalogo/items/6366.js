@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6366.js",[{"codigo":"3.3.9-5653.1","item":"MANT. Y REPAR. EQ. P/SANITARIO; DESCRIPCION: MANT. DE EQUIPOS P/SANITARIOS"}]);

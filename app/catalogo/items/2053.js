@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2053.js",[{"codigo":"4.3.2-4004.4","item":"HELIBALDES; CAPACIDAD: 900 L, CARGA: 969 Kg, CONTROL DE LANZAMIENTO: MULTIPLE"}]);

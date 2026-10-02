@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6733.js",[{"codigo":"3.5.1-7989.1","item":"TRANSP. DE EQUIPAJE; TIPO: AEREO"},{"codigo":"3.5.1-7989.2","item":"TRANSP. DE EQUIPAJE; TIPO: ENCOMIENDA"}]);

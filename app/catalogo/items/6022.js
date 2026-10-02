@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6022.js",[{"codigo":"2.9.6-5047.1","item":"TAPAS P/COLUMNAS CROMATOGR.; PRESENTACION: PAQUETE, MATERIAL: PLASTICO, MATERIAL : PLASTICO"}]);

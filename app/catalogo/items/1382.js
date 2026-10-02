@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1382.js",[{"codigo":"4.3.3-7573.1","item":"BANCOS P/ESTUDIO DE SOLIDO; CANT.DEMOSTRACIONES: 6, DIMENSIONES: 1 X 0,8 X 0,6 M, DIMENSION: 1 X 0,8 X 0,6 M"}]);

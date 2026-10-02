@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/520.js",[{"codigo":"4.3.5-6478.1","item":"CARGADORES DE PELICULAS; MEDIDA DE PELICULA: 35 mm, CAPACIDAD: 30 M, EXPOSICIONES: 36, PRESENTACION: UNIDAD, ANCHO DE CINTA: 35 mm"}]);

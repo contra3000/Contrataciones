@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6171.js",[{"codigo":"3.2.4-9734.1","item":"ALQ. DE CARTUCHO TONER; DESCRIPCION: ALQ. DE CARTUCHO TONER"}]);

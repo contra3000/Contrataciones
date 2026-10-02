@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3278.js",[{"codigo":"4.3.3-6264.3","item":"LANZA DARDOS; TIPO: A GAS COMPRIMIDO, CALIBRE: 11-13 mm, USO: ANESTESICO, DARDOS: 5 A 20 mL, ELEMENTO: RIFLE"}]);

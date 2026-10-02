@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2075.js",[{"codigo":"4.3.3-8165.2","item":"IMPEDANCIOMETROS/ANALIZ. OIDOS; FRECUEN. IPSILATERALES: 110 db, FRECUEN. CONTRALATER.: 120 db, TIPO: MANUAL/AUTOMATICO"}]);

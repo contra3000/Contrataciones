@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2713.js",[{"codigo":"4.3.9-7556.1","item":"SOPORTES DE ENERGIA; DURACION: 12 H, USO: CENTRAL DE ALARMAS"}]);

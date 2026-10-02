@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2031.js",[{"codigo":"4.3.9-3394.1","item":"GENERADORES TACOMETRICOS; TIPO: A222\"S\"V15, Nº BOBINA ESATORICA: 4 A 40 V"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4073.js",[{"codigo":"3.3.2-9694.2","item":"INST. CERTIF. EQ. P/AERONAVES; DESCRIPCION: INST. CERTIF. EQ. P/AERONAVES, CRITERIO SOCIAL: DECRETO 312/2010"}]);

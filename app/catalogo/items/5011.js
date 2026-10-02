@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5011.js",[{"codigo":"2.9.5-5543.1","item":"LAPIZ DIAMANTE; USO: ESCRITURA PORTAOBJETO, TAMAÑO: STANDAR"},{"codigo":"2.9.5-5543.2","item":"LAPIZ DIAMANTE; USO: P/MARCAR VIDRIO, TAMAÑO: STANDAR"},{"codigo":"2.9.5-5543.3","item":"LAPIZ DIAMANTE; USO: PERITAJE, TAMAÑO: 15 Cm"}]);

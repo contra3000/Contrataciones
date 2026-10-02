@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2161.js",[{"codigo":"3.3.3-8949.1","item":"MANT. Y REPAR. TABLEROS ELECT.; DESCRIPCION: REPAR Y MANT P/TABLERO ELECTRO"}]);

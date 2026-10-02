@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2554.js",[{"codigo":"4.3.3-9072.1","item":"RETINOGRAFO; ANGULO: 20-35-50 º, DISTANCIA TRABAJO: 39 mm, RANGO DE MEDICION: 4 mm"}]);

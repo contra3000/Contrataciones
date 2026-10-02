@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1087.js",[{"codigo":"2.9.2-7509.1","item":"FOLIOS PORTA CD; FORMATO: A4, CANTIDAD DE CD: 2 UN"},{"codigo":"2.9.2-7509.2","item":"FOLIOS PORTA CD; FORMATO: A4, CANTIDAD DE CD: 8"}]);

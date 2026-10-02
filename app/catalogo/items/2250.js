@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2250.js",[{"codigo":"4.3.9-4531.1","item":"MEDIDORES DE TRANSITO; OBTENCION DE DATOS: 2 CAMARAS DE VIDEO, LECTURA DE DATOS: INTERFACE PC, SOFTWARE: CON"}]);

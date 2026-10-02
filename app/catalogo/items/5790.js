@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5790.js",[{"codigo":"2.9.6-9297.11","item":"REP. Y ACC. LLENADORA AMPOLLAS; MARCA: RAMAYON, MODELO EQUIPO: LHCA4, ELEMENTO: BOMBA DOSIFICADORA"}]);

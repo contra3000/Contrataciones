@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/327.js",[{"codigo":"3.5.4-2065.1","item":"SEGURO DE RESPONSABILIDAD; DESCRIPCION: SEGURO DE RESPONSABILIDAD"}]);

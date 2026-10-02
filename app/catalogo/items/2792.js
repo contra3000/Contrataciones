@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2792.js",[{"codigo":"4.3.9-9671.1","item":"TRIBUNAS; TIPO: TUBULAR TELESCOPICA, CANTIDAD DE FILAS: 6, MATERIAL ESTRUCTURA: HIERRO"}]);

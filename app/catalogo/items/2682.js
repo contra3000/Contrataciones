@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2682.js",[{"codigo":"4.3.9-9885.1","item":"SISTEMA DE CAMARA GESELL; USO: REGISTRO TOMA DE DECLARACIONES"}]);

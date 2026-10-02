@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5609.js",[{"codigo":"2.9.9-7837.1","item":"BAHIA P/COMPUTADORA; MATERIAL: METALICO, DIMENSIONES: 20 X 15 X 2 Cm, USO: DISCO RIGICO, DIMENSION: 20 X 15 X 2 Cm"}]);

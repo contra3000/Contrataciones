@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2593.js",[{"codigo":"4.3.3-9739.1","item":"SENSORES ULTRAVIOLETA; RANGO ESPECTRAL: 280 A 315 nM, ALIMENTACION: 220 V, TEMPERATURA DE TRABAJO: -40 A 40 °C"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2221.js",[{"codigo":"4.3.3-4153.1","item":"MED. REVENTAMIENTO P/PAPEL; ALIMENTACION: 220 A 240 V, TIPO: MOVIL, RANGO DE MEDICION: 50 A 2000 KPa, PRECISION: +/- 1 %, LECTURA: DIGITAL"}]);

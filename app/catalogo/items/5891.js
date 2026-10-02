@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5891.js",[{"codigo":"2.9.6-7174.4","item":"REP. Y ACC. P/HOMOGEINIZADORES; TIPO: 50 TUBOS PARA LISIS"},{"codigo":"2.9.6-7174.5","item":"REP. Y ACC. P/HOMOGENIZADORES; TIPO: MICROTIP"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1762.js",[{"codigo":"4.3.9-9950.5","item":"EQ P/LABORATORIO OBRAS DE ARTE; TIPO: ESPATULA TERMICA CON CONTROL, USO: PINTURA, ESCULTURA, OTROS"}]);

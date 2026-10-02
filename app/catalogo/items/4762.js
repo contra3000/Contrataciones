@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4762.js",[{"codigo":"2.9.5-7466.1","item":"CLAVOS PLACAS P/CIRUGIAS; MATERIAL: ACERO 0316, CODO: DOBLE, GRADO: 90 °C, MEDIDA: 8 Cm"}]);

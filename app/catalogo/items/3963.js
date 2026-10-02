@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3963.js",[{"codigo":"2.9.9-7925.1","item":"PALETAS P/DIBUJO; MATERIAL: PLASTICO"},{"codigo":"2.9.9-7925.2","item":"PALETAS P/DIBUJO; MATERIAL: PAPEL VEGETAL"}]);

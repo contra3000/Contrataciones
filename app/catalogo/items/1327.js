@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1327.js",[{"codigo":"4.3.9-9524.6","item":"ANALIZADORES DE TORQUE; TIPO: DE SAFE, RANGO DE MEDICION: 5 A 25 NM"},{"codigo":"4.3.9-9524.7","item":"ANALIZADORES DE TORQUE; TIPO: DE SAFE, RANGO DE MEDICION: 0 - 210 NM"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1605.js",[{"codigo":"4.3.9-8635.1","item":"CONMUTADORES DE ENERGIA; POTENCIA: 140 KVA, CORRIENTE: 250 A, POLARIDAD: 3"},{"codigo":"4.3.9-8635.2","item":"CONMUTADORES DE ENERGIA; POTENCIA: 30 KW, CORRIENTE: 121 A, POLARIDAD: 2"}]);

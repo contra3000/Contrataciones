@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/195.js",[{"codigo":"3.2.9-4320.1","item":"ALQ. DE FOTOGRAFIA; USO: CAMPAÑA GRAFICA, DESCRIPCION: ALQUILER DE FOTOGRAFIA"}]);

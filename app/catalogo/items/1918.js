@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1918.js",[{"codigo":"4.3.3-5823.1","item":"EQUIPOS P/TINCION DE PLATA; TIPO: 3 SOL. P/FIJACI. LAVA, TEÑIDO, USO: INMUNOLOGIA, PRESENTACION: CAJA X 40 UN"}]);

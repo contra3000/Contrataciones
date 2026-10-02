@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3047.js",[{"codigo":"2.9.6-2294.2","item":"PANTALLAS DE CALEFACCION; CALORIAS: 1500"},{"codigo":"2.9.6-2294.5","item":"PANTALLAS DE CALEFACCION; CALORIAS: 3000 CAL"}]);

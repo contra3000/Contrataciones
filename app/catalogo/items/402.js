@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/402.js",[{"codigo":"2.5.8-8773.1","item":"JABONERAS DE PLASTICO; MEDIDA: 7X9X4 Cm"}]);

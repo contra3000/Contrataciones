@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5481.js",[{"codigo":"2.5.9-5375.1","item":"CREMA ENJUAGUE BASE; TIPO: CREMA BLANCA, PRESENTACION: 1000 GR"}]);

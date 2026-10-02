@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6277.js",[{"codigo":"4.2.1-9459.1","item":"INGENIERIA DE PROCESOS; DESCRIPCION: INGENIERIA DE PROCESOS"}]);

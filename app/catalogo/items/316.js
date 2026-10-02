@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/316.js",[{"codigo":"3.5.5-2944.1","item":"S. BANCA ELECTRONICA; DESCRIPCION: SERVICIO BANCA ELECTRONICA"}]);

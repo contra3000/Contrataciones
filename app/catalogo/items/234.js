@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/234.js",[{"codigo":"3.2.2-8200.1","item":"ALQ. EQ. RAYOS X PORTAT; DESCRIPCION: ALQUILER EQUIPO RAYOS X PORTAT"}]);

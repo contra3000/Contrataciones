@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6695.js",[{"codigo":"3.4.9-9848.1","item":"SERV. TECNICO PROFESIONAL P/CM; CONVENIO MARCO: ADOBE, DESCRIPCION: LIVECYCLE ES4 Y TECN. RELAC."}]);

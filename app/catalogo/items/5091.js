@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5091.js",[{"codigo":"2.9.5-8234.1","item":"ORINALES; MATERIAL: PVC"}]);

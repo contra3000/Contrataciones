@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4356.js",[{"codigo":"2.5.9-6980.1","item":"COAGULANTES DE ESCORIA; ESTADO: GRANULADO, PRESENTACION: BOLSA X 30 Kg, FORMA DE PRESENTACION: GRANULADO"}]);

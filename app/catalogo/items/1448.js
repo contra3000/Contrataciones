@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1448.js",[{"codigo":"4.3.4-1441.2","item":"CABEZAL P/TELEFONISTA; USO: GENERICO, TIPO: ULTRALIVIANO"},{"codigo":"4.3.4-1441.5","item":"CABEZAL P/TELEFONISTA; USO: TELEFONO IP, TIPO: ULTRALIVIANO"}]);

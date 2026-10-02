@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1787.js",[{"codigo":"4.3.3-8876.2","item":"EQ. MEDICION NIVEL ALCOHOL; TIPO: SEMI- PROFESIONAL, PRECISION: 97 %, RANGO DE TEMPERATURA: SIN, RANGO DE MEDICION: 0 A 4 GR/L"}]);

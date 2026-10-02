@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5065.js",[{"codigo":"2.9.5-9663.1","item":"MICROPISTILOS; MATERIAL: POLIPROPILENO AUTOCLAVABLE, CAPACIDAD: 1,5 A 2 mL, PRESENTACION: ENVASE X 10 UN"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1221.js",[{"codigo":"4.4.0-9262.1","item":"FIBRA OPTICA TACTICA; LARGO: 920 mm, RESOLUCION: 7400 PXL"}]);

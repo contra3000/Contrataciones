@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/345.js",[{"codigo":"3.5.4-4384.1","item":"SEGURO TRANSP. DE MERCADERIA; DESCRIPCION: SEGURO DE TRANSPORTE DE MERCAD"}]);

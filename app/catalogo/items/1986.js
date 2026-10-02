@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1986.js",[{"codigo":"4.3.9-6936.1","item":"FLUXIMETROS; RANGO MEDICION: 100 A 100000 KMX, INDICE: LUMINOSO, HILO: TENSO, RANGO DE MEDICION: 100 A 100000 KMX"}]);

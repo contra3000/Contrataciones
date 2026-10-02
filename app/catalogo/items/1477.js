@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1477.js",[{"codigo":"4.3.9-8455.1","item":"CAMARAS DE VIDEO P/LOCOMOTORA; ALIMENTACION: 12 V, LENTE: 3,6 mm, RESOLUCION: 420 TVL, USO: P/EXTERIOR"}]);

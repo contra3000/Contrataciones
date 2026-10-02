@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6870.js",[{"codigo":"4.3.5-2388.1","item":"PLASTRON PARED P/ESGRIMA; FORMA: REDONDO, COLOR: BLANCO"}]);

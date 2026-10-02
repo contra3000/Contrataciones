@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3418.js",[{"codigo":"4.5.0-6703.1","item":"ACTUALIZACIONES REVISTAS COLEC; DESCRIPCION: ACTUALIZACION DE REVISTA COLEC"}]);

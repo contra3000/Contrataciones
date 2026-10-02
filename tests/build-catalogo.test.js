@@ -113,10 +113,17 @@ test('el build produce manifiesto con catalogoVersion y conteos del fixture', ()
   assert.ok(clases.every((e) => Array.isArray(e) && e.length === 5), 'cada clase debe ser [idClase, idRubro, clase, cantidad, partes]');
 });
 
+// Desde la RONDA-28 el build escribe, junto a cada .json, un .js hermano para
+// poder cargar el catálogo sobre file:// (ORDEN-RONDA-28 §1). Los tests que
+// recorren items/ tienen que quedarse con los .json.
+function soloJson(archivos) {
+  return archivos.filter((nombre) => nombre.endsWith('.json'));
+}
+
 test('el build descarta el campo estado y los fragmentos suman los registros del fixture', () => {
   const dirItems = path.join(dirA, 'items');
   let suma = 0;
-  const archivos = fs.readdirSync(dirItems);
+  const archivos = soloJson(fs.readdirSync(dirItems));
   assert.ok(archivos.length >= esperado.clases, 'debe haber al menos un fragmento por clase');
   for (const nombre of archivos) {
     const texto = fs.readFileSync(path.join(dirItems, nombre), 'utf8');
@@ -126,10 +133,26 @@ test('el build descarta el campo estado y los fragmentos suman los registros del
   assert.strictEqual(suma, esperado.registros);
 });
 
+test('el hermano .js de cada fragmento lleva los mismos datos que su .json', () => {
+  const dirItems = path.join(dirA, 'items');
+  const nombres = soloJson(fs.readdirSync(dirItems));
+  assert.ok(nombres.length > 0, 'debe haber fragmentos');
+  for (const nombre of nombres) {
+    const rutaJs = path.join(dirItems, nombre.replace(/\.json$/, '.js'));
+    assert.ok(fs.existsSync(rutaJs), 'falta el hermano .js de ' + nombre);
+    const codigo = fs.readFileSync(rutaJs, 'utf8');
+    assert.ok(codigo.startsWith('SGC.catalogo.recibir("catalogo/items/' + nombre.replace(/\.json$/, '.js') + '",'),
+      nombre + ': el .js entrega su propia ruta lógica');
+    const cuerpo = codigo.slice(codigo.indexOf(',') + 1, codigo.lastIndexOf(');'));
+    assert.deepStrictEqual(JSON.parse(cuerpo), JSON.parse(fs.readFileSync(path.join(dirItems, nombre), 'utf8')),
+      nombre + ': el .js y el .json llevan los mismos datos');
+  }
+});
+
 test('ningún fragmento supera ' + LIMITE_FRAGMENTO + ' bytes', () => {
   const dirItems = path.join(dirA, 'items');
   let max = 0;
-  for (const nombre of fs.readdirSync(dirItems)) {
+  for (const nombre of soloJson(fs.readdirSync(dirItems))) {
     const tamanio = fs.statSync(path.join(dirItems, nombre)).size;
     if (tamanio > max) {
       max = tamanio;
@@ -166,7 +189,7 @@ test('la verificación del catálogo completo (159.366 filas) se saltea con avis
     assert.strictEqual(manifiesto.rubros, 50);
     let suma = 0;
     const dirItems = path.join(dir, 'items');
-    for (const nombre of fs.readdirSync(dirItems)) {
+    for (const nombre of soloJson(fs.readdirSync(dirItems))) {
       suma += JSON.parse(fs.readFileSync(path.join(dirItems, nombre), 'utf8')).length;
     }
     assert.strictEqual(suma, 159366);

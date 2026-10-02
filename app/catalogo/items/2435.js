@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2435.js",[{"codigo":"4.3.4-3888.3","item":"PORTEROS VISORES; TIPO: CON CIRCUITO CERRADO DE TV, MONITOR: LCD 5 pulg, ESTACIONES DE APERTURA: 4"}]);

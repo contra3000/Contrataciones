@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3457.js",[{"codigo":"2.9.9-8801.1","item":"PLANTILLAS GRAFICAS; MATERIAL: METAL, DIMENSION: 10 X 5 Cm"}]);

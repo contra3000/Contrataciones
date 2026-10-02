@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2526.js",[{"codigo":"4.3.9-8668.5","item":"REGISTRADORES VAR. ELECTRICAS; TIPO: TRIFASICO, RANGO DE MEDICION: 150 A 1500 A, EXACTITUD: 0,1 V"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1443.js",[{"codigo":"4.3.9-5347.6","item":"BUZONES; TIPO: DE CREDENCIALES, MATERIAL: CHAPA, DIMENSION: 10 X 10 X 40 Cm, ACCESORIO: SIN"}]);

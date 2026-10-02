@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3160.js",[{"codigo":"4.3.8-9874.1","item":"ALINEADORES DE BRIDAS; ACCIONAMIENTO: MANUAL, ACCESORIOS: CON"},{"codigo":"4.3.8-9874.2","item":"ALINEADORES DE BRIDAS; ACCIONAMIENTO: MANUAL, ACCESORIOS: SIN"}]);

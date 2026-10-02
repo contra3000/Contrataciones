@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1811.js",[{"codigo":"4.3.9-9792.1","item":"EQUILIBRADORA DE BIELA; ALIMENTACION: 220 V, DIMENSION: 615 X 400 X 270 mm, DISTANCIA MAX. ENTRE CENTROS: 480 mm"}]);

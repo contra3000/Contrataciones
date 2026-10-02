@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6635.js",[{"codigo":"3.9.9-7182.1","item":"SERV. DE INYECCION DE PLASTICO; DESCRIPCION: SERV. DE INYECCION DE PLASTICO"}]);

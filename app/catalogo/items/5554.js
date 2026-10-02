@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5554.js",[{"codigo":"2.5.9-8030.1","item":"POLVO ANTIRRETINTE; TIPO: GRANULADO, PRESENTACION: BOLSA X 1 Kg, USO: IMPRESION OFFSET"}]);

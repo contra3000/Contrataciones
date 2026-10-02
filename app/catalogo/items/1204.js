@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1204.js",[{"codigo":"4.3.9-3094.1","item":"CASTILLETES ANTIBALA; DIMENSION (A/P/H): 1,20 X 1,20 X 2,85 M, VENTILACION: FORZADA"}]);

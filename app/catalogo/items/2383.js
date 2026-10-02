@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2383.js",[{"codigo":"4.3.1-8593.1","item":"PARRILLAS PARA SOLDAR; USO: ELEMENTOS DE BATERIA, MATERIAL: ACERO, DIMENSION: 52 X 700 mm"}]);

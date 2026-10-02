@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2758.js",[{"codigo":"4.3.8-4748.2","item":"TIERNIZADORES P/CARNES; TIPO: MANUAL, MATERIAL: ALUMINIO, CUCHILLA: SIN, DIAMETRO: 235 mm"}]);

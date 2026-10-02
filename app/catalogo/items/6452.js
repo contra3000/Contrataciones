@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6452.js",[{"codigo":"3.3.1-9815.2","item":"S. DE CONST. DE EDIFICIO SUST.; DESCRIPCION: S. DE CONST. DE EDIFICIO SUST., CRITERIO SOCIAL: DECRETO 312/2010"}]);

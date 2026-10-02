@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2224.js",[{"codigo":"4.3.3-4156.1","item":"MEDIDORES COMPRESION P/PAPELES; ALIMENTACION: 220 A 240 V, TIPO: MOVIL, RANGO DE MEDICION: 0 A 500 N, LECTURA: DIGITAL"}]);

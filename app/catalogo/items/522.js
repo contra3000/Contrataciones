@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/522.js",[{"codigo":"2.9.2-1779.8","item":"CASETES DE AUDIO; DURACION: 60 MIN, TIPO: MINI DVC"}]);

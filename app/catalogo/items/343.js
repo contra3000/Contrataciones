@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/343.js",[{"codigo":"1.5.1-2195.1","item":"SEGURO RIESGO DE TRABAJO; DESCRIPCION: SEGURO DE RIESGO DE TRABAJO"}]);

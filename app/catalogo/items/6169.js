@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6169.js",[{"codigo":"2.5.8-7438.1","item":"VIROLAS PLASTICAS; MATERIAL: POLIETILENO, DIAMETRO: 4 pulg"},{"codigo":"2.5.8-7438.2","item":"VIROLAS PLASTICAS; MATERIAL: POLIPROPILENO, DIAMETRO: 2,4 mm"}]);

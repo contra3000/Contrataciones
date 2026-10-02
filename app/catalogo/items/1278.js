@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1278.js",[{"codigo":"4.3.3-9344.1","item":"ADELGAZADORES ELECTROLITIVOS; TIPO: AUTOMATICO, ESPESOR DE MUESTRA: 0,1 mm, DIAMETRO DE MUESTRA: 3 mm"}]);

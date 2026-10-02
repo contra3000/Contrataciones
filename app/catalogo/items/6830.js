@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6830.js",[{"codigo":"4.3.2-9781.1","item":"COMPENSADORES P/TRANSPORTE; CANTIDAD DE EJES: 2, CANTIDAD DE NEUMATICOS: 8"}]);

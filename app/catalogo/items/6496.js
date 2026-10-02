@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6496.js",[{"codigo":"3.4.9-4238.1","item":"S. DE MENSURA; DESCRIPCION: SERVICIO DE MENSURA"}]);

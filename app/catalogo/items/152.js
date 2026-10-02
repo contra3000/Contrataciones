@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/152.js",[{"codigo":"2.1.1-7165.1","item":"YEMA EN POLVO; PRESENTACION: SOBRE X 25 GR"}]);

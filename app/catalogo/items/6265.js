@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6265.js",[{"codigo":"3.9.9-10154.1","item":"GESTION SALDO DE COMBUSTIBLE; DESCRIPCION: GESTION SALDO DE COMBUSTIBLE"}]);

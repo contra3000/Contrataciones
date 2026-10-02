@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/631.js",[{"codigo":"4.2.1-9826.1","item":"TENDIDO DE FIBRA OPTICA; DESCRIPCION: TENDIDO DE FIBRA OPTICA"}]);

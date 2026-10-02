@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5856.js",[{"codigo":"2.9.6-6804.1","item":"REP. Y ACC. P/ENCENDEDOR; REPUESTO: PIEDRA, USO: ENCENDEDOR A PIEDRA"}]);

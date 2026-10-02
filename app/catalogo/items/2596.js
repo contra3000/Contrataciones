@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2596.js",[{"codigo":"4.3.3-8758.1","item":"SEPARADORES GRAVITACIONALES; TIPO: A PRESION, CAPACIDAD: 2 ton/h, POTENCIA: 1,5 KW"},{"codigo":"4.3.3-8758.2","item":"SEPARADORES GRAVITACIONALES; TIPO: MANUAL, CAPACIDAD: 600 L/H, POTENCIA: SIN"}]);

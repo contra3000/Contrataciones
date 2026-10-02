@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3479.js",[{"codigo":"2.2.2-2000.1","item":"AMBO IMPERMEABLE; MATERIAL PVC - CON CAPUCHA"},{"codigo":"2.2.2-2000.9","item":"AMBO IMPERMEABLE; MATERIAL: TAFETAN TRILAMINAR, CAPUCHA: CON"}]);

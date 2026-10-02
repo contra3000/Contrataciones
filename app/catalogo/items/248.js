@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/248.js",[{"codigo":"3.2.2-9977.1","item":"ALQ. SISTEMA CONTROL DE ACCESO; DESCRIPCION: ALQ. SISTEMA CONTROL DE ACCESO"}]);

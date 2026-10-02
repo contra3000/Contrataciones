@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6812.js",[{"codigo":"3.8.3-10009.1","item":"TASA ANTE REGISTRO NACIONAL; DESCRIPCION: TASA ANTE REGISTRO NACIONAL"}]);

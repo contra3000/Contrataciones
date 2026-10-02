@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2285.js",[{"codigo":"4.3.4-9924.1","item":"MODULADORES ESPACIALES DE LUZ; DISPLAY: REFLEXIVO, RESOLUCION: 1920 X 1080 PXL, FACTOR DE LLENADO: 87 A 93 %"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1329.js",[{"codigo":"4.3.9-7882.1","item":"ANALIZADORES ELECTRONEUMATICO; MEDICION: VISUAL, RANGO: 0 A 120 Lb, ENERGIA: NEUMATICO Y ELECTRICO"}]);

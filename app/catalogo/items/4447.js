@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4447.js",[{"codigo":"2.6.1-6384.1","item":"TEJUELINES; DIMENSION: 40 X 20 X 3 Cm"}]);

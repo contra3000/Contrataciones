@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3012.js",[{"codigo":"2.7.5-1244.1","item":"LAPIZ DE CARPINTERO; SECCION: OVAL, COLOR: NEGRO"},{"codigo":"2.7.5-1244.3","item":"LAPIZ DE CARPINTERO; SECCION: OVAL, COLOR: ROJO"},{"codigo":"2.7.5-1244.4","item":"LAPIZ DE CARPINTERO; SECCION: RECTANGULAR"}]);

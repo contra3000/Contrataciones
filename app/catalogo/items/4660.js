@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4660.js",[{"codigo":"2.9.5-7669.1","item":"ASPIRADORES DE INSECTO; ALIMENTACION: 2 PILAS AA DE 1,5 V, TIPO: MECANICO-PORTATIL, USO: INSECTOS"}]);

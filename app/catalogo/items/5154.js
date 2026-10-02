@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5154.js",[{"codigo":"2.9.5-6638.1","item":"PLACAS P/ELECTROINMUNODIFUSION; MATERIAL: VIDRIO, ESPESOR: 1.5 mm, MEDIDA: 78 X 150 mm"}]);

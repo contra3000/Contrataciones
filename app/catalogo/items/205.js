@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/205.js",[{"codigo":"3.2.2-4445.1","item":"ALQ. DE MICROFONO; TIPO: CORBATERO, DESCRIPCION: ALQUILER DE MICROFONO"}]);

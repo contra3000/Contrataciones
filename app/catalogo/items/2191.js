@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2191.js",[{"codigo":"4.3.1-8714.1","item":"MAQUINAS ENCOLADORAS; ANCHO: 50 Cm, CANT. DE RODILLOS: 2, USO: INDUSTRIAL, VOLTAJE: 220 V, TENSION: 220 V"}]);

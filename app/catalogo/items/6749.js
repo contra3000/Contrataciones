@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6749.js",[{"codigo":"3.4.9-6326.1","item":"SIST. INFORMACION GEOGRAFICA; DESCRIPCION: SIST.DE INFORMACION GEOGRAFICA"}]);

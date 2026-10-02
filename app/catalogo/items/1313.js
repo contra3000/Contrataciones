@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1313.js",[{"codigo":"4.3.9-9315.1","item":"ANALIZADORES DE BUJIA; TEMPERATURA DE TRABAJO: 0 A 40 °C, TIPO: ELECTRONICO, PRESION: 120 lb/pulg2"}]);

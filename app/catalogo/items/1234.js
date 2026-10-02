@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1234.js",[{"codigo":"4.3.4-7258.1","item":"PALETAS DE SEÑALERO; MATERIAL: MADERA, DIAMETRO: 12 Cm, USO: SEÑALERO AERONAUTICO"}]);

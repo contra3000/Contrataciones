@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3656.js",[{"codigo":"2.9.9-8255.3","item":"TITERES; MATERIAL: POLYESTER Y POLAR, MEDIDA: 20 X 15 Cm"}]);

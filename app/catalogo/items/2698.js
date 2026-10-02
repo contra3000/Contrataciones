@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2698.js",[{"codigo":"4.3.3-7416.2","item":"SISTEMAS DE OPTICA P/LABORAT.; CANT. COMPONENTES: 1, CANT. ELEM. OPTICA: 1, COMPONENTES: 1"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2580.js",[{"codigo":"4.3.3-7142.9","item":"SENSORES DE FUERZAS; RANGO DE MEDICION: 0 A 10000 Kg, RESOLUCION: 0,5 %"}]);

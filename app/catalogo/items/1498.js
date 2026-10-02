@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1498.js",[{"codigo":"4.3.2-7289.1","item":"CAMIONES P/INCENDIO; MARCA: MERCEDES BENZ, MODELO: L 1620, AÑO: 2002, TIPO: CAMION"}]);

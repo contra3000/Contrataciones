@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1940.js",[{"codigo":"4.3.9-9400.2","item":"ESTACION MOVIL; USO: OPERACIONAL"},{"codigo":"4.3.9-9400.4","item":"ESTACION MOVIL; USO: HELIPUERTO"},{"codigo":"4.3.9-9400.5","item":"ESTACION MOVIL; USO: DESPACHO DE COMBUSTIBLE"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/620.js",[{"codigo":"3.3.1-9110.2","item":"M. Y .R. DE NICHO; DESCRIPCION: M. Y .R. DE NICHO, CRITERIO SOCIAL: DECRETO 312/2010"},{"codigo":"3.3.1-9110.3","item":"M. Y .R. DE NICHO; DESCRIPCION: M. Y .R. DE NICHO, CRITERIO SOCIAL: SIN"}]);

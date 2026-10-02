@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1350.js",[{"codigo":"4.3.6-6051.10","item":"ARRAY D/DISCO; CAPACIDAD: 2700 Gb, DISCO DURO: SAS, GABINETE: INTERNO, BAHIAS ADAPTADORAS: 3,5, TIPO CABLE: SAS"}]);

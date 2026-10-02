@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4246.js",[{"codigo":"3.3.3-3230.1","item":"MANT. Y REPAR. PERFOR ELECTRIC; DESCRIPCION: MANT. DE PERFORADORA ELECTRICA"}]);

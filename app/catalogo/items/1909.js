@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1909.js",[{"codigo":"4.3.3-4272.1","item":"EQUIPOS P/MONONUCLEOSIS; CAPACIDAD: 4 mL"},{"codigo":"4.3.3-4272.2","item":"EQUIPOS P/MONONUCLEOSIS; CAPACIDAD: 100 DETERM."}]);

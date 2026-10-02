@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4929.js",[{"codigo":"2.9.5-6305.1","item":"FRASCOS LAVA OXIGENO; MATERIAL: PVC, TAMAÑO: 1 L"}]);

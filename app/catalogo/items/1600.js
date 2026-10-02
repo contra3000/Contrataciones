@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1600.js",[{"codigo":"4.3.3-6665.1","item":"CONDUCTORES LUZ P/LARINGOSCOPI; USO: MICROCIRUGIA DE LARINGE, MEDIDA: 182 mm"}]);

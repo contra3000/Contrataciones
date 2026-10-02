@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3819.js",[{"codigo":"2.9.9-7767.1","item":"BOLSAS P/HERVIDO DE POLVORA; TELA: ALGODON FILTRANTE, DIMENSIONES: 72 X 75 Cm, DIMENSION: 72 X 75 Cm"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/192.js",[{"codigo":"3.2.9-9976.1","item":"ALQ. DE EXHIBIDORES; DESCRIPCION: ALQ. DE EXHIBIDORES"}]);

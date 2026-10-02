@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6355.js",[{"codigo":"3.3.3-7098.1","item":"MANT. Y REPAR. DE SECARROPAS; DESCRIPCION: MANT. Y REP. DE SECARROPAS"}]);

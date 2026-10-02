@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4119.js",[{"codigo":"3.3.9-9833.1","item":"M. Y R. DE CAJAS DE ARCHIVO; DESCRIPCION: M. Y R. DE CAJAS DE ARCHIVO"}]);

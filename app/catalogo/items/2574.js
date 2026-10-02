@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2574.js",[{"codigo":"4.3.3-7205.1","item":"SENSOR D/INTEN. D/CAMPO MAGNET; RANGO DE MEDICION: +/-10, +/-100, +/-1000 gauss, SELECTOR: B RADIAL/B AXIAL"},{"codigo":"4.3.3-7205.2","item":"SENSOR D/INTEN. D/CAMPO MAGNET; RANGO DE MEDICION: +/- 2 gauss, SELECTOR: TRI AXIAL"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2514.js",[{"codigo":"4.3.3-9170.1","item":"RECUPERADORES DE ASFALTO; POTENCIA DE CALENTAMIENTO: 500 W, TIEMPO DE OPERACION: 90 MIN, MALLA: 74 Mn"}]);

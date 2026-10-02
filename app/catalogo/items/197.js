@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/197.js",[{"codigo":"3.2.2-1425.1","item":"ALQ. DE GRUPOS ELECTROGENOS; ALQUILER GRUPO ELECTROGENO"}]);

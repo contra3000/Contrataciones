@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6373.js",[{"codigo":"3.4.6-2881.1","item":"MANT. Y REPAR. RED INFORMATICA; DESCRIPCION: MANTENIMIENTO DE RED INFORMAT."}]);

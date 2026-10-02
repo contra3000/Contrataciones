@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1115.js",[{"codigo":"4.3.7-4637.6","item":"MESADAS ESTRATIFICADAS; MATERIAL: ACERO INOXIDABLE, ANCHO: 900 mm, PROFUNDIDAD: 600 mm, ALTURA: 900 mm"}]);

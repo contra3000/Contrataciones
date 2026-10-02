@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6610.js",[{"codigo":"3.4.9-6981.1","item":"SERV. DE ASISTENCIA SOCIAL; DESCRIPCION: SERVICIO DE ASISTENCIA SOCIAL"}]);

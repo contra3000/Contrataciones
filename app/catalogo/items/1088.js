@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1088.js",[{"codigo":"4.3.7-5343.1","item":"FONDO DIVISOR P/MODULO ARCHIVO; MATERIAL: CHAPA DE HIERRO PINTADA, DIMENSION: 2,26 X 2,12 M"}]);

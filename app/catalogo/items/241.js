@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/241.js",[{"codigo":"3.2.2-3010.1","item":"ALQ. MAQUINA PULIDORA PISO; DESCRIPCION: ALQUILER MAQ. PULIDORA DE PISO"}]);

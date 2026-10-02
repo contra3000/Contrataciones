@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1359.js",[{"codigo":"4.3.9-9231.1","item":"ASPIRADORES DE HUMO; TIPO: DE SOLDADURA, POTENCIA: 2 HP, CAPACIDAD: 5 L"}]);

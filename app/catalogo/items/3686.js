@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3686.js",[{"codigo":"4.3.6-5433.1","item":"BAHIAS P/ZIP; CAPACIDAD: 1 ZIP, CONEXION: NO ESTANDAR, TIPO DE CONEXION: NO ESTANDAR"}]);

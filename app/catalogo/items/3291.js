@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3291.js",[{"codigo":"2.7.5-3239.1","item":"LLAVES P/AJUSTE DE MANGUERA; MATERIAL: HIERRO FUNDIDO"},{"codigo":"2.7.5-3239.3","item":"LLAVES P/AJUSTE DE MANGUERA; MATERIAL: ALUMINIO"}]);

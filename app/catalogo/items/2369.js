@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2369.js",[{"codigo":"4.3.3-4961.1","item":"OXIMETROS P/CARROS PAROS; RANGO: 19.99 mGr/L, ALIMENTACION: 220 V, PESO: 1500 GR, TEMPERATURA DE TRABAJO: -5 + 50 °C"}]);

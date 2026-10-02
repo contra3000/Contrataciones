@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4921.js",[{"codigo":"2.9.5-2958.2","item":"FORCEPS P/EXTRACCION; MATERIAL: ACERO INOXIDABLE, TIPO: ODONTOLOGICO, USO: ODONTOLOGICO"}]);

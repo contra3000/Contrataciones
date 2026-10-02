@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/567.js",[{"codigo":"2.5.6-5291.1","item":"GAS NATURAL COMPRIMIDO; PRESENTACION: GRANEL"},{"codigo":"2.5.6-5291.2","item":"GAS NATURAL COMPRIMIDO; PRESENTACION: METRO CUBICO"}]);

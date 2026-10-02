@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2680.js",[{"codigo":"4.3.4-7320.1","item":"SISTEMA DE AUTOPATCH; ENTRADA MICROFONO: SI, SALIDA MONITOREO: SI, USO: SIST.INTEGR.RADIOTELEFONICO"}]);

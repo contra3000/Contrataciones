@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6229.js",[{"codigo":"3.4.5-2106.1","item":"CURSO DE CAPACITACION; DESCRIPCION: CURSO DE CAPACITACION"}]);

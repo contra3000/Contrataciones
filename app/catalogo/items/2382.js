@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2382.js",[{"codigo":"4.3.9-2739.1","item":"PARRILLAS DE LUCES; CONTROL: AUTOMATICO, LINEAS: 48, CANT.LINEAS: 48, CANTIDAD DE ATENUADORES: 2 DE 12, Nº DE DIMMERS: 2 DE 12"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2956.js",[{"codigo":"2.7.9-8090.1","item":"CUPLAS DE CUNIFE; TIPO: ROSCADA, MEDIDA: 3/4 pulg, ROSCA: GAS"}]);

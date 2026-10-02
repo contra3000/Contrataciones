@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5052.js",[{"codigo":"2.9.5-6649.1","item":"MEDIDOR P/MICROCIRUGIA DE OIDO; MATERIAL: PLATINA, MEDIDA: 4,5 mm"}]);

@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6761.js",[{"codigo":"3.8.2-8987.1","item":"IMPUESTOS PROVINCIALES; DESCRIPCION: IMPUESTO PROVINCIAL"}]);

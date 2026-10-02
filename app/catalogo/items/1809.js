@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1809.js",[{"codigo":"4.3.9-8005.1","item":"EQ.P/EXAMENES DE DOCUMENTOS; TIPO: COMPARADOR ESPECTRAL DE VIDEO, FUENTE DE LUZ: UV/IR/NORMAL, MONITOR: TFT 23 Cm"}]);

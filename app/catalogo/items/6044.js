@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/6044.js",[{"codigo":"2.9.6-4572.1","item":"VASTAGOS P/MATAFUEGOS; DIAMETRO: 1 mm, ASIENTO: CAUCHO"},{"codigo":"2.9.6-4572.2","item":"VASTAGOS P/MATAFUEGOS; DIAMETRO: 1 mm, ASIENTO: PLASTICO"}]);

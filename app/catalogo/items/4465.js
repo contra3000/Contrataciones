@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4465.js",[{"codigo":"2.7.2-9777.1","item":"ALAMBRES DE TANTALIO; DIAMETRO: 0,062 pulg, PRESENTACION: ROLLO X 35 pulg"}]);

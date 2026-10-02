@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/683.js",[{"codigo":"4.3.4-7566.1","item":"BLOQUEADORES TELEFONICOS; TIPO: C/CERRADURA P/DDN-DDI-15"}]);

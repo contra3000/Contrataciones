@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2599.js",[{"codigo":"4.3.9-9117.1","item":"SEXTANTE; TIPO: MARINO, MATERIAL: ALIACION DE ALUMINIO, RANGO DE MEDICION: -5 A 130 º, PRECISION: 20 Seg, ALIMENTACION: 3 V"}]);

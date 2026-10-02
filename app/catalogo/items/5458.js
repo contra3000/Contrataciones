@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5458.js",[{"codigo":"2.5.9-4536.1","item":"ANTIESPUMA; PRESENTACION: ENVASE X 1 L, CAPACIDAD: 1 L, ESTADO: LIQUIDO"}]);

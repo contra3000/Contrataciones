@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/5914.js",[{"codigo":"2.9.6-8466.39","item":"REP. Y ACC. P/MAQ. LIMPIA TUBO; REPUESTO: ACOPLAMIENTO, MARCA EQUIPO: GOODWAY, MODELO EQUIPO: GTC-706"}]);

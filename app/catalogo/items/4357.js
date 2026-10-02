@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/4357.js",[{"codigo":"2.6.4-6890.1","item":"COLORANTES P/CEMENTO; TIPO: FERRITE, PRESENTACION: ENVASE X 1 Kg, ESTADO: POLVO, FORMA DE PRESENTACION: POLVO"}]);

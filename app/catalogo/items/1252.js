@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/1252.js",[{"codigo":"4.3.9-7484.2","item":"SIST. IDENTIF/INVEST. CRIMINAL; DESCRIPCION: EQ. ANAL. FORENSE INFORMATICO"}]);

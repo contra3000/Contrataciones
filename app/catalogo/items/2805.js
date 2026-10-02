@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/2805.js",[{"codigo":"4.3.6-6725.1","item":"UN. DE CONTROL DE DISPOSITIVO; USO: AD. DE CONSOLAS SIST.CENTRAL"},{"codigo":"4.3.6-6725.8","item":"UN. DE CONTROL DE DISPOSITIVO; USO: CONTROL DE TEMPERATURA"},{"codigo":"4.3.6-6725.9","item":"UN. DE CONTROL DE DISPOSITIVO; USO: COMANDO Y CONTROL"}]);

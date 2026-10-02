@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/114.js",[{"codigo":"2.1.1-8100.1","item":"MILANESAS; TIPO: POLLO, PRESENTACION: A GRANEL"},{"codigo":"2.1.1-8100.2","item":"MILANESAS; TIPO: VACUNA, PRESENTACION: A GRANEL"}]);

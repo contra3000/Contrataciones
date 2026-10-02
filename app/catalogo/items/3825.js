@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/3825.js",[{"codigo":"2.9.9-7923.1","item":"CARTUCHOS P/PISTOLA LANZA GUIA; TIPO: CILINDRICO, MATERIAL: PLOMO, ALCANCE: 250 M, PRESENTACION: UNIDAD"}]);

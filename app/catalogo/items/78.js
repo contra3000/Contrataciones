@@ -1,0 +1,1 @@
+SGC.catalogo.recibir("catalogo/items/78.js",[{"codigo":"2.1.1-5252.1","item":"EXTRACTOS DE CARNE; TIPO: VACUNO, PRESENTACION: FRASCO X 150 GR"},{"codigo":"2.1.1-5252.2","item":"EXTRACTOS DE CARNE; TIPO: VACUNO, PRESENTACION: ENVASE X 500 GR"}]);
