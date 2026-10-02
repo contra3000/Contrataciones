@@ -161,6 +161,8 @@ button:disabled {
 .seccion-busqueda,
 .seccion-items,
 .seccion-renglones,
+.seccion-presupuestos,
+.seccion-valores,
 .revision-filas {
   margin-bottom: 24px;
 }
@@ -389,6 +391,14 @@ mark {
   background: var(--navy-800);
   color: var(--white);
   font-weight: 600;
+}
+
+/* ORDEN-RONDA-28 §3: los documentos del generador se componen en una sección
+   aparte que sólo existe para imprimir. En la pantalla no se ve —tampoco
+   vacía: una hoja vacía antes del contenido no explica nada—, y al imprimir se
+   muestra con .imprimiendo (css/impresion.css). */
+.impresion-generador {
+  display: none;
 }
 
 .lista-operadores {
@@ -907,6 +917,35 @@ mark {
   font-family: var(--fuente-mono);
   font-size: 1rem;
   margin: 8px 0;
+}
+
+/* ORDEN-RONDA-28 §3: los presupuestos de referencia del generador se listan
+   como texto + botón, porque no hay archivo que previsualizar ni que abrir:
+   lo que hay es el nombre, el proveedor y la fecha con que se cita. */
+.req-presupuesto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+/* Los dos botones del último paso del generador: imprimir y exportar. El de
+   exportar queda deshabilitado con su motivo al lado mientras falte algo, que
+   es más honesto que ocultarlo (quien no lo ve no sabe que existe). */
+.acciones-generador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.acciones-generador .paso-msj,
+.acciones-generador .aviso-clave {
+  flex-basis: 100%;
+  margin: 0;
 }
 
 .req-imputacion {

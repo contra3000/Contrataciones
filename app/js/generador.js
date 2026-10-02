@@ -44,6 +44,13 @@
   if (!SGC.cargaConfig) {
     throw new Error('generador.js requiere el cargador de configuración (generador/config-carga.js)');
   }
+  if (!SGC.views.requerimientoValores) {
+    throw new Error('generador.js requiere el bloque de valores de referencia (views/requerimiento-valores.js)');
+  }
+  if (!SGC.generadorPresupuestos || !SGC.generadorValores || !SGC.generadorDocumentos) {
+    throw new Error('generador.js requiere los módulos del rol Usuario ' +
+      '(generador/presupuestos.js, generador/valores.js, generador/documentos.js)');
+  }
 
   // El rol que ejecuta el primer estado del circuito: el mismo id que usa el
   // padrón de la aplicación con servidor (config.js ROLES[0]). Con el mismo id,
@@ -139,6 +146,68 @@
     // El wizard deja a la vista el nombre y el rol, y esconde la pantalla de
     // selección de operador por su cuenta.
     SGC.views.wizard.seleccionarOperador(estado.operador, estado.repo);
+    // ORDEN-RONDA-28 §3: el rol Usuario hace, en el generador, todo lo que hace
+    // el generador de Fase 1. Los presupuestos son referencias (no hay a dónde
+    // subir un archivo), los valores de referencia se citan igual que en la
+    // aplicación con servidor, y en vez de "Avanzar" están imprimir y exportar.
+    montarRolUsuario();
+  }
+
+  /*
+   * El paso 2 del generador tiene dos bloques que la aplicación con servidor
+   * tiene en otra pantalla (la de carga del requerimiento del expediente): los
+   * presupuestos de referencia y los valores de referencia por renglón. Se
+   * montan acá y se re-sincronizan cada vez que cambia la lista de renglones,
+   * porque el bloque se arma con los renglones de ese momento.
+   */
+  function montarRolUsuario() {
+    var raiz = porId('app');
+    // Empezar de cero: lo que esté en memoria es de una pantalla anterior.
+    SGC.generadorPresupuestos.limpiar();
+    SGC.generadorValores.limpiar();
+    SGC.generadorPresupuestos.montar(raiz);
+    SGC.generadorPresupuestos.alCambio(sincronizarValores);
+    SGC.generadorValores.montar(raiz);
+    SGC.generadorValores.alCambio(publicarDatos);
+    SGC.generadorDocumentos.montar();
+    SGC.generadorDocumentos.seleccionarOperador(estado.operador);
+    SGC.generadorDocumentos.onExportar(function () {
+      avisarEnRevision('Podés exportar para Abastecimiento. El archivo se descarga en la ' +
+        'próxima versión del generador (ORDEN-RONDA-28 §4).');
+    });
+    // La lista de renglones del asistente y el bloque de valores de referencia
+    // son la misma información vista de dos maneras: si cambia una, se rearma el
+    // otro (el renglón recién agregado nace con sus dos filas de valores, como en
+    // la pantalla del servidor).
+    SGC.catalogo.renglones.alCambiar(sincronizarValores);
+    SGC.views.wizard.alRender(publicarDatos);
+    sincronizarValores();
+  }
+
+  // Los renglones del asistente. Los valores no viajan con ellos: el bloque de
+  // valores se los pone sobre la misma lista al sincronizarse.
+  function renglonesDelAsistente() {
+    return SGC.catalogo.renglones.obtener();
+  }
+
+  function sincronizarValores() {
+    SGC.generadorValores.sincronizar(renglonesDelAsistente(),
+      SGC.generadorPresupuestos.listar());
+  }
+
+  // Los documentos del paso 4 se calculan sobre los datos que el asistente tiene
+  // ahora, no sobre los que tenía cuando se montó.
+  function publicarDatos() {
+    SGC.views.wizard.sincronizar();
+    SGC.generadorDocumentos.fijarDatos(SGC.views.wizard.datos());
+  }
+
+  function avisarEnRevision(texto) {
+    var nodo = porId('sgc-generador-msj-revision');
+    if (nodo) {
+      nodo.textContent = texto;
+      nodo.hidden = false;
+    }
   }
 
   function elegirRol(boton) {

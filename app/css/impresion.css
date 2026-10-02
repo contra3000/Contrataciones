@@ -43,7 +43,15 @@
    queda `display: none` y no ocupa lugar (`.documento-impresion` lo excluyen
    los `:not(...)`: sigue en la página). Estructura real:
    body > main#app > #sgc-expediente > #sgc-expediente-documento-seccion
-   > #sgc-expediente-documento. */
+   > #sgc-expediente-documento.
+
+   ORDEN-RONDA-28 §3 (ADR-044): el generador no tiene #sgc-expediente, y sus
+   documentos se componen en #sgc-generador-impresion, hermano de #app. Ahí no
+   hay estado del expediente detrás, así que se oculta TODO #app (sin
+   :not(...)) y se muestra la sección de impresión, con la misma técnica de
+   display:none que evita las hojas en blanco. Lleva la clase .generador del
+   body porque la aplicación con servidor también imprime con .imprimiendo y
+   necesita ver #sgc-expediente. */
 @media print {
   body.imprimiendo > #app > *:not(#sgc-expediente) {
     display: none;
@@ -59,6 +67,18 @@
     left: 0;
     top: 0;
     width: 100%;
+  }
+
+  body.generador.imprimiendo > #app {
+    display: none;
+  }
+  body.generador.imprimiendo > #sgc-generador-impresion {
+    display: block;
+  }
+  /* Un documento por hoja: el que sigue a otro empieza en página nueva. */
+  body.generador.imprimiendo #sgc-generador-impresion > .documento-generador + .documento-generador {
+    page-break-before: always;
+    break-before: page;
   }
 
   /* Familias del sistema: cuerpo serif, etiquetas sans versales, números mono. */

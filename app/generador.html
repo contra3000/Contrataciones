@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/impresion.css" media="print">
 </head>
-<body>
+<body class="generador">
   <!-- ORDEN-RONDA-28 §2 (ADR-044). Segundo punto de entrada del MISMO
        repositorio que app/index.html, con el mismo núcleo, los mismos renders y
        las mismas vistas. Se abre con doble clic (file://), sin servidor, sin
@@ -166,6 +166,50 @@
           <ul id="sgc-lista-renglones" class="lista-renglones"></ul>
           <p id="sgc-resumen" class="resumen" role="status" aria-live="polite">Sin renglones todavía.</p>
         </div>
+
+        <!-- ORDEN-RONDA-28 §3. En el generador NO hay a dónde subir un archivo
+             de presupuesto: no hay servidor ni carpeta del expediente. Por eso
+             el presupuesto se anota como REFERENCIA —cómo se llamaba el archivo,
+             de qué proveedor y de qué fecha— y los valores de referencia lo
+             citan igual, con el mismo presupuestoId que usa la aplicación con
+             servidor (ADR-022). El PDF original se queda donde estaba. -->
+        <div class="seccion-presupuestos" aria-label="Presupuestos de referencia">
+          <h3>Presupuestos de referencia</h3>
+          <p class="req-ayuda">Sin servidor no se suben archivos: anotá el nombre del archivo,
+            el proveedor y la fecha. Los valores de referencia lo citan igual y el PDF
+            original sigue donde lo tenés.</p>
+          <div class="campo">
+            <label for="sgc-presup-archivo">Nombre del archivo</label>
+            <input id="sgc-presup-archivo" type="text" autocomplete="off"
+                   placeholder="Ej.: presupuesto-resma-2026.pdf">
+          </div>
+          <div class="campo">
+            <label for="sgc-presup-proveedor">Proveedor</label>
+            <input id="sgc-presup-proveedor" type="text" autocomplete="off">
+          </div>
+          <div class="campo">
+            <label for="sgc-presup-fecha">Fecha</label>
+            <input id="sgc-presup-fecha" type="text" autocomplete="off"
+                   placeholder="Ej.: 12/02/2026">
+          </div>
+          <button id="sgc-presup-agregar" type="button">Agregar presupuesto</button>
+          <p id="sgc-presup-msj" class="error-global" role="alert" hidden></p>
+          <ul id="sgc-presup-lista" class="req-presupuestos"></ul>
+        </div>
+
+        <!-- El bloque de valores de referencia NO se reescribe: es el mismo
+             archivo (views/requerimiento-valores.js) que usa la pantalla de
+             carga del requerimiento con servidor, con el mismo cálculo y con la
+             misma regla de la ronda 26 (cada renglón con al menos dos valores).
+             Lo único que cambia acá es de dónde salen los presupuestos que se
+             citan, que son los de referencia de arriba. -->
+        <div class="seccion-valores" aria-label="Valores de referencia">
+          <h3>Valores de referencia</h3>
+          <p class="req-ayuda">Dos valores por renglón: es lo mínimo para que el promedio
+            tenga sentido y para que Abastecimiento tenga contra qué comparar.</p>
+          <div id="sgc-req-valores" class="req-valores"></div>
+          <p id="sgc-req-total" class="req-total"></p>
+        </div>
       </section>
 
       <section id="sgc-paso-fundamentacion" class="paso-panel" aria-labelledby="sgc-titulo-paso-3" hidden>
@@ -184,11 +228,33 @@
       <section id="sgc-paso-revision" class="paso-panel" aria-labelledby="sgc-titulo-paso-4" hidden>
         <h2 id="sgc-titulo-paso-4">4 · Revisión y confirmación</h2>
         <dl id="sgc-revision-filas" class="revision-filas"></dl>
-        <button id="sgc-persistir" type="button" class="primario">Crear expediente</button>
-        <p id="sgc-persistir-msj" class="error-global" role="alert" hidden></p>
-        <p id="sgc-exito" class="exito" role="status" hidden>
-          <strong id="sgc-exito-id"></strong> creado. El borrador local se limpió.
-        </p>
+
+        <!-- ORDEN-RONDA-28 §3: en el generador no hay "Avanzar" ni "Crear
+             expediente": no hay servidor donde crear nada. Lo que hay es
+             imprimir lo que se hizo y exportar el archivo para el
+             Abastecimiento (pieza 4). El botón se habilita sólo cuando la
+             validación del estado ESPECIFICACIONES_TECNICAS da válida, y si no,
+             dice qué falta. -->
+        <div class="acciones-generador">
+          <button id="sgc-btn-imprimir" type="button">Imprimir los documentos</button>
+          <button id="sgc-btn-exportar" type="button" class="primario" disabled>
+            Exportar para Abastecimiento
+          </button>
+          <p id="sgc-exportar-msj" class="paso-msj" role="status" aria-live="polite" hidden></p>
+          <p id="sgc-generador-msj-revision" class="aviso-clave" role="status" aria-live="polite" hidden></p>
+        </div>
+
+        <!-- El botón de "Crear expediente" del asistente no se usa acá: el
+             generador no crea expedientes (no hay servidor donde crearlos).
+             Se declara igual, porque el asistente lo busca por id y le pone su
+             escucha; sin el, el asistente no arranca. -->
+        <div id="sgc-generador-sin-crear" hidden>
+          <button id="sgc-persistir" type="button" class="primario">Crear expediente</button>
+          <p id="sgc-persistir-msj" class="error-global" role="alert" hidden></p>
+          <p id="sgc-exito" class="exito" role="status" hidden>
+            <strong id="sgc-exito-id"></strong> creado. El borrador local se limpió.
+          </p>
+        </div>
       </section>
 
       <nav class="navegacion" aria-label="Navegación del asistente">
@@ -197,6 +263,20 @@
       </nav>
     </section>
   </main>
+
+  <!-- ORDEN-RONDA-28 §3: los documentos compuestos quedan acá, fuera del
+       asistente, para poder imprimirlos sin que salga también el formulario. La
+       hoja de estilos de impresión muestra únicamente esta sección cuando el
+       body tiene la clase "imprimiendo" (css/impresion.css), que es la misma
+       convención que usa la vista de expediente con el botón "Imprimir".
+
+       Lleva la clase documento-impresion para heredar la tipografía y el
+       membrete de los documentos del sistema; los documentos se componen como
+       hijos suyos (.documento-generador), uno por hoja. Vive fuera de #app a
+       propósito: si no, el selector de impresión —que pertenece a la
+       aplicación con servidor— tendría que conocer esta pantalla. -->
+  <section id="sgc-generador-impresion" class="impresion-generador documento-impresion"
+           aria-label="Documentos para imprimir"></section>
 
   <!-- ORDEN-RONDA-28 §2: el mismo núcleo, los mismos renders y las mismas
        vistas que app/index.html, en el mismo orden (ADR-029: cada módulo exige
@@ -234,6 +314,7 @@
   <script src="js/views/fasttrack.js"></script>
   <script src="js/views/wizard-formulario.js"></script>
   <script src="js/views/wizard.js"></script>
+  <script src="js/views/requerimiento-valores.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.memoria.js"></script>
 
@@ -242,6 +323,16 @@
        que la recibe va antes que ella. -->
   <script src="js/generador/config-carga.js"></script>
   <script src="config/aplicacion.js"></script>
+
+  <!-- ORDEN-RONDA-28 §3: el rol Usuario del generador. Son tres piezas y
+       ninguna repite una regla: los presupuestos son referencias (no hay
+       archivo que subir), los valores de referencia son el bloque ya usado por
+       la pantalla del servidor, y los documentos son los renders de siempre
+       sobre un expediente local, con la validación del núcleo deciding si se
+       puede exportar. -->
+  <script src="js/generador/presupuestos.js"></script>
+  <script src="js/generador/valores.js"></script>
+  <script src="js/generador/documentos.js"></script>
 
   <script src="js/generador.js"></script>
 </body>

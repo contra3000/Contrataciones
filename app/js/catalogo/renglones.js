@@ -44,7 +44,8 @@
     renglones: [],
     siguienteId: 1,
     dom: {},
-    onCambio: null
+    onCambio: null,
+    suscriptor: null
   };
 
   function erroresDeRenglon(renglon) {
@@ -193,6 +194,13 @@
     if (typeof estado.onCambio === 'function') {
       estado.onCambio();
     }
+    // Un segundo interesado, además del dueño que puso montar(): el generador
+    // rearma su bloque de valores de referencia cuando la lista cambia
+    // (ORDEN-RONDA-28 §3). Es un lugar, no una lista: la pantalla que se
+    // suscribe es una sola, y volver a suscribirse la reemplaza.
+    if (typeof estado.suscriptor === 'function') {
+      estado.suscriptor();
+    }
   }
 
   function agregar(resultado) {
@@ -250,9 +258,19 @@
     notificar();
   }
 
+  /*
+   * Montar es empezar una lista nueva: se vacía la que hubiera y se vuelve a 1
+   * la numeración, porque los ids de renglón son de esta lista (los valores de
+   * referencia se guardan por id de renglón, ORDEN-RONDA-28 §3, y el editor los
+   * restaura de un renglón al otro). Quien necesite recargar renglones en esta
+   * misma lista —un borrador, un expediente— usa cargar(), no montar().
+   */
   function montar(dom) {
     estado.dom.listaRenglones = dom.listaRenglones;
     estado.dom.resumen = dom.resumen;
+    estado.renglones = [];
+    estado.siguienteId = 1;
+    estado.dom.listaRenglones.textContent = '';
     if (dom.onCambio) {
       estado.onCambio = dom.onCambio;
     }
@@ -267,6 +285,9 @@
     cargar: cargar,
     vaciar: vaciar,
     erroresDeRenglon: erroresDeRenglon,
-    actualizarResumen: actualizarResumen
+    actualizarResumen: actualizarResumen,
+    alCambiar: function (fn) {
+      estado.suscriptor = typeof fn === 'function' ? fn : null;
+    }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

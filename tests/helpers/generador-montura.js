@@ -173,8 +173,25 @@ async function arrancar() {
     });
   };
 
-  // Atajos de escritura, como los de la otra montura: los tests escriben en la
-  // pantalla y emiten el evento, no llaman funciones de vista a mano.
+  /*
+   * Quitar una fila de valores por su botón ("−", data-quitar="i:j"). Como en
+   * cargarValores: los botones son escuchados por DELEGACIÓN en el contenedor
+   * (#sgc-req-valores) y el stub no burbujea eventos, así que el clic se emite en
+   * el contenedor con `target` apuntando al botón, como haría el navegador.
+   */
+  m.quitarValorFila = function (i, j) {
+    const contenedor = documento.getElementById('sgc-req-valores');
+    const boton = contenedor.querySelector('[data-quitar="' + i + ':' + j + '"]');
+    if (!boton) {
+      throw new Error('quitarValorFila: no existe el botón para quitar ' + i + ':' + j);
+    }
+    contenedor.emit('click', { target: boton });
+    return boton;
+  };
+
+  // Atajo de escritura, como los de la montura de la aplicación con servidor:
+  // los tests escriben en la pantalla y emiten el evento, no llaman funciones de
+  // vista a mano.
   m.escribir = function (id, valor) {
     const nodo = documento.getElementById(id);
     nodo.value = String(valor);
@@ -184,6 +201,51 @@ async function arrancar() {
 
   m.setear = function (id, valor) {
     documento.getElementById(id).value = String(valor);
+  };
+
+  m.mousedown = function (id) {
+    documento.getElementById(id).emit('mousedown', { preventDefault() {} });
+  };
+
+  m.escribirEnNodo = function (nodo, valor) {
+    nodo.value = String(valor);
+    nodo.emit('input', { target: nodo });
+    return nodo;
+  };
+
+  /*
+   * ORDEN-RONDA-28 §3: los valores de referencia del generador se escriben por
+   * el mismo bloque de la aplicación con servidor
+   * (#sgc-req-valores, vistas/requerimiento-valores.js). Ese bloque atiende por
+   * delegación: los campos no tienen listener propio y el contenedor es el que
+   * escucha 'change'. El stub no burbujea eventos, así que acá se emite
+   * DIRECTAMENTE en el contenedor con `target` apuntando al campo, como haría
+   * el navegador.
+   *
+   * filasPorRenglon[i] = [{presupuestoId, base, valor}, ...]: lo que escribe
+   * una persona, renglón por renglón y fila por fila.
+   */
+  m.cargarValores = function (filasPorRenglon) {
+    const contenedor = documento.getElementById('sgc-req-valores');
+    if (!contenedor) {
+      throw new Error('cargarValores: no existe #sgc-req-valores en el generador');
+    }
+    filasPorRenglon.forEach(function (filas, i) {
+      filas.forEach(function (fila, j) {
+        const escribir = function (atributo, valor) {
+          const elemento = contenedor.querySelector('[data-' + atributo + '="' + i + ':' + j + '"]');
+          if (!elemento) {
+            throw new Error('cargarValores: no existe la fila ' + i + ':' + j +
+              ' (atributo data-' + atributo + ')');
+          }
+          elemento.value = String(valor);
+          contenedor.emit('change', { target: elemento });
+        };
+        escribir('presupuesto', fila.presupuestoId);
+        escribir('base', fila.base);
+        escribir('valor', fila.valor);
+      });
+    });
   };
 
   // El botón de un rol, por su data-rol. Se busca atributo por atributo y no

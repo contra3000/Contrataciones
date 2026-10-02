@@ -27,6 +27,7 @@
     datos: { identificacion: {}, renglones: [], fundamentacion: {} },
     paso: 0,
     persistido: false,
+    alRender: null,
     dom: {}
   };
 
@@ -82,6 +83,13 @@
     mostrarErrores([]);
     if (estado.paso === pasos.PASOS.length - 1) {
       renderRevision();
+    }
+    // La última pantalla cambia cuando cambia el paso (ORDEN-RONDA-28 §3): quien
+    //	use el asistente para calcular algo sobre los mismos datos —el generador
+    // con sus documentos— se entera acá sin tener que adivinar cuándo se
+    //  actualizaron.
+    if (typeof estado.alRender === 'function') {
+      estado.alRender(estado.paso);
     }
     enfocarPrimerCampo();
   }
@@ -379,6 +387,19 @@
     },
     pasoActual: function () {
       return estado.paso;
+    },
+    // ORDEN-RONDA-28 §3: el generador calcula sus documentos sobre los mismos
+    // datos del asistente, sin copiarlos ni mantenerlos aparte. Estos tres
+    // accesores son toda la superficie que necesita: leer, sincronizar y
+    // avisarse de un cambio de paso. La aplicación con servidor no los usa.
+    alRender: function (fn) {
+      estado.alRender = fn;
+    },
+    datos: function () {
+      return estado.datos;
+    },
+    sincronizar: function () {
+      sincronizarDesdeFormulario();
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
