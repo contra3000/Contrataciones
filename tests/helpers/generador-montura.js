@@ -328,6 +328,29 @@ async function arrancar() {
   // con 'button[data-rol=...]': el selector de dom-stub.js entiende '#id' y
   // '[attr]', pero en un selector compuesto con el nombre de la etiqueta se
   // queda con el nombre y devolvería el primer botón, el equivocado.
+  /*
+   * ORDEN-RONDA-29 pieza 2: la pantalla de identidad pide cuatro datos antes
+   * del rol. Los tests que sólo elegían un nombre pasan por acá para completar
+   * lo demás; el nombre lo sigue escribiendo cada test, porque es lo que
+   * afirma. El número de control se escribe con `escribir` y no con `setear`
+   * para que corra el formateo, como cuando se tipea.
+   */
+  m.completarIdentidad = function (datos) {
+    const d = datos || {};
+    m.setear('sgc-generador-grado', d.grado || 'Cabo');
+    m.setear('sgc-generador-apellido', d.apellido || 'Pérez');
+    m.escribir('sgc-generador-numero-control', d.numeroControl || '12345');
+  };
+
+  // Los cuatro datos de la identidad, escritos con eventos, como una persona.
+  m.escribirIdentidad = function (datos) {
+    const d = datos || {};
+    m.escribir('sgc-generador-grado', d.grado || 'Cabo');
+    m.escribir('sgc-generador-nombre', d.nombre || 'Ana');
+    m.escribir('sgc-generador-apellido', d.apellido || 'Pérez');
+    m.escribir('sgc-generador-numero-control', d.numeroControl || '12345');
+  };
+
   m.botonDeRol = function (rol) {
     for (const b of documento.getElementById('sgc-generador-roles')
       .querySelectorAll('button')) {

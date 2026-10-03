@@ -36,8 +36,25 @@
     return Array.from(texto).length;
   }
 
+  // Un entero con puntos de miles: 12345 -> 12.345. Se cuenta a mano y no
+  // con toLocaleString para que dé lo mismo en cualquier navegador y en las
+  // pruebas, sin depender de los datos de idioma que traiga el equipo
+  // (ORDEN-RONDA-29 pieza 2: el número de control se muestra con puntos).
+  function numeroConPuntos(numero) {
+    var digitos = String(numero);
+    var salida = '';
+    for (var i = 0; i < digitos.length; i++) {
+      if (i > 0 && (digitos.length - i) % 3 === 0) {
+        salida += '.';
+      }
+      salida += digitos.charAt(i);
+    }
+    return salida;
+  }
+
   SGC.core.utils = {
     idEstado: idEstado,
-    contarCaracteres: contarCaracteres
+    contarCaracteres: contarCaracteres,
+    numeroConPuntos: numeroConPuntos
   };
 })(typeof window !== 'undefined' ? window : globalThis);

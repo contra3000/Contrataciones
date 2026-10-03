@@ -52,7 +52,7 @@
 
   function componer(expediente) {
     var m = d.modelo(expediente);
-    return d.documentoHtml(m, 'Especificación Técnica', seccionesHtml(m));
+    return d.documentoHtml(m, 'Especificación Técnica', seccionesHtml(m), d.SIN_FIRMA);
   }
 
   function montar(contenedor, expediente) {
@@ -78,7 +78,10 @@
     if (m.objetivo) {
       d.pDom(contenedor, 'doc-objetivo', 'Objetivo: ' + m.objetivo);
     }
-    d.firmaDom(contenedor, m);
+    // ORDEN-RONDA-29 pieza 2: la EETT va al sistema de firmas, así que este
+    // documento no lleva el bloque del operador solicitante ni el espacio de
+    // firma: lo firma la autoridad competente fuera del sistema (ADR-016).
+    d.firmaDom(contenedor, m, d.SIN_FIRMA);
     d.pieDom(contenedor, m);
   }
 

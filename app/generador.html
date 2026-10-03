@@ -34,20 +34,41 @@
       </p>
     </header>
 
-    <!-- ORDEN-RONDA-28 §2: sin login y sin padrón. El nombre es libre y el rol
-         se elige de una lista cerrada: Usuario, Abastecimiento o
-         Contrataciones. Este rol tiene una sola vista habilitada; los otros dos
-         avisan que llegan en la ronda siguiente. -->
+    <!-- ORDEN-RONDA-28 §2: sin login y sin padrón. ORDEN-RONDA-29 pieza 2: los
+         cuatro datos (grado, nombre, apellido y número de control) son
+         obligatorios antes de elegir el rol, y son los que quedan escritos en
+         el archivo que se exporta. El rol se elige de una lista cerrada:
+         Usuario, Abastecimiento o Contrataciones. Este rol tiene una sola vista
+         habilitada; los otros dos avisan que llegan en la ronda siguiente. -->
     <section id="sgc-generador-identidad" class="seccion-operador" aria-label="¿Quién sos?">
       <h2>¿Quién sos?</h2>
       <p class="subtitulo">
-        Sin login y sin padrón: escribí tu nombre y elegí el rol. El nombre queda
-        escrito en el archivo que exportes.
+        Sin login y sin padrón: escribí los cuatro datos y elegí el rol. Quedan
+        escritos en el archivo que exportes.
       </p>
+
+      <div class="campo">
+        <label for="sgc-generador-grado">Grado</label>
+        <select id="sgc-generador-grado">
+          <option value="">Elegí el grado</option>
+        </select>
+      </div>
 
       <div class="campo">
         <label for="sgc-generador-nombre">Nombre</label>
         <input id="sgc-generador-nombre" type="text" autocomplete="off">
+      </div>
+
+      <div class="campo">
+        <label for="sgc-generador-apellido">Apellido</label>
+        <input id="sgc-generador-apellido" type="text" autocomplete="off">
+      </div>
+
+      <div class="campo">
+        <label for="sgc-generador-numero-control">Número de Control</label>
+        <input id="sgc-generador-numero-control" type="text" inputmode="numeric"
+               autocomplete="off" placeholder="12.345">
+        <p class="ayuda">Sólo números. Se muestra con puntos de miles.</p>
         <p id="sgc-generador-error" class="error-global" role="alert" hidden></p>
       </div>
 

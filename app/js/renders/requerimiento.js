@@ -225,7 +225,7 @@
 
   function componer(expediente) {
     var m = modelo(expediente);
-    return d.documentoHtml(m.base, TITULO, seccionesHtml(m));
+    return d.documentoHtml(m.base, TITULO, seccionesHtml(m), d.SIN_FIRMA);
   }
 
   function tablaDom(contenedor, encabezados, filas) {
@@ -303,7 +303,7 @@
       d.pDom(contenedor, 'doc-nota', CAUSAL_OCA_NORMATIVA);
     }
 
-    d.firmaDom(contenedor, m.base);
+    d.firmaDom(contenedor, m.base, d.SIN_FIRMA);
     d.pieDom(contenedor, m.base);
   }
 

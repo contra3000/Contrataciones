@@ -69,6 +69,8 @@ async function entrarComoUsuario(nombre) {
   await arrancar();
   await esperarCatalogo();
   m.setear('sgc-generador-nombre', nombre);
+  // ORDEN-RONDA-29 pieza 2: la identidad son cuatro datos desde la ronda 29.
+  m.completarIdentidad();
   m.elegirRol('generador');
   await m.esperar(() => SGC().generadorValores, 20000, 'el rol Usuario montado');
   return m;

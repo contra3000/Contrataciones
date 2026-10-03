@@ -188,13 +188,32 @@
     estado.dom.borradorAviso.hidden = true;
     estado.dom.seleccionOperador.hidden = true;
     estado.dom.app.hidden = false;
-    estado.dom.operadorActual.textContent =
-      operador.nombre + ' ' + operador.apellido + ' (' + operador.roles.join(', ') + ') — ' + operador.email;
+    estado.dom.operadorActual.textContent = descripcionOperador(operador);
     renderPaso();
     var registro = borrador.leer(storage());
     if (registro && registro.operador === operador.email) {
       ofrecerBorrador(registro);
     }
+  }
+
+  /*
+ * Cómo se ve el operador, arriba de todo (ORDEN-RONDA-29 pieza 2).
+ *
+ * El generador declara cuatro datos: grado, nombre, apellido y número de
+ * control. Los del padrón no tienen grado ni número de control, así que se
+ * suman sólo si están: la línea es la misma para las dos aplicaciones, y en
+ * el generador el correo interno no se muestra porque ya están los cuatro
+ * datos y el número de control es lo que identifica a la persona.
+ */
+function descripcionOperador(operador) {
+    var quien = [operador.grado, operador.nombre, operador.apellido]
+      .filter(function (parte) { return Boolean(parte); })
+      .join(' ');
+    var linea = quien + ' (' + operador.roles.join(', ') + ')';
+    if (typeof operador.numeroControl === 'number') {
+      return linea + ' · ' + SGC.core.utils.numeroConPuntos(operador.numeroControl);
+    }
+    return linea + ' — ' + operador.email;
   }
 
   /*

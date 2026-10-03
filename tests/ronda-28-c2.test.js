@@ -59,6 +59,8 @@ async function esperarCatalogo() {
 async function entrarComo(nombre, rol) {
   await arrancar();
   m.setear('sgc-generador-nombre', nombre);
+  // ORDEN-RONDA-29 pieza 2: desde la ronda 29 la identidad son cuatro datos.
+  m.completarIdentidad();
   m.elegirRol(rol);
   return m;
 }
@@ -142,6 +144,7 @@ test('elegir Usuario muestra el alta, con el nombre del operador a la vista', as
 
 test('sin nombre no se entra', async () => {
   await arrancar();
+  m.completarIdentidad();
   m.setear('sgc-generador-nombre', '   ');
   m.elegirRol('generador');
 
@@ -161,6 +164,7 @@ test('Abastecimiento y Contrataciones dicen que llegan en la próxima versión',
   ]) {
     await arrancar();
     m.setear('sgc-generador-nombre', 'Beto');
+    m.completarIdentidad();
     m.elegirRol(caso.rol);
 
     assert.strictEqual(d.getElementById('sgc-app').hidden, true,

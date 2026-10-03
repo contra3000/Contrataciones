@@ -51,6 +51,8 @@ async function entrarComoUsuario(nombre) {
   m.limpiarDescargas();
   await esperarCatalogo();
   m.setear('sgc-generador-nombre', nombre || 'Ana Pérez');
+  // ORDEN-RONDA-29 pieza 2: la identidad son cuatro datos desde la ronda 29.
+  m.completarIdentidad();
   m.elegirRol('generador');
   await m.esperar(() => SGC().generadorValores, 20000, 'el rol Usuario montado');
 }
@@ -205,6 +207,7 @@ test('exportar, importar y volver a exportar da el mismo contenido: el sello es 
     m.limpiarDescargas();
     await esperarCatalogo();
     m.setear('sgc-generador-nombre', 'Ana Pérez');
+    m.completarIdentidad();
     m.elegirRol('generador');
     await m.esperar(() => SGC().generadorValores, 20000, 'el rol Usuario montado');
 
@@ -254,6 +257,7 @@ test('corregir un campo y un renglón después de importar se ve en el JSON expo
     m.limpiarDescargas();
     await esperarCatalogo();
     m.setear('sgc-generador-nombre', 'Ana Pérez');
+    m.completarIdentidad();
     m.elegirRol('generador');
     await m.esperar(() => SGC().generadorValores, 20000, 'el rol Usuario montado');
     await importarTexto(primera.texto);
@@ -322,6 +326,7 @@ test('un renglón con un solo valor de referencia se rechaza con el texto de la 
     m.limpiarDescargas();
     await esperarCatalogo();
     m.setear('sgc-generador-nombre', 'Ana Pérez');
+    m.completarIdentidad();
     m.elegirRol('generador');
     await m.esperar(() => SGC().generadorValores, 20000, 'el rol Usuario montado');
 
@@ -344,6 +349,7 @@ test('una huella que no calza dice que el archivo fue modificado fuera del gener
   m.limpiarDescargas();
   await esperarCatalogo();
   m.setear('sgc-generador-nombre', 'Ana Pérez');
+  m.completarIdentidad();
   m.elegirRol('generador');
   await m.esperar(() => SGC().generadorValores, 20000, 'el rol Usuario montado');
 
@@ -404,6 +410,7 @@ test('importar una versión más vieja que otra ya importada avisa y sigue', asy
   m.limpiarDescargas();
   await esperarCatalogo();
   m.setear('sgc-generador-nombre', 'Ana Pérez');
+  m.completarIdentidad();
   m.elegirRol('generador');
   await m.esperar(() => SGC().generadorValores, 20000, 'el rol Usuario montado');
   await importarTexto(tercera.texto);

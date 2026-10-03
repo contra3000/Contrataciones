@@ -15,9 +15,10 @@
  *  2. NUNCA repo.http ni repo.sesion. El repositorio es el de memoria, que
  *     tiene el mismo contrato (ADR-002): los repositorios son intercambiables,
  *     así que las vistas no se enteran de cuál es.
- *  3. SIN login y SIN padrón (ADR-017 no aplica acá): se escribe un nombre libre
- *     y se elige el rol de una lista cerrada. El nombre queda sellado en cada
- *     exportación (pieza 4).
+ *  3. SIN login y SIN padrón (ADR-017 no aplica acá): se escriben los cuatro
+ *     datos de la persona —grado, nombre, apellido y número de control— y se
+ *     elige el rol de una lista cerrada (ORDEN-RONDA-29 pieza 2). Los cuatro
+ *     quedan a la vista en el asistente y sellados en cada exportación.
  *
  * Este rol tiene una sola vista habilitada. Abastecimiento y Contrataciones
  * avisan que llegan en la ronda 29 y 30: no es un error ni una pantalla
@@ -69,6 +70,29 @@
 
   var RUTA_CONFIG = 'config/aplicacion.json';
 
+  /*
+   * ORDEN-RONDA-29 pieza 2: los grados, en el orden en que se listan. Es la
+   * lista cerrada que se ofrece en el desplegable, de menor a mayor.
+   */
+  var GRADOS = [
+    'Personal Civil',
+    'Cabo',
+    'Cabo Primero',
+    'Cabo Principal',
+    'Suboficial Auxiliar',
+    'Suboficial Ayudante',
+    'Suboficial Principal',
+    'Suboficial Mayor',
+    'Alférez',
+    'Teniente',
+    'Primer Teniente',
+    'Capitán',
+    'Mayor',
+    'Vicecomodoro',
+    'Comodoro',
+    'Brigadier'
+  ];
+
   var estado = {
     config: null,
     operador: null,
@@ -80,7 +104,7 @@
     return document.getElementById(id);
   }
 
-  // Aviso de la pantalla de identidad: falta el nombre.
+  // Aviso de la pantalla de identidad: falta un dato de los cuatro.
   function avisar(texto) {
     var nodo = estado.dom.error;
     if (nodo) {
@@ -121,21 +145,83 @@
   }
 
   /*
-   * El operador del generador.
+   * Los cuatro datos, obligatorios (ORDEN-RONDA-29 pieza 2).
    *
-   * Sin padrón no hay correo: la identidad declarada es el nombre que la
-   * persona escribió. El campo `email` se completa con ese nombre porque el
-   * núcleo lo usa como identificador del operador en el borrador local y en la
-   * validación del paso 1 ("El operador es obligatorio"); ponerlo vacío haría
-   * que un requerimiento lleno no se pueda confirmar. No es un correo y no
-   * viaja como tal: lo que se sella en la exportación es `nombre` y `rol`
-   * (pieza 4), y el correo es sólo el identificador interno del operador.
+   * El número de control es un entero: se leen los dígitos, se sacan los puntos
+   * de miles que muestra el campo y, si queda algo que no es un dígito, no se
+   * entra. No se "limpia" lo que la persona escribió para admitirlo: si él
+   * escribió `12a`, el número de control es `12a` y no es un número entero, y
+   * el aviso tiene que decirlo. Formatear y avisar son cosas distintas.
+   *
+   * Vuelve {ok:true, datos:{grado, nombre, apellido, numeroControl}} o
+   * {ok:false, motivo}.
    */
-  function operadorDe(nombre) {
+  function leerIdentidad() {
+    var grado = estado.dom.grado ? String(estado.dom.grado.value || '').trim() : '';
+    var nombre = nombreDeLaPantalla();
+    var apellido = estado.dom.apellido ? String(estado.dom.apellido.value || '').trim() : '';
+
+    if (grado === '') {
+      return { ok: false, motivo: 'Elegí el grado.' };
+    }
+    if (GRADOS.indexOf(grado) === -1) {
+      return { ok: false, motivo: 'Ese grado no está en la lista.' };
+    }
+    if (nombre === '') {
+      return { ok: false, motivo: 'Escribí tu nombre.' };
+    }
+    if (apellido === '') {
+      return { ok: false, motivo: 'Escribí tu apellido.' };
+    }
+
+    var escrito = estado.dom.numeroControl ? String(estado.dom.numeroControl.value || '').trim() : '';
+    var digitos = escrito.replace(/\./g, '');
+    if (digitos === '') {
+      return { ok: false, motivo: 'Escribí tu número de control.' };
+    }
+    if (!/^\d+$/.test(digitos)) {
+      return { ok: false, motivo: 'El número de control es un número entero: quitá "' +
+        escrito + '" y dejá sólo los dígitos.' };
+    }
     return {
-      nombre: nombre,
-      apellido: '',
-      email: nombre,
+      ok: true,
+      datos: {
+        grado: grado,
+        nombre: nombre,
+        apellido: apellido,
+        numeroControl: parseInt(digitos, 10)
+      }
+    };
+  }
+
+  // El campo se muestra con puntos de miles mientras se escribe: 12345 ->
+  // 12.345. Sólo se reformatea cuando lo escrito son dígitos, para no pisar lo
+  // que la persona está escribiendo cuando todavía no es un número.
+  function formatearNumeroControl() {
+    var nodo = estado.dom.numeroControl;
+    if (!nodo) {
+      return;
+    }
+    var escrito = String(nodo.value || '').trim();
+    var digitos = escrito.replace(/\./g, '');
+    if (/^\d+$/.test(digitos)) {
+      nodo.value = SGC.core.utils.numeroConPuntos(digitos);
+    }
+  }
+
+  function operadorDe(datos) {
+    return {
+      grado: datos.grado,
+      nombre: datos.nombre,
+      apellido: datos.apellido,
+      numeroControl: datos.numeroControl,
+      // El `email` es el identificador interno del operador: con él se separa
+      // el borrador de una persona del de otra y el núcleo valida que el
+      // operador esté. Acá no hay correo, y sin padrón tampoco lo hay: lo que
+      // se escribe es la identidad completa, con el número de control, que es
+      // lo único que no se repite. No es un correo y no viaja como tal.
+      email: datos.nombre + ' ' + datos.apellido + ' · ' +
+        SGC.core.utils.numeroConPuntos(datos.numeroControl),
       rol: ROL_GENERADOR,
       roles: SGC.core.config.rolesEfectivos(ROL_GENERADOR),
       sector: 'usuario',
@@ -233,12 +319,12 @@
         'Ese rol todavía no está en el generador.');
       return;
     }
-    var nombre = nombreDeLaPantalla();
-    if (nombre === '') {
-      avisar('Escribí tu nombre para continuar.');
+    var identidad = leerIdentidad();
+    if (!identidad.ok) {
+      avisar(identidad.motivo);
       return;
     }
-    estado.operador = operadorDe(nombre);
+    estado.operador = operadorDe(identidad.datos);
     abrirAlta();
   }
 
@@ -249,12 +335,29 @@
     }
 
     estado.dom.identidad = porId('sgc-generador-identidad');
+    estado.dom.grado = porId('sgc-generador-grado');
     estado.dom.nombre = porId('sgc-generador-nombre');
+    estado.dom.apellido = porId('sgc-generador-apellido');
+    estado.dom.numeroControl = porId('sgc-generador-numero-control');
     estado.dom.error = porId('sgc-generador-error');
     estado.dom.msj = porId('sgc-generador-msj');
     estado.dom.roles = porId('sgc-generador-roles');
-    if (!estado.dom.nombre || !estado.dom.roles) {
-      throw new Error('generador.html no tiene la pantalla de identidad (#sgc-generador-nombre, #sgc-generador-roles)');
+    if (!estado.dom.nombre || !estado.dom.roles || !estado.dom.grado ||
+        !estado.dom.apellido || !estado.dom.numeroControl) {
+      throw new Error('generador.html no tiene la pantalla de identidad completa (#sgc-generador-grado, ' +
+        '#sgc-generador-nombre, #sgc-generador-apellido, #sgc-generador-numero-control, #sgc-generador-roles)');
+    }
+
+    // El desplegable se arma con la lista de grados, en orden. La primera
+    // opción es la de "no eligió": sin grado no se entra.
+    for (var g = 0; g < GRADOS.length; g++) {
+      var opcion = document.createElement('option');
+      opcion.value = GRADOS[g];
+      opcion.textContent = GRADOS[g];
+      estado.dom.grado.appendChild(opcion);
+    }
+    if (estado.dom.numeroControl.addEventListener) {
+      estado.dom.numeroControl.addEventListener('input', formatearNumeroControl);
     }
 
     // La configuración llegó como .js (config/aplicacion.js), no por fetch. Si
@@ -319,8 +422,10 @@
   SGC.generador = {
     ROL_GENERADOR: ROL_GENERADOR,
     ROLES_FUTUROS: ROLES_FUTUROS,
+    GRADOS: GRADOS,
     RUTA_CONFIG: RUTA_CONFIG,
     montar: montar,
+    leerIdentidad: leerIdentidad,
     operadorActual: function () {
       return estado.operador;
     },

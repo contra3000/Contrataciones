@@ -100,7 +100,7 @@
       renglones: base.renglones,
       condiciones: ae.condicionesParticulares(expediente)
     };
-    return d.documentoHtml(base, tituloDe(nombre), seccionesHtml(m, anexo));
+    return d.documentoHtml(base, tituloDe(nombre), seccionesHtml(m, anexo), d.SIN_FIRMA);
   }
 
   // componerTodos(expediente): [{nombre, archivo, html}] en orden. Sin
@@ -174,7 +174,9 @@
       d.h2Dom(contenedor, 'Renglón ' + (anexo.indice + 1) + ' — texto completo');
       tablaDom(contenedor, [celdasFicha(r, anexo.indice)]);
     }
-    d.firmaDom(contenedor, base);
+    // ORDEN-RONDA-29 pieza 2: el anexo de EETT va al sistema de firmas y sale sin
+    // el bloque del operador solicitante ni el espacio de firma.
+    d.firmaDom(contenedor, base, d.SIN_FIRMA);
     d.pieDom(contenedor, base);
   }
 

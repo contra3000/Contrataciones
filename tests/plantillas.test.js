@@ -41,6 +41,7 @@ require(path.join(RAIZ, 'app', 'js', 'renders', 'vista-previa-pliego.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'disposicion-adjudicacion.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'orden-compra.js'));
 require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-1.js'));
+require(path.join(RAIZ, 'app', 'js', 'renders', 'anexo-eett.js'));
 
 const SGC = globalThis.SGC;
 const config = SGC.core.config;
@@ -319,6 +320,60 @@ test('vista-previa-pliego: no tiene estado, no lleva firma ni pie de ADR-023, ll
   const texto = textoDelContenedor(contenedor);
   assert.ok(texto.includes('Vista previa'), 'banner visible en DOM');
   assert.ok(!texto.includes('Firma'), 'sin firma en DOM');
+});
+
+/*
+ * ORDEN-RONDA-29 pieza 2: los documentos que van al sistema de firmas —el
+ * requerimiento, la EETT y el anexo de EETT— salen sin el bloque del operador
+ * solicitante ni el espacio de firma, en el HTML que se guarda y en el DOM que
+ * se imprime. Los demás documentos no se tocan: el ANEXO I sigue con su
+ * bloque, y la firma de la orden de compra y de la disposición también.
+ */
+test('los tres documentos que van a firmar no llevan el bloque del operador; el ANEXO I sí', () => {
+  const renglones = [
+    { codigo: '2.1.1-439.101', cantidad: 2, unidad: 'UN', item: 'Bolsa',
+      aclaracion: 'y'.repeat(300) }
+  ];
+  const exp = expedienteEn('ESPECIFICACIONES_TECNICAS', renglones);
+
+  const sinFirma = [];
+  sinFirma.push(['el requerimiento', SGC.renders.requerimiento]);
+  sinFirma.push(['la EETT', SGC.renders.especificacionTecnica]);
+  const anexos = SGC.renders.anexoEett.componerTodos(exp);
+  assert.equal(anexos.length, 1, 'la aclaración larga genera un anexo de EETT');
+
+  for (const [nombre, plantilla] of sinFirma) {
+    const html = plantilla.componer(exp);
+    assert.ok(!html.includes('Operador solicitante'), nombre + ': sin el bloque del operador');
+    assert.ok(!html.includes('Firma y aclaración'), nombre + ': sin el espacio de firma');
+    assert.ok(!html.includes('<div class="doc-firma">'), nombre + ': sin el bloque de firma');
+
+    const contenedor = nodo('div', 'sgc-sin-firma');
+    plantilla.montar(contenedor, exp);
+    const texto = textoDelContenedor(contenedor);
+    assert.ok(!texto.includes('Operador solicitante'), nombre + ': tampoco en la impresión');
+    assert.ok(!texto.includes('Firma y aclaración'), nombre + ': sin firma en la impresión');
+  }
+
+  assert.ok(!anexos[0].html.includes('Operador solicitante'),
+    'el anexo de EETT: sin el bloque del operador');
+  assert.ok(!anexos[0].html.includes('Firma y aclaración'),
+    'el anexo de EETT: sin el espacio de firma');
+
+  // Lo que no se toca: el ANEXO I, la disposición y la orden de compra siguen
+  // con su bloque de firma, como antes de la ronda 29.
+  const anexo1 = documentoRender.paraEstado('ANALISIS_SCo');
+  assert.ok(anexo1, 'el ANEXO I tiene plantilla');
+  const htmlAnexo1 = anexo1.componer(exp);
+  assert.ok(htmlAnexo1.includes('Operador solicitante'), 'el ANEXO I sigue con su bloque');
+  assert.ok(htmlAnexo1.includes('Firma y aclaración'), 'el ANEXO I sigue con su espacio de firma');
+
+  for (const estadoId of ['FIRMA_DISPOSICION', 'GENERACION_ORDEN_COMPRA']) {
+    const plantilla = documentoRender.paraEstado(estadoId);
+    const html = plantilla.componer(expedienteEn(estadoId, dosRenglones()));
+    assert.ok(html.includes('Operador solicitante'), estadoId + ' sigue con su bloque');
+    assert.ok(html.includes('Firma y aclaración'), estadoId + ' sigue con su espacio de firma');
+  }
 });
 
 test('FIRMAS_PLIEGO_DISPOSICION: entregable es yaml-pliego y no tiene plantilla HTML', () => {

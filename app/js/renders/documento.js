@@ -161,6 +161,21 @@
     return partes.join('\n');
   }
 
+  /*
+   * ORDEN-RONDA-29 pieza 2: los documentos que van al sistema de firmas se
+   * piden con `SIN_FIRMA` y salen sin el bloque del operador solicitante ni el
+   * espacio de firma. Esos tres los firma la autoridad competente fuera del
+   * sistema (ADR-016): el sistema no imprime un renglón que después queda en
+   * blanco. El ANEXO I y el resto de los documentos no se tocan: siguen
+   * levando el bloque como antes.
+   */
+  var CON_FIRMA = {};
+  var SIN_FIRMA = { firma: false };
+
+  function llevaFirma(opciones) {
+    return !opciones || opciones.firma !== false;
+  }
+
   function firmaHtml(m) {
     return '<h2>Operador solicitante</h2>' +
       '<p class="doc-operador">' + esc(m.operadorNombre) + ' — ' + esc(m.operadorEmail) + '</p>' +
@@ -188,7 +203,7 @@
 
   // Documento HTML autocontenido: `secciones` es el arreglo de HTML de las
   // secciones propias de la plantilla (identificación, renglones, etc.).
-  function documentoHtml(m, tituloDocumento, secciones) {
+  function documentoHtml(m, tituloDocumento, secciones, opciones) {
     var partes = [];
     partes.push('<!DOCTYPE html>');
     partes.push('<html lang="es">');
@@ -204,7 +219,9 @@
     for (var i = 0; i < secciones.length; i++) {
       partes.push(secciones[i]);
     }
-    partes.push(firmaHtml(m));
+    if (llevaFirma(opciones)) {
+      partes.push(firmaHtml(m));
+    }
     partes.push(pieHtml(m));
     partes.push('</body>');
     partes.push('</html>');
@@ -301,7 +318,10 @@
     tabla.appendChild(tbody);
   }
 
-  function firmaDom(contenedor, m) {
+  function firmaDom(contenedor, m, opciones) {
+    if (!llevaFirma(opciones)) {
+      return;
+    }
     h2Dom(contenedor, 'Operador solicitante');
     pDom(contenedor, 'doc-operador', m.operadorNombre + ' — ' + m.operadorEmail);
     pDom(contenedor, 'doc-fecha', 'Fecha: ' + m.fecha);
@@ -366,6 +386,9 @@
     membreteDom: membreteDom,
     encabezadoHtml: encabezadoHtml,
     tablaRenglonesHtml: tablaRenglonesHtml,
+    CON_FIRMA: CON_FIRMA,
+    SIN_FIRMA: SIN_FIRMA,
+    llevaFirma: llevaFirma,
     firmaHtml: firmaHtml,
     pieHtml: pieHtml,
     documentoHtml: documentoHtml,

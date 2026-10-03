@@ -241,12 +241,20 @@
       nombre: nombreArchivo(cuerpo.anio, cuerpo.titulo, version),
       version: version,
       archivo: {
+        // ORDEN-RONDA-29 pieza 2: el sello lleva los cuatro datos de quien
+        // exportó —grado, nombre, apellido y número de control (entero)—, que
+        // es lo que el Jefe pidió que quede escrito. Los archivos viejos, con
+        // sólo `nombre`, se siguen importando: los que falten vienen vacíos.
         sello: {
           formato: FORMATO,
           versionGenerador: versionGenerador(),
           versionCatalogo: versionCatalogo(),
           rol: operador ? operador.rol : null,
+          grado: operador && operador.grado ? operador.grado : '',
           nombre: operador ? operador.nombre : '',
+          apellido: operador && operador.apellido ? operador.apellido : '',
+          numeroControl: operador && typeof operador.numeroControl === 'number'
+            ? operador.numeroControl : null,
           fecha: new Date().toISOString(),
           version: version
         },
