@@ -1,0 +1,390 @@
+#!/usr/bin/env node
+/*
+ * empaquetar-generador.js
+ * ORDEN-RONDA-28 §5 (ADR-044). Arma la carpeta que se copia a otra máquina y se
+ * abre con doble clic: dist/SGC-Generador/.
+ *
+ * Por qué una herramienta y no "copiar la carpeta a mano": lo que se copia es
+ * la aplicación con servidor menos todo lo que el generador no usa, y esa resta
+ * tiene que ser exacta y repetible. Si alguien copia app/ tal cual, viaja
+ * js/adapters/repo.http.js (que habla con /api/), js/app.js (el arranque del
+ * servidor) y el catálogo en .json que en file:// no se puede leer. Este archivo
+ * arma el paquete desde la lista que declara el propio generador.html, así que
+ * no hay una lista aparte que se pueda quedar vieja.
+ *
+ * Lo que entra:
+ *   - generador.html, tal cual;
+ *   - cada <script src> y cada <link rel="stylesheet" href> que declara, con su
+ *     carpeta (js/, css/, config/): el núcleo, los renders, las vistas y los
+ *     tres módulos del generador;
+ *   - el catálogo entero en .js (manifiesto, rubros, clases, cada clase en
+ *     items/, y el índice de códigos), porque sobre file:// el catálogo se lee
+ *     inyectando <script> (carga.js, ORDEN-RONDA-28 §1).
+ *
+ * Lo que NO entra, y por qué:
+ *   - server/, tests/ y datos/: son de la aplicación con servidor y de las
+ *     pruebas. En un paquete para el Jefe no tienen por qué estar, y un
+ *     server/ adentro invite a arrancar algo que no hace falta.
+ *   - los .json: en file:// Chrome no los puede leer, así que el build ya dejó
+ *     el hermano .js de cada uno (ver tools/build-catalogo.js y
+ *     tools/build-config.js). Copiarlos duplicaría el paquete sin que los use
+ *     nadie: son la mitad del peso.
+ *   - app/index.html y lo demás de app/ que generador.html no declara.
+ *
+ * El destino se limpia antes de escribir: un paquete viejo puede tener archivos
+ * que esta versión ya no copia, y sobrarían. Por seguridad, si el destino ya
+ * existe y no está vacío y NO parece un paquete generado (le falta
+ * generador.html), la herramienta se niega a borrarlo salvo --forzar.
+ *
+ * El informe final dice cuántas archivos son y cuántos bytes pesan, que es lo
+ * que va al INFORME-RONDA-28.md.
+ *
+ * Uso:
+ *   node tools/empaquetar-generador.js [--destino <carpeta>] [--json] [--forzar]
+ *
+ *   --destino <carpeta>   dónde armar el paquete (por defecto dist/SGC-Generador).
+ *   --json                imprime el informe como una línea JSON, para tests.
+ *   --forzar              borra un destinoOccupado aunque no parezca un paquete.
+ *
+ * Determinista: el mismo repo produce el mismo contenido byte a byte.
+ * Sin dependencias: sólo la biblioteca estándar de Node.
+ */
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const RAIZ = path.resolve(__dirname, '..');
+const APP = path.join(RAIZ, 'app');
+
+/*
+ * Carpetas que no viajan. Se comparan por nombre de carpeta en cualquier
+ * posición de la ruta, para que app/server/, server/ y tests/helpers/ queden
+ * afuera los tres.
+ */
+const EXCLUIDOS = ['server', 'tests', 'datos'];
+
+/* El archivo que tiene que estar en el destino para que la herramienta lo borre. */
+const MARCA = 'generador.html';
+
+function leerArgumentos(argv) {
+  const opciones = { destino: null, json: false, forzar: false };
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--destino') {
+      opciones.destino = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--json') {
+      opciones.json = true;
+    } else if (argv[i] === '--forzar') {
+      opciones.forzar = true;
+    }
+  }
+  return opciones;
+}
+
+/*
+ * carpetaExcluida(relativo)
+ *
+ * Dice por qué un archivo no entra al paquete, o null si entra. Los motivos
+ * importan: un archivo que se pierde sin explicación es un bug que aparece
+ * tres rondas después, con la pantalla en blanco y sin rastro.
+ */
+function carpetaExcluida(relativo) {
+  const partes = relativo.split(/[\\/]+/);
+  for (const parte of partes) {
+    if (EXCLUIDOS.indexOf(parte) !== -1) {
+      return 'la carpeta ' + parte + '/ no viaja al generador';
+    }
+  }
+  return null;
+}
+
+/* Un .json no entra: sobre file:// el generador lee el hermano .js. */
+function extensionExcluida(relativo) {
+  if (/\.json$/i.test(relativo)) {
+    return 'los .json no viajan: el generador los lee como .js';
+  }
+  return null;
+}
+
+function motivoExclusion(relativo) {
+  return carpetaExcluida(relativo) || extensionExcluida(relativo);
+}
+
+/*
+ * DeclaradoEnElGenerador()
+ *
+ * Lee app/generador.html y devuelve la lista de rutas que el documento pide:
+ * los <script src> y los <link rel="stylesheet" href>. Es la lista real, no una
+ * copia: si mañana se saca o se agrega un módulo, el paquete sigue al
+ * documento y no hay nada que mantener a mano.
+ */
+function declaradoEnElGenerador(html) {
+  const rutas = [];
+  const vistos = Object.create(null);
+
+  const agregar = (ruta) => {
+    if (!ruta || /^(https?:)?\/\//.test(ruta) || ruta.charAt(0) === '/') {
+      return;
+    }
+    if (vistos[ruta]) {
+      return;
+    }
+    vistos[ruta] = true;
+    rutas.push(ruta);
+  };
+
+  const patrones = [
+    /<script[^>]+src=["']([^"']+)["']/gi,
+    /<link[^>]+href=["']([^"']+)["']/gi
+  ];
+  for (const patron of patrones) {
+    let m;
+    while ((m = patron.exec(html)) !== null) {
+      agregar(m[1]);
+    }
+  }
+  return rutas;
+}
+
+/* Los .js del catálogo, en sus tres formas: manifiesto, rubros/clases e items/. */
+function archivosDelCatalogo(catalogo) {
+  const encontrados = [];
+  const recorrer = (dir, prefijo) => {
+    for (const entrada of fs.readdirSync(dir, { withFileTypes: true })) {
+      const ruta = prefijo + entrada.name;
+      if (entrada.isDirectory()) {
+        recorrer(path.join(dir, entrada.name), ruta + '/');
+      } else if (/\.js$/i.test(entrada.name)) {
+        encontrados.push('catalogo/' + ruta);
+      }
+    }
+  };
+  recorrer(catalogo, '');
+  encontrados.sort();
+  return encontrados;
+}
+
+/*
+ * plan(origen, destino)
+ *
+ * Todo lo que hay que hacer, sin tocar el disco: la lista de archivos a copiar
+ * y la lista de los que se dejaron afuera con su motivo. Los tests usan esto
+ * para revisar el paquete sin armarlo entero, y para comprobar que las
+ * exclusiones existen (si se borran, el plan deja de filtrar y el test se pone
+ * rojo).
+ */
+function plan(origen, destino) {
+  const declarados = declaradoEnElGenerador(fs.readFileSync(path.join(origen, MARCA), 'utf8'));
+  const catalogos = archivosDelCatalogo(path.join(origen, 'catalogo'));
+
+  const copiar = [{ relativo: MARCA, desde: path.join(origen, MARCA) }];
+  const fuera = [];
+
+  for (const relativo of declarados.concat(catalogos)) {
+    const motivo = motivoExclusion(relativo);
+    if (motivo) {
+      fuera.push({ relativo: relativo, motivo: motivo });
+      continue;
+    }
+    const desde = path.join(origen, relativo);
+    if (!fs.existsSync(desde)) {
+      throw new Error('el generador declara ' + relativo + ' y no está en el repositorio');
+    }
+    copiar.push({ relativo: relativo, desde: desde });
+  }
+
+  return { destino: destino, copiar: copiar, fuera: fuera };
+}
+
+function leerLeeme() {
+  return [
+    'SGC · Generador de documentos',
+    '',
+    'Abrí generador.html con Chrome. No hace falta instalar nada.',
+    '',
+    'Cómo se usa',
+    '  1. Abrí generador.html con doble clic (o con Chrome).',
+    '  2. Escribí tu nombre y elegí el rol Usuario.',
+    '  3. Cargá el requerimiento en el formulario, como siempre.',
+    '  4. Imprimí los documentos, o tocá "Exportar para Abastecimiento".',
+    '',
+    'Lo que hay que saber',
+    '  · Esta carpeta NO necesita servidor: no hay login, ni puerto, ni base de',
+    '    datos. Los archivos que se abren son de sólo lectura.',
+    '  · Lo que hagas queda en el archivo que exportes. Si cerrás la ventana sin',
+    '    exportar, el trabajo no quedó guardado en ninguna parte.',
+    '  · Para seguir más adelante: exportá, y después en la otra máquina usá',
+    '    "Importar" sobre el mismo archivo. Lo importado se sigue editando en el',
+    '    mismo formulario.',
+    '  · La plantilla vacía ("Descargar plantilla vacía") sirve para llenar el',
+    '    requerimiento en una planilla y volver a importarlo.',
+    '',
+    'Copia esta carpeta entera. El catálogo está en js/../catalogo: no lo borres.',
+    'La carpeta va tal cual, con su nombre y sus subcarpetas.',
+    ''
+  ].join('\r\n');
+}
+
+/*
+ * listaFinal(origen)
+ *
+ * Todo lo que un paquete debe tener, y que no debe tener nunca. Se usa en dos
+ * lugares: la herramienta, para dejar por escrito lo questata al armar el
+ * paquete, y el test, que revisa el resultado de verdad.
+ */
+function problemasDePaquete(destino, declarados, cantidadCatalogo) {
+  const problemas = [];
+  const hay = (relativo) => fs.existsSync(path.join(destino, relativo));
+
+  if (!hay(MARCA)) {
+    problemas.push('no está ' + MARCA);
+  }
+  for (const relativo of declarados) {
+    if (relativo !== MARCA && !hay(relativo)) {
+      problemas.push('falta ' + relativo + ', que el generador declara');
+    }
+  }
+  if (!hay('catalogo/codigos.js')) {
+    problemas.push('falta catalogo/codigos.js, el índice de códigos');
+  }
+
+  const contar = (extension) => {
+    let total = 0;
+    const recorrer = (dir) => {
+      for (const entrada of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entrada.isDirectory()) {
+          recorrer(path.join(dir, entrada.name));
+        } else if (extension.test(entrada.name)) {
+          total++;
+        }
+      }
+    };
+    if (fs.existsSync(destino)) {
+      recorrer(destino);
+    }
+    return total;
+  };
+
+  const js = contar(/\.js$/i);
+  const json = contar(/\.json$/i);
+  if (json > 0) {
+    problemas.push(json + ' archivo(s) .json: en el generador no sirven y se pidió que no viajen');
+  }
+  if (cantidadCatalogo > 0 && js - declarados.filter((r) => /\.js$/i.test(r)).length !== cantidadCatalogo) {
+    problemas.push('el catálogo quedó incompleto: hay ' +
+      (js - declarados.filter((r) => /\.js$/i.test(r)).length) + ' .js de catálogo y son ' +
+      cantidadCatalogo + ' los que hay que copiar');
+  }
+  return problemas;
+}
+
+function limpiar(destino, forzar) {
+  if (!fs.existsSync(destino)) {
+    return;
+  }
+  const entradas = fs.readdirSync(destino);
+  if (entradas.length === 0) {
+    return;
+  }
+  if (!forzar && !entradas.includes(MARCA)) {
+    throw new Error('el destino ' + destino + ' ya existe, no está vacío y no parece un paquete ' +
+      'generado (le falta ' + MARCA + '). Revisá la ruta o usá --forzar.');
+  }
+  fs.rmSync(destino, { recursive: true, force: true });
+}
+
+function enMegabytes(bytes) {
+  return Math.round((bytes / (1024 * 1024)) * 100) / 100;
+}
+
+function main() {
+  const opciones = leerArgumentos(process.argv.slice(2));
+  const destino = opciones.destino ? path.resolve(opciones.destino) : path.join(RAIZ, 'dist', 'SGC-Generador');
+
+  let trabajo;
+  let declarados;
+  let cantidadCatalogo;
+  try {
+    declarados = declaradoEnElGenerador(fs.readFileSync(path.join(APP, MARCA), 'utf8'));
+    cantidadCatalogo = archivosDelCatalogo(path.join(APP, 'catalogo')).length;
+    trabajo = plan(APP, destino);
+  } catch (err) {
+    console.error('empaquetar-generador: ' + err.message);
+    process.exit(1);
+    return;
+  }
+
+  try {
+    limpiar(destino, opciones.forzar);
+  } catch (err) {
+    console.error('empaquetar-generador: ' + err.message);
+    process.exit(1);
+    return;
+  }
+
+  let bytes = 0;
+  try {
+    fs.mkdirSync(destino, { recursive: true });
+    for (const item of trabajo.copiar) {
+      const hacia = path.join(destino, item.relativo);
+      fs.mkdirSync(path.dirname(hacia), { recursive: true });
+      fs.copyFileSync(item.desde, hacia);
+      bytes += fs.statSync(hacia).size;
+    }
+    fs.writeFileSync(path.join(destino, 'LEEME.txt'), Buffer.from(leerLeeme(), 'utf8'));
+  } catch (err) {
+    console.error('empaquetar-generador: no se pudo copiar: ' + err.message);
+    process.exit(1);
+    return;
+  }
+
+  bytes += fs.statSync(path.join(destino, 'LEEME.txt')).size;
+
+  const problemas = problemasDePaquete(destino, declarados, cantidadCatalogo);
+  if (problemas.length > 0) {
+    console.error('empaquetar-generador: el paquete quedó incompleto:');
+    for (const problema of problemas) {
+      console.error('  - ' + problema);
+    }
+    process.exit(1);
+    return;
+  }
+
+  const informe = {
+    destino: destino,
+    declarados: declarados.length,
+    catalogo: cantidadCatalogo,
+    archivos: trabajo.copiar.length + 1,
+    bytes: bytes,
+    mb: enMegabytes(bytes),
+    excluidos: trabajo.fuera
+  };
+
+  if (opciones.json) {
+    console.log(JSON.stringify(informe));
+    return;
+  }
+  console.log('empaquetar-generador: ' + MARCA + ' + ' + declarados.length +
+    ' archivo(s) declarados + ' + cantidadCatalogo + ' archivo(s) de catálogo en .js');
+  console.log('empaquetar-generador: ' + informe.archivos + ' archivo(s), ' +
+    informe.bytes + ' bytes (' + informe.mb + ' MB) en ' + destino);
+  console.log('empaquetar-generador: sin ' + EXCLUIDOS.join('/') + ' y sin .json');
+  console.log('empaquetar-generador: abrí ' + path.join(destino, MARCA) + ' con doble clic.');
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  EXCLUIDOS,
+  declaradoEnElGenerador,
+  archivosDelCatalogo,
+  carpetaExcluida,
+  extensionExcluida,
+  motivoExclusion,
+  plan,
+  problemasDePaquete,
+  leerLeeme
+};

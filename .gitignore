@@ -11,3 +11,8 @@ catalogo_incisos.json
 
 # app/catalogo/ NO se ignora: son los fragmentos servibles generados por
 # tools/build-catalogo.js y se versionan (contenido estático versionado, ADR-004).
+
+# dist/ es el paquete del generador (ORDEN-RONDA-28 §5): se arma con
+# node tools/empaquetar-generador.js y son ~25 MB de copia de app/ y del
+# catálogo. No es fuente: se regenera, y no va al repositorio.
+dist/
