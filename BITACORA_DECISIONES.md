@@ -1513,6 +1513,60 @@ todavía no nombra las acciones nuevas.
 
 ---
 
+## ADR-044 - Generador de documentación sin servidor, mientras se tramita el puerto
+
+**Estado:** Aceptada - 2026-10-02 (pedida por el Jefe; el *cómo*, mismo repositorio
+con segundo punto de entrada, propuesto por el revisor)
+
+**Contexto.** El responsable técnico del servidor informó que **usar un puerto en el
+servidor para correr un proceso requiere trámites que van a demorar**. Sin ese puerto,
+la aplicación con servidor (ADR-035) no puede salir de la PC del Jefe, y el proceso de
+contratación —que es lo que el Jefe necesita usar ya— sigue sin registro, sin
+movimiento en bloque y sin pliego consolidado.
+
+**Decisión.** Un **segundo punto de entrada en el mismo repositorio**,
+`app/generador.html`, que se abre con **doble clic** (`file://`), sin login, sin
+puerto y sin instalar nada, y que se entrega como una **carpeta aparte**
+(`dist/SGC-Generador`) armada por `tools/empaquetar-generador.js`.
+
+**Fundamento.** El revisor verificó, abriendo `app/index.html` como archivo en
+Chromium, que **todo el JavaScript carga** y que lo único que falla son los tres
+lugares que usan `fetch`: el catálogo, la configuración y el padrón. Con eso, y con que
+**ya existía** el repositorio en memoria (`adapters/repo.memoria.js`, mismo contrato
+que el del servidor, ADR-002), el modelo JSON del Fast-Track con descarga e
+importación, y las reglas y los renders corriendo en el navegador, el trabajo era
+**desarmar el arranque**, no reconstruir la aplicación.
+
+**Alternativas consideradas.**
+
+- *(a)* Un clon aparte con su copia del núcleo: descartada. Cada arreglo —una regla,
+  un documento, el catálogo mensual— habría que hacerlo dos veces, y las dos copias
+  divergen en semanas.
+- *(b)* Esperar el puerto y meanwhile no hacer nada: descartada. El Jefe pidió
+  capitalize lo construido ya.
+- *(c)* Mandar el trabajo por correo o por un drive, en vez de una carpeta: la
+  carpeta gana porque no necesita permisos ni internet, y porque **quien recibe
+  abre el archivo sin instalar nada**.
+- *(d)* Un ejecutable empaquetado (Electron, un portable de Node): descartada. Pide
+  instalación ounsigned binaries, y contradice "no hace falta instalar nada".
+
+**Consecuencias.** Se gana: el rol **Usuario** completo —alta, EETT, anexo de EETT,
+impresión y presupuestos de referencia— usable hoy desde `Y:\UOC`, y un archivo JSON
+que **es el expediente** y viaja de rol a rol con **sello** (formato, versiones,
+rol, nombre, fecha) y **huella SHA-256**; la aplicación con servidor queda **intacta**
+para cuando salga el puerto, y un arreglo al núcleo vale para las dos. Se pierde:
+**sin login no hay control de quién hizo qué** más allá del nombre que cada uno
+escribe —el control real sigue siendo la firma del circuito (ADR-016)—; **no hay un
+lugar central**, así que dos copias del mismo archivo pueden divergir y sólo la huella
+y el número de versión lo delatan; los **PDF de los presupuestos no se guardan** (el
+JSON los cita por nombre); y el **buzón de sugerencias no tiene dónde guardarse**.
+Queda pendiente de validar: los roles **Abastecimiento (ronda 29) y Contrataciones
+(ronda 30)**; que la consolidación del ANEXO I de `server/sco.js:799` pase al núcleo
+compartido; y que la **firma en el circuito** siga siendo el control de autoría, sin
+que el nombre del archivo baste para dar por hecho quién lo escribió.
+
+---
+
 ## Plantilla
 
 ```
