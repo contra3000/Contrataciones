@@ -1,0 +1,102 @@
+diff --git a/tests/helpers/aplicacion-montura.js b/tests/helpers/aplicacion-montura.js
+index d88ab79..9dbb3f6 100644
+--- a/tests/helpers/aplicacion-montura.js
++++ b/tests/helpers/aplicacion-montura.js
+@@ -422,11 +422,11 @@ function montura(servidor) {
+   // espera el avance que sigue iría con la versión vieja → 409.
+   m.guardarRequerimiento = async function () {
+     const d = documento;
++    const hitos = d.getElementById('sgc-expediente-auditoria');
++    const previoHito = hitos.children[0];
+     d.getElementById('sgc-requerimiento-guardar').click();
+     await m.esperar(() => (d.getElementById('sgc-requerimiento-msj').textContent || '')
+       .indexOf('Requerimiento guardado') !== -1, 30000, 'requerimiento guardado');
+-    const hitos = d.getElementById('sgc-expediente-auditoria');
+-    const previoHito = hitos.children[0];
+     await m.esperar(() => hitos.children[0] !== previoHito, 30000,
+       'el expediente se recargó tras guardar el requerimiento');
+   };
+diff --git a/tests/helpers/circuito-ronda-21.js b/tests/helpers/circuito-ronda-21.js
+index e7484f3..58e6f37 100644
+--- a/tests/helpers/circuito-ronda-21.js
++++ b/tests/helpers/circuito-ronda-21.js
+@@ -97,10 +97,10 @@ async function irAlExpediente(m, expId) {
+ 
+ async function guardarDocumento(m) {
+   const d = m.documento;
++  const previo = d.getElementById('sgc-expediente-documento').children[0];
+   d.getElementById('sgc-expediente-documento-guardar').click();
+   await m.esperar(() => (d.getElementById('sgc-expediente-documento-msj').textContent || '')
+     .indexOf('Documento guardado') !== -1, 30000, 'documento del estado guardado');
+-  const previo = d.getElementById('sgc-expediente-documento').children[0];
+   await m.esperar(() => {
+     const actual = d.getElementById('sgc-expediente-documento').children[0];
+     return actual !== previo && d.getElementById('sgc-expediente-documento').children.length > 0;
+@@ -114,13 +114,11 @@ async function cargarNumeroSCo(m) {
+   await m.esperar(() => d.getElementById('sgc-sco-numero-seccion').hidden === false, 30000,
+     'sección del número de SCo visible');
+   m.escribir('sgc-sco-numero', '2026-0000' + String(Math.floor(Math.random() * 9000) + 1000));
++  const hitos = d.getElementById('sgc-expediente-auditoria');
++  const previoHito = hitos.children[0];
+   d.getElementById('sgc-sco-guardar').click();
+   await m.esperar(() => (d.getElementById('sgc-sco-msj').textContent || '')
+     .indexOf('Número de SCo guardado') !== -1, 30000, 'número de SCo guardado');
+-  // La recarga automática (expediente.abrir) renueva la versión antes del
+-  // avance; sin esta espera el avance iría con la versión vieja → 409.
+-  const hitos = d.getElementById('sgc-expediente-auditoria');
+-  const previoHito = hitos.children[0];
+   await m.esperar(() => hitos.children[0] !== previoHito, 30000,
+     'el expediente se recargó tras guardar el número de SCo');
+ }
+diff --git a/tests/ronda-20.test.js b/tests/ronda-20.test.js
+index 065be52..5ba63fc 100644
+--- a/tests/ronda-20.test.js
++++ b/tests/ronda-20.test.js
+@@ -42,13 +42,8 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
+   try {
+     const d = m.documento;
+ 
+-  async function esperarDocumentoRemontado() {
+-    // ORDEN-RONDA-21 §1.1: tras guardar el documento, la vista de expediente se
+-    // recarga sola (expediente.abrir) y re-monta el documento; el avance que
+-    // sigue no debe dar 409 de versión. Sin el fix, el sector queda intacto y
+-    // la espera expira (rojo), el mismo síntoma que reportó la RONDA-20.
++  async function esperarDocumentoRemontado(previo) {
+     const sector = d.getElementById('sgc-expediente-documento');
+-    const previo = sector.children[0];
+     await m.esperar(() => sector.children[0] !== previo && sector.children.length > 0,
+       30000, 'el documento se re-montó por la recarga automática tras guardar');
+   }
+@@ -156,6 +151,7 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
+ 
+     // C3 (parcial) · el documento del estado (especificación técnica) se
+     // guarda como entregable por botón; sin eso no se puede avanzar.
++    const previoDoc = d.getElementById('sgc-expediente-documento').children[0];
+     d.getElementById('sgc-expediente-documento-guardar').click();
+     await m.esperar(() => (d.getElementById('sgc-expediente-documento-msj').textContent || '')
+       .indexOf('Documento guardado') !== -1, 30000, 'documento del estado guardado');
+@@ -164,7 +160,7 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
+       'enlace al entregable guardado');
+ 
+     // C4 · el generador avanza ESPECIFICACIONES_TECNICAS → SOLICITUD_CONTRATACION.
+-    await esperarDocumentoRemontado();
++    await esperarDocumentoRemontado(previoDoc);
+     d.getElementById('sgc-expediente-avanzar').click();
+     await m.esperar(() => (d.getElementById('sgc-expediente-resumen').textContent || '')
+       .indexOf('Solicitud de Contratación') !== -1, 30000, 'el expediente avanzó a Solicitud de Contratación');
+@@ -197,13 +193,11 @@ test('§1 + §3: C2 completo → C4 → C5 (+C3 parcial) por la montura real', a
+     await m.esperar(() => d.getElementById('sgc-sco-numero-seccion').hidden === false, 20000,
+       'la sección del número de SCo se muestra en Solicitud de Contratación');
+     m.escribir('sgc-sco-numero', '2026-00001');
++    const hitosAuditoria = d.getElementById('sgc-expediente-auditoria');
++    const previoHito = hitosAuditoria.children[0];
+     d.getElementById('sgc-sco-guardar').click();
+     await m.esperar(() => (d.getElementById('sgc-sco-msj').textContent || '')
+       .indexOf('Número de SCo guardado') !== -1, 30000, 'número de SCo guardado');
+-    // La recarga automática (expediente.abrir) renueva la versión antes del
+-    // avance; sin esta espera el avance iría con la versión vieja → 409.
+-    const hitosAuditoria = d.getElementById('sgc-expediente-auditoria');
+-    const previoHito = hitosAuditoria.children[0];
+     await m.esperar(() => hitosAuditoria.children[0] !== previoHito, 30000,
+       'el expediente se recargó tras guardar el número de SCo');
+     d.getElementById('sgc-expediente-avanzar').click();
