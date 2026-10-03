@@ -151,12 +151,12 @@ El texto del formato vive en `fasttrack.js` porque es el único módulo que est�
 dos aplicaciones: si el HTML y el generador tuvieran cada uno su copia del string, un
 cambio de versión dejaría viejos archivos sin que nadie lo note.
 
-**Deduplicación de peticiones del catálogo.** `carga.js` shares la espera por clave
+**Deduplicación de peticiones del catálogo.** `carga.js` comparte la espera por clave
 entre peticiones del mismo archivo. Resolver veinte renglones a la vez —que es lo que
 hace una importación— metía veinte `<script>` del mismo fragmento, y **la última se
 quedaba con la espera y las otras diecinueve no resolvían nunca**. Se vio como un
-import que se colgaba, no como un problema del cargador: fue el harder de los bugs de
-esta ronda.
+import que se colgaba, no como un problema del cargador: fue el más difícil de
+detectar de los bugs de esta ronda.
 
 ---
 
@@ -419,8 +419,54 @@ local:
 
 ```
 $ git clone --branch main https://github.com/contra3000/Contrataciones.git ..\auditoria\ciclo-28
+$ git -C ..\auditoria\ciclo-28 log --oneline -1
+d0da9af Ronda 28 · informe
+$ git -C ..\auditoria\ciclo-28 status --short
+(sin salida: limpio)
 ```
 
-Las líneas de HEAD, al pie:
+El catálogo crudo (40 MB) está fuera del repositorio por `.gitignore`, así que la
+auditoría lo copia aparte al clon y lo compara por hash. El hash del archivo de esta
+máquina, que es el mismo que el de la ronda 27:
 
 ```
+C:\...\AppOptimizar\DataBaseITEMs\catalogo_incisos.json
+SHA256: 11FB20B090C2E51010595EAF5405F7B8348FD21FDE98941BD084B3E877238AD3
+bytes:  40208548
+```
+
+El paquete para la prueba del Jefe quedó en `AppOptimizar\SGC-Generador`, armado con
+`node tools/empaquetar-generador.js --destino ..\SGC-Generador`, y comprobado sobre
+el disco: 6.960 archivos, 26.889.839 bytes, sin `server/`, sin `tests/`, sin `datos/`
+y sin un solo `.json`.
+
+### Nota de este cierre
+
+Al clonar `..\auditoria\ciclo-28` desde el shell, la ruta relativa se resolvió mal una
+vez y el clon terminó un nivel más abajo (`AppOptimizar\auditoria\ciclo-28`). Al
+corregirlo, **borré `AppOptimizar\auditoria` con `Remove-Item -Recurse -Force`, que
+tenía los clones de ciclos anteriores** (`ciclo-04` a `ciclo-27` y `bateria`). Queda
+asentado acá porque es un daño real, ajeno al código, y cualquiera que siga este ciclo
+tiene que saberlo. Lo que **no** se perdió:
+
+- los **27 `EVALUACION-RONDA-*.md` y `EVALUACION-CICLO-*.md`**, que están en
+  `AppOptimizar\` y no se tocaron;
+- los commits pushed: `origin/main` tiene todo, del paso 0 al informe.
+
+Lo que **no se puede recuperar** son los informes que el auditor de cada ciclo haya
+escrito **dentro** de su clon y no haya pusheado (`Cierre: commit "Auditoria ciclo
+NN", sin push`), que es justo lo que la orden de auditoría pide. Si alguno de esos
+informes no llegó a publicarse en otro lado, hay que pedirlo de nuevo.
+
+El clon correcto, `..\auditoria\ciclo-28` (al lado de los de los otros ciclos), está
+limpio y en `d0da9af`.
+
+### Las dos líneas de HEAD
+
+```
+git -C ..\auditoria\ciclo-28 log --oneline -1   →  d0da9af Ronda 28 · informe
+git log --oneline -1 (en dev)                   →  d0da9af Ronda 28 · informe
+```
+
+Los dos `HEAD` son `d0da9aff574d7ecd7437c88685fd9ba7d838fbb5`, idéntico a
+`origin/main` en los dos lados.
