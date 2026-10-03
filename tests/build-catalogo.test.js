@@ -161,6 +161,64 @@ test('ningún fragmento supera ' + LIMITE_FRAGMENTO + ' bytes', () => {
   assert.ok(max <= LIMITE_FRAGMENTO, 'el fragmento más grande es de ' + max + ' bytes');
 });
 
+test('el build escribe el índice código -> clase, que es lo único que permite resolver un código sin servidor', () => {
+  const codigos = leerJson(path.join(dirA, 'codigos.json'));
+  const clases = leerJson(path.join(dirA, 'clases.json'));
+  const rubros = leerJson(path.join(dirA, 'rubros.json'));
+  const idsDeClase = new Set(clases.map((e) => String(e[0])));
+  const idDeRubro = {};
+  for (const r of rubros) {
+    idDeRubro[r.rubro] = String(r.idRubro);
+  }
+// La clase de un ítem es la del par rubro + clase (la taxonomía del build), y
+  // clases.json ya trae el id del rubro, no su nombre.
+  const idDeClase = {};
+  for (const e of clases) {
+    idDeClase[String(e[1]) + ' ' + e[2]] = String(e[0]);
+  }
+  const datos = leerJson(FIXTURE);
+
+  // 1. Ningún ítem se queda sin resolver: todo código está en el índice.
+  for (const r of datos) {
+    assert.ok(Object.prototype.hasOwnProperty.call(codigos, r.codigo),
+      'el código ' + r.codigo + ' no está en el índice');
+  }
+  // 2. El índice no inventa clases.
+  for (const codigo of Object.keys(codigos)) {
+    assert.ok(idsDeClase.has(String(codigos[codigo])),
+      'el código ' + codigo + ' apunta a la clase ' + codigos[codigo] + ', que no existe');
+  }
+  // 3. Y cada código apunta a una clase que DE VERDAD lo contiene. Con códigos
+  // repetidos en el catálogo (159.366 filas, 158.306 códigos distintos) el
+  // índice resuelve al de la clase más alta, que es determinista; por eso puede
+  // haber clases sin códigos propios: sus ítems se resuelven por la clase
+  // duplicada que ganó, y ningún ítem se pierde.
+  let chequeados = 0;
+  for (const r of datos) {
+    const idEsperado = idDeClase[idDeRubro[r.rubro] + ' ' + r.clase];
+    if (!idEsperado) {
+      continue;
+    }
+    const id = String(codigos[r.codigo]);
+    assert.ok(id === idEsperado || datos.some((otro) => otro.codigo === r.codigo &&
+      idDeClase[idDeRubro[otro.rubro] + ' ' + otro.clase] === id),
+      'el código ' + r.codigo + ' apunta a la clase ' + id + ', que no lo contiene');
+    chequeados += 1;
+  }
+  assert.ok(chequeados > 0, 'se comprobó al menos un código del fixture');
+});
+
+test('el hermano .js de codigos.json lleva los mismos datos que su .json', () => {
+  const rutaJs = path.join(dirA, 'codigos.js');
+  assert.ok(fs.existsSync(rutaJs), 'falta el hermano .js del índice de códigos');
+  const codigo = fs.readFileSync(rutaJs, 'utf8');
+  assert.ok(codigo.startsWith('SGC.catalogo.recibir("catalogo/codigos.js",'),
+    'el .js entrega su propia ruta lógica');
+  const cuerpo = codigo.slice(codigo.indexOf(',') + 1, codigo.lastIndexOf(');'));
+  assert.deepStrictEqual(JSON.parse(cuerpo), leerJson(path.join(dirA, 'codigos.json')),
+    'el .js y el .json llevan los mismos datos');
+});
+
 test('el build es determinista: dos corridas producen archivos byte a byte idénticos', () => {
   ejecutarBuild(dirB, FIXTURE);
   const archivosA = listar(dirA);

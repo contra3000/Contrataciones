@@ -107,10 +107,18 @@
       <section id="sgc-paso-identificacion" class="paso-panel" aria-labelledby="sgc-titulo-paso-1">
         <h2 id="sgc-titulo-paso-1">1 · Identificación</h2>
 
-        <div class="fasttrack" aria-label="Carga rápida de un modelo JSON">
-          <p class="subtitulo">Fast-Track: baje el modelo, complételo por fuera y súbalo para pre-poblar el asistente.</p>
-          <button id="sgc-btn-modelo" type="button">Descargar modelo JSON</button>
-          <label class="etiqueta-inline" for="sgc-archivo-modelo">Importar JSON modelo</label>
+        <!-- ORDEN-RONDA-28 §4. El archivo es el transporte: sin servidor no hay
+             dónde guardar el trabajo. "Descargar plantilla vacía" baja el JSON
+             del Fast-Track con su formato, para llenarlo por fuera (por ejemplo
+             en una planilla compartida). "Importar" acepta esa plantilla
+             llenada o un requerimiento exportado antes, para seguir
+             trabajando donde quedó. Lo importado se abre en este mismo
+             formulario: el JSON no reemplaza la pantalla. -->
+        <div class="fasttrack" aria-label="Plantilla e importación de un requerimiento">
+          <p class="subtitulo">Podés bajar la plantilla, llenarla por fuera y volver a importarla,
+            o importar un requerimiento que ya habías exportado para seguir con él.</p>
+          <button id="sgc-btn-modelo" type="button">Descargar plantilla vacía</button>
+          <label class="etiqueta-inline" for="sgc-archivo-modelo">Importar</label>
           <input id="sgc-archivo-modelo" type="file" accept=".json,application/json">
           <p id="sgc-fasttrack-msj" class="fasttrack-msj" role="status" aria-live="polite" hidden></p>
         </div>
@@ -333,6 +341,12 @@
   <script src="js/generador/presupuestos.js"></script>
   <script src="js/generador/valores.js"></script>
   <script src="js/generador/documentos.js"></script>
+
+  <!-- ORDEN-RONDA-28 §4: la plantilla, la importación y la exportación del
+       requerimiento. Va después de los tres de arriba porque compone el mismo
+       expediente local que ellos, y no antes porque el archivo que arma es
+       exactamente el mismo que se imprime. -->
+  <script src="js/generador/intercambio.js"></script>
 
   <script src="js/generador.js"></script>
 </body>

@@ -10,6 +10,9 @@
  *   app/catalogo/rubros.json            los 50 rubros: [{idRubro, rubro}]
  *   app/catalogo/clases.json            una entrada compacta por clase
  *                                       [idClase, idRubro, clase, cantidad, partes]
+ *   app/catalogo/codigos.json           de cada código, la clase donde está
+ *                                       (~3 MB; se pide bajo demanda y sólo
+ *                                       lo usa el generador sin servidor)
  *   app/catalogo/items/<idClase>.json   ítems de cada clase (partido si pesa más
  *                                       del límite: <idClase>_p1.json, _p2.json...)
  *
@@ -198,6 +201,7 @@ function main() {
   });
 
   const clases = [];
+  const codigosPorClase = new Map();
   let totalFragmentos = 0;
   let fragmentoMasGrande = 0;
   let bytesTotal = 0;
@@ -242,6 +246,11 @@ function main() {
       items.length,
       partes.length
     ]);
+
+    // El índice de códigos: de cada código, qué fragmento lo tiene.
+    codigosPorClase.set(idClase, items.map(function (item) {
+      return item.codigo;
+    }));
   }
 
   const rubros = rubrosOrdenados.map(function (rubro, indice) {
@@ -250,6 +259,33 @@ function main() {
 
   escribirJson(path.join(opciones.salida, 'rubros.json'), 'catalogo/rubros.json', rubros);
   escribirJson(path.join(opciones.salida, 'clases.json'), 'catalogo/clases.json', clases);
+
+  /*
+   * catalogo/codigos.json — de cada código, el id de la clase donde está.
+   *
+   * Por qué hace falta: el id de clase NO sale del código. El código trae la
+   * clasificación del catálogo de origen (2.9.4-3622.1) y el id de clase es de
+   * esta taxonomía (3622 es PRESILLA, pero ese ítem vive en el fragmento 378, que
+   * es COPAS P/POSTRE), así que a un código no se le puede pedir su fragmento con
+   * descomponerCodigo. Sin este índice, quien tenga que comprobar si un código
+   * existe (el generador al importar un JSON, ORDEN-RONDA-28 §4) tendría que
+   * cargar los ~14.000 fragmentos: son 43 MB, justo lo que el diseño del catálogo
+   * fragmentado evita.
+   *
+   * Son 3 MB para 159.000 ítems (sólo el código y el id de clase, sin
+   * descripciones), un archivo, y se pide bajo demanda: la aplicación con
+   * servidor valida contra su propia base y no lo carga nunca.
+   */
+  const codigos = {};
+  const idsClase = Array.from(codigosPorClase.keys()).sort(function (a, b) { return a - b; });
+  for (let i = 0; i < idsClase.length; i++) {
+    const idClase = idsClase[i];
+    const lista = codigosPorClase.get(idClase).slice().sort(compararTexto);
+    for (let j = 0; j < lista.length; j++) {
+      codigos[lista[j]] = idClase;
+    }
+  }
+  escribirJson(path.join(opciones.salida, 'codigos.json'), 'catalogo/codigos.json', codigos);
 
   const manifiesto = {
     catalogoVersion: catalogoVersion,
@@ -264,8 +300,10 @@ function main() {
   const segundos = ((Date.now() - inicio) / 1000).toFixed(2);
   console.log('catalogo: ' + registros.length + ' registros en ' + clases.length + ' clases y ' + totalFragmentos + ' fragmentos');
   console.log('catalogo: fragmento más grande ' + (fragmentoMasGrande / 1024).toFixed(0) + ' KB, total ' + (bytesTotal / 1024).toFixed(0) + ' KB');
+  console.log('catalogo: índice de códigos ' + (Object.keys(codigos).length) + ' entradas (' +
+    (fs.statSync(path.join(opciones.salida, 'codigos.json')).size / 1024 / 1024).toFixed(1) + ' MB) para resolver un código sin cargar el catálogo entero');
   console.log('catalogo: catalogoVersion ' + catalogoVersion + ', generado ' + manifiesto.generado);
-  console.log('catalogo: ' + (totalFragmentos + 3) + ' archivos .js hermanos para file:// (uno por .json)');
+  console.log('catalogo: ' + (totalFragmentos + 4) + ' archivos .js hermanos para file:// (uno por .json)');
   console.log('catalogo: listo en ' + segundos + ' s -> ' + opciones.salida);
 }
 

@@ -89,7 +89,7 @@
       return;
     }
     estado.lista.push({
-      id: 'ref-' + (estado.siguiente++),
+      id: idSiguiente(idsEnUso()),
       nombreOriginal: nombre,
       proveedor: String(estado.dom.proveedor.value || '').trim(),
       fecha: String(estado.dom.fecha.value || '').trim(),
@@ -110,6 +110,67 @@
         return;
       }
     }
+  }
+
+  /*
+   * Cargar una lista venida de un archivo (ORDEN-RONDA-28 §4, pieza 4).
+   *
+   * Los ids se respetan: son la referencia que citan los valores de cada
+   * renglón (presupuestoId, ADR-022), así que cambiarles el id al importar
+   * dejaría citing un presupuesto que no está. Sólo se renumeran los que
+   * vengan vacíos o repetidos, que es lo único que no se podría citar.
+   */
+  function cargar(lista) {
+    estado.lista = [];
+    estado.siguiente = 1;
+    var vistos = {};
+    var entrantes = Array.isArray(lista) ? lista : [];
+    for (var i = 0; i < entrantes.length; i++) {
+      var p = entrantes[i];
+      if (!p || typeof p !== 'object') {
+        continue;
+      }
+      var nombre = typeof p.nombreOriginal === 'string' ? p.nombreOriginal.trim() : '';
+      if (nombre === '') {
+        continue;
+      }
+      var id = typeof p.id === 'string' ? p.id.trim() : '';
+      if (id === '' || Object.prototype.hasOwnProperty.call(vistos, id)) {
+        id = idSiguiente(vistos);
+      }
+      vistos[id] = true;
+      estado.lista.push({
+        id: id,
+        nombreOriginal: nombre,
+        proveedor: typeof p.proveedor === 'string' ? p.proveedor : '',
+        fecha: typeof p.fecha === 'string' ? p.fecha : '',
+        referencia: true
+      });
+    }
+    render();
+    return estado.lista.length;
+  }
+
+  /*
+   * El próximo id libre con el formato de esta vista (ref-1, ref-2, ...). El
+   * contador arranca en 1 después de cargar: un archivo puede traer ids que no
+   * son de esta forma, y el contador tiene que seguir después del último usado
+   * para no repetir uno.
+   */
+  function idSiguiente(vistos) {
+    var id = 'ref-' + estado.siguiente++;
+    while (Object.prototype.hasOwnProperty.call(vistos, id)) {
+      id = 'ref-' + estado.siguiente++;
+    }
+    return id;
+  }
+
+  function idsEnUso() {
+    var mapa = {};
+    for (var i = 0; i < estado.lista.length; i++) {
+      mapa[estado.lista[i].id] = true;
+    }
+    return mapa;
   }
 
   function montar(raiz) {
@@ -135,6 +196,7 @@
 
   SGC.generadorPresupuestos = {
     montar: montar,
+    cargar: cargar,
     listar: function () {
       return estado.lista.map(function (p) {
         return {

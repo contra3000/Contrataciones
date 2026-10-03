@@ -123,11 +123,85 @@ function instalarEspiasDeRed() {
   return llamadas;
 }
 
+/*
+ * ORDEN-RONDA-28 §4: las descargas. El generador baja la plantilla y exporta el
+ * requerimiento con un <a download> y un Blob, así que acá se captura lo que se
+ * descarga: el nombre y el texto. El parche va en ESTA montura y no en
+ * dom-desde-html.js a propósito, porque las otras suites (wizard, exportar) ya
+ *iaryn de su propia descarga y no tienen que ver un click extra.
+ *
+ * Se intercepta URL.createObjectURL para guardar el Blob con su nombre de
+ * archivo: el <a> recibe la url como href y no vuelve a mirar el Blob.
+ *
+ * El parche va en ESTA montura y no en dom-desde-html.js a propósito: las otras
+ * suites (wizard, exportar) cuentan su propia descarga y no tienen que ver un
+ * click extra.
+ */
+function capturarDescargas() {
+  const descargas = [];
+  const objetos = {};
+  let contador = 0;
+  const createOriginal = globalThis.URL.createObjectURL;
+  globalThis.URL.createObjectURL = function (blob) {
+    contador += 1;
+    const url = 'blob:generador/' + contador;
+    objetos[url] = blob;
+    return url;
+  };
+  const revokeOriginal = globalThis.URL.revokeObjectURL;
+  globalThis.URL.revokeObjectURL = function (url) {
+    delete objetos[url];
+  };
+  const clickOriginal = Nodo.prototype.click;
+  Nodo.prototype.click = function () {
+    // En el navegador, `enlace.download = nombre` se refleja en el atributo; en
+    // el stub es una propiedad y nada más, así que se mira de las dos formas.
+    const descarga = (this.getAttribute && this.getAttribute('download')) || this.download;
+    if (descarga) {
+      // El blob se guarda acá, en el momento del click: la app revoca la url
+      // enseguida (que es lo correcto en el navegador) y después ya no queda
+      // nada de dónde leer el contenido.
+      const blob = objetos[this.href] || null;
+      descargas.push({
+        nombre: descarga,
+        blob: blob,
+        texto: () => textoDeBlob(blob)
+      });
+      return;
+    }
+    return clickOriginal.call(this);
+  };
+  return {
+    descargas: descargas,
+    desarmar: function () {
+      Nodo.prototype.click = clickOriginal;
+      globalThis.URL.createObjectURL = createOriginal;
+      globalThis.URL.revokeObjectURL = revokeOriginal;
+    }
+  };
+}
+
+function textoDeBlob(blob) {
+  if (!blob) {
+    return Promise.resolve('');
+  }
+  // El Blob del stub de dom-desde-html.js guarda las partes; el de Node trae
+  // text(). Los dos caminos devuelven el texto del archivo descargado.
+  if (Array.isArray(blob.partes)) {
+    return Promise.resolve(blob.partes.join(''));
+  }
+  if (typeof blob.text === 'function') {
+    return blob.text();
+  }
+  return Promise.resolve('');
+}
+
 async function arrancar() {
   cargarModulos();
   dom.instalarGlobales(documento);
   dom.prepararBusquedaPorId(documento);
   const llamadas = instalarEspiasDeRed();
+  const capturas = capturarDescargas();
 
   // Con doble clic, location.protocol es 'file:'. Así carga.js elige la rama de
   // <script>, que es la que se está probando.
@@ -145,6 +219,8 @@ async function arrancar() {
     botonEn: dom.botonEn,
     HTML: GENERADOR_HTML,
     APP_DIR: APP_DIR,
+    descargas: capturas.descargas,
+    desarmarDescargas: capturas.desarmar,
     scripts: function () {
       return dom.scriptsDelHtml(GENERADOR_HTML);
     }
@@ -268,6 +344,44 @@ async function arrancar() {
 
   m.franja = function () {
     return documento.getElementById('sgc-generador-franja');
+  };
+
+  /*
+   * ORDEN-RONDA-28 §4: bajar la plantilla. Es el botón de siempre del
+   * asistente, así que el test lo aprieta y lee lo que quedó en m.descargas.
+   */
+  m.bajarPlantilla = async function () {
+    const antes = m.descargas.length;
+    documento.getElementById('sgc-btn-modelo').click();
+    await m.esperar(function () { return m.descargas.length > antes; }, 10000,
+      'la plantilla no se descargó');
+    return m.descargas[m.descargas.length - 1];
+  };
+
+  /*
+   * ORDEN-RONDA-28 §4: elegir un archivo en el <input type="file"> y disparar
+   * el 'change' como haría la persona al elegirlo. El FileReader del stub lee
+   * `archivo.contenido`, así que el archivo que se "elige" es su texto.
+   */
+  m.elegirArchivo = function (contenido, nombre) {
+    const input = documento.getElementById('sgc-archivo-modelo');
+    if (!input) {
+      throw new Error('elegirArchivo: no existe #sgc-archivo-modelo en el generador');
+    }
+    input.files = [{ name: nombre || 'archivo.json', contenido: contenido }];
+    input.emit('change', { target: input });
+    return input;
+  };
+
+  // Lo que el asistente contesta al archivo elegido (el mismo <p> del aviso).
+  m.msjArchivo = function () {
+    return documento.getElementById('sgc-fasttrack-msj');
+  };
+
+  // Vaciar lo descargado: cada test corre su propia sesión (como F5) y no tiene
+  // que ver las descargas del anterior.
+  m.limpiarDescargas = function () {
+    m.descargas.length = 0;
   };
 
   return m;

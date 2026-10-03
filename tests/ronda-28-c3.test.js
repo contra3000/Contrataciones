@@ -287,13 +287,17 @@ test('"Exportar para Abastecimiento" se habilita con la validación válida y an
     'con la EETT compuesta la validación de ESPECIFICACIONES_TECNICAS da válida');
   assert.strictEqual(msj.hidden, true, 'ya no hay motivo que dar');
 
-  // Y lo que hace no es un "Avanzar" de estado: avisa que la descarga llega en
-  // la pieza 4, sin fingir que ya exportó.
+  // Y lo que hace no es un "Avanzar" de estado: arma el archivo para
+  // Abastecimiento (pieza 4) y lo dice en la pantalla. El nombre del archivo lo
+  // comprueba la pieza 4; acá importa que no finge: descarga y contesta.
   exportar.click();
   const aviso = d.getElementById('sgc-generador-msj-revision');
-  assert.strictEqual(aviso.hidden, false, 'el generador contesta');
+  await m.esperar(() => aviso.hidden === false, 10000, 'el generador contesta');
   assert.match(aviso.textContent, /Abastecimiento/,
     'dice a quién es el archivo: el circuito empieza en Abastecimiento');
+  assert.match(aviso.textContent, /\.json/, 'dice qué archivo se descargó');
+  assert.deepStrictEqual(m.red.llamadas, [],
+    'exportar no pide nada por red: ' + m.red.llamadas.join(', '));
 });
 
 test('un renglón con un solo valor deja exportar deshabilitado con el texto de la ronda 26', async () => {

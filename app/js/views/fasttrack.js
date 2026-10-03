@@ -27,8 +27,19 @@
     return SGC.core.config.MAX_ACLARACION_TOTAL;
   }
 
+  /*
+   * El formato del archivo que viaja entre el generador y Abastecimiento
+   * (ORDEN-RONDA-28 §4). Vive acá y no en el generador por una razón práctica:
+   * fasttrack.js es el único módulo que está en las dos aplicaciones, y la
+   * plantilla y el sello del archivo exportado tienen que decir lo mismo. Si
+   * cada uno tuviera su copia, un cambio de versión dejaría viejo un archivo sin
+   * que nadie lo note.
+   */
+  var FORMATO = 'sgc-requerimiento/1';
+
   function modelo() {
     return {
+      formato: FORMATO,
       titulo: 'Adquisición de insumos para la División',
       anio: '2026',
       dependenciaSolicitante: 'División Usuario',
@@ -165,6 +176,7 @@
 
   SGC.views.fasttrack = {
     MAX_ACLARACION: SGC.core.config.MAX_ACLARACION,
+    FORMATO: FORMATO,
     modelo: modelo,
     importar: importar
   };

@@ -28,6 +28,8 @@
     paso: 0,
     persistido: false,
     alRender: null,
+    importador: null,
+    alImportar: null,
     dom: {}
   };
 
@@ -195,6 +197,96 @@
     }
   }
 
+  /*
+   * ORDEN-RONDA-28 §4: el importador es intercambiable.
+   *
+   * Por defecto es el Fast-Track de siempre, con la existencia de los códigos
+   * validada por el servidor (repo.validarCodigos, ORDEN-RONDA-06 §2.2). El
+   * generador pasa el suyo, que además acepta un requerimiento exportado antes y
+   * resuelve los códigos contra el catálogo local: sin servidor no hay a quién
+   * preguntarle (ADR-044).
+   *
+   * Lo que NO cambia con el importador es el resto: leer el archivo, aplicar los
+   * datos al formulario, registrar los códigos, cargar los renglones, avisar y
+   * abrir el paso 2. Eso vive acá una sola vez para las dos aplicaciones.
+   */
+  function leerArchivo(texto) {
+    if (typeof estado.importador === 'function') {
+      return Promise.resolve(estado.importador(texto));
+    }
+    return importarFasttrack(texto);
+  }
+
+  // El camino del servidor: estructura y tipos primero con verificación de
+  // códigos en blanco (un archivo mal formado se rechaza sin tocar la red), y
+  // después la existencia de los códigos contra el catálogo del servidor.
+  function importarFasttrack(texto) {
+    var estructural = fasttrack.importar(texto, function () {
+      return true;
+    });
+    if (!estructural.ok) {
+      return Promise.resolve({ ok: false, errores: estructural.errores });
+    }
+    var codigos = estructural.datos.renglones.map(function (r) {
+      return r.codigo;
+    });
+    if (!estado.repo || typeof estado.repo.validarCodigos !== 'function') {
+      return Promise.resolve({
+        ok: false,
+        errores: ['No se pudo validar el archivo: el servidor de catálogo no está disponible. ' +
+          'El archivo no se importa.']
+      });
+    }
+    return estado.repo.validarCodigos(codigos).then(function (respuesta) {
+      var verificar = function (codigo) {
+        return respuesta.invalidos.indexOf(codigo) === -1;
+      };
+      var resultado = fasttrack.importar(texto, verificar);
+      if (!resultado.ok) {
+        return { ok: false, errores: resultado.errores };
+      }
+      return {
+        ok: true,
+        datos: resultado.datos,
+        mensaje: 'Modelo importado correctamente. Revisá los pasos y seguí.'
+      };
+    });
+  }
+
+  function avisarFasttrack(texto) {
+    estado.dom.fasttrackMsj.textContent = texto;
+    estado.dom.fasttrackMsj.hidden = false;
+  }
+
+  /*
+   * Aplicar una importación que ya pasó las reglas y llega como
+   * {datos, mensaje, avisos}. Es lo que usan el Fast-Track del servidor y el
+   * importador del generador: una sola implementación, para que importar en una
+   * aplicación y en la otra termine en el mismo estado del formulario.
+   */
+  function aplicarImportacion(resultado) {
+    estado.datos = resultado.datos;
+    estado.datos.identificacion.operador = estado.operador.email;
+    aplicarDatosAlFormulario();
+    SGC.catalogo.indice.registrarCodigos(estado.datos.renglones);
+    SGC.catalogo.renglones.cargar(estado.datos.renglones);
+    // Lo que el archivo trae y el formulario no tiene (presupuestos de
+    // referencia y valores, en el generador). Se avisa después de cargar los
+    // renglones y antes de avisar, para que la pantalla muestre el resultado
+    // final.
+    if (typeof estado.alImportar === 'function') {
+      estado.alImportar(resultado);
+    }
+    guardarBorrador();
+    var texto = resultado.mensaje || 'Archivo importado. Revisá los pasos y seguí.';
+    if (Array.isArray(resultado.avisos) && resultado.avisos.length > 0) {
+      texto = texto + ' ' + resultado.avisos.join(' ');
+    }
+    avisarFasttrack(texto);
+    estado.dom.archivoModelo.value = '';
+    irAPaso(1, false);
+  }
+
   function importarModelo() {
     var archivo = estado.dom.archivoModelo.files && estado.dom.archivoModelo.files[0];
     if (!archivo) {
@@ -203,53 +295,17 @@
     estado.dom.fasttrackMsj.hidden = true;
     var lector = new FileReader();
     lector.onload = function () {
-      // Estructura y tipos primero, con verificación de códigos en blanco:
-      // un archivo mal formado se rechaza sin tocar la red. La existencia de
-      // los códigos la valida el servidor (ORDEN-RONDA-06 §2.2): el cliente
-      // ya no baja el universo de códigos.
-      var estructural = fasttrack.importar(String(lector.result), function () {
-        return true;
-      });
-      if (!estructural.ok) {
-        estado.dom.fasttrackMsj.textContent = 'No se pudo importar el archivo:\n' + estructural.errores.join('\n');
-        estado.dom.fasttrackMsj.hidden = false;
-        return;
-      }
-      var codigos = estructural.datos.renglones.map(function (r) {
-        return r.codigo;
-      });
-      if (typeof estado.repo.validarCodigos !== 'function') {
-        estado.dom.fasttrackMsj.textContent =
-          'No se pudo validar el archivo: el servidor de catálogo no está disponible. El archivo no se importa.';
-        estado.dom.fasttrackMsj.hidden = false;
-        return;
-      }
-      estado.repo.validarCodigos(codigos).then(function (respuesta) {
-        var verificar = function (codigo) {
-          return respuesta.invalidos.indexOf(codigo) === -1;
-        };
-        var resultado = fasttrack.importar(String(lector.result), verificar);
-        if (!resultado.ok) {
-          estado.dom.fasttrackMsj.textContent = 'No se pudo importar el archivo:\n' + resultado.errores.join('\n');
-          estado.dom.fasttrackMsj.hidden = false;
+      leerArchivo(String(lector.result)).then(function (resultado) {
+        if (!resultado || !resultado.ok) {
+          avisarFasttrack('No se pudo importar el archivo:\n' +
+            ((resultado && resultado.errores) || ['el archivo no se pudo leer']).join('\n'));
           return;
         }
-        estado.datos = resultado.datos;
-        estado.datos.identificacion.operador = estado.operador.email;
-        aplicarDatosAlFormulario();
-        SGC.catalogo.indice.registrarCodigos(estado.datos.renglones);
-        SGC.catalogo.renglones.cargar(estado.datos.renglones);
-        guardarBorrador();
-        estado.dom.fasttrackMsj.textContent = 'Modelo importado correctamente. Revisá los pasos y seguí.';
-        estado.dom.fasttrackMsj.hidden = false;
-        estado.dom.archivoModelo.value = '';
-        irAPaso(1, false);
+        aplicarImportacion(resultado);
       }).catch(function (err) {
-        estado.dom.fasttrackMsj.textContent =
-          'No se pudo validar el archivo contra el servidor: ' +
+        avisarFasttrack('No se pudo validar el archivo: ' +
           (err && err.message ? err.message : 'error de red') +
-          '. El archivo no se importa.';
-        estado.dom.fasttrackMsj.hidden = false;
+          '. El archivo no se importa.');
       });
     };
     lector.readAsText(archivo);
@@ -268,8 +324,16 @@
     URL.revokeObjectURL(url);
   }
 
-  function montar(raiz) {
+  function montar(raiz, opciones) {
     estado.dom.raiz = raiz;
+    // ORDEN-RONDA-28 §4: quien lo monta puede cambiar sólo la lectura del
+    // archivo (opciones.importador) y enterarse de que terminó (opciones.alImportar).
+    // Sin opciones, el comportamiento es el de siempre.
+    var opcionesMontaje = opciones || {};
+    estado.importador = typeof opcionesMontaje.importador === 'function'
+      ? opcionesMontaje.importador : null;
+    estado.alImportar = typeof opcionesMontaje.alImportar === 'function'
+      ? opcionesMontaje.alImportar : null;
     estado.dom.seleccionOperador = qs(raiz, '#sgc-seleccion-operador');
     estado.dom.listaOperadores = qs(raiz, '#sgc-lista-operadores');
     estado.dom.app = qs(raiz, '#sgc-app');
@@ -335,6 +399,9 @@
   SGC.views.wizard = {
     montar: montar,
     seleccionarOperador: seleccionarOperador,
+    alImportar: function (fn) {
+      estado.alImportar = fn;
+    },
     renderOperadores: function (padron) {
       var lista = estado.dom.listaOperadores;
       lista.textContent = '';

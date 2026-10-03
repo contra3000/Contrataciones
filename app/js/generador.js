@@ -51,6 +51,9 @@
     throw new Error('generador.js requiere los módulos del rol Usuario ' +
       '(generador/presupuestos.js, generador/valores.js, generador/documentos.js)');
   }
+  if (!SGC.generadorIntercambio) {
+    throw new Error('generador.js requiere el módulo de plantilla e intercambio (generador/intercambio.js)');
+  }
 
   // El rol que ejecuta el primer estado del circuito: el mismo id que usa el
   // padrón de la aplicación con servidor (config.js ROLES[0]). Con el mismo id,
@@ -171,9 +174,18 @@
     SGC.generadorValores.alCambio(publicarDatos);
     SGC.generadorDocumentos.montar();
     SGC.generadorDocumentos.seleccionarOperador(estado.operador);
+    // ORDEN-RONDA-28 §4: "Exportar para Abastecimiento" ya no es un aviso de que
+    // la descarga llega después: arma el archivo con el sello y lo baja. La
+    // validación del botón la hace el propio módulo, que vuelve con el motivo.
     SGC.generadorDocumentos.onExportar(function () {
-      avisarEnRevision('Podés exportar para Abastecimiento. El archivo se descarga en la ' +
-        'próxima versión del generador (ORDEN-RONDA-28 §4).');
+      SGC.generadorIntercambio.exportar().then(function (resultado) {
+        if (resultado.ok) {
+          avisarEnRevision('Se descargó ' + resultado.nombre + ' (versión ' + resultado.version +
+            '). Ese archivo es el que pasa a Abastecimiento.');
+        } else {
+          avisarEnRevision(resultado.errores.join(' '));
+        }
+      });
     });
     // La lista de renglones del asistente y el bloque de valores de referencia
     // son la misma información vista de dos maneras: si cambia una, se rearma el
@@ -261,11 +273,35 @@
     estado.repo = SGC.adapters.repoMemoria.crear();
     SGC.adapters.repo.usar(estado.repo);
 
-    // El alta es la de siempre: el mismo asistente, los mismos cuatro pasos y
+    // ORDEN-RONDA-28 §4: una sesión arranca en la versión 0. El contador vive en
+    // el módulo de intercambio, no acá, porque es lo único que tiene que saber
+    // cuánto se exportó y se importó.
+    SGC.generadorIntercambio.reiniciar();
+
+    // La alta es la de siempre: el mismo asistente, los mismos cuatro pasos y
     // el mismo buscador de catálogo. Montarla acá, y no cablearla de otro modo,
     // es lo que hace que un arreglo de un archivo valga para las dos
     // aplicaciones (ADR-044).
-    SGC.views.wizard.montar(contenedor);
+    //
+    // Lo único propio del generador es el importador: en la aplicación es el
+    // Fast-Track contra el servidor, y acá el archivo puede venir por el mismo
+    // camino (una plantilla) o ser un requerimiento ya exportado. Lo que el
+    // archivo traía de más —sus presupuestos y sus valores por renglón— lo
+    // restaura este archivo, porque son estado local del generador y no forma
+    // parte de los pasos del asistente.
+    SGC.views.wizard.montar(contenedor, {
+      importador: function (texto) {
+        return SGC.generadorIntercambio.importar(texto);
+      },
+      alImportar: function (resultado) {
+        SGC.generadorPresupuestos.cargar(resultado.presupuestos);
+        SGC.generadorValores.fijar(
+          SGC.catalogo.renglones.obtener(),
+          SGC.generadorPresupuestos.listar(),
+          resultado.valoresPorRenglon
+        );
+      }
+    });
     SGC.views.wizard.fijarRepo(estado.repo);
     SGC.catalogo.buscador.montar(porId('sgc-paso-renglones'));
     SGC.views.wizard.vincularRenglones();
