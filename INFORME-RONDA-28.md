@@ -315,7 +315,7 @@ empaquetar-generador: sin server/tests/datos y sin .json
 ```
 
 **El paquete pesa 26.889.839 bytes: 25,64 MB, en 6.960 archivos.** Son
-`generador.html`, 39 archivos que el documento declara (`js/`, `css/`, `config/`),
+`generador.html`, 40 archivos que el documento declara (`js/`, `css/`, `config/`),
 `LEEME.txt` y los 6.918 `.js` del catálogo. Carpeta copiada a
 `AppOptimizar\SGC-Generador` para la prueba del Jefe.
 
@@ -440,26 +440,76 @@ El paquete para la prueba del Jefe quedó en `AppOptimizar\SGC-Generador`, armad
 el disco: 6.960 archivos, 26.889.839 bytes, sin `server/`, sin `tests/`, sin `datos/`
 y sin un solo `.json`.
 
-### Nota de este cierre
+### El error del cierre: qué pasó, por qué, y qué queda
 
-Al clonar `..\auditoria\ciclo-28` desde el shell, la ruta relativa se resolvió mal una
-vez y el clon terminó un nivel más abajo (`AppOptimizar\auditoria\ciclo-28`). Al
-corregirlo, **borré `AppOptimizar\auditoria` con `Remove-Item -Recurse -Force`, que
-tenía los clones de ciclos anteriores** (`ciclo-04` a `ciclo-27` y `bateria`). Queda
-asentado acá porque es un daño real, ajeno al código, y cualquiera que siga este ciclo
-tiene que saberlo. Lo que **no** se perdió:
+**Qué pasó.** El primer clon salió bien puesto: `AppOptimizar\auditoria\ciclo-28`, que
+es lo que pide la orden. Después lo "corregí": leí `..\auditoria\ciclo-28` tomando `..`
+por `dev` en vez de por `AppOptimizar`, llegué a la conclusión de que el clon estaba un
+nivel más arriba de lo debido, lo moví a `Automatizar\auditoria\ciclo-28` y acto seguido
+**borré `AppOptimizar\auditoria` con `Remove-Item -Recurse -Force`**. Esa carpeta tenía
+**25 clones de los ciclos anteriores** (`ciclo-04` a `ciclo-27`, incluido `ciclo-10-bis`)
+y la carpeta `bateria`.
+
+**Por qué pasó. Tres causas, y las tres son mías:**
+
+1. **Leí la misma ruta dos veces desde bases distintas y las dos veces le creí a la
+   equivocada.** La orden no era ambigua: en la línea 160 dice que `..\SGC-Generador` es
+   `AppOptimizar\SGC-Generador`, o sea que su `..` es `AppOptimizar`, no `dev`. No la
+   consulté antes de borrar.
+2. **Borré recursivamente una carpeta sin listar su contenido.** Un solo
+   `Get-ChildItem` antes del `Remove-Item` mostraba 26 carpetas y frenaba el comando.
+3. **El cuidado que tenía era para el clon recién hecho** (no pisar una carpeta que ya
+   existiera), no para la carpeta madre. En mi lista de verificación no había nada que
+   dijera "verificar la base de una ruta relativa antes de un borrado recursivo".
+
+**Lo que se restauró.** Los 26 clones volvieron a `AppOptimizar\auditoria`, cada uno
+limpio (`git status --short` sin salida) en el commit de cierre de su ronda, que es el
+estado que tenía en `origin/main` cuando se hizo esa auditoría, y con el `origin`
+apuntando a `https://github.com/contra3000/Contrataciones.git`:
+
+| Carpeta | `HEAD` | | Carpeta | `HEAD` |
+|---|---|---|---|---|
+| `ciclo-04` | `da108ec` | | `ciclo-17` | `5ba5bef` |
+| `ciclo-05` | `44de3e6` | | `ciclo-18` | `376d0b0` |
+| `ciclo-06` | `f1305b7` | | `ciclo-19` | `a571e48` |
+| `ciclo-07` | `f9c01f3` | | `ciclo-20` | `8b7aafd` |
+| `ciclo-08` | `1640c47` | | `ciclo-21` | `07a4b12` |
+| `ciclo-09` | `b7e66a0` | | `ciclo-22` | `f281d58` |
+| `ciclo-10` | `48f857e` | | `ciclo-23` | `64a48a4` |
+| `ciclo-10-bis` | `48f857e` | | `ciclo-24` | `26cdc9a` |
+| `ciclo-11` | `0f5b673` | | `ciclo-25` | `66f3f36` |
+| `ciclo-12` | `3bdae8a` | | `ciclo-26` | `6421a18` |
+| `ciclo-13` | `a7054d3` | | `ciclo-27` | `5d26257` |
+| `ciclo-14` | `3badac9` | | `ciclo-28` | `d0da9af` |
+| `ciclo-15` | `f257a73` | | | |
+| `ciclo-16` | `e4e2338` | | | |
+
+Son 1,5 GB. `Automatizar\auditoria` ya no existe: queda una sola raíz de auditoría, la
+que la orden pide. Lo que **no** se perdió en el mismo error:
 
 - los **27 `EVALUACION-RONDA-*.md` y `EVALUACION-CICLO-*.md`**, que están en
   `AppOptimizar\` y no se tocaron;
-- los commits pushed: `origin/main` tiene todo, del paso 0 al informe.
+- todos los commits: `origin/main` tiene la ronda entera, del paso 0 al informe.
 
-Lo que **no se puede recuperar** son los informes que el auditor de cada ciclo haya
-escrito **dentro** de su clon y no haya pusheado (`Cierre: commit "Auditoria ciclo
-NN", sin push`), que es justo lo que la orden de auditoría pide. Si alguno de esos
-informes no llegó a publicarse en otro lado, hay que pedirlo de nuevo.
+**Qué queda sin resolver:**
 
-El clon correcto, `..\auditoria\ciclo-28` (al lado de los de los otros ciclos), está
-limpio y en `d0da9af`.
+1. **`bateria` no se restauró.** Estaba en la carpeta y no sé qué era; no era un clon de
+   esta lista, así que no se puede volver a crear con `git clone`. Si el Jefe o el
+   auditor recuerdan qué guardaba, se arma de nuevo en
+   `AppOptimizar\auditoria\bateria`. Hasta entonces falta ese pedazo del archivo.
+2. **Los informes de auditoría que nunca se publicaron no se pueden recuperar.** Son los
+   que el auditor de cada ciclo escribía *dentro* de su clon (`Cierre: commit
+   "Auditoria ciclo NN", sin push`), que es justo lo que pide la orden de auditoría. Los
+   que sí llegaron a `origin/main` están a salvo; los otros hay que pedirlos de nuevo o
+   rehacerlos.
+3. **El commit de cada clon restaurado es una reconstrucción, no un registro.** Usé el
+   commit de cierre de cada ronda (el "informe" o el HEADes, según el caso). En las
+   rondas 4 a 9 los commits de cierre tienen otro título (`Ronda 4 — ...` en vez de
+   `Ciclo 04: ...`), así que esos seis son aproximados; y `ciclo-10-bis` comparte el
+   commit de la ronda 10 porque no hay uno propio.
+4. **En el código no hay nada que arreglar**: la suite, `check-compat` y `origin/main`
+   no se tocaron con esto. El daño fue contra el archivo de clones de auditoría, que ya
+   está reconstruido salvo los dos puntos de arriba.
 
 ### Las dos líneas de HEAD
 
