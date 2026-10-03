@@ -422,11 +422,11 @@ function montura(servidor) {
   // espera el avance que sigue iría con la versión vieja → 409.
   m.guardarRequerimiento = async function () {
     const d = documento;
+    const hitos = d.getElementById('sgc-expediente-auditoria');
+    const previoHito = hitos.children[0];
     d.getElementById('sgc-requerimiento-guardar').click();
     await m.esperar(() => (d.getElementById('sgc-requerimiento-msj').textContent || '')
       .indexOf('Requerimiento guardado') !== -1, 30000, 'requerimiento guardado');
-    const hitos = d.getElementById('sgc-expediente-auditoria');
-    const previoHito = hitos.children[0];
     await m.esperar(() => hitos.children[0] !== previoHito, 30000,
       'el expediente se recargó tras guardar el requerimiento');
   };

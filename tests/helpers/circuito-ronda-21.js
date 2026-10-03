@@ -97,10 +97,10 @@ async function irAlExpediente(m, expId) {
 
 async function guardarDocumento(m) {
   const d = m.documento;
+  const previo = d.getElementById('sgc-expediente-documento').children[0];
   d.getElementById('sgc-expediente-documento-guardar').click();
   await m.esperar(() => (d.getElementById('sgc-expediente-documento-msj').textContent || '')
     .indexOf('Documento guardado') !== -1, 30000, 'documento del estado guardado');
-  const previo = d.getElementById('sgc-expediente-documento').children[0];
   await m.esperar(() => {
     const actual = d.getElementById('sgc-expediente-documento').children[0];
     return actual !== previo && d.getElementById('sgc-expediente-documento').children.length > 0;
@@ -114,13 +114,11 @@ async function cargarNumeroSCo(m) {
   await m.esperar(() => d.getElementById('sgc-sco-numero-seccion').hidden === false, 30000,
     'sección del número de SCo visible');
   m.escribir('sgc-sco-numero', '2026-0000' + String(Math.floor(Math.random() * 9000) + 1000));
+  const hitos = d.getElementById('sgc-expediente-auditoria');
+  const previoHito = hitos.children[0];
   d.getElementById('sgc-sco-guardar').click();
   await m.esperar(() => (d.getElementById('sgc-sco-msj').textContent || '')
     .indexOf('Número de SCo guardado') !== -1, 30000, 'número de SCo guardado');
-  // La recarga automática (expediente.abrir) renueva la versión antes del
-  // avance; sin esta espera el avance iría con la versión vieja → 409.
-  const hitos = d.getElementById('sgc-expediente-auditoria');
-  const previoHito = hitos.children[0];
   await m.esperar(() => hitos.children[0] !== previoHito, 30000,
     'el expediente se recargó tras guardar el número de SCo');
 }

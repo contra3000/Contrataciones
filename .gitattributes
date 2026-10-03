@@ -1,0 +1,48 @@
+# .gitattributes — ORDEN-RONDA-29, pieza 1d
+#
+# Sin este archivo, en Windows el clon salía con los finales de línea en CRLF
+# (315 archivos) y `build-config --verificar` fallaba aunque no mostrara error:
+# el archivo era correcto y los bytes del final de línea no.
+#
+# `* text=auto eol=lf` dice dos cosas: en el índice el texto se guarda siempre
+# en LF, y en el árbol de trabajo se escribe en LF aunque el sistema use CRLF.
+# El índice no se toca nunca otra vez, así que la normalización es de una vez.
+
+* text=auto eol=lf
+
+# El generador del catálogo escribe cada ítem en una sola línea y sin salto de
+# línea final. Git toma como binario un archivo de texto sin salto final
+# (`i/none`), así que esos 6.928 archivos del catálogo quedaban fuera de la
+# normalización y se copiaban byte a byte. Con `text` explícito entran como
+# texto, que es lo que son.
+*.json text eol=lf
+*.js text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+*.txt text eol=lf
+*.csv text eol=lf
+*.patch text eol=lf
+
+# Binarios de verdad: `binary` le dice a Git que no los toque nunca, ni para
+# normalizar finales ni para mostrar diferencias.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.zip binary
+*.gz binary
+*.7z binary
+*.mp4 binary
+*.xlsx binary
+*.xls binary
+*.doc binary
+*.docx binary
+*.ppt binary
+*.pptx binary
