@@ -225,6 +225,8 @@ test('tres renglones reales con dos valores cada uno: se imprimen la Solicitud d
   const d = m.documento;
 
   assert.strictEqual(renglones.length, 3, 'el requerimiento tiene tres renglones');
+  assert.strictEqual(new Set(renglones.map((r) => r.codigo)).size, 3,
+    'los tres renglones son tres códigos distintos: la lista se dibuja de cero, no arrastra filas');
   for (const r of renglones) {
     assert.ok(typeof r.item === 'string' && r.item.length > 0,
       'cada renglón trae la descripción del ítem del catálogo (RONDA-25 pieza 5)');

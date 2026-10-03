@@ -219,6 +219,8 @@ test('exportar, importar y volver a exportar da el mismo contenido: el sello es 
       'Se necesita papel para el área.', 'la fundamentación quedó en el formulario');
     const renglones = renglonesEnPantalla();
     assert.strictEqual(renglones.length, 3, 'los tres renglones volvieron');
+    assert.strictEqual(new Set(renglones.map((r) => r.codigo)).size, 3,
+      'los tres renglones son tres códigos distintos: la lista se redibuja vacía antes de llenarse');
     assert.ok(renglones[0].item && renglones[0].item.length > 3,
       'el renglón volvió con la descripción del ítem, no sólo con el código');
     assert.strictEqual(SGC().generadorPresupuestos.listar().length, 1,

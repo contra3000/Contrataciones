@@ -149,8 +149,14 @@ class Nodo {
     return propio + this.children.map((c) => c.textContent).join('');
   }
 
+  // Escribir textContent borra los hijos y deja solo ese texto. Si el valor es
+  // cadena vacía no queda texto: el nodo se queda sin contenido.
   set textContent(valor) {
-    this._textoPropio = String(valor);
+    const texto = String(valor);
+    for (const hijo of this.children.slice()) {
+      this.removeChild(hijo);
+    }
+    this._textoPropio = texto === '' ? '' : texto;
   }
 
   appendChild(nodo) {
