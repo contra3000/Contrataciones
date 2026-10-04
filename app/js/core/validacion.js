@@ -86,6 +86,14 @@
   // si algún renglón las tiene (así los tests que no esperan la clave siguen
   // con la forma exacta).
   function renglonesSinValores(expediente) {
+    // el mismo criterio que aplica validarRenglon al guardar (requerimiento.js),
+    // así lo que llegó persistido siempre está completo.
+    function valorCompleto(v) {
+      return v && typeof v === 'object' &&
+        typeof v.presupuestoId === 'string' && v.presupuestoId.trim() !== '' &&
+        (v.base === 'unitario' || v.base === 'total') &&
+        typeof v.valor === 'number' && isFinite(v.valor) && v.valor >= 0;
+    }
     if (!SGC.core.requerimiento) {
       throw new Error('validacion.js (valoresDelRequerimiento) requiere que core/requerimiento.js se cargue primero');
     }
@@ -94,13 +102,16 @@
     for (var i = 0; i < info.renglones.length; i++) {
       var lista = Array.isArray(info.renglones[i].valoresReferencia)
         ? info.renglones[i].valoresReferencia : [];
-      var completos = 0;
+      var completos = [];
       for (var j = 0; j < lista.length; j++) {
         if (valorCompleto(lista[j])) {
-          completos += 1;
+          var pid = lista[j].presupuestoId.trim();
+          if (completos.indexOf(pid) === -1) {
+            completos.push(pid);
+          }
         }
       }
-      if (completos < 2) {
+      if (completos.length < 2) {
         deficientes.push('Renglón ' + (i + 1));
       }
     }
