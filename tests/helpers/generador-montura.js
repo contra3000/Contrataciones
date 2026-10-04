@@ -387,9 +387,17 @@ async function arrancar() {
    * `archivo.contenido`, así que el archivo que se "elige" es su texto.
    */
   m.elegirArchivo = function (contenido, nombre) {
-    const input = documento.getElementById('sgc-archivo-modelo');
+    // Prueba primero el input del Fast-Track (plantillas); si no existe, busca
+    // cualquier input de tipo file aceptable para JSON (importar avance).
+    var input = documento.getElementById('sgc-archivo-modelo');
     if (!input) {
-      throw new Error('elegirArchivo: no existe #sgc-archivo-modelo en el generador');
+      var candidatos = documento.querySelectorAll('input[type="file"][accept*="json"]');
+      if (candidatos.length > 0) {
+        input = candidatos[0];
+      }
+    }
+    if (!input) {
+      throw new Error('elegirArchivo: no existe #sgc-archivo-modelo ni input[type=file][accept*="json"]');
     }
     input.files = [{ name: nombre || 'archivo.json', contenido: contenido }];
     input.emit('change', { target: input });

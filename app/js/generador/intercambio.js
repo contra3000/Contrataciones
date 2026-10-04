@@ -496,6 +496,62 @@
       });
     }
 
+    // Pieza 3 · avance local: distinto a exportado y a plantilla
+    if (crudo.tipo === 'sgc-generador-avance') {
+      var avance = crudo;
+      var avisosAv = [];
+      var datosAv = {
+        identificacion: {
+          operador: avance.operador && avance.operador.nombre && avance.operador.apellido
+            ? (avance.operador.nombre + ' ' + avance.operador.apellido) : '',
+          titulo: avance.datos && avance.datos.identificacion
+            ? avance.datos.identificacion.titulo || ''
+            : '',
+          dependenciaSolicitante: avance.datos && avance.datos.identificacion
+            ? avance.datos.identificacion.dependenciaSolicitante || ''
+            : '',
+          anio: avance.datos && avance.datos.identificacion
+            ? avance.datos.identificacion.anio || ''
+            : ''
+        },
+        renglones: Array.isArray(avance.renglones) ? avance.renglones : [],
+        fundamentacion: {
+          justificacion: avance.datos && avance.datos.fundamentacion
+            ? avance.datos.fundamentacion.justificacion || ''
+            : '',
+          objetivo: avance.datos && avance.datos.fundamentacion
+            ? avance.datos.fundamentacion.objetivo || ''
+            : ''
+        },
+        noExpediente: null
+      };
+      var valoresAv = [];
+      for (var k = 0; k < datosAv.renglones.length; k++) {
+        valoresAv.push(Array.isArray(datosAv.renglones[k].valoresReferencia)
+          ? datosAv.renglones[k].valoresReferencia.slice()
+          : []);
+      }
+      return Promise.resolve({
+        ok: true,
+        datos: datosAv,
+        presupuestos: Array.isArray(avance.presupuestos) ? avance.presupuestos.slice() : [],
+        valoresPorRenglon: valoresAv,
+        operador: avance.operador ? {
+          rol: avance.operador.rol || 'generador',
+          grado: avance.operador.grado || '',
+          nombre: avance.operador.nombre || '',
+          apellido: avance.operador.apellido || '',
+          numeroControl: typeof avance.operador.numeroControl === 'number'
+            ? avance.operador.numeroControl
+            : null,
+          email: avance.operador.email || ''
+        } : null,
+        paso: typeof avance.paso === 'number' ? avance.paso : 0,
+        avisos: avisosAv,
+        version: avance.version || null
+      });
+    }
+
     var forma = formaDeArchivo(crudo);
     if (forma === 'desconocida') {
       return Promise.resolve({

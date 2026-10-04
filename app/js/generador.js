@@ -273,6 +273,89 @@
         }
       });
     });
+    // Botón guardar avance
+    var btnGuardarAvance = porId('sgc-guardar-avance');
+    if (btnGuardarAvance) {
+      btnGuardarAvance.onclick = function () {
+        var res = SGC.views.wizard.guardarAvance();
+        if (res && res.ok) {
+          avisarEnRevision('Avance guardado (' + (res.fecha || '') + ').');
+        } else {
+          avisarEnRevision('No se pudo guardar el avance.');
+        }
+      };
+    }
+    // Importar avance: archivo local (distinto del exportado completo)
+    var btnImportarAvance = porId('sgc-btn-importar-avance');
+    if (btnImportarAvance) {
+      var inputAvance = document.createElement('input');
+      inputAvance.type = 'file';
+      inputAvance.accept = 'application/json,.json';
+      inputAvance.style.display = 'none';
+      document.body.appendChild(inputAvance);
+      btnImportarAvance.onclick = function () {
+        inputAvance.value = '';
+        inputAvance.click();
+      };
+      inputAvance.addEventListener('change', function () {
+        var archivo = inputAvance.files && inputAvance.files[0];
+        if (!archivo) {
+          return;
+        }
+        var lector = new FileReader();
+        lector.onload = function (ev) {
+          var texto = ev.target && ev.target.result;
+          if (typeof texto !== 'string') {
+            return;
+          }
+          var res = SGC.generadorIntercambio.importar(texto);
+          if (res && res.ok === false) {
+            avisarEnRevision((res.errores || ['No se pudo importar el avance.']).join(' '));
+            return;
+          }
+          // Restaurar operador si viene en avance
+          if (res.operador) {
+            estado.operador = operadorDe({
+              grado: res.operador.grado || '',
+              nombre: res.operador.nombre || '',
+              apellido: res.operador.apellido || '',
+              numeroControl: res.operador.numeroControl
+            });
+            if (SGC.generadorDocumentos && SGC.generadorDocumentos.seleccionarOperador) {
+              SGC.generadorDocumentos.seleccionarOperador(estado.operador);
+            }
+            SGC.views.wizard.seleccionarOperador(estado.operador, estado.repo);
+          }
+          // Cargar presupuestos/valores como al importar exportado
+          if (SGC.generadorPresupuestos && res.presupuestos) {
+            SGC.generadorPresupuestos.cargar(res.presupuestos);
+          }
+          if (SGC.generadorValores && res.valoresPorRenglon) {
+            SGC.generadorValores.fijar(
+              SGC.catalogo.renglones.obtener(),
+              SGC.generadorPresupuestos.listar(),
+              res.valoresPorRenglon
+            );
+          }
+          // Pasar a wizard: alImportar recibe el resultado (con mismos campos)
+          if (SGC.views.wizard.alImportar) {
+            try {
+              SGC.views.wizard.alImportar(res);
+            } catch (e) { /* ignore */ }
+          }
+          publicarDatos();
+          sincronizarValores();
+          // Ir al paso guardado si corresponde
+          if (typeof res.paso === 'number' && SGC.views.wizard.irAPaso) {
+            try {
+              SGC.views.wizard.irAPaso(res.paso, false);
+            } catch (e) { /* ignore */ }
+          }
+          avisarEnRevision('Avance importado.');
+        };
+        lector.readAsText(archivo);
+      });
+    }
     // La lista de renglones del asistente y el bloque de valores de referencia
     // son la misma información vista de dos maneras: si cambia una, se rearma el
     // otro (el renglón recién agregado nace con sus dos filas de valores, como en
