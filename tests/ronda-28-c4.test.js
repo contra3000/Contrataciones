@@ -100,15 +100,21 @@ async function altaExportable(nombre) {
   m.escribir('sgc-presup-proveedor', 'Librería Sur');
   m.escribir('sgc-presup-fecha', '12/02/2026');
   d.getElementById('sgc-presup-agregar').click();
+  m.escribir('sgc-presup-archivo', 'presupuesto-resma-2026-b.pdf');
+  m.escribir('sgc-presup-proveedor', 'Papelera Norte');
+  m.escribir('sgc-presup-fecha', '13/02/2026');
+  d.getElementById('sgc-presup-agregar').click();
 
-  const presupuesto = SGC().generadorPresupuestos.listar()[0].id;
+  const presupuestos = SGC().generadorPresupuestos.listar();
+  const presupuesto1 = presupuestos[0].id;
+  const presupuesto2 = presupuestos[1].id;
   m.cargarValores([
-    [{ presupuestoId: presupuesto, base: 'unitario', valor: '4200' },
-      { presupuestoId: presupuesto, base: 'unitario', valor: '4500' }],
-    [{ presupuestoId: presupuesto, base: 'unitario', valor: '800' },
-      { presupuestoId: presupuesto, base: 'unitario', valor: '900' }],
-    [{ presupuestoId: presupuesto, base: 'unitario', valor: '15000' },
-      { presupuestoId: presupuesto, base: 'unitario', valor: '16000' }]
+    [{ presupuestoId: presupuesto1, base: 'unitario', valor: '4200' },
+      { presupuestoId: presupuesto2, base: 'unitario', valor: '4500' }],
+    [{ presupuestoId: presupuesto1, base: 'unitario', valor: '800' },
+      { presupuestoId: presupuesto2, base: 'unitario', valor: '900' }],
+    [{ presupuestoId: presupuesto1, base: 'unitario', valor: '15000' },
+      { presupuestoId: presupuesto2, base: 'unitario', valor: '16000' }]
   ]);
 
   d.getElementById('sgc-siguiente').click();
@@ -226,8 +232,8 @@ test('exportar, importar y volver a exportar da el mismo contenido: el sello es 
       'los tres renglones son tres códigos distintos: la lista se redibuja vacía antes de llenarse');
     assert.ok(renglones[0].item && renglones[0].item.length > 3,
       'el renglón volvió con la descripción del ítem, no sólo con el código');
-    assert.strictEqual(SGC().generadorPresupuestos.listar().length, 1,
-      'el presupuesto de referencia volvió');
+    assert.strictEqual(SGC().generadorPresupuestos.listar().length, 2,
+      'el presupuesto de referencia volvíó');
     assert.strictEqual(SGC().generadorValores.renglonesConValores()[0].valoresReferencia.length, 2,
       'los dos valores de referencia del primer renglón volvieron');
 
