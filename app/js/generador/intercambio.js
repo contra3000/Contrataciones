@@ -21,12 +21,29 @@
  *     expediente local (número, entregables, fecha de creación): eso se
  *     recalcula acá, y en el sello está de quién es el trabajo.
  *
+ * ORDEN-RONDA-30 §2. El mismo archivo sirve para las dos cosas que se le piden
+ * a un requerimiento a medio hacer, y el sello dice cuál es cuál:
+ *
+ *  - `estado: "para-abastecimiento"` es el archivo que va a Abastecimiento: para
+ *    eso tiene que estar COMPLETO, y por eso exportar() pide la validación antes
+ *    de armar nada.
+ *  - `estado: "avance"` (más `paso`, de 0 a 3) es el archivo para cerrar el día y
+ *    seguir otro. Se arma igual, con la misma huella, pero SIN pedir completitud:
+ *    un avance que sólo se puede guardar cuando ya está listo no sirve de nada.
+ *
+ * Los dos entran por la misma puerta del Importar del paso 1 y se distinguen
+ * solos por el sello, que además es lo que se verifica: cambiarle el estado a
+ * mano es cambiar el archivo, y el archivo se rechaza diciendo eso.
+ *
  * Importar valida con las MISMAS reglas del núcleo (SGC.views.pasos sobre
  * SGC.core.validacion, y la de los dos valores por renglón de la ronda 26), no
  * con reglas propias. Y no carga nada a medias: primero se resuelve y se
  * valida todo, y sólo después se toca el formulario. Los códigos se validan
  * contra el catálogo local con el índice código -> clase (carga.js
  * resolverCodigo), que es lo único que se puede hacer sin servidor.
+ *
+ * Y la descripción del ítem que queda es la del ARCHIVO. La del catálogo no la
+ * pisa: si cambió, se avisa y decide quien está trabajando (resolverItems).
  */
 (function (root) {
   'use strict';
@@ -53,6 +70,30 @@
 
   function esEnteroPositivo(valor) {
     return typeof valor === 'number' && isFinite(valor) && Math.floor(valor) === valor && valor > 0;
+  }
+
+  // ------------------------------------------------------------------ estados
+
+  /*
+   * ORDEN-RONDA-30 §2. Los dos estados del sello. Un archivo va o para
+   * Abastecimiento o es un avance; lo dice el sello y no el nombre del archivo,
+   * porque el nombre lo puede cambiar quien lo renombra y el sello no se
+   * renombra: se edita a mano, y si se edita, la huella deja de calzar.
+   */
+  var ESTADO_ABASTECIMIENTO = 'para-abastecimiento';
+  var ESTADO_AVANCE = 'avance';
+
+  /*
+   * El paso del avance: un entero de 0 a 3 (los cuatro pasos del asistente) o
+   * cero, que es donde se abre un archivo que no lo dice. Un número raro no
+   * rompe nada: se abre en el primer paso, que es donde siempre se puede
+   * trabajar.
+   */
+  function pasoValido(paso) {
+    if (typeof paso !== 'number' || !isFinite(paso) || Math.floor(paso) !== paso || paso < 0 || paso > 3) {
+      return 0;
+    }
+    return paso;
   }
 
   // ------------------------------------------------------------------ canónico
@@ -126,6 +167,10 @@
    * título va "corto" y sin tildes ni signos, porque el nombre lo van a tener
    * que escribir y mandar por correo personas, no máquinas. Sólo se admiten
    * letras y números, así que no puede colarse una barra ni un dos puntos.
+   *
+   * ORDEN-RONDA-30 §2: el archivo del avance lleva "-avance" antes del .json
+   * (requerimiento-2026-resmas-a4-v1-avance.json), para que en una carpeta con
+   * los dos se los distinga de una mirada, sin abrir nada.
    */
   function tituloCorto(titulo) {
     var base = String(titulo === undefined || titulo === null ? '' : titulo).toLowerCase();
@@ -139,10 +184,11 @@
     return base === '' ? 'requerimiento' : base;
   }
 
-  function nombreArchivo(anio, titulo, version) {
+  function nombreArchivo(anio, titulo, version, sufijo) {
     var y = String(anio === undefined || anio === null ? '' : anio).trim();
     return 'requerimiento-' + (/^\d{4}$/.test(y) ? y : 'sin-anio') + '-' +
-      tituloCorto(titulo) + '-v' + version + '.json';
+      tituloCorto(titulo) + '-v' + version +
+      (sufijo ? '-' + sufijo : '') + '.json';
   }
 
   // ------------------------------------------------------------------- exportar
@@ -232,13 +278,24 @@
     };
   }
 
-  function armarArchivo() {
+  /*
+   * ORDEN-RONDA-30 §2. Un solo armado para los dos archivos, con el mismo
+   * contenido y la misma huella, y lo que cambia es el estado del sello: el de
+   * Abastecimiento y el avance se arman acá igual, y por eso no pueden
+   * divergir. Lo que hace distinto a cada uno es la puerta de entrada: exportar()
+   * pide la validación de completitud antes de llamar a armarArchivo, y
+   * exportarAvance() no la pide, porque un avance está incompleto por definición.
+   */
+  function armarArchivo(opciones) {
+    var pedido = opciones || {};
     var version = versionSiguiente();
     var cuerpo = contenido();
     var operador = SGC.generador && SGC.generador.operadorActual
       ? SGC.generador.operadorActual() : null;
+    var esAvance = pedido.estado === ESTADO_AVANCE;
+    var nombre = nombreArchivo(cuerpo.anio, cuerpo.titulo, version, esAvance ? 'avance' : '');
     return {
-      nombre: nombreArchivo(cuerpo.anio, cuerpo.titulo, version),
+      nombre: nombre,
       version: version,
       archivo: {
         // ORDEN-RONDA-29 pieza 2: el sello lleva los cuatro datos de quien
@@ -256,7 +313,15 @@
           numeroControl: operador && typeof operador.numeroControl === 'number'
             ? operador.numeroControl : null,
           fecha: new Date().toISOString(),
-          version: version
+          version: version,
+          // ORDEN-RONDA-30 §2: qué es este archivo. Sin esto, un avance y un
+          // requerimiento para Abastecimiento serían el mismo archivo y el que
+          // lo importa no tendría forma de saber si puede exigir que esté
+          // completo.
+          estado: esAvance ? ESTADO_AVANCE : ESTADO_ABASTECIMIENTO,
+          // Sólo el avance dice dónde quedó: es lo único que hace falta para
+          // devolver a quien lo guardó a la pantalla donde estaba trabajando.
+          paso: esAvance ? pasoValido(pedido.paso) : 0
         },
         expediente: cuerpo
       }
@@ -282,6 +347,10 @@
    * Exportar. Vuelve con {ok:true, nombre, version} o {ok:false, errores}. No
    * tira excepciones ni deja un archivo a medias: o sale el archivo con su
    * huella, o se dice por qué no salió.
+   *
+   * ORDEN-RONDA-30 §2: este es el archivo que va a Abastecimiento, así que se
+   * sella estado "para-abastecimiento" y se pide la validación antes de armar
+   * nada. El avance del mismo botón "Guardar avance" es exportarAvance().
    */
   function exportar() {
     if (!SGC.generadorDocumentos || typeof SGC.generadorDocumentos.revision !== 'function') {
@@ -297,16 +366,49 @@
         errores: ['Todavía no se puede exportar. Falta: ' + info.items.join(' · ')]
       });
     }
-    var armado = armarArchivo();
+    var armado = armarArchivo({ estado: ESTADO_ABASTECIMIENTO });
+    return descargarArmado(armado);
+  }
+
+  /*
+   * ORDEN-RONDA-30 §2. Guardar avance: el mismo archivo que arma exportar(),
+   * con la misma huella y el mismo contenido, y dos diferencias que son las que
+   * lo hacen distinto:
+   *
+   *  1. NO se pide que el requerimiento esté completo. Se guarda con lo que haya
+   *     cargado, incluso con los renglones sin valores, que es exactamente el
+   *     momento en que uno cierra y quiere seguir otro día.
+   *  2. El nombre termina en "-avance" y el sello dice estado "avance" y en qué
+   *     paso quedó, para que al importarlo se abra donde estaba.
+   */
+  function exportarAvance(paso) {
+    if (!SGC.generadorDocumentos || typeof SGC.generadorDocumentos.expedienteLocal !== 'function') {
+      return Promise.resolve({
+        ok: false,
+        errores: ['No se puede guardar el avance: los documentos del generador no están montados.']
+      });
+    }
+    return descargarArmado(armarArchivo({ estado: ESTADO_AVANCE, paso: paso }));
+  }
+
+  // La descarga de los dos: se firma, se baja y se recuerda la versión. Vuelve
+  // con {ok:true, nombre, version, huella} o {ok:false, errores}.
+  function descargarArmado(armado) {
     return huellaDe(armado.archivo).then(function (huella) {
       armado.archivo.sello.huella = huella;
       descargar(armado.nombre, JSON.stringify(armado.archivo, null, 2));
       estado.versionExportada = armado.version;
-      return { ok: true, nombre: armado.nombre, version: armado.version, huella: huella };
+      return {
+        ok: true,
+        nombre: armado.nombre,
+        version: armado.version,
+        huella: huella,
+        paso: armado.archivo.sello.paso
+      };
     }).catch(function (err) {
       return {
         ok: false,
-        errores: ['No se pudo exportar: ' + (err && err.message ? err.message : 'error desconocido') + '.']
+        errores: ['No se pudo guardar el archivo: ' + (err && err.message ? err.message : 'error desconocido') + '.']
       };
     });
   }
@@ -421,8 +523,17 @@
    * bloque de valores), pero un requerimiento que vuelve con las filas de
    * valores a medio llenar sí es un archivo a medio llenar, y el caso de la
    * orden es exactamente ese.
+   *
+   * ORDEN-RONDA-30 §2: a un AVANCE esto no se le pide. Se guarda cuando se
+   * quiere cerrar, que es casi siempre con renglones a medio hacer, así que
+   * exigirle los dos valores de cada renglón sería dejar el botón sin poder
+   * apretarse justo cuando hay que apretarlo. Un avance entra con lo que traiga;
+   * lo que falte se ve en la pantalla y se sigue completando.
    */
-  function revisarValores(cuerpo) {
+  function revisarValores(cuerpo, esAvance) {
+    if (esAvance) {
+      return [];
+    }
     var tieneAlguno = cuerpo.renglones.some(function (r) {
       return Array.isArray(r.valoresReferencia) && r.valoresReferencia.length > 0;
     });
@@ -446,7 +557,7 @@
     return errores;
   }
 
-  function revisarConElNucleo(cuerpo) {
+  function revisarConElNucleo(cuerpo, esAvance) {
     // El índice de "códigos vistos" se alimenta antes de validar: la existencia
     // real ya se comprobó contra el catálogo (resolverCodigo) y esta función
     // sólo necesita que el código no le parezca desconocido.
@@ -464,6 +575,21 @@
         objetivo: cuerpo.campos.objetivo
       }
     };
+    /*
+     * ORDEN-RONDA-30 §2. A un avance NO se le pide que esté completo, y esto es
+     * lo que se lo pedía: validarPaso('revision') exige título, año,
+     * dependencia, al menos un renglón con su unidad y la justificación, o sea
+     * justo lo que uno todavía no tiene cuando decide guardar. Un avance
+     * guardado en el paso 1 no tiene ni renglones, y si se le exigieran, el
+     * botón no serviría para lo único que se le pide: retomar más adelante.
+     *
+     * Lo que sí se le exige es lo de siempre y es lo que la orden pide: que los
+     * códigos existan (resolverCodigo, más arriba) y que la huella calce
+     * (verificarHuella). Lo que le falte se ve apenas se abre el formulario.
+     */
+    if (esAvance) {
+      return { errores: [], datos: datos };
+    }
     var revision = SGC.views.pasos.validarPaso('revision', datos);
     var errores = [];
     for (var i = 0; i < revision.errores.length; i++) {
@@ -496,62 +622,6 @@
       });
     }
 
-    // Pieza 3 · avance local: distinto a exportado y a plantilla
-    if (crudo.tipo === 'sgc-generador-avance') {
-      var avance = crudo;
-      var avisosAv = [];
-      var datosAv = {
-        identificacion: {
-          operador: avance.operador && avance.operador.nombre && avance.operador.apellido
-            ? (avance.operador.nombre + ' ' + avance.operador.apellido) : '',
-          titulo: avance.datos && avance.datos.identificacion
-            ? avance.datos.identificacion.titulo || ''
-            : '',
-          dependenciaSolicitante: avance.datos && avance.datos.identificacion
-            ? avance.datos.identificacion.dependenciaSolicitante || ''
-            : '',
-          anio: avance.datos && avance.datos.identificacion
-            ? avance.datos.identificacion.anio || ''
-            : ''
-        },
-        renglones: Array.isArray(avance.renglones) ? avance.renglones : [],
-        fundamentacion: {
-          justificacion: avance.datos && avance.datos.fundamentacion
-            ? avance.datos.fundamentacion.justificacion || ''
-            : '',
-          objetivo: avance.datos && avance.datos.fundamentacion
-            ? avance.datos.fundamentacion.objetivo || ''
-            : ''
-        },
-        noExpediente: null
-      };
-      var valoresAv = [];
-      for (var k = 0; k < datosAv.renglones.length; k++) {
-        valoresAv.push(Array.isArray(datosAv.renglones[k].valoresReferencia)
-          ? datosAv.renglones[k].valoresReferencia.slice()
-          : []);
-      }
-      return Promise.resolve({
-        ok: true,
-        datos: datosAv,
-        presupuestos: Array.isArray(avance.presupuestos) ? avance.presupuestos.slice() : [],
-        valoresPorRenglon: valoresAv,
-        operador: avance.operador ? {
-          rol: avance.operador.rol || 'generador',
-          grado: avance.operador.grado || '',
-          nombre: avance.operador.nombre || '',
-          apellido: avance.operador.apellido || '',
-          numeroControl: typeof avance.operador.numeroControl === 'number'
-            ? avance.operador.numeroControl
-            : null,
-          email: avance.operador.email || ''
-        } : null,
-        paso: typeof avance.paso === 'number' ? avance.paso : 0,
-        avisos: avisosAv,
-        version: avance.version || null
-      });
-    }
-
     var forma = formaDeArchivo(crudo);
     if (forma === 'desconocida') {
       return Promise.resolve({
@@ -581,6 +651,12 @@
 
     var avisos = [];
     var version = null;
+    /*
+     * ORDEN-RONDA-30 §2. El sello dice si este archivo es un avance. Los archivos
+     * que exportó la ronda 28 y la 29 no traen `estado`: se importan como eran,
+     * o sea, exigiéndoles estar completos, que es lo que se hacía con ellos.
+     */
+    var esAvance = sello ? sello.estado === ESTADO_AVANCE : false;
     if (sello) {
       if (esEnteroPositivo(sello.version)) {
         version = sello.version;
@@ -612,8 +688,8 @@
       if (!resolucion.ok) {
         return resolucion;
       }
-      var conNucleo = revisarConElNucleo(cuerpo);
-      var errores = resolucion.errores.concat(conNucleo.errores).concat(revisarValores(cuerpo));
+      var conNucleo = revisarConElNucleo(cuerpo, esAvance);
+      var errores = resolucion.errores.concat(conNucleo.errores).concat(revisarValores(cuerpo, esAvance));
       if (errores.length > 0) {
         return { ok: false, errores: errores };
       }
@@ -621,7 +697,7 @@
         if (!verificacion.ok) {
           return { ok: false, errores: verificacion.errores };
         }
-        avisos = avisos.concat(verificacion.avisos);
+        avisos = avisos.concat(verificacion.avisos).concat(resolucion.avisos);
         if (version !== null) {
           // La versión se recuerda sólo si el archivo entró: un archivo rechazado
           // no corrió el contador.
@@ -630,17 +706,29 @@
         var valoresPorRenglon = cuerpo.renglones.map(function (r) {
           return Array.isArray(r.valoresReferencia) ? r.valoresReferencia : [];
         });
-        return {
+        var resultado = {
           ok: true,
           datos: conNucleo.datos,
           presupuestos: cuerpo.presupuestos,
           valoresPorRenglon: valoresPorRenglon,
           version: version,
           avisos: avisos,
-          mensaje: forma === 'exportado'
-            ? 'Requerimiento importado. Revisá los pasos y seguí.'
-            : 'Plantilla importada. Revisá los pasos y seguí.'
+          mensaje: esAvance
+            ? 'Avance importado. Se abrió donde lo dejaste.'
+            : (forma === 'exportado'
+              ? 'Requerimiento importado. Revisá los pasos y seguí.'
+              : 'Plantilla importada. Revisá los pasos y seguí.')
         };
+        if (esAvance) {
+          /*
+           * ORDEN-RONDA-30 §2: el avance se abre en el paso que dice su sello, no
+           * en el de renglones como cualquier otro import. Es lo único que cambia
+           * entre los dos archivos: los datos entran igual, y lo que se recuerda
+           * es dónde estaba la persona cuando lo guardó.
+           */
+          resultado.paso = pasoValido(sello.paso);
+        }
+        return resultado;
       });
     }).catch(function (err) {
       return {
@@ -692,10 +780,16 @@
   }
 
   /*
-   * Los ítems del catálogo. Un código que no existe se dice con su renglón, y
-   * si existe se toma la descripción del catálogo y no la del archivo: la del
-   * catálogo es la vigente, que es la que después se imprime y se cotiza. Los
-   * fragmentos traen {codigo, item}, donde `item` es el texto de la descripción.
+   * Los ítems del catálogo. Un código que no existe se dice con su renglón. Y si
+   * existe, la descripción que queda puesta es la DEL ARCHIVO, que es la que se
+   * pidió y la que después se imprime y se cotiza: cambiarle el texto a una
+   * persona sin avisarla sería cambiar lo que pidió. Si el catálogo vigente la
+   * cambió, lo que se hace es avisar, para que decida ella.
+   *
+   * Sólo se completa la descripción cuando el archivo no trae ninguna: una
+   * plantilla se arma con los códigos y las descripciones se ponen en pantalla.
+   * Los fragmentos traen {codigo, item}, donde `item` es el texto de la
+   * descripción.
    */
   function textoDeItem(item) {
     if (typeof item.item === 'string' && item.item.trim() !== '') {
@@ -707,6 +801,7 @@
 
   function resolverItems(cuerpo) {
     var errores = [];
+    var avisos = [];
     var pendientes = [];
     for (var i = 0; i < cuerpo.renglones.length; i++) {
       (function (indice, renglon) {
@@ -721,16 +816,26 @@
             return;
           }
           var texto = textoDeItem(item);
-          if (texto !== '') {
+          var delArchivo = typeof renglon.item === 'string' ? renglon.item.trim() : '';
+          if (texto === '') {
+            return;
+          }
+          if (delArchivo === '') {
             renglon.item = texto;
+            return;
+          }
+          if (texto !== delArchivo) {
+            avisos.push('Renglón ' + (indice + 1) + ': el catálogo de ahora llama "' + texto +
+              '" al ítem ' + renglon.codigo + ' y el archivo dice "' + delArchivo +
+              '". Queda la del archivo; actualizala vos si lo que querés comprar cambió.');
           }
         }));
       })(i, cuerpo.renglones[i]);
     }
     return Promise.all(pendientes).then(function () {
       return errores.length > 0
-        ? { ok: false, errores: errores }
-        : { ok: true, errores: [] };
+        ? { ok: false, errores: errores, avisos: avisos }
+        : { ok: true, errores: [], avisos: avisos };
     });
   }
 
@@ -741,6 +846,7 @@
     tituloCorto: tituloCorto,
     nombreArchivo: nombreArchivo,
     exportar: exportar,
+    exportarAvance: exportarAvance,
     importar: importar,
     // La página abierta es la sesión: al arrancar de cero se olvida qué se
     // exportó y qué se importó antes.

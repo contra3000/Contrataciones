@@ -115,7 +115,11 @@
         <p id="sgc-borrador-info"></p>
         <button id="sgc-btn-retomar" type="button">Retomar borrador</button>
         <button id="sgc-btn-descartar" type="button">Descartar borrador</button>
-        <button id="sgc-btn-importar-avance" type="button">Importar avance</button>
+        <!-- ORDEN-RONDA-30 §2: el botón de "Importar avance" que estaba acá
+             se fue. El avance es un archivo más, y entra por el "Importar" de
+             siempre del paso 1, igual que la plantilla y que el requerimiento
+             exportado: una sola puerta para las tres cosas, y el sello del
+             archivo dice cuál es cuál. -->
       </div>
 
       <ol id="sgc-pasos" class="pasos">
@@ -287,9 +291,14 @@
         </div>
       </section>
 
+      <!-- ORDEN-RONDA-30 §2. "Guardar avance" baja el archivo del requerimiento
+           a como está, aunque esté a medias, para seguir otro día. El aviso va
+           ACÁ, al lado del botón: el que aprieta el botón está en el paso 2 o en
+           el 3, y el mensaje del paso 4 no lo ve. -->
       <nav class="navegacion" aria-label="Navegación del asistente">
         <button id="sgc-anterior" type="button" hidden>Anterior</button>
         <button id="sgc-guardar-avance" type="button">Guardar avance</button>
+        <p id="sgc-avance-msj" class="paso-msj" role="status" aria-live="polite" hidden></p>
         <button id="sgc-siguiente" type="button" class="primario">Siguiente</button>
       </nav>
     </section>

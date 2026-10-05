@@ -303,7 +303,14 @@ function descripcionOperador(operador) {
     }
     avisarFasttrack(texto);
     estado.dom.archivoModelo.value = '';
-    irAPaso(1, false);
+    /*
+     * ORDEN-RONDA-30 §2: un avance se abre donde quedó, no en el paso 2 como
+     * los demás archivos. Es lo que trae `paso` en su sello, y es lo único que
+     * distingue la importación de un avance de la de una plantilla o de un
+     * requerimiento exportado: los datos entran por el mismo lado.
+     */
+    var paso = typeof resultado.paso === 'number' ? resultado.paso : 1;
+    irAPaso(paso, false);
   }
 
   function importarModelo() {
@@ -486,58 +493,6 @@ function descripcionOperador(operador) {
     },
     sincronizar: function () {
       sincronizarDesdeFormulario();
-    },
-    // Pieza 3 · RONDA-29: guardar/cargar avance en localStorage para continuar
-    // desde cualquier paso, aunque el expediente no esté completo para exportar.
-    guardarAvance: function () {
-      try {
-        var datos = JSON.parse(JSON.stringify(estado.datos || {}));
-        var renglones = [];
-        var listaR = Array.isArray(datos.renglones) ? datos.renglones : [];
-        for (var i = 0; i < listaR.length; i++) {
-          renglones.push(JSON.parse(JSON.stringify(listaR[i])));
-        }
-        var operador = estado.operador ? {
-          rol: estado.operador.rol || null,
-          grado: estado.operador.grado || '',
-          nombre: estado.operador.nombre || '',
-          apellido: estado.operador.apellido || '',
-          numeroControl: typeof estado.operador.numeroControl === 'number'
-            ? estado.operador.numeroControl
-            : (estado.operador.numeroControl ? Number(estado.operador.numeroControl) : null),
-          email: estado.operador.email || '',
-          activo: !!estado.operador.activo
-        } : null;
-        var avance = {
-          tipo: 'sgc-generador-avance',
-          version: 1,
-          paso: estado.paso || 0,
-          datos: datos,
-          renglones: renglones,
-          presupuestos: Array.isArray(estado.presupuestos) ? JSON.parse(JSON.stringify(estado.presupuestos)) : [],
-          operador: operador,
-          fecha: new Date().toISOString()
-        };
-        localStorage.setItem('sgc-generador-avance', JSON.stringify(avance));
-        return { ok: true, fecha: avance.fecha };
-      } catch (err) {
-        return { ok: false, error: err && err.message ? err.message : String(err) };
-      }
-    },
-    cargarAvance: function () {
-      try {
-        var raw = localStorage.getItem('sgc-generador-avance');
-        if (!raw) {
-          return { ok: false, error: 'No hay avance guardado.' };
-        }
-        var avance = JSON.parse(raw);
-        if (!avance || avance.tipo !== 'sgc-generador-avance') {
-          return { ok: false, error: 'El avance guardado no es válido.' };
-        }
-        return { ok: true, avance: avance };
-      } catch (err) {
-        return { ok: false, error: err && err.message ? err.message : String(err) };
-      }
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

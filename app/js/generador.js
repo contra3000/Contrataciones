@@ -273,87 +273,21 @@
         }
       });
     });
-    // Botón guardar avance
-    var btnGuardarAvance = porId('sgc-guardar-avance');
-    if (btnGuardarAvance) {
-      btnGuardarAvance.onclick = function () {
-        var res = SGC.views.wizard.guardarAvance();
-        if (res && res.ok) {
-          avisarEnRevision('Avance guardado (' + (res.fecha || '') + ').');
-        } else {
-          avisarEnRevision('No se pudo guardar el avance.');
-        }
-      };
-    }
-    // Importar avance: archivo local (distinto del exportado completo)
-    var btnImportarAvance = porId('sgc-btn-importar-avance');
-    if (btnImportarAvance) {
-      var inputAvance = document.createElement('input');
-      inputAvance.type = 'file';
-      inputAvance.accept = 'application/json,.json';
-      inputAvance.style.display = 'none';
-      document.body.appendChild(inputAvance);
-      btnImportarAvance.onclick = function () {
-        inputAvance.value = '';
-        inputAvance.click();
-      };
-      inputAvance.addEventListener('change', function () {
-        var archivo = inputAvance.files && inputAvance.files[0];
-        if (!archivo) {
-          return;
-        }
-        var lector = new FileReader();
-        lector.onload = function (ev) {
-          var texto = ev.target && ev.target.result;
-          if (typeof texto !== 'string') {
-            return;
+    // ORDEN-RONDA-30 §2: "Guardar avance" descarga el archivo, como "Exportar
+    // para Abastecimiento" pero sin pedir que el requerimiento esté completo: se
+    // guarda con lo que haya cargado. El aviso va en #sgc-avance-msj, al lado
+    // del botón, porque el mensaje del paso 4 no lo ve quien está en el 2 o en
+    // el 3; y no es el de la revisión, que es para otra cosa.
+    var botonAvance = porId('sgc-guardar-avance');
+    if (botonAvance) {
+      botonAvance.addEventListener('click', function () {
+        SGC.generadorIntercambio.exportarAvance(SGC.views.wizard.pasoActual()).then(function (resultado) {
+          if (resultado.ok) {
+            avisarEnAvance('Se descargó ' + resultado.nombre + '.');
+          } else {
+            avisarEnAvance(resultado.errores.join(' '));
           }
-          var res = SGC.generadorIntercambio.importar(texto);
-          if (res && res.ok === false) {
-            avisarEnRevision((res.errores || ['No se pudo importar el avance.']).join(' '));
-            return;
-          }
-          // Restaurar operador si viene en avance
-          if (res.operador) {
-            estado.operador = operadorDe({
-              grado: res.operador.grado || '',
-              nombre: res.operador.nombre || '',
-              apellido: res.operador.apellido || '',
-              numeroControl: res.operador.numeroControl
-            });
-            if (SGC.generadorDocumentos && SGC.generadorDocumentos.seleccionarOperador) {
-              SGC.generadorDocumentos.seleccionarOperador(estado.operador);
-            }
-            SGC.views.wizard.seleccionarOperador(estado.operador, estado.repo);
-          }
-          // Cargar presupuestos/valores como al importar exportado
-          if (SGC.generadorPresupuestos && res.presupuestos) {
-            SGC.generadorPresupuestos.cargar(res.presupuestos);
-          }
-          if (SGC.generadorValores && res.valoresPorRenglon) {
-            SGC.generadorValores.fijar(
-              SGC.catalogo.renglones.obtener(),
-              SGC.generadorPresupuestos.listar(),
-              res.valoresPorRenglon
-            );
-          }
-          // Pasar a wizard: alImportar recibe el resultado (con mismos campos)
-          if (SGC.views.wizard.alImportar) {
-            try {
-              SGC.views.wizard.alImportar(res);
-            } catch (e) { /* ignore */ }
-          }
-          publicarDatos();
-          sincronizarValores();
-          // Ir al paso guardado si corresponde
-          if (typeof res.paso === 'number' && SGC.views.wizard.irAPaso) {
-            try {
-              SGC.views.wizard.irAPaso(res.paso, false);
-            } catch (e) { /* ignore */ }
-          }
-          avisarEnRevision('Avance importado.');
-        };
-        lector.readAsText(archivo);
+        });
       });
     }
     // La lista de renglones del asistente y el bloque de valores de referencia
@@ -385,6 +319,20 @@
 
   function avisarEnRevision(texto) {
     var nodo = porId('sgc-generador-msj-revision');
+    if (nodo) {
+      nodo.textContent = texto;
+      nodo.hidden = false;
+    }
+  }
+
+  /*
+   * ORDEN-RONDA-30 §2: el aviso de "Guardar avance" va en su propio <p>, al
+   * lado del botón. El de la revisión está dentro del paso 4 y sólo se ve
+   * cuando se llega a la revisión: entre "lo descargué" y "lo vi" no puede
+   * haber que cambiar de paso.
+   */
+  function avisarEnAvance(texto) {
+    var nodo = porId('sgc-avance-msj');
     if (nodo) {
       nodo.textContent = texto;
       nodo.hidden = false;
