@@ -13,8 +13,9 @@
  *    componen los documentos con nodos DOM (nunca innerHTML, ADR-011) y con el
  *    mismo modelo que usa el servidor.
  *  - SGC.core.validacion.validarParaAvanzar + itemsFaltantes deciden si se puede
- *    exportar, con el texto de la ronda 26 ("2 valores de referencia en
- *    Renglón N", "guardar Especificación Técnica").
+ *    exportar, con el texto de la ronda 26 y de la ronda 29 ("2 valores de
+ *    referencia de presupuestos distintos en Renglón N", "guardar Especificación
+ *    Técnica").
  *
  * El expediente local es de ESPECIFICACIONES_TECNICAS y no tiene número de
  * expediente real: lleva uno local y el sello va en el archivo exportado (pieza

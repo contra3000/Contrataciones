@@ -996,6 +996,15 @@ mark {
   color: var(--color-texto-suave);
 }
 
+/* ORDEN-RONDA-30 pieza 1c: el aviso de los dos valores del mismo presupuesto.
+   Va debajo del renglón, con el color de los errores de campo: es un error, y
+   se lee en el mismo lugar donde la persona está escribiendo. */
+.req-aviso-valores {
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin: 4px 0;
+}
+
 .req-oca-campos {
   margin: 8px 0;
 }

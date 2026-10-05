@@ -80,11 +80,12 @@
   }
 
   // ORDEN-RONDA-26 pieza 5: en ESPECIFICACIONES_TECNICAS cada renglón exige al
-  // menos dos valores de referencia. La lista de faltantes se construye en
-  // palabras por el texto de la pieza 2 (itemsFaltantes), que pone
-  // "2 valores de referencia en Renglón N"; la clave `renglones` sólo aparece
-  // si algún renglón las tiene (así los tests que no esperan la clave siguen
-  // con la forma exacta).
+  // menos dos valores de referencia, y ORDEN-RONDA-29 pieza 4 exige que salgan
+  // de presupuestos DISTINTOS: la lista de faltantes se construye en palabras
+  // por el texto de la pieza 2 (itemsFaltantes), que pone "2 valores de
+  // referencia de presupuestos distintos en Renglón N"; la clave `renglones` sólo
+  // aparece si algún renglón las tiene (así los tests que no esperan la clave
+  // siguen con la forma exacta).
   function renglonesSinValores(expediente) {
     // el mismo criterio que aplica validarRenglon al guardar (requerimiento.js),
     // así lo que llegó persistido siempre está completo.
@@ -183,7 +184,8 @@
 
   // Arreglo de frases (una por falto), sin el prefijo "Falta: " (lo pone cada
   // superficie). Para entregables: "guardar <título>". Para renglones (pieza
-  // 5): "2 valores de referencia en <renglón>".
+  // 5 de la 26, con la regla de la 29): "2 valores de referencia de
+  // presupuestos distintos en <renglón>".
   function itemsFaltantes(revision) {
     var items = [];
     if (!revision || !revision.faltantes) {
@@ -199,7 +201,7 @@
       items.push('guardar ' + tituloEntregable(entregables[j]));
     }
     for (var k = 0; k < renglones.length; k++) {
-      items.push('2 valores de referencia en ' + String(renglones[k]));
+      items.push('2 valores de referencia de presupuestos distintos en ' + String(renglones[k]));
     }
     return items;
   }

@@ -63,6 +63,23 @@
     }
     estado.dom.pasoMsj.textContent = lista.join(' · ');
     estado.dom.pasoMsj.hidden = lista.length === 0;
+    /*
+     * ORDEN-RONDA-30 pieza 1d: "Siguiente no hace nada".
+     *
+     * El motivo de no avanzar se escribe en #sgc-paso-msj, que está arriba de
+     * todo (generador.html:127), y el botón que se apretó al final (generador.html:293).
+     * En el paso 2, con la lista de renglones y los presupuestos, la distancia
+     * entre los dos es de toda una pantalla: el aviso aparecía y la persona
+     * veía que no pasaba nada.
+     *
+     * Por eso, cuando hay errores, el mensaje se trae al centro de la pantalla.
+     * Sólo cuando hay errores: con la lista vacía el nodo está oculto y no hay
+     * nada que traer, y en el render de cada paso (que limpia el mensaje) no
+     * tendría que mover la página.
+     */
+    if (lista.length > 0 && typeof estado.dom.pasoMsj.scrollIntoView === 'function') {
+      estado.dom.pasoMsj.scrollIntoView({ block: 'center' });
+    }
   }
 
   function guardarBorrador(estado, storage) {

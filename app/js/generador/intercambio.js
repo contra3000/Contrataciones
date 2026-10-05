@@ -409,8 +409,8 @@
    * pide al núcleo con las MISMAS funciones que usa el botón de exportar
    * (validarParaAvanzar + itemsFaltantes), sobre un expediente mínimo en
    * ESPECIFICACIONES_TECNICAS. Así el motivo sale con las palabras de la ronda 26
-   * ("2 valores de referencia en Renglón 2") y no con una cuenta propia que
-   * podría quedar vieja.
+   * ("2 valores de referencia de presupuestos distintos en Renglón 2") y no con
+   * una cuenta propia que podría quedar vieja.
    *
    * Se mira sólo lo que devuelve de renglones: los campos y los entregables que
    * también complain son del formulario que se va a llenar después, no del

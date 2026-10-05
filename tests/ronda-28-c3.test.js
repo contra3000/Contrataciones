@@ -327,8 +327,9 @@ test('un renglón con un solo valor deja exportar deshabilitado con el texto de 
   await m.esperar(() => exportar.disabled === true, 10000,
     'con un renglón de un solo valor no se puede exportar');
 
-  assert.match(msj.textContent, /2 valores de referencia en Rengl.n 2/,
-    'el motivo es el texto de la ronda 26, con el renglón: ' + msj.textContent);
+  assert.match(msj.textContent,
+    /2 valores de referencia de presupuestos distintos en Rengl.n 2/,
+    'el motivo es el texto de la ronda 26 y 29, con el renglón: ' + msj.textContent);
 
   // Y el botón de imprimir tampoco compone un documento a medias: lo que quedó
   // de la impresión anterior se deja como estaba.
