@@ -166,6 +166,13 @@
   var AVISO_PRESUPUESTO_REPETIDO =
     'Los dos valores tienen que salir de presupuestos distintos.';
 
+  // ORDEN-RONDA-31 pieza 2e: lo que le falta al renglón, dicho debajo del
+  // renglón. Es el texto de la regla de la ronda 31 (2 valores de fuentes
+  // distintas, o 1 valor y una justificación), en el mismo nodo de aviso que
+  // lo de la ronda 30, para que no haya dos lugares donde mirar.
+  var AVISO_FALTAN_VALORES =
+    'Faltan valores de referencia: 2 de fuentes distintas, o 1 y una justificación.';
+
   function avisoDeRenglon(i) {
     var conCita = 0;
     var citados = [];
@@ -191,10 +198,19 @@
         citados.push(pid);
       }
     }
-    if (conCita < 2) {
-      return null;
+    // La ronda 30 manda primero: presupuestos repetidos es el motivo que hay
+    // que decir cuando hay dos citas completas al mismo.
+    if (conCita >= 2 && citados.length < 2) {
+      return AVISO_PRESUPUESTO_REPETIDO;
     }
-    return citados.length < 2 ? AVISO_PRESUPUESTO_REPETIDO : null;
+    // ORDEN-RONDA-31 pieza 2e: si el renglón todavía no reúne lo que pide el
+    // núcleo (2 valores de fuentes distintas, o 1 valor y una justificación),
+    // se dice acá apenas se abre el paso, en vez de esperar a que el botón lo
+    // corte en otro lado. Desaparece solo cuando el renglón se completa.
+    if (!SGC.core.requerimiento.fuentesDeRenglon(renglonTemporal(i)).completo) {
+      return AVISO_FALTAN_VALORES;
+    }
+    return null;
   }
 
   // Un <p> por renglón, que se pinta y se borra sin volver a armar el bloque: el

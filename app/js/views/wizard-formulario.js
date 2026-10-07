@@ -43,7 +43,56 @@
     campoInput(estado, 'objetivo').value = fund.objetivo || '';
   }
 
+  /*
+   * ORDEN-RONDA-31 pieza 2d: "Siguiente" me lleva arriba y tengo que buscar el
+   * error, dice el Jefe.
+   *
+   * Cuando la validación no deja avanzar, el motivo de no avanzar se trae a la
+   * vista: no el mensaje de arriba, sino el PRIMER CAMPO con error —por
+   * ejemplo la unidad del renglón 2—, enfocado y con la clase campo-con-error
+   * (borde rojo). El mensaje de arriba queda como está (el texto sigue ahí);
+   * sólo se lo trae a la vista cuando ningún error tiene campo propio.
+   *
+   * Un error tiene campo cuando es del formulario (título, año, dependencia,
+   * justificación) o cuando es de un renglón y el mensaje nombra un input de
+   * esa fila (unidad, cantidad, aclaración). El código del renglón no tiene
+   * input (es un texto), así que ese error no lleva el foco a ningún lado.
+   */
+  function campoDeError(estado, e) {
+    if (e.campo && estado.dom.errores[e.campo] && estado.dom.campos[e.campo]) {
+      return estado.dom.campos[e.campo];
+    }
+    var coincidencia = /^renglones\[(\d+)\]$/.exec(e.campo || '');
+    if (!coincidencia) {
+      return null;
+    }
+    var lista = estado.dom.listaRenglones;
+    var fila = lista ? lista.children[Number(coincidencia[1])] : null;
+    if (!fila) {
+      return null;
+    }
+    var etiqueta = null;
+    if (/unidad/i.test(e.mensaje)) {
+      etiqueta = 'Unidad de medida';
+    } else if (/cantidad/i.test(e.mensaje)) {
+      etiqueta = 'Cantidad del ítem';
+    } else if (/aclaraci/i.test(e.mensaje)) {
+      etiqueta = 'Aclaración opcional';
+    }
+    if (!etiqueta) {
+      return null;
+    }
+    var candidatos = fila.querySelectorAll('[aria-label="' + etiqueta + '"]');
+    return candidatos.length > 0 ? candidatos[0] : null;
+  }
+
   function mostrarErrores(estado, errores) {
+    // La marca roja corresponde sólo mientras ese error siga en pie: se quita
+    // al principio y se pone de vuelta si el mismo campo vuelve a fallar.
+    if (estado.campoMarcado && estado.campoMarcado.classList) {
+      estado.campoMarcado.classList.remove('campo-con-error');
+    }
+    estado.campoMarcado = null;
     for (var clave in estado.dom.errores) {
       if (Object.prototype.hasOwnProperty.call(estado.dom.errores, clave)) {
         estado.dom.errores[clave].textContent = '';
@@ -64,20 +113,34 @@
     estado.dom.pasoMsj.textContent = lista.join(' · ');
     estado.dom.pasoMsj.hidden = lista.length === 0;
     /*
-     * ORDEN-RONDA-30 pieza 1d: "Siguiente no hace nada".
+     * ORDEN-RONDA-30 pieza 1d + ORDEN-RONDA-31 pieza 2d.
      *
      * El motivo de no avanzar se escribe en #sgc-paso-msj, que está arriba de
-     * todo (generador.html:127), y el botón que se apretó al final (generador.html:293).
-     * En el paso 2, con la lista de renglones y los presupuestos, la distancia
-     * entre los dos es de toda una pantalla: el aviso aparecía y la persona
-     * veía que no pasaba nada.
+     * todo (generador.html:127), y el botón que se apretó al final
+     * (generador.html:293). En el paso 2, con la lista de renglones y los
+     * presupuestos, la distancia entre los dos es de toda una pantalla.
      *
-     * Por eso, cuando hay errores, el mensaje se trae al centro de la pantalla.
-     * Sólo cuando hay errores: con la lista vacía el nodo está oculto y no hay
-     * nada que traer, y en el render de cada paso (que limpia el mensaje) no
-     * tendría que mover la página.
+     * Por eso, cuando hay errores, se trae a la vista y se enfoca el primer
+     * campo con error (pieza 2d); si ningún error tiene campo propio, se trae
+     * el mensaje (pieza 1d de la ronda 30). Sólo cuando hay errores: con la
+     * lista vacía el nodo está oculto y no hay nada que traer.
      */
-    if (lista.length > 0 && typeof estado.dom.pasoMsj.scrollIntoView === 'function') {
+    var campo = null;
+    for (var j = 0; j < errores.length && campo === null; j++) {
+      campo = campoDeError(estado, errores[j]);
+    }
+    if (campo) {
+      estado.campoMarcado = campo;
+      if (typeof campo.scrollIntoView === 'function') {
+        campo.scrollIntoView({ block: 'center' });
+      }
+      if (typeof campo.focus === 'function') {
+        campo.focus();
+      }
+      if (campo.classList) {
+        campo.classList.add('campo-con-error');
+      }
+    } else if (lista.length > 0 && typeof estado.dom.pasoMsj.scrollIntoView === 'function') {
       estado.dom.pasoMsj.scrollIntoView({ block: 'center' });
     }
   }

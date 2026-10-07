@@ -13,9 +13,9 @@
  *    componen los documentos con nodos DOM (nunca innerHTML, ADR-011) y con el
  *    mismo modelo que usa el servidor.
  *  - SGC.core.validacion.validarParaAvanzar + itemsFaltantes deciden si se puede
- *    exportar, con el texto de la ronda 26 y de la ronda 29 ("2 valores de
- *    referencia de presupuestos distintos en Renglón N", "guardar Especificación
- *    Técnica").
+ *    exportar, con el texto de la ronda 26 y de la ronda 31 ("2 valores de
+ *    referencia de fuentes distintas, o 1 valor y una justificación, en Renglón
+ *    N", "guardar Especificación Técnica").
  *
  * El expediente local es de ESPECIFICACIONES_TECNICAS y no tiene número de
  * expediente real: lleva uno local y el sello va en el archivo exportado (pieza
@@ -65,7 +65,7 @@
     // imprime el documento), igual que en el expediente del servidor.
     datosIniciales.renglones = renglones;
     datosIniciales.presupuestos = presupuestos;
-    return {
+    var resultado = {
       expedienteId: estado.operador ? ('generador-' + estado.operador.email) : 'generador',
       estado: { id: ESTADO },
       titulo: datosIniciales.titulo,
@@ -73,11 +73,29 @@
       campos: datosIniciales.campos,
       renglones: renglones,
       presupuestos: presupuestos,
-      entregables: estado.generados
-        ? [{ id: ID_ENTREGABLE, nombre: SGC.renders.especificacionTecnica.nombre, ruta: 'local' }]
-        : [],
+      entregables: [],
       datos: datosIniciales
     };
+    // ORDEN-RONDA-31 pieza 2a: "Imprimir" compone el anexo de EETT cuando hay
+    // aclaraciones que desbordan o condiciones particulares, y el entregable
+    // también hay que registrarlo: la validación del núcleo lo exige (ADR-029:
+    // exigir, no saltear) y sin el registro "Exportar" queda deshabilitado para
+    // siempre aunque el anexo se vea en la impresión.
+    if (estado.generados) {
+      resultado.entregables.push({
+        id: ID_ENTREGABLE,
+        nombre: SGC.renders.especificacionTecnica.nombre,
+        ruta: 'local'
+      });
+      if (SGC.core.anexoEett.tieneContenido(resultado)) {
+        resultado.entregables.push({
+          id: 'anexo-eett',
+          nombre: SGC.renders.anexoEett.nombre,
+          ruta: 'local'
+        });
+      }
+    }
+    return resultado;
   }
 
   // La misma validación que usa el servidor para el botón "Avanzar" y el mismo

@@ -230,6 +230,12 @@ class Nodo {
 
   focus() {
     this.foco = true;
+    // RONDA-31 pieza 2d: el documento del stub también recuerda el foco, como
+    // el navegador (document.activeElement), para que el test pueda afirmar
+    // que "Siguiente" lleva el foco al primer campo con error.
+    if (typeof documento !== 'undefined' && documento) {
+      documento.activeElement = this;
+    }
   }
 
   // APIs de nodo que la app real usa; no hacen nada en el harness.
@@ -279,6 +285,9 @@ function estaEnElCuerpo(nodo) {
 
 const documento = {
   body: new Nodo('body'),
+  // RONDA-31 pieza 2d: el elemento con el foco. Arranca en el body, como el
+  // navegador, y focus() lo actualiza.
+  activeElement: null,
   // RONDA-24 (pieza 3): scroll del documento para que la capa de vistas
   // pueda guardar y restaurar la posición. El stub no tiene layout; el layout
   // simulado (colapso al vaciar un nodo del cuerpo) vive en Nodo.removeChild.
@@ -315,6 +324,8 @@ const documento = {
     }
   }
 };
+
+documento.activeElement = documento.body;
 
 function registrar(nodo) {
   if (nodo.id) {

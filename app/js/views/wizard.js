@@ -381,6 +381,9 @@ function descripcionOperador(operador) {
     estado.dom.exitoId = qs(raiz, '#sgc-exito-id');
     estado.dom.pasoMsj = qs(raiz, '#sgc-paso-msj');
     estado.dom.revisionFilas = qs(raiz, '#sgc-revision-filas');
+    // ORDEN-RONDA-31 pieza 2d: la lista de renglones, para que al fallar la
+    // validación el foco pueda ir al campo concreto del renglón con error.
+    estado.dom.listaRenglones = qs(raiz, '#sgc-lista-renglones');
     estado.dom.campos = {
       titulo: qs(raiz, '#sgc-titulo'),
       anio: qs(raiz, '#sgc-anio'),
@@ -415,6 +418,24 @@ function descripcionOperador(operador) {
       irAPaso(estado.paso + 1, true);
     });
     estado.dom.persistir.addEventListener('click', persistir);
+    /*
+     * ORDEN-RONDA-31 pieza 2c: "Año" acepta letras.
+     *
+     * El campo es de texto (la validación de validacion.js sigue pidiendo los
+     * cuatro dígitos y no cambia), pero lo que no sea dígito se descarta
+     * mientras se escribe, como en un campo numérico. El listener va ANTES del
+     * del borrador para que el borrador guarde el valor ya limpio.
+     */
+    if (estado.dom.campos.anio) {
+      estado.dom.campos.anio.addEventListener('input', function () {
+        var campo = estado.dom.campos.anio;
+        var bruto = campo.value === undefined || campo.value === null ? '' : String(campo.value);
+        var limpio = bruto.replace(/\D/g, '');
+        if (bruto !== limpio) {
+          campo.value = limpio;
+        }
+      });
+    }
     for (var campo in estado.dom.campos) {
       if (Object.prototype.hasOwnProperty.call(estado.dom.campos, campo)) {
         estado.dom.campos[campo].addEventListener('input', guardarBorrador);

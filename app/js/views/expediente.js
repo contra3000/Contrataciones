@@ -32,6 +32,10 @@
     id: null,
     expediente: null,
     version: null,
+    // ORDEN-RONDA-31 pieza 2b: contador de aperturas. Si mientras se lee un
+    // expediente llega otra (recargar, doble clic), sólo la última lectura
+    // manda: la respuesta vieja no pisa a la nueva.
+    pedidoAbrir: 0,
     dom: {}
   };
 
@@ -438,11 +442,24 @@
     if (!estado.repo) {
       return;
     }
+    // ORDEN-RONDA-31 pieza 2b: la recarga vieja. Cada apertura anota su
+    // número; cuando la respuesta llega, sólo se aplica si sigue siendo la
+    // última. Así una lectura lenta de un expediente anterior no pisa en
+    // pantalla la del que se abrió después (y el error de una vieja tampoco
+    // tapa la nueva).
+    estado.pedidoAbrir = estado.pedidoAbrir + 1;
+    var mio = estado.pedidoAbrir;
     estado.repo.leerExpediente(id).then(function (respuesta) {
+      if (mio !== estado.pedidoAbrir) {
+        return;
+      }
       estado.expediente = respuesta.expediente;
       estado.version = respuesta.version;
       render();
     }).catch(function (err) {
+      if (mio !== estado.pedidoAbrir) {
+        return;
+      }
       avisar('No se pudo leer el expediente: ' + err.message, true);
     });
   }

@@ -508,6 +508,17 @@ mark {
   font-weight: 600;
 }
 
+/* ORDEN-RONDA-31 pieza 2e: el paso con algo pendiente para exportar queda en
+ * rojo y dice "· falta", así se ve sin abrirlo. */
+.pasos li.pendiente {
+  border-color: var(--color-error);
+}
+
+.pasos li .paso-falta {
+  color: var(--color-error);
+  font-weight: 700;
+}
+
 .paso-msj {
   color: var(--color-error);
   margin-bottom: 12px;
@@ -576,6 +587,15 @@ mark {
   color: var(--color-error);
   font-size: 0.85rem;
   margin-top: 4px;
+}
+
+/* ORDEN-RONDA-31 pieza 2d: el primer campo con error, marcado para que se vea
+ * sin buscarlo: borde rojo, igual que el foco pero en el color del error. */
+input.campo-con-error,
+select.campo-con-error,
+textarea.campo-con-error {
+  border-color: var(--color-error) !important;
+  box-shadow: 0 0 0 2px rgba(170, 17, 17, 0.2) !important;
 }
 
 .fasttrack {

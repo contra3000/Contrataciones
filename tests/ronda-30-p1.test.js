@@ -200,22 +200,28 @@ test('RONDA-30 pieza 1c · el mismo presupuesto en las dos filas avisa debajo de
 
   // Y lo que falta NO es elegir un presupuesto: eso lo dice la revisión del
   // renglón. Con base y valor puestos pero sin presupuesto elegido, este aviso
-  // calla, porque "presupuestos repetidos" sería el motivo equivocado.
+  // calla de "presupuestos repetidos" —sería el motivo equivocado— y, como el
+  // renglón sigue incompleto, el mismo nodo dice lo que le falta (pieza 2e de
+  // la ronda 31).
   const cont = m.documento.getElementById('sgc-req-valores');
   const sinPresupuesto = cont.querySelector('[data-presupuesto="0:1"]');
   const baseSinPresupuesto = cont.querySelector('[data-base="0:1"]');
   const valorSinPresupuesto = cont.querySelector('[data-valor="0:1"]');
   sinPresupuesto.value = '';
-  sinPresupuesto.emit('change');
   baseSinPresupuesto.value = 'unitario';
-  baseSinPresupuesto.emit('change');
   valorSinPresupuesto.value = '4500';
-  valorSinPresupuesto.emit('change');
+  // El bloque escucha por delegación y el stub no burbujea: el 'change' se
+  // emite en el contenedor con target apuntando al campo, como el navegador.
+  cont.emit('change', { target: sinPresupuesto });
+  cont.emit('change', { target: baseSinPresupuesto });
+  cont.emit('change', { target: valorSinPresupuesto });
 
   assert.strictEqual(cont.querySelector('[data-presupuesto="0:1"]').value, '',
     'la segunda fila sigue sin elegir presupuesto');
-  assert.strictEqual(suyo.hidden, true,
+  assert.notStrictEqual(suyo.textContent, AVISO,
     'una fila sin presupuesto no hace aparecer el aviso de presupuestos repetidos');
+  assert.match(suyo.textContent, /Faltan valores de referencia/,
+    'y el mismo nodo dice qué le falta al renglón: ' + suyo.textContent);
 });
 
 test('RONDA-30 pieza 1d · "Siguiente" con un renglón sin unidad trae el motivo a la vista', async () => {
@@ -226,13 +232,21 @@ test('RONDA-30 pieza 1d · "Siguiente" con un renglón sin unidad trae el motivo
   const clases = await claseConItems();
   await agregarRenglonReal(0, clases[0][2], false);
 
-  // El aviso del paso: espía de scrollIntoView sobre ESTE nodo, como el
-  // navegador lo llamaría. El stub no tiene layout, así que lo que se afirma es
-  // la llamada, no el desplazamiento.
+  // ORDEN-RONDA-31 pieza 2d: el foco va al PRIMER campo con error (unidad del
+  // renglón), no al mensaje de arriba. Espías de scrollIntoView sobre los dos
+  // nodos, como el navegador los llamaría. El stub no tiene layout, así que lo
+  // que se afirma es la llamada, no el desplazamiento.
   const msj = d.getElementById('sgc-paso-msj');
-  const llamadas = [];
+  const llamadasMsj = [];
   msj.scrollIntoView = function (opciones) {
-    llamadas.push(opciones);
+    llamadasMsj.push(opciones);
+  };
+  const unidad = d.getElementById('sgc-lista-renglones')
+    .children[0].querySelectorAll('[aria-label="Unidad de medida"]')[0];
+  assert.ok(unidad, 'el renglón tiene el campo de unidad de medida');
+  const llamadasUnidad = [];
+  unidad.scrollIntoView = function (opciones) {
+    llamadasUnidad.push(opciones);
   };
 
   d.getElementById('sgc-siguiente').click();
@@ -242,6 +256,12 @@ test('RONDA-30 pieza 1d · "Siguiente" con un renglón sin unidad trae el motivo
   assert.strictEqual(msj.hidden, false, 'el motivo está a la vista');
   assert.match(msj.textContent, /Rengl.n 1: .*unidad/i,
     'el motivo dice qué le falta al renglón: ' + msj.textContent);
-  assert.deepStrictEqual(llamadas, [{ block: 'center' }],
-    'se llamó a scrollIntoView({block: "center"}) sobre #sgc-paso-msj');
+  assert.deepStrictEqual(llamadasUnidad, [{ block: 'center' }],
+    'el campo con error se trae a la vista con scrollIntoView({block: "center"})');
+  assert.strictEqual(d.activeElement, unidad,
+    'y el foco queda en el primer campo con error');
+  assert.strictEqual(unidad.classList.contains('campo-con-error'), true,
+    'el campo queda marcado con la clase campo-con-error');
+  assert.deepStrictEqual(llamadasMsj, [],
+    'el mensaje de arriba no se trae a la vista: manda el campo');
 });

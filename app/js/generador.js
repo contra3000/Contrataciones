@@ -260,6 +260,16 @@
     SGC.generadorValores.alCambio(publicarDatos);
     SGC.generadorDocumentos.montar();
     SGC.generadorDocumentos.seleccionarOperador(estado.operador);
+    // ORDEN-RONDA-31 pieza 2e: al apretar "Imprimir" cambian los pendientes
+    // (el documento y el anexo de EETT quedaron registrados), así que el paso
+    // 4 se repinta apenas se imprima. Este listener va DESPUÉS del de
+    // documentos.montar, que es el que registra los entregables.
+    var botonImprimir = porId('sgc-btn-imprimir');
+    if (botonImprimir) {
+      botonImprimir.addEventListener('click', function () {
+        pintarPasosPendientes();
+      });
+    }
     // ORDEN-RONDA-28 §4: "Exportar para Abastecimiento" ya no es un aviso de que
     // la descarga llega después: arma el archivo con el sello y lo baja. La
     // validación del botón la hace el propio módulo, que vuelve con el motivo.
@@ -297,6 +307,7 @@
     SGC.catalogo.renglones.alCambiar(sincronizarValores);
     SGC.views.wizard.alRender(publicarDatos);
     sincronizarValores();
+    pintarPasosPendientes();
   }
 
   // Los renglones del asistente. Los valores no viajan con ellos: el bloque de
@@ -315,6 +326,87 @@
   function publicarDatos() {
     SGC.views.wizard.sincronizar();
     SGC.generadorDocumentos.fijarDatos(SGC.views.wizard.datos());
+    pintarPasosPendientes();
+  }
+
+  /*
+   * ORDEN-RONDA-31 pieza 2e: lo que falta, a la vista.
+   *
+   * Se puede seguir sin presupuestos, y está bien (el asistente no los pide
+   * para avanzar), pero el paso que tiene algo pendiente para exportar —lo que
+   * dice revision().items— tiene que verse sin abrirlo: la clase "pendiente"
+   * en el <li> del paso y el texto "· falta".
+   *
+   * Los pendientes salen de la MISMA validación que decide el botón Exportar
+   * (validarParaAvanzar), leída por faltantes y no por los textos, para que
+   * el paso marcado y el botón nunca se contradigan:
+   *  - campos requeridos → identificación o fundamentación, según el campo;
+   *  - entregables (imprimir / anexo de EETT) → revisión;
+   *  - renglones sin los dos valores → renglones.
+   */
+  function pasosPendientes() {
+    var pendientes = {};
+    var info = SGC.generadorDocumentos.revision();
+    var faltantes = (info.revision && info.revision.faltantes) || {};
+    var campos = faltantes.campos || [];
+    for (var i = 0; i < campos.length; i++) {
+      var nombre = campos[i];
+      var paso = 'revision';
+      if (nombre === 'titulo' || nombre === 'anio' ||
+          nombre === 'dependenciaSolicitante' || nombre === 'operador') {
+        paso = 'identificacion';
+      } else if (nombre === 'justificacion' || nombre === 'objetivo') {
+        paso = 'fundamentacion';
+      }
+      pendientes[paso] = true;
+    }
+    if ((faltantes.entregables || []).length > 0) {
+      pendientes.revision = true;
+    }
+    if (faltantes.renglones && faltantes.renglones.length > 0) {
+      pendientes.renglones = true;
+    }
+    if (info.items.length > 0 && Object.keys(pendientes).length === 0) {
+      pendientes.revision = true;
+    }
+    return pendientes;
+  }
+
+  function pintarPasosPendientes() {
+    var pasosNav = porId('sgc-pasos');
+    if (!pasosNav) {
+      return;
+    }
+    var pendientes = pasosPendientes();
+    for (var i = 0; i < pasosNav.children.length; i++) {
+      var li = pasosNav.children[i];
+      var paso = li.getAttribute('data-paso');
+      var falta = pendientes[paso] === true;
+      if (falta) {
+        li.classList.add('pendiente');
+      } else {
+        li.classList.remove('pendiente');
+      }
+      // La marca "· falta" es un <span> propio del <li>: se crea una vez y se
+      // busca por su clase (el DOM del navegador y el del test se manejan
+      // igual, recorriendo los hijos).
+      var marca = null;
+      for (var j = 0; j < li.children.length; j++) {
+        if (li.children[j].className === 'paso-falta') {
+          marca = li.children[j];
+        }
+      }
+      if (falta) {
+        if (!marca) {
+          marca = document.createElement('span');
+          marca.className = 'paso-falta';
+          li.appendChild(marca);
+        }
+        marca.textContent = '· falta';
+      } else if (marca) {
+        li.removeChild(marca);
+      }
+    }
   }
 
   function avisarEnRevision(texto) {
