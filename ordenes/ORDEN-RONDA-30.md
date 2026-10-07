@@ -104,3 +104,14 @@ Antes de que la hagas vos, **el revisor la corre en un navegador real**
 3. "Guardar avance" → **¿se descarga el JSON y ves "Se descargó …"?**
 4. Cerrá todo, entrá de nuevo e importalo → **¿volvés al paso 2 con tus renglones?**
 5. Con presupuestos distintos → **¿"Siguiente" te lleva a Fundamentación?**
+
+Lo que encontré:
+- "Año" no debería permitir nada que no sea números
+- "1. Paso 2, un renglón sin unidad, "Siguiente" → **¿ves el motivo sin tener que subir?**" -> aparece la leyenda "La unidad de medida es obligatoria" cuando clicko en siguiente, pero además me lleva al inicio de la pagina, y tengo q manualmente buscar el error. Hay alguna manera de que la pantalla me lleve hasta donde tengo el error? si no hay manera que el erro resalte más.
+- Por otra parte cuando cargue la unidad de medida, me dejó seguir a pesar de no cargar presupuestos. No está mal, porque a lo mejor estan cargando el requerimiento antes de tener los presupuestos, pero sería ideal que quede de alguna manera resaltada la sección "2 · Renglones" para avisarme que aún faltan los presupuestos.
+- Relacionado a los presupuestos, debo admitir que a veces no se encuentrar 2 presupuestos y sirve algún valor de referencia de los precios de plaza, como por ejemplo alguna orden de compra perfeccionada en los ulitmos meses. Si ninguno de estos casos se logra, con 1 presupuesto y 1 fundamentación de por que no se anexa un segundo prespuesto alcanzaría. Con lo cual podríamos aceptar que suban un presupuesto y otro archivo PDF que fundamente por que no hay otro presupuesto. Te parece busar alguna solución para la parte en la que cargamos los valores de referencia si el segundo archivo subido no tiene valores de referencia sino que solo es una justificación de inexistencia de otro presupuesto?
+- "2. El mismo presupuesto en los dos valores de un renglón → **¿aparece el aviso ahí
+   mismo?** -> Aparece el aviso "Los dos valores tienen que salir de presupuestos distintos." sin embargo me deja continuar, lo cual no está mal siempre que quede resaltado el error y que al final no me deje exportar, que veo que lo hace bien.
+- "3. "Guardar avance" → **¿se descarga el JSON y ves "Se descargó …"?**" -> SI
+- "4. Cerrá todo, entrá de nuevo e importalo → **¿volvés al paso 2 con tus renglones?**" -> SI
+- "5. Con presupuestos distintos → **¿"Siguiente" te lleva a Fundamentación?**" -> sin presupuestos distintos tambien siguiente me deja avanzar, no me molesta siempre que no me deje exportar y quede resaltada la sección en la que está el error. Y cuando abra la sección que quede resaltado dónde corregirlo.
