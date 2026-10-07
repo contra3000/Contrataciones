@@ -84,7 +84,7 @@ Corridas completas de la suite (`node --test --test-timeout=120000
 | 2 · tras el commit de pieza 2 | 612 | 612 | 0 | 634295 | gate de pieza 2 |
 | 3 | 612 | 610 | 2 | 734137 | infra: ronda-12 (spawn PyYAML ETIMEDOUT) y presupuestos-servidor (proceso cortado); ambos pasan en aislamiento |
 | 4 | 612 | 612 | 0 | 687657 | |
-| 5 | 612 | 612 | 0 | ~700000 | |
+| 5 | 612 | 612 | 0 | 638432 | |
 
 - Fallas de la corrida 3 en aislamiento:
   - `node --test "tests/ronda-12.test.js"` → fail 0 (22 s). El error fue
