@@ -125,6 +125,13 @@ async function cargarNumeroSCo(m) {
 
 async function avanzarEstado(m, proximoTitulo) {
   const d = m.documento;
+  // Guardar el documento del estado confirma el POST en el msj, pero el estado
+  // del botón de avanzar se refresca después: apretar en el medio es apretar un
+  // botón deshabilitado (como una persona, se espera a que se habilite, con el
+  // motivo a la vista si no se habilita).
+  await m.esperar(() => d.getElementById('sgc-expediente-avanzar').disabled === false, 30000,
+    'el botón de avanzar se habilita: ' +
+    ((d.getElementById('sgc-expediente-avanzar-porque') || {}).textContent || ''));
   d.getElementById('sgc-expediente-avanzar').click();
   await m.esperar(() => (d.getElementById('sgc-expediente-resumen').textContent || '')
     .indexOf(proximoTitulo) !== -1, 30000, 'avanzó a "' + proximoTitulo + '"');

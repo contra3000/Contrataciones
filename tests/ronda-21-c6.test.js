@@ -53,7 +53,11 @@ const TITULO = {
   PERFECCIONADA: 'Perfeccionada'
 };
 
-test('C6: la cadena de roles hasta la firma por la montura real', async function () {
+// { timeout }: la cadena son 18 avances con servidor real y, con la suite
+// entera corriendo, el tope de 120 s del runner la dejaba cancelada en el
+// borde (medido: 107 s sola, 120.03 s en corrida compartida).
+test('C6: la cadena de roles hasta la firma por la montura real',
+  { timeout: 300000 }, async function () {
   const m = await am.arrancar({ prefix: 'rp21c6-' });
   try {
     const d = m.documento;
