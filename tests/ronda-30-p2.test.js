@@ -91,11 +91,8 @@ async function agregarRenglonReal(indice, claseNombre, conUnidad) {
   }
 }
 
-function agregarPresupuesto(archivo, proveedor, fecha) {
-  m.escribir('sgc-presup-archivo', archivo);
-  m.escribir('sgc-presup-proveedor', proveedor);
-  m.escribir('sgc-presup-fecha', fecha);
-  m.documento.getElementById('sgc-presup-agregar').click();
+async function agregarPresupuesto(archivo, proveedor, fecha) {
+  await m.agregarDocumento({ nombre: archivo, proveedor, fecha });
 }
 
 function renglonesEnPantalla() {
@@ -157,8 +154,8 @@ async function avanceCompleto() {
   await irAlPasoRenglones();
   const clases = await claseConItems();
   await agregarRenglonReal(0, clases[0][2]);
-  agregarPresupuesto('presupuesto-resma-2026.pdf', 'Librería Sur', '12/02/2026');
-  agregarPresupuesto('presupuesto-resma-2026-b.pdf', 'Papelera Norte', '13/02/2026');
+  await agregarPresupuesto('presupuesto-resma-2026.pdf', 'Librería Sur', '12/02/2026');
+  await agregarPresupuesto('presupuesto-resma-2026-b.pdf', 'Papelera Norte', '13/02/2026');
   const [p1, p2] = SGC().generadorPresupuestos.listar().map((p) => p.id);
   m.cargarValores([
     [{ presupuestoId: p1, base: 'unitario', valor: '4200' },

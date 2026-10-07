@@ -201,21 +201,30 @@
           <p id="sgc-resumen" class="resumen" role="status" aria-live="polite">Sin renglones todavía.</p>
         </div>
 
-        <!-- ORDEN-RONDA-28 §3. En el generador NO hay a dónde subir un archivo
-             de presupuesto: no hay servidor ni carpeta del expediente. Por eso
-             el presupuesto se anota como REFERENCIA —cómo se llamaba el archivo,
-             de qué proveedor y de qué fecha— y los valores de referencia lo
-             citan igual, con el mismo presupuestoId que usa la aplicación con
-             servidor (ADR-022). El PDF original se queda donde estaba. -->
-        <div class="seccion-presupuestos" aria-label="Presupuestos de referencia">
-          <h3>Presupuestos de referencia</h3>
-          <p class="req-ayuda">Sin servidor no se suben archivos: anotá el nombre del archivo,
-            el proveedor y la fecha. Los valores de referencia lo citan igual y el PDF
-            original sigue donde lo tenés.</p>
+        <!-- ORDEN-RONDA-28 §3 + ORDEN-RONDA-31 pieza 1. En el generador NO hay
+             a dónde subir un archivo: no hay servidor ni carpeta del expediente.
+             Lo que sí se hace es ELEGIR el archivo en la máquina propia para
+             leerlo —nombre, tamaño y huella SHA-256, todo en tu equipo— y
+             anotar de qué tipo es: presupuesto, precio de plaza o justificación.
+             Con eso los valores de referencia citan igual que en la aplicación
+             con servidor, con el mismo presupuestoId (ADR-022), y el PDF
+             original se queda donde estaba. -->
+        <div class="seccion-presupuestos" aria-label="Documentos de referencia">
+          <h3>Documentos de referencia</h3>
+          <p class="req-ayuda">Sin servidor no se sube nada a ningún lado: el archivo se lee en
+            tu equipo para anotar su huella (SHA-256), su tamaño y de qué tipo es. El PDF
+            original sigue donde lo tenés y los valores de referencia lo citan igual.</p>
           <div class="campo">
-            <label for="sgc-presup-archivo">Nombre del archivo</label>
-            <input id="sgc-presup-archivo" type="text" autocomplete="off"
-                   placeholder="Ej.: presupuesto-resma-2026.pdf">
+            <label for="sgc-presup-archivo">Archivo del documento</label>
+            <input id="sgc-presup-archivo" type="file" accept=".pdf,image/*">
+          </div>
+          <div class="campo">
+            <label for="sgc-presup-tipo">Tipo de documento</label>
+            <select id="sgc-presup-tipo">
+              <option value="presupuesto">Presupuesto</option>
+              <option value="precio-plaza">Orden de compra / precio de plaza</option>
+              <option value="justificacion">Justificación de falta de presupuesto</option>
+            </select>
           </div>
           <div class="campo">
             <label for="sgc-presup-proveedor">Proveedor</label>
@@ -223,10 +232,9 @@
           </div>
           <div class="campo">
             <label for="sgc-presup-fecha">Fecha</label>
-            <input id="sgc-presup-fecha" type="text" autocomplete="off"
-                   placeholder="Ej.: 12/02/2026">
+            <input id="sgc-presup-fecha" type="date">
           </div>
-          <button id="sgc-presup-agregar" type="button">Agregar presupuesto</button>
+          <button id="sgc-presup-agregar" type="button">Agregar documento</button>
           <p id="sgc-presup-msj" class="error-global" role="alert" hidden></p>
           <ul id="sgc-presup-lista" class="req-presupuestos"></ul>
         </div>
@@ -239,8 +247,9 @@
              citan, que son los de referencia de arriba. -->
         <div class="seccion-valores" aria-label="Valores de referencia">
           <h3>Valores de referencia</h3>
-          <p class="req-ayuda">Dos valores por renglón: es lo mínimo para que el promedio
-            tenga sentido y para que Abastecimiento tenga contra qué comparar.</p>
+          <p class="req-ayuda">Cada renglón necesita dos valores de fuentes distintas —o un
+            valor y una justificación—: es lo mínimo para que el promedio tenga sentido y para
+            que Abastecimiento tenga contra qué comparar.</p>
           <div id="sgc-req-valores" class="req-valores"></div>
           <p id="sgc-req-total" class="req-total"></p>
         </div>

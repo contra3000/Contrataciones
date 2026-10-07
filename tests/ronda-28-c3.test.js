@@ -16,7 +16,8 @@
  *  - el generador no ofrece "Avanzar" ni "Crear expediente": ofrece imprimir y
  *    exportar para Abastecimiento;
  *  - los presupuestos son REFERENCIAS (nombre, proveedor, fecha), no archivos
- *    subidos: no hay <input type="file"> de presupuestos en el generador;
+ *    subidos a un servidor: el archivo se elige en la máquina propia y se
+ *    anota su huella (ORDEN-RONDA-31 pieza 1);
  *  - el bloque de valores de referencia es el MISMO archivo que usa la pantalla
  *    de carga del requerimiento con servidor, no una copia;
  *  - un requerimiento con tres renglones reales y dos valores por renglón
@@ -111,15 +112,9 @@ async function altaCompleta(nombre) {
   await m.esperar(() => (d.getElementById('sgc-resumen').textContent || '').indexOf('0 con error') !== -1,
     20000, 'los tres renglones quedan sin errores');
 
-  // Un presupuesto de REFERENCIA (no se sube nada).
-  m.escribir('sgc-presup-archivo', 'presupuesto-resma-2026.pdf');
-  m.escribir('sgc-presup-proveedor', 'Librería Sur');
-  m.escribir('sgc-presup-fecha', '12/02/2026');
-  d.getElementById('sgc-presup-agregar').click();
-  m.escribir('sgc-presup-archivo', 'presupuesto-resma-2026-b.pdf');
-  m.escribir('sgc-presup-proveedor', 'Papelera Norte');
-  m.escribir('sgc-presup-fecha', '13/02/2026');
-  d.getElementById('sgc-presup-agregar').click();
+  // Un presupuesto de REFERENCIA (no se sube nada: se elige el archivo).
+  await m.agregarDocumento({ nombre: 'presupuesto-resma-2026.pdf', proveedor: 'Librería Sur', fecha: '12/02/2026' });
+  await m.agregarDocumento({ nombre: 'presupuesto-resma-2026-b.pdf', proveedor: 'Papelera Norte', fecha: '13/02/2026' });
 
   // Dos valores completos por renglón: la regla de la ronda 26.
   const presupuestos = SGC().generadorPresupuestos.listar();
@@ -173,11 +168,11 @@ test('el generador no ofrece "Avanzar" ni crear expediente: ofrece imprimir y ex
   assert.match(msj.textContent, /Falta:/, 'el motivo se anuncia');
 });
 
-test('los presupuestos se anotan como referencia: nombre, proveedor y fecha, sin subir archivos', async () => {
+test('los presupuestos se anotan como referencia: nombre, proveedor y fecha, y la fecha se guarda en ISO', async () => {
   await entrarComoUsuario('Ana Pérez');
   const d = m.documento;
 
-  // En el generador no hay a dónde subir un archivo: no hay input de archivo.
+  // En el generador no hay a dónde subir un archivo: no hay input de subida.
   assert.strictEqual(d.getElementById('sgc-req-presupuesto-archivo'), null,
     'el generador no ofrece subir presupuestos: no hay dónde guardarlos');
   assert.strictEqual(d.getElementById('sgc-req-presupuestos-lista'), null,
@@ -185,27 +180,25 @@ test('los presupuestos se anotan como referencia: nombre, proveedor y fecha, sin
 
   d.getElementById('sgc-presup-agregar').click();
   assert.match(d.getElementById('sgc-presup-msj').textContent, /nombre del archivo/i,
-    'sin nombre no hay presupuesto: un nombre es lo mínimo para poder citarlo');
+    'sin archivo no hay documento: el nombre del archivo es lo que se cita');
 
-  m.escribir('sgc-presup-archivo', 'presupuesto-resma-2026.pdf');
-  m.escribir('sgc-presup-proveedor', 'Librería Sur');
-  m.escribir('sgc-presup-fecha', '12/02/2026');
-  d.getElementById('sgc-presup-agregar').click();
+  await m.agregarDocumento({ nombre: 'presupuesto-resma-2026.pdf', proveedor: 'Librería Sur', fecha: '12/02/2026' });
 
   const lista = SGC().generadorPresupuestos.listar();
   assert.strictEqual(lista.length, 1, 'el presupuesto quedó anotado');
   assert.strictEqual(lista[0].nombreOriginal, 'presupuesto-resma-2026.pdf');
   assert.strictEqual(lista[0].proveedor, 'Librería Sur');
-  assert.strictEqual(lista[0].fecha, '12/02/2026');
+  assert.strictEqual(lista[0].fecha, '2026-02-12',
+    'la fecha del type="date" se guarda en ISO (aaaa-mm-dd)');
   assert.ok(lista[0].id, 'tiene id propio: es el presupuestoId que citan los valores');
   assert.match(d.getElementById('sgc-presup-lista').textContent,
     /presupuesto-resma-2026\.pdf · Librería Sur · 12\/02\/2026/,
-    'en pantalla se ve nombre, proveedor y fecha');
+    'en pantalla se ve nombre, proveedor y fecha en dd/mm/aaaa');
 
-  // Sin nombre de archivo no se agrega: se avisa y no se guarda nada.
+  // Sin archivo no se agrega: se avisa y no se guarda nada.
   d.getElementById('sgc-presup-agregar').click();
   assert.strictEqual(SGC().generadorPresupuestos.listar().length, 1,
-    'un clic sin datos no inventa un presupuesto');
+    'un clic sin archivo no inventa un documento');
 });
 
 test('el bloque de valores es el de la aplicación con servidor, no una copia', () => {
@@ -328,7 +321,7 @@ test('un renglón con un solo valor deja exportar deshabilitado con el texto de 
     'con un renglón de un solo valor no se puede exportar');
 
   assert.match(msj.textContent,
-    /2 valores de referencia de presupuestos distintos en Rengl.n 2/,
+    /2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en Rengl.n 2/,
     'el motivo es el texto de la ronda 26 y 29, con el renglón: ' + msj.textContent);
 
   // Y el botón de imprimir tampoco compone un documento a medias: lo que quedó

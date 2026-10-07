@@ -52,9 +52,87 @@
     return salida;
   }
 
+  /*
+   * ORDEN-RONDA-31 pieza 1: la huella SHA-256 de un archivo, en hex.
+   *
+   * Es UNA sola función para todo el sistema: la que calcula la huella del
+   * sello del JSON exportado (generador/intercambio.js) y la que anota la
+   * huella de cada documento de referencia (generador/presupuestos.js). Si
+   * hubiera dos, un día divergirían y dos archivos "iguales" dirían cosas
+   * distintas. Devuelve una promesa con el hex en minúsculas.
+   */
+  function sha256Hex(bytes) {
+    if (!root.crypto || !root.crypto.subtle || typeof root.crypto.subtle.digest !== 'function') {
+      return Promise.reject(new Error(
+        'este navegador no tiene WebCrypto, así que no se puede calcular ni verificar la huella'));
+    }
+    return root.crypto.subtle.digest('SHA-256', bytes).then(function (buffer) {
+      var octetos = new Uint8Array(buffer);
+      var hex = '';
+      for (var i = 0; i < octetos.length; i++) {
+        hex += (octetos[i] < 16 ? '0' : '') + octetos[i].toString(16);
+      }
+      return hex;
+    });
+  }
+
+  /*
+   * Fechas. El campo de la pantalla es type="date", así que lo que se GUARDA
+   * es ISO (aaaa-mm-dd) y lo que se MUESTRA es dd/mm/aaaa, como lo lee todo el
+   * mundo. Un JSON viejo trae "12/02/2026": fechaAIso lo convierte a ISO para
+   * guardarlo y fechaCorta lo deja pasar tal cual, así que las dos formas se
+   * leen igual en pantalla.
+   */
+  function fechaAIso(texto) {
+    var t = String(texto === undefined || texto === null ? '' : texto).trim();
+    var partes = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t);
+    if (partes) {
+      return partes[3] + '-' + partes[2] + '-' + partes[1];
+    }
+    return t;
+  }
+
+  function fechaCorta(texto) {
+    var t = String(texto === undefined || texto === null ? '' : texto).trim();
+    var partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+    if (partes) {
+      return partes[3] + '/' + partes[2] + '/' + partes[1];
+    }
+    return t;
+  }
+
+  /*
+   * El tipo de un documento de referencia (ORDEN-RONDA-31 pieza 1): presupuesto,
+   * precio de plaza o justificación. En la aplicación con servidor `tipo` es el
+   * MIME del archivo subido (application/pdf, image/png...), y un documento
+   * subido sin tipo es un presupuesto: por eso todo lo que no sea uno de los
+   * tres tipos conocidos cuenta como presupuesto.
+   */
+  var TIPOS_DOCUMENTO = ['presupuesto', 'precio-plaza', 'justificacion'];
+
+  function tipoDeDocumento(p) {
+    var t = p && typeof p.tipo === 'string' ? p.tipo.trim() : '';
+    return TIPOS_DOCUMENTO.indexOf(t) === -1 ? 'presupuesto' : t;
+  }
+
+  function etiquetaDeTipo(tipo) {
+    if (tipo === 'precio-plaza') {
+      return 'Precio de plaza';
+    }
+    if (tipo === 'justificacion') {
+      return 'Justificación';
+    }
+    return 'Presupuesto';
+  }
+
   SGC.core.utils = {
     idEstado: idEstado,
     contarCaracteres: contarCaracteres,
-    numeroConPuntos: numeroConPuntos
+    numeroConPuntos: numeroConPuntos,
+    sha256Hex: sha256Hex,
+    fechaAIso: fechaAIso,
+    fechaCorta: fechaCorta,
+    tipoDeDocumento: tipoDeDocumento,
+    etiquetaDeTipo: etiquetaDeTipo
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -197,14 +197,8 @@ async function altaExportable() {
   await m.esperar(() => (d.getElementById('sgc-resumen').textContent || '').indexOf('0 con error') !== -1,
     20000, 'los tres renglones quedan sin errores');
 
-  m.escribir('sgc-presup-archivo', 'presupuesto-resma-2026.pdf');
-  m.escribir('sgc-presup-proveedor', 'Librería Sur');
-  m.escribir('sgc-presup-fecha', '12/02/2026');
-  d.getElementById('sgc-presup-agregar').click();
-  m.escribir('sgc-presup-archivo', 'presupuesto-resma-2026-b.pdf');
-  m.escribir('sgc-presup-proveedor', 'Papelera Norte');
-  m.escribir('sgc-presup-fecha', '13/02/2026');
-  d.getElementById('sgc-presup-agregar').click();
+  await m.agregarDocumento({ nombre: 'presupuesto-resma-2026.pdf', proveedor: 'Librería Sur', fecha: '12/02/2026' });
+  await m.agregarDocumento({ nombre: 'presupuesto-resma-2026-b.pdf', proveedor: 'Papelera Norte', fecha: '13/02/2026' });
 
   const presupuestos = SGC().generadorPresupuestos.listar();
   const presupuesto1 = presupuestos[0].id;

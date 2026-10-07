@@ -46,11 +46,16 @@
   }
 
   function copiarFila(f) {
-    return {
+    var copia = {
+      // ORDEN-RONDA-31 pieza 1: una fila de justificación se copia con su marca
+      // (sin base ni valor): es lo que hace que al repintar se escondan esos
+      // campos y que el núcleo no la cuente como valor.
+      justificacion: f && f.justificacion === true,
       presupuestoId: f && f.presupuestoId !== undefined && f.presupuestoId !== null ? String(f.presupuestoId) : '',
       base: f && f.base !== undefined && f.base !== null ? String(f.base) : '',
       valor: f && (f.valor !== undefined && f.valor !== null) ? String(f.valor) : ''
     };
+    return copia;
   }
 
   // fijarDatos(renglones, presupuestos, valoresGuardados, cantidadesGuardadas,
@@ -108,12 +113,22 @@
     return temp;
   }
 
-  // Filas completas (las vacías no se mandan ni se validan).
+  // Filas completas (las vacías no se mandan ni se validan). Las filas de
+  // justificación (ORDEN-RONDA-31) sí van, marcadas: el núcleo las cuenta como
+  // la segunda fuente del renglón (fuentesDeRenglon) y las saca del promedio.
   function valoresLimpios(i) {
     var salida = [];
     var filas = estado.valores[i] || [];
     for (var j = 0; j < filas.length; j++) {
       var f = filas[j];
+      if (f.justificacion === true) {
+        var pidJ = String(f.presupuestoId === undefined || f.presupuestoId === null
+          ? '' : f.presupuestoId).trim();
+        if (pidJ !== '') {
+          salida.push({ presupuestoId: pidJ, justificacion: true });
+        }
+        continue;
+      }
       if ((f.presupuestoId === '' && f.base === '' && String(f.valor).trim() === '') ||
           !f.base || String(f.valor).trim() === '') {
         continue;
@@ -152,12 +167,22 @@
     'Los dos valores tienen que salir de presupuestos distintos.';
 
   function avisoDeRenglon(i) {
-    var completos = valoresLimpios(i);
     var conCita = 0;
     var citados = [];
-    for (var f = 0; f < completos.length; f++) {
-      var pid = String(completos[f].presupuestoId === undefined ||
-        completos[f].presupuestoId === null ? '' : completos[f].presupuestoId).trim();
+    var filas = estado.valores[i] || [];
+    for (var f = 0; f < filas.length; f++) {
+      var fila = filas[f];
+      // ORDEN-RONDA-31: una justificación no es un valor: en el renglón A + J
+      // la fila J no puede disparar el aviso de "dos valores del mismo
+      // presupuesto" (ese renglón está bien).
+      if (fila.justificacion === true) {
+        continue;
+      }
+      if (!fila.base || String(fila.valor).trim() === '') {
+        continue;
+      }
+      var pid = String(fila.presupuestoId === undefined || fila.presupuestoId === null
+        ? '' : fila.presupuestoId).trim();
       if (pid === '') {
         continue;
       }
@@ -237,7 +262,14 @@
       var pr = estado.presupuestos[p];
       var opt = doc.createElement('option');
       opt.value = pr.id;
+      // ORDEN-RONDA-31 pieza 1: el desplegable ofrece TODOS los documentos de
+      // referencia. A los de justificación (un PDF que reemplaza el segundo
+      // valor) se les dice el tipo, porque elegir uno cambia la fila: se
+      // esconden base y valor.
       opt.textContent = pr.nombreOriginal + ' (' + pr.id + ')';
+      if (SGC.core.utils.tipoDeDocumento(pr) === 'justificacion') {
+        opt.textContent += ' · justificación';
+      }
       if (fila.presupuestoId === pr.id) {
         opt.selected = true;
       }
@@ -382,6 +414,16 @@
       inValor.disabled = !estado.editable;
       filaDiv.appendChild(inValor);
 
+      // ORDEN-RONDA-31 pieza 1: una fila de justificación no lleva base ni
+      // valor (un PDF que reemplaza el segundo valor no tiene qué promediar):
+      // se esconden y se deshabilitan los dos campos.
+      if (filas[j].justificacion === true) {
+        selBase.hidden = true;
+        selBase.disabled = true;
+        inValor.hidden = true;
+        inValor.disabled = true;
+      }
+
       var btnQuitar = doc.createElement('button');
       btnQuitar.type = 'button';
       btnQuitar.className = 'req-quitar-valor';
@@ -454,7 +496,34 @@
       var fila = estado.valores[i] && estado.valores[i][j];
       if (fila) {
         if (objetivo.hasAttribute('data-presupuesto')) {
+          // ORDEN-RONDA-31 pieza 1: elegir un documento de justificación vuelve
+          // la fila una justificación —sin base ni valor— y se esconden esos
+          // campos. Elegir cualquier otro la vuelve una fila de valor común.
           fila.presupuestoId = objetivo.value;
+          var elegido = null;
+          for (var q = 0; q < estado.presupuestos.length; q++) {
+            if (estado.presupuestos[q].id === objetivo.value) {
+              elegido = estado.presupuestos[q];
+              break;
+            }
+          }
+          var esJustificacion = !!elegido &&
+            SGC.core.utils.tipoDeDocumento(elegido) === 'justificacion';
+          fila.justificacion = esJustificacion;
+          if (esJustificacion) {
+            fila.base = '';
+            fila.valor = '';
+          }
+          var baseSel = estado.dom.contenedor.querySelector('[data-base="' + i + ':' + j + '"]');
+          var valIn = estado.dom.contenedor.querySelector('[data-valor="' + i + ':' + j + '"]');
+          if (baseSel) {
+            baseSel.hidden = esJustificacion;
+            baseSel.disabled = !estado.editable || esJustificacion;
+          }
+          if (valIn) {
+            valIn.hidden = esJustificacion;
+            valIn.disabled = !estado.editable || esJustificacion;
+          }
         } else if (objetivo.hasAttribute('data-base')) {
           fila.base = objetivo.value;
         } else {

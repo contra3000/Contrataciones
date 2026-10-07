@@ -68,51 +68,24 @@
     return false;
   }
 
-  // ORDEN-RONDA-26 pieza 5: un valor de referencia (ADR-022) es completo cuando
-  // trae el presupuesto que cita, la base normalizable y el valor numérico. Es
-  // el mismo criterio que aplica validarRenglon al guardar (requerimiento.js),
-  // así lo que llegó persistido siempre está completo.
-  function valorCompleto(v) {
-    return v && typeof v === 'object' &&
-      typeof v.presupuestoId === 'string' && v.presupuestoId.trim() !== '' &&
-      (v.base === 'unitario' || v.base === 'total') &&
-      typeof v.valor === 'number' && isFinite(v.valor) && v.valor >= 0;
-  }
-
-  // ORDEN-RONDA-26 pieza 5: en ESPECIFICACIONES_TECNICAS cada renglón exige al
-  // menos dos valores de referencia, y ORDEN-RONDA-29 pieza 4 exige que salgan
-  // de presupuestos DISTINTOS: la lista de faltantes se construye en palabras
-  // por el texto de la pieza 2 (itemsFaltantes), que pone "2 valores de
-  // referencia de presupuestos distintos en Renglón N"; la clave `renglones` sólo
-  // aparece si algún renglón las tiene (así los tests que no esperan la clave
-  // siguen con la forma exacta).
+  // ORDEN-RONDA-31 pieza 1: un renglón está completo con dos valores que salen
+  // de fuentes distintas (presupuesto o precio de plaza), o con UN valor y una
+  // fila de justificación. La cuenta y el criterio viven en
+  // core/requerimiento.js (fuentesDeRenglon), que es el mismo que mira la
+  // pantalla: acá sólo se traduce a "Renglón N" para la lista de faltantes.
+  //
+  // La clave `renglones` sólo aparece si algún renglón es deficiente, como en
+  // la ronda 26 (así los tests que no esperan la clave siguen con la forma
+  // exacta).
   function renglonesSinValores(expediente) {
-    // el mismo criterio que aplica validarRenglon al guardar (requerimiento.js),
-    // así lo que llegó persistido siempre está completo.
-    function valorCompleto(v) {
-      return v && typeof v === 'object' &&
-        typeof v.presupuestoId === 'string' && v.presupuestoId.trim() !== '' &&
-        (v.base === 'unitario' || v.base === 'total') &&
-        typeof v.valor === 'number' && isFinite(v.valor) && v.valor >= 0;
-    }
     if (!SGC.core.requerimiento) {
-      throw new Error('validacion.js (valoresDelRequerimiento) requiere que core/requerimiento.js se cargue primero');
+      throw new Error('validacion.js (renglonesSinValores) requiere que core/requerimiento.js se cargue primero');
     }
     var info = SGC.core.requerimiento.requerimientoDe(expediente);
     var deficientes = [];
     for (var i = 0; i < info.renglones.length; i++) {
-      var lista = Array.isArray(info.renglones[i].valoresReferencia)
-        ? info.renglones[i].valoresReferencia : [];
-      var completos = [];
-      for (var j = 0; j < lista.length; j++) {
-        if (valorCompleto(lista[j])) {
-          var pid = lista[j].presupuestoId.trim();
-          if (completos.indexOf(pid) === -1) {
-            completos.push(pid);
-          }
-        }
-      }
-      if (completos.length < 2) {
+      var fuentes = SGC.core.requerimiento.fuentesDeRenglon(info.renglones[i]);
+      if (!fuentes.completo) {
         deficientes.push('Renglón ' + (i + 1));
       }
     }
@@ -184,8 +157,9 @@
 
   // Arreglo de frases (una por falto), sin el prefijo "Falta: " (lo pone cada
   // superficie). Para entregables: "guardar <título>". Para renglones (pieza
-  // 5 de la 26, con la regla de la 29): "2 valores de referencia de
-  // presupuestos distintos en <renglón>".
+  // 5 de la 26, con la regla de la 29 y la ampliación de la 31): "2 valores de
+  // referencia de fuentes distintas, o 1 valor y una justificación, en
+  // <renglón>".
   function itemsFaltantes(revision) {
     var items = [];
     if (!revision || !revision.faltantes) {
@@ -201,7 +175,8 @@
       items.push('guardar ' + tituloEntregable(entregables[j]));
     }
     for (var k = 0; k < renglones.length; k++) {
-      items.push('2 valores de referencia de presupuestos distintos en ' + String(renglones[k]));
+      items.push('2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en ' +
+        String(renglones[k]));
     }
     return items;
   }

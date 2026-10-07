@@ -74,11 +74,8 @@ async function claseConItems() {
   return clases;
 }
 
-function agregarPresupuesto(archivo, proveedor, fecha) {
-  m.escribir('sgc-presup-archivo', archivo);
-  m.escribir('sgc-presup-proveedor', proveedor);
-  m.escribir('sgc-presup-fecha', fecha);
-  m.documento.getElementById('sgc-presup-agregar').click();
+async function agregarPresupuesto(archivo, proveedor, fecha) {
+  await m.agregarDocumento({ nombre: archivo, proveedor, fecha });
 }
 
 function presupuestos() {
@@ -116,8 +113,8 @@ test('RONDA-30 pieza 1b · dos valores del mismo presupuesto dejan "Exportar" de
   for (let i = 0; i < 3; i++) {
     await agregarRenglonReal(i, clases[i][2]);
   }
-  agregarPresupuesto('presupuesto-resma-2026.pdf', 'Librería Sur', '12/02/2026');
-  agregarPresupuesto('presupuesto-resma-2026-b.pdf', 'Papelera Norte', '13/02/2026');
+  await agregarPresupuesto('presupuesto-resma-2026.pdf', 'Librería Sur', '12/02/2026');
+  await agregarPresupuesto('presupuesto-resma-2026-b.pdf', 'Papelera Norte', '13/02/2026');
   const [p1, p2] = presupuestos().map((p) => p.id);
   m.cargarValores([
     [{ presupuestoId: p1, base: 'unitario', valor: '4200' },
@@ -156,7 +153,7 @@ test('RONDA-30 pieza 1b · dos valores del mismo presupuesto dejan "Exportar" de
     'con un renglón de dos valores del mismo presupuesto no se puede exportar');
 
   assert.match(msj.textContent,
-    /2 valores de referencia de presupuestos distintos en Rengl.n 2/,
+    /2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en Rengl.n 2/,
     'el motivo dice la regla y nombra el renglón: ' + msj.textContent);
 });
 
@@ -167,8 +164,8 @@ test('RONDA-30 pieza 1c · el mismo presupuesto en las dos filas avisa debajo de
   const clases = await claseConItems();
   await agregarRenglonReal(0, clases[0][2]);
   await agregarRenglonReal(1, clases[1][2]);
-  agregarPresupuesto('presupuesto-resma-2026.pdf', 'Librería Sur', '12/02/2026');
-  agregarPresupuesto('presupuesto-resma-2026-b.pdf', 'Papelera Norte', '13/02/2026');
+  await agregarPresupuesto('presupuesto-resma-2026.pdf', 'Librería Sur', '12/02/2026');
+  await agregarPresupuesto('presupuesto-resma-2026-b.pdf', 'Papelera Norte', '13/02/2026');
   const [p1, p2] = presupuestos().map((p) => p.id);
 
   // Las dos filas del primer renglón con el mismo presupuesto: el aviso tiene

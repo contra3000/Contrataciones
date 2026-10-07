@@ -136,6 +136,39 @@
     ];
   }
 
+  /*
+   * ORDEN-RONDA-31 pieza 1: la leyenda de adjuntos. El requerimiento se
+   * acompaña con los documentos de referencia (presupuestos, precios de plaza y
+   * justificaciones), y el papel tiene que dejarlo escrito, con su tipo y su
+   * fecha en dd/mm/aaaa, porque es el documento con el que Abastecimiento
+   * compara. Se muestra sólo si hay adjuntos: sin documentos no hay lista.
+   */
+  function leyendaAdjuntos(presupuestos) {
+    var utils = SGC.core.utils;
+    var partes = [];
+    for (var i = 0; i < presupuestos.length; i++) {
+      var p = presupuestos[i] || {};
+      var nombre = typeof p.nombreOriginal === 'string' ? p.nombreOriginal : '';
+      if (nombre === '') {
+        continue;
+      }
+      var detalle = [];
+      if (typeof p.proveedor === 'string' && p.proveedor !== '') {
+        detalle.push(p.proveedor);
+      }
+      var fecha = utils.fechaCorta(p.fecha);
+      if (fecha) {
+        detalle.push(fecha);
+      }
+      partes.push(utils.etiquetaDeTipo(utils.tipoDeDocumento(p)) + ' ' + nombre +
+        (detalle.length > 0 ? ' (' + detalle.join(', ') + ')' : ''));
+    }
+    if (partes.length === 0) {
+      return '';
+    }
+    return 'Se acompañan como adjuntos: ' + partes.join('; ');
+  }
+
   function celdasDeOca(r, i) {
     var minima = r.cantidadMinima !== undefined && r.cantidadMinima !== null
       ? String(r.cantidadMinima) : '';
@@ -220,6 +253,12 @@
       partes.push('<p class="doc-nota">' + d.esc(CAUSAL_OCA_NORMATIVA) + '</p>');
     }
 
+    var leyenda = leyendaAdjuntos(m.presupuestos);
+    if (leyenda !== '') {
+      partes.push('<h2>Adjuntos</h2>');
+      partes.push('<p class="doc-adjuntos">' + d.esc(leyenda) + '</p>');
+    }
+
     return partes;
   }
 
@@ -301,6 +340,12 @@
       d.pDom(contenedor, 'doc-nota',
         'La cantidad máxima es el tope que se le puede requerir al proveedor en una sola Solicitud de Provisión (uso de la División, ADR-022 §3).');
       d.pDom(contenedor, 'doc-nota', CAUSAL_OCA_NORMATIVA);
+    }
+
+    var leyenda = leyendaAdjuntos(m.presupuestos);
+    if (leyenda !== '') {
+      d.h2Dom(contenedor, 'Adjuntos');
+      d.pDom(contenedor, 'doc-adjuntos', leyenda);
     }
 
     d.firmaDom(contenedor, m.base, d.SIN_FIRMA);

@@ -317,9 +317,14 @@ async function arrancar() {
           elemento.value = String(valor);
           contenedor.emit('change', { target: elemento });
         };
+        // ORDEN-RONDA-31 pieza 1: una fila de justificación se guarda sin base
+        // ni valor (esos campos se esconden al elegir el documento), así que
+        // acá no se tocan.
         escribir('presupuesto', fila.presupuestoId);
-        escribir('base', fila.base);
-        escribir('valor', fila.valor);
+        if (fila.justificacion !== true) {
+          escribir('base', fila.base);
+          escribir('valor', fila.valor);
+        }
       });
     });
   };
@@ -407,6 +412,62 @@ async function arrancar() {
   // Lo que el asistente contesta al archivo elegido (el mismo <p> del aviso).
   m.msjArchivo = function () {
     return documento.getElementById('sgc-fasttrack-msj');
+  };
+
+  /*
+   * ORDEN-RONDA-31 pieza 1: elegir el archivo de un documento de referencia en
+   * el <input type="file"> del generador (#sgc-presup-archivo). Nada se sube:
+   * el módulo lee los bytes del archivo "elegido". Con `contenido` (un texto)
+   * se puede verificar la huella contra Node (se codifica a UTF-8).
+   */
+  m.elegirDocumento = function (nombre, contenido) {
+    const input = documento.getElementById('sgc-presup-archivo');
+    if (!input) {
+      throw new Error('elegirDocumento: no existe #sgc-presup-archivo');
+    }
+    const bytes = (contenido && typeof contenido === 'string')
+      ? new TextEncoder().encode(contenido) : null;
+    input.files = bytes
+      ? [{ name: nombre, contenido: contenido, bytes: bytes, size: bytes.length }]
+      : [{ name: nombre }];
+    input.emit('change', { target: input });
+    return input;
+  };
+
+  /*
+   * ORDEN-RONDA-31 pieza 1: el camino completo de un documento de referencia,
+   * por la pantalla: archivo elegido, tipo, proveedor, fecha, clic en Agregar,
+   * y espera a que termine la lectura y la huella. Devuelve el documento ya
+   * anotado (con bytes y sha256). `nombre` es obligatorio.
+   */
+  m.agregarDocumento = async function (opciones) {
+    const d = opciones || {};
+    if (!d.nombre) {
+      throw new Error('agregarDocumento: falta el nombre del archivo');
+    }
+    // Todos los documentos de la pantalla se leen y se sellan: si el test no
+    // da contenido, se sella el nombre. Lo que el JSON tiene que verificar es
+    // que la huella ES la de esos bytes, con Node.
+    if (d.contenido === undefined) {
+      d.contenido = 'contenido de ' + d.nombre;
+    }
+    m.elegirDocumento(d.nombre, d.contenido);
+    if (d.tipo !== undefined) {
+      m.setear('sgc-presup-tipo', d.tipo);
+    }
+    if (d.proveedor !== undefined) {
+      m.setear('sgc-presup-proveedor', d.proveedor || '');
+    }
+    if (d.fecha !== undefined) {
+      m.setear('sgc-presup-fecha', d.fecha || '');
+    }
+    const antes = globalThis.SGC.generadorPresupuestos.listar().length;
+    documento.getElementById('sgc-presup-agregar').click();
+    await m.esperar(function () {
+      return globalThis.SGC.generadorPresupuestos.listar().length > antes;
+    }, 10000, 'el documento de referencia no se agregó');
+    const lista = globalThis.SGC.generadorPresupuestos.listar();
+    return lista[lista.length - 1];
   };
 
   // Vaciar lo descargado: cada test corre su propia sesión (como F5) y no tiene

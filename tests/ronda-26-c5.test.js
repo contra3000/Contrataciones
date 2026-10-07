@@ -8,7 +8,7 @@
  * referencia por cada renglón (mismo código en cliente y servidor), y desde la
  * ronda 29 los dos tienen que salir de presupuestos DISTINTOS. Sin ellos,
  * "Avanzar" queda deshabilitado y el texto dice, por cada renglón que falta:
- * "2 valores de referencia de presupuestos distintos en Renglón N" (con la N
+ * "2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en Renglón N" (con la N
  * humana, nunca el índice técnico). El motor (que es el mismo servidor) también
  * lo exige y lo nombra igual al rechazar un avanzar fabricado. Con dos valores
  * completos de presupuestos distintos, la vista habilita el botón y el motor
@@ -69,7 +69,7 @@ test('RONDA-26 pieza 5 · un valor por renglón: no avanza y se nombra el rengl�
   assert.strictEqual(nodos['sgc-expediente-avanzar'].disabled, true,
     'con un solo valor, Avanzar queda deshabilitado');
   assert.match(nodos['sgc-expediente-avanzar-porque'].textContent,
-    /Falta: 2 valores de referencia de presupuestos distintos en Rengl.n 1/,
+    /Falta: 2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en Rengl.n 1/,
     'el texto nombra el renglón que falta');
   assert.ok(nodos['sgc-expediente-avanzar-porque'].textContent.indexOf('Renglón 2') === -1,
     'no nombra renglones que sí están completos');
@@ -77,7 +77,7 @@ test('RONDA-26 pieza 5 · un valor por renglón: no avanza y se nombra el rengl�
   // El motor (que es el mismo servidor) también lo exige y lo nombra igual.
   const sinValor = SGC.core.estados.avanzar(actual, 'generador', 'SOLICITUD_CONTRATACION', CONTEXTO_GENERADOR);
   assert.strictEqual(sinValor.ok, false, 'el motor no deja avanzar con un solo valor');
-  assert.match(sinValor.error, /2 valores de referencia de presupuestos distintos en Rengl.n 1/,
+  assert.match(sinValor.error, /2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en Rengl.n 1/,
     'el mensaje del motor nombra el renglón falta');
 
   // El rol llena el segundo valor y lo guarda; el expediente vuelve completo.
@@ -121,9 +121,9 @@ test('RONDA-26 pieza 5 · la validación nombró sólo los renglones que quedan 
     'un renglón ya completo no figura');
 
   const texto = nodos['sgc-expediente-avanzar-porque'].textContent;
-  assert.match(texto, /Falta: 2 valores de referencia de presupuestos distintos en Rengl.n 1/,
+  assert.match(texto, /Falta: 2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en Rengl.n 1/,
     'el botón dice cuál renglón falta');
-  assert.match(texto, /Falta: 2 valores de referencia de presupuestos distintos en Rengl.n 3/,
+  assert.match(texto, /Falta: 2 valores de referencia de fuentes distintas, o 1 valor y una justificación, en Rengl.n 3/,
     'el botón dice cada renglón que falta');
   assert.ok(texto.indexOf('Renglón 2') === -1,
     'no menciona el renglón que está completo');

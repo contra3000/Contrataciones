@@ -150,14 +150,10 @@
       return Promise.reject(new Error(falta));
     }
     var bytes = new root.TextEncoder().encode(canonico(sinHuella(objeto)));
-    return root.crypto.subtle.digest('SHA-256', bytes).then(function (buffer) {
-      var octetos = new Uint8Array(buffer);
-      var hex = '';
-      for (var i = 0; i < octetos.length; i++) {
-        hex += (octetos[i] < 16 ? '0' : '') + octetos[i].toString(16);
-      }
-      return hex;
-    });
+    // La MISMA función que anota la huella de cada documento de referencia
+    // (ORDEN-RONDA-31 pieza 1): una sola implementación del SHA-256 para todo
+    // el sistema, así dos huellas "iguales" nunca se calculan distinto.
+    return SGC.core.utils.sha256Hex(bytes);
   }
 
   // -------------------------------------------------------------------- nombres
@@ -222,6 +218,18 @@
     var salida = [];
     for (var i = 0; i < lista.length; i++) {
       var v = lista[i] || {};
+      // ORDEN-RONDA-31 pieza 1: una fila de justificación se guarda SIN base ni
+      // valor, con la marca justificacion:true (un PDF que reemplaza el segundo
+      // valor). Los valores de las fuentes de verdad, igual que siempre.
+      if (v.justificacion === true) {
+        salida.push({
+          presupuestoId: typeof v.presupuestoId === 'string' ? v.presupuestoId : '',
+          justificacion: true,
+          base: '',
+          valor: ''
+        });
+        continue;
+      }
       salida.push({
         presupuestoId: typeof v.presupuestoId === 'string' ? v.presupuestoId : '',
         base: typeof v.base === 'string' ? v.base : '',
@@ -256,13 +264,26 @@
     var presupuestos = [];
     var listaP = Array.isArray(expediente.presupuestos) ? expediente.presupuestos : [];
     for (var j = 0; j < listaP.length; j++) {
-      presupuestos.push({
-        id: listaP[j].id,
-        nombreOriginal: listaP[j].nombreOriginal,
-        proveedor: listaP[j].proveedor || '',
-        fecha: listaP[j].fecha || '',
+      var doc = listaP[j];
+      var copiaDoc = {
+        id: doc.id,
+        nombreOriginal: doc.nombreOriginal,
+        proveedor: doc.proveedor || '',
+        fecha: doc.fecha || '',
+        // ORDEN-RONDA-31 pieza 1: cada documento lleva su TIPO (presupuesto /
+        // precio de plaza / justificación), y si pudo sellarse, sus bytes y su
+        // SHA-256. Un archivo importado de una versión vieja no los trae: en
+        // ese caso el tipo queda "presupuesto" y la huella no se inventa.
+        tipo: SGC.core.utils.tipoDeDocumento(doc),
         referencia: true
-      });
+      };
+      if (typeof doc.bytes === 'number') {
+        copiaDoc.bytes = doc.bytes;
+      }
+      if (typeof doc.sha256 === 'string' && doc.sha256 !== '') {
+        copiaDoc.sha256 = doc.sha256;
+      }
+      presupuestos.push(copiaDoc);
     }
     return {
       titulo: String(expediente.titulo || ''),
@@ -511,7 +532,8 @@
    * pide al núcleo con las MISMAS funciones que usa el botón de exportar
    * (validarParaAvanzar + itemsFaltantes), sobre un expediente mínimo en
    * ESPECIFICACIONES_TECNICAS. Así el motivo sale con las palabras de la ronda 26
-   * ("2 valores de referencia de presupuestos distintos en Renglón 2") y no con
+   * ("2 valores de referencia de fuentes distintas, o 1 valor y una
+   * justificación, en Renglón 2") y no con
    * una cuenta propia que podría quedar vieja.
    *
    * Se mira sólo lo que devuelve de renglones: los campos y los entregables que

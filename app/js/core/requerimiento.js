@@ -78,10 +78,75 @@
     return { ipp: ippParte.replace(/\./g, ''), clase: clase, item: item };
   }
 
+  // ORDEN-RONDA-31 pieza 1: una fila puede ser una JUSTIFICACIÓN en vez de un
+  // valor: un PDF de respaldo que se elige en el renglón y sirve para varios.
+  // Esa fila no trae base ni valor numérico (no hay nada que promediar), y es
+  // la segunda "fuente" que completa un renglón junto a un único valor.
+  function esJustificacion(v) {
+    return !!v && typeof v === 'object' && v.justificacion === true;
+  }
+
+  // ORDEN-RONDA-31 pieza 1: lo que cuenta como valor completo de un renglón
+  // (mismo criterio que aplicaban validacion.js y validarValoresReferencia): la
+  // cita a un documento, la base normalizable y el número.
+  function valorCompleto(v) {
+    return v && typeof v === 'object' && !esJustificacion(v) &&
+      typeof v.presupuestoId === 'string' && v.presupuestoId.trim() !== '' &&
+      (v.base === 'unitario' || v.base === 'total') &&
+      typeof v.valor === 'number' && isFinite(v.valor) && v.valor >= 0;
+  }
+
+  /*
+   * ORDEN-RONDA-31 pieza 1: las fuentes de un renglón y si está completo.
+   *
+   * La regla de la ronda 29 —dos valores de presupuestos distintos— y la de la
+   * ronda 31 —o dos valores de fuentes distintas, o un valor y una
+   * justificación— se cuentan acá, en un solo lugar, para que el botón de
+   * exportar, la lista de faltantes y la vista de la pantalla digan lo mismo.
+   *
+   *   fuentes         documentos distintos que aportan un valor completo
+   *   valores         valores completos (pueden citar el mismo documento)
+   *   justificaciones filas de justificación con un documento elegido
+   *   completo        2 valores de fuentes distintas, o 1 valor + 1 justificación
+   */
+  function fuentesDeRenglon(renglon) {
+    var lista = renglon && Array.isArray(renglon.valoresReferencia)
+      ? renglon.valoresReferencia : [];
+    var fuentes = [];
+    var valores = 0;
+    var justificaciones = 0;
+    for (var i = 0; i < lista.length; i++) {
+      var v = lista[i];
+      if (!v || typeof v !== 'object') {
+        continue;
+      }
+      if (esJustificacion(v)) {
+        if (typeof v.presupuestoId === 'string' && v.presupuestoId.trim() !== '') {
+          justificaciones++;
+        }
+        continue;
+      }
+      if (valorCompleto(v)) {
+        valores++;
+        var pid = v.presupuestoId.trim();
+        if (fuentes.indexOf(pid) === -1) {
+          fuentes.push(pid);
+        }
+      }
+    }
+    return {
+      fuentes: fuentes,
+      valores: valores,
+      justificaciones: justificaciones,
+      completo: fuentes.length >= 2 || (valores >= 1 && justificaciones >= 1)
+    };
+  }
+
   // Rechaza un valor de referencia mal formado. La base es obligatoria: un
   // valor sin base no se puede normalizar. Con base 'total' y cantidad cero
   // o ausente no hay normalización posible: se rechaza, nunca se divide por
-  // cero (ADR-022 §2).
+  // cero (ADR-022 §2). Las filas de justificación (ORDEN-RONDA-31) no entran:
+  // no traen base ni valor, y no hay nada que normalizar en ellas.
   function validarValoresReferencia(renglon) {
     var errores = [];
     if (!renglon || typeof renglon !== 'object') {
@@ -93,6 +158,9 @@
       var prefijo = 'Valor de referencia ' + (i + 1) + ': ';
       if (!v || typeof v !== 'object') {
         errores.push(prefijo + 'debe ser un objeto');
+        continue;
+      }
+      if (esJustificacion(v)) {
         continue;
       }
       if (typeof v.presupuestoId !== 'string' || v.presupuestoId.trim() === '') {
@@ -155,12 +223,23 @@
   // multiplica por la cantidad (ADR-022 §2 pasos 2 y 3). Nunca divide por
   // cero: un valor con base 'total' y cantidad inválida lo deja sin
   // preventivo y reporta el error.
+  //
+  // ORDEN-RONDA-31 pieza 1: las filas de justificación no entran en el promedio
+  // (no traen valor; promediarlas las contaría como cero y bajaría el
+  // preventivo de un renglón que está bien). Sí entran en la regla de "renglón
+  // completo" (fuentesDeRenglon), que es donde la justificación aporta.
   function preventivoRenglon(renglon) {
     var errores = validarValoresReferencia(renglon);
     if (errores.length > 0) {
       return { valido: false, promedio: null, preventivo: null, errores: errores };
     }
-    var lista = Array.isArray(renglon.valoresReferencia) ? renglon.valoresReferencia : [];
+    var todos = Array.isArray(renglon.valoresReferencia) ? renglon.valoresReferencia : [];
+    var lista = [];
+    for (var j = 0; j < todos.length; j++) {
+      if (!esJustificacion(todos[j])) {
+        lista.push(todos[j]);
+      }
+    }
     if (lista.length === 0) {
       return { valido: true, promedio: null, preventivo: null, errores: [] };
     }
@@ -344,6 +423,9 @@
     IMPUTACION_CAMPOS: IMPUTACION_CAMPOS,
     NOTA_OCA: NOTA_OCA,
     descomponerCodigo: descomponerCodigo,
+    esJustificacion: esJustificacion,
+    valorCompleto: valorCompleto,
+    fuentesDeRenglon: fuentesDeRenglon,
     validarValoresReferencia: validarValoresReferencia,
     validarCantidades: validarCantidades,
     normalizarUnitario: normalizarUnitario,

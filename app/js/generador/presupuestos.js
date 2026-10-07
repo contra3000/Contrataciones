@@ -1,6 +1,7 @@
 /*
  * presupuestos.js
- * ORDEN-RONDA-28 §3 (ADR-044). Presupuestos del generador: NO se suben.
+ * ORDEN-RONDA-28 §3 (ADR-044) + ORDEN-RONDA-31 pieza 1.
+ * Presupuestos y demás documentos de referencia del generador: NO se suben.
  *
  * En la aplicación con servidor, un presupuesto es un archivo que el operador
  * sube y que queda en la carpeta del expediente (views/requerimiento-presupuestos.js
@@ -8,13 +9,16 @@
  * hay dónde dejar el archivo, y fingir que sí lo hay sería una mentira que
  * aparece después, cuando alguien busca el PDF y no está.
  *
- * Lo que sí hay es la REFERENCIA: cómo se llamaba el archivo, de qué proveedor
- * era y de qué fecha. Con eso el valor de referencia se cita igual que en la
- * aplicación con servidor —el renglón guarda `presupuestoId`, y ese id es el de
- * esta lista (ADR-022)— y el PDF original sigue en la máquina de quien lo tuvo.
+ * Lo que sí se hace es ELEGIRLO en la propia máquina, para leerlo y anotar su
+ * huella: nombre, tamaño, SHA-256, proveedor, fecha y de qué tipo es —
+ * presupuesto, precio de plaza o justificación (ORDEN-RONDA-31 pieza 1). Nada
+ * sale del equipo; el PDF original sigue donde estaba. Con eso el valor de
+ * referencia se cita igual que en la aplicación con servidor —el renglón guarda
+ * `presupuestoId`, y ese id es el de esta lista (ADR-022)—.
  *
  * Es una vista adaptada, no la del servidor: el contrato de los renglones es el
- * mismo, la carga del archivo no existe.
+ * mismo; la única diferencia es que aquí la huella la calcula este módulo con
+ * SGC.core.utils.sha256Hex, en la máquina propia.
  */
 (function (root) {
   'use strict';
@@ -31,13 +35,26 @@
     alCambio: null
   };
 
+  /*
+   * Cómo se muestra un documento en la lista: nombre · proveedor · fecha ·
+   * tipo de documento, y "sin huella" cuando no la hay (un archivo viejo
+   * importado sin SHA-256 no se puede citar como sellado). El orden de las
+   * tres primeras partes es fijo porque los tests y el informe leen esa línea
+   * tal cual: "presupuesto-resma-2026.pdf · Librería Sur · 12/02/2026".
+   */
   function textoDe(p) {
+    var utils = SGC.core.utils;
     var partes = [p.nombreOriginal];
     if (p.proveedor) {
       partes.push(p.proveedor);
     }
-    if (p.fecha) {
-      partes.push(p.fecha);
+    var fecha = utils.fechaCorta(p.fecha);
+    if (fecha) {
+      partes.push(fecha);
+    }
+    partes.push(utils.etiquetaDeTipo(utils.tipoDeDocumento(p)));
+    if (typeof p.sha256 !== 'string' || p.sha256.trim() === '') {
+      partes.push('sin huella');
     }
     return partes.join(' · ');
   }
@@ -69,7 +86,7 @@
         quitar.type = 'button';
         quitar.className = 'req-quitar-valor';
         quitar.setAttribute('data-quitar', p.id);
-        quitar.setAttribute('aria-label', 'Quitar el presupuesto de referencia ' + p.nombreOriginal);
+        quitar.setAttribute('aria-label', 'Quitar el documento de referencia ' + p.nombreOriginal);
         quitar.textContent = 'Quitar';
         li.appendChild(quitar);
         lista.appendChild(li);
@@ -80,26 +97,91 @@
     }
   }
 
-  // Agregar: el nombre del archivo es lo único obligatorio. Sin nombre no hay
-  // qué citar, y una referencia sin nombre no sirve de referencia.
-  function agregar() {
-    var nombre = String(estado.dom.archivo.value || '').trim();
-    if (nombre === '') {
-      avisar('Escribí el nombre del archivo del presupuesto.');
+  /*
+   * Los bytes del archivo elegido. En el navegador es file.arrayBuffer(); en
+   * los tests, el montura puede dejar los bytes directos o un texto (a ese se
+   * lo convierte con TextEncoder) para no tener que tocar el disco.
+   */
+  function leerBytes(archivo) {
+    if (archivo && typeof archivo.arrayBuffer === 'function') {
+      return Promise.resolve(archivo.arrayBuffer()).then(function (buffer) {
+        return new Uint8Array(buffer);
+      });
+    }
+    if (archivo && archivo.bytes) {
+      return Promise.resolve(archivo.bytes);
+    }
+    if (archivo && typeof archivo.contenido === 'string' && typeof root.TextEncoder === 'function') {
+      return Promise.resolve(new root.TextEncoder().encode(archivo.contenido));
+    }
+    return Promise.resolve(null);
+  }
+
+  function limpiarEntrada() {
+    if (!estado.dom.archivo) {
       return;
     }
-    estado.lista.push({
-      id: idSiguiente(idsEnUso()),
-      nombreOriginal: nombre,
-      proveedor: String(estado.dom.proveedor.value || '').trim(),
-      fecha: String(estado.dom.fecha.value || '').trim(),
-      referencia: true
-    });
     estado.dom.archivo.value = '';
-    estado.dom.proveedor.value = '';
-    estado.dom.fecha.value = '';
-    avisar('');
-    render();
+    // En el navegador, vaciar value ya vacía la lista de archivos; en los
+    // tests el montura guarda los archivos aparte y hay que vaciarlos a mano.
+    try {
+      estado.dom.archivo.files = null;
+    } catch (e) {
+      /* el navegador ya dejó la lista vacía al limpiar value */
+    }
+  }
+
+  /*
+   * Agregar: obligatorio el archivo (sin él no hay nombre ni huella que citar)
+   * y el cálculo de la huella. Se lee y se calcula en la propia máquina, y el
+   * documento se anota recién cuando la huella está: un documento sin huella no
+   * sirve para la auditoría de la ronda 31.
+   */
+  function agregar() {
+    var entrada = estado.dom.archivo;
+    var archivo = entrada && entrada.files && entrada.files.length > 0 ? entrada.files[0] : null;
+    if (!archivo || typeof archivo.name !== 'string' || archivo.name.trim() === '') {
+      avisar('Elegí el archivo del documento: el nombre del archivo es lo que se cita.');
+      return;
+    }
+    var utils = SGC.core.utils;
+    var registro = {
+      id: idSiguiente(idsEnUso()),
+      nombreOriginal: archivo.name.trim(),
+      proveedor: String(estado.dom.proveedor.value || '').trim(),
+      fecha: utils.fechaAIso(String(estado.dom.fecha.value || '').trim()),
+      tipo: utils.tipoDeDocumento({ tipo: estado.dom.tipo ? estado.dom.tipo.value : '' }),
+      referencia: true
+    };
+
+    leerBytes(archivo).then(function (bytes) {
+      if (!bytes || typeof bytes.length !== 'number') {
+        throw new Error('no se pudieron leer los bytes del archivo');
+      }
+      return utils.sha256Hex(bytes).then(function (huella) {
+        registro.bytes = bytes.length;
+        registro.sha256 = huella;
+      });
+    }).then(function () {
+      estado.lista.push(registro);
+      limpiarEntrada();
+      if (estado.dom.proveedor) {
+        estado.dom.proveedor.value = '';
+      }
+      if (estado.dom.fecha) {
+        estado.dom.fecha.value = '';
+      }
+      if (estado.dom.tipo) {
+        estado.dom.tipo.value = 'presupuesto';
+      }
+      avisar('');
+      render();
+    }).catch(function (error) {
+      // No se borra lo que el usuario eligió: si falló la huella, el archivo
+      // sigue elegido y se puede reintentar arreglando el problema.
+      avisar('No se pudo leer el archivo: ' +
+        (error && error.message ? error.message : 'error de lectura'));
+    });
   }
 
   function quitar(id) {
@@ -144,6 +226,10 @@
         nombreOriginal: nombre,
         proveedor: typeof p.proveedor === 'string' ? p.proveedor : '',
         fecha: typeof p.fecha === 'string' ? p.fecha : '',
+        // El tipo no es obligatorio en un JSON viejo: sin él, presupuesto.
+        tipo: SGC.core.utils.tipoDeDocumento(p),
+        bytes: typeof p.bytes === 'number' ? p.bytes : null,
+        sha256: typeof p.sha256 === 'string' ? p.sha256 : '',
         referencia: true
       });
     }
@@ -176,6 +262,7 @@
   function montar(raiz) {
     estado.dom.raiz = raiz;
     estado.dom.archivo = raiz.querySelector('#sgc-presup-archivo');
+    estado.dom.tipo = raiz.querySelector('#sgc-presup-tipo');
     estado.dom.proveedor = raiz.querySelector('#sgc-presup-proveedor');
     estado.dom.fecha = raiz.querySelector('#sgc-presup-fecha');
     estado.dom.lista = raiz.querySelector('#sgc-presup-lista');
@@ -199,13 +286,23 @@
     cargar: cargar,
     listar: function () {
       return estado.lista.map(function (p) {
-        return {
+        var copia = {
           id: p.id,
           nombreOriginal: p.nombreOriginal,
           proveedor: p.proveedor,
           fecha: p.fecha,
+          tipo: SGC.core.utils.tipoDeDocumento(p),
           referencia: true
         };
+        // bytes y huella no son obligatorios: un archivo importado de una
+        // versión vieja no los trae, y en ese caso no se inventan.
+        if (typeof p.bytes === 'number') {
+          copia.bytes = p.bytes;
+        }
+        if (typeof p.sha256 === 'string' && p.sha256 !== '') {
+          copia.sha256 = p.sha256;
+        }
+        return copia;
       });
     },
     // Los valores ya escritos apuntan a un presupuesto que se quitó: se limpian
@@ -222,9 +319,12 @@
       estado.lista = [];
       estado.siguiente = 1;
       if (estado.dom.archivo) {
-        estado.dom.archivo.value = '';
+        limpiarEntrada();
         estado.dom.proveedor.value = '';
         estado.dom.fecha.value = '';
+        if (estado.dom.tipo) {
+          estado.dom.tipo.value = 'presupuesto';
+        }
         avisar('');
       }
       render();
