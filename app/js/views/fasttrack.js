@@ -45,8 +45,22 @@
       dependenciaSolicitante: 'División Usuario',
       justificacion: 'Se necesita reponer insumos en uso corriente.',
       objetivo: '',
+      // ORDEN-RONDA-32 pieza 2: un texto para el asistente de IA que llena la
+      // plantilla. No es parte del requerimiento: importar() lo ignora, y eso
+      // se prueba en ronda-32-p2.
+      instrucciones: 'Rellená este JSON y devolvemelo tal cual, con la misma forma, sin ' +
+        'agregar ni quitar campos.\nNo inventes códigos de catálogo: usá sólo los que te ' +
+        'pase la persona (sacados del buscador del generador o de un requerimiento anterior). ' +
+        'Si no te dan el código, dejalo vacío.\nNo escribas la descripción del ítem: la pone ' +
+        'el catálogo ONC.\nLa aclaración no repite la descripción ni nombra marcas, y tiene ' +
+        'hasta 256 caracteres.\nLa cantidad es un número; la unidad, un texto corto como "UN" ' +
+        'o "KG".',
       renglones: [
-        { codigo: '2.9.6-1115.1', cantidad: 2, unidad: 'UN', aclaracion: '' }
+        // Un renglón modelo creíble de papelería, con un código real del
+        // catálogo vigente (versión 98201747), y un renglón con el código
+        // vacío, que muestra cómo se deja el código que no se sabe.
+        { codigo: '2.3.1-6563.129', cantidad: 2, unidad: 'UN', aclaracion: '' },
+        { codigo: '', cantidad: 1, unidad: 'UN', aclaracion: '' }
       ]
     };
   }
@@ -74,6 +88,14 @@
     if (!esObjeto(crudo)) {
       return { ok: false, errores: ['El archivo debe ser un objeto JSON, no un arreglo ni un valor suelto'] };
     }
+
+    /*
+     * ORDEN-RONDA-32 pieza 2: "instrucciones" es el texto para el asistente
+     * que llena la plantilla — no es parte del requerimiento. Se ignora a
+     * propósito, y el test ronda-32-p2 lo prueba: la plantilla con
+     * instrucciones importa igual que sin ellas.
+     */
+    crudo.instrucciones = undefined;
 
     function textoObligatorio(campo) {
       if (typeof crudo[campo] !== 'string' || crudo[campo].trim() === '') {

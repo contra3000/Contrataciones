@@ -67,11 +67,16 @@ test('RONDA-32 pieza 1a · la plantilla importada deja la descripción del ítem
   await entrarComoUsuario();
 
   // La plantilla se baja y se vuelve a subir SIN tocarla: la descripción del
-  // renglón tiene que ser la del catálogo, nunca el código.
+  // renglón tiene que ser la del catálogo, nunca el código. ORDEN-RONDA-32
+  // pieza 2: la plantilla trae además un renglón con el código vacío (para
+  // mostrar cómo se deja el que no se sabe) y un código vacío no entra; como
+  // esta prueba es de la pieza 1, el renglón 2 se completa con un código real
+  // antes de volver a subir (lo mismo que hace ronda-28-c4).
   const descarga = await m.bajarPlantilla();
   const plantilla = JSON.parse(await descarga.texto());
   const codigo = plantilla.renglones[0].codigo;
   assert.strictEqual(typeof codigo, 'string', 'el renglón modelo trae su código');
+  plantilla.renglones[1].codigo = codigo;
 
   const msj = await importarPlantilla(JSON.stringify(plantilla));
   assert.match(msj, /Plantilla importada/i, 'el asistente contesta que la importó: ' + msj);

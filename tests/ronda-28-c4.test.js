@@ -167,8 +167,15 @@ test('la plantilla se baja con su formato y se puede volver a subir vacía de va
   assert.deepStrictEqual(m.red.llamadas, [],
     'bajar la plantilla no pide nada por red: ' + m.red.llamadas.join(', '));
 
-  // Subida tal cual, sin tocar nada: es el caso de "la bajé y la volví a subir".
-  const respuesta = await importarTexto(JSON.stringify(plantilla));
+  // Subida tal cual. ORDEN-RONDA-32 pieza 2: la plantilla trae un renglón con
+  // el código vacío a propósito (para mostrar cómo se deja el que no se sabe),
+  // y un código vacío no entra — dice "Renglón N: falta el código del
+  // catálogo". Para "la bajé y la volví a subir", se completa ese código con
+  // uno real antes de importar; es justo lo que la orden pide que haga la
+  // persona (o el asistente).
+  const completa = JSON.parse(JSON.stringify(plantilla));
+  completa.renglones[1].codigo = completa.renglones[0].codigo;
+  const respuesta = await importarTexto(JSON.stringify(completa));
   assert.match(respuesta, /importad/i, 'el asistente contesta que la importó: ' + respuesta);
   assert.ok(!/No se pudo importar/.test(respuesta), 'una plantilla válida no se rechaza');
 
