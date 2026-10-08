@@ -1,0 +1,26 @@
+diff --git a/app/css/tokens.css b/app/css/tokens.css
+index 59680c0..3bb8936 100644
+--- a/app/css/tokens.css
++++ b/app/css/tokens.css
+@@ -71,7 +71,7 @@
+   /* Estados: se resuelven tipográficamente (regla single_accent del paquete).
+      --color-error y --color-exito se mantienen como alias para no tocar los
+      consumidores, pero ya no introducen rojos ni verdes. */
+-  --color-error: var(--ink-900);
++  --color-error: #b3261e; /* rojo para errores: pedido del Jefe, 2026-10-08 (arreglo h1, ronda 32) */
+   --color-exito: var(--navy-800);
+ 
+   --sombra-card: rgba(17, 20, 24, 0.12);
+diff --git a/app/js/generador/intercambio.js b/app/js/generador/intercambio.js
+index b0bdc43..59ed842 100644
+--- a/app/js/generador/intercambio.js
++++ b/app/js/generador/intercambio.js
+@@ -515,7 +515,7 @@
+         renglones: d.renglones.map(function (r) {
+           return {
+             codigo: r.codigo,
+-            item: r.item,
++            item: '', // plantilla: la descripción la pone el catálogo (arreglo h1, ronda 32)
+             cantidad: r.cantidad,
+             unidad: r.unidad,
+             aclaracion: r.aclaracion || '',
