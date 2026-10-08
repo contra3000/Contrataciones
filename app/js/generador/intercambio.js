@@ -515,7 +515,7 @@
         renglones: d.renglones.map(function (r) {
           return {
             codigo: r.codigo,
-            item: r.item,
+            item: '', // plantilla: la descripción la pone el catálogo (arreglo h1, ronda 32)
             cantidad: r.cantidad,
             unidad: r.unidad,
             aclaracion: r.aclaracion || '',

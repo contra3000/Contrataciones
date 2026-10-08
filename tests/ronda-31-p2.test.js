@@ -217,7 +217,9 @@ test('RONDA-31 pieza 2e · sin valores, el paso queda marcado "falta" y cada ren
     'el paso "2 · Renglones" queda con la clase pendiente');
   const marca = marcaFalta(liRenglones);
   assert.ok(marca, 'el paso lleva la marca "· falta"');
-  assert.strictEqual(marca.textContent, '· falta', 'la marca dice "· falta"');
+  // ORDEN-RONDA-32 pieza 1b: la marca lleva un espacio inicial, para que el
+  // paso lea "2 · Renglones · falta" y no "2 · Renglones· falta".
+  assert.strictEqual(marca.textContent, ' · falta', 'la marca dice " · falta"');
 
   // De vuelta en el paso 2, los avisos siguen ahí.
   d.getElementById('sgc-anterior').click();

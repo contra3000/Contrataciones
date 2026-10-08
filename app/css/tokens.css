@@ -71,7 +71,7 @@
   /* Estados: se resuelven tipográficamente (regla single_accent del paquete).
      --color-error y --color-exito se mantienen como alias para no tocar los
      consumidores, pero ya no introducen rojos ni verdes. */
-  --color-error: var(--ink-900);
+  --color-error: #b3261e; /* rojo para errores: pedido del Jefe, 2026-10-08 (arreglo h1, ronda 32) */
   --color-exito: var(--navy-800);
 
   --sombra-card: rgba(17, 20, 24, 0.12);

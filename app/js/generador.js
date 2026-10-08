@@ -402,7 +402,9 @@
           marca.className = 'paso-falta';
           li.appendChild(marca);
         }
-        marca.textContent = '· falta';
+        // ORDEN-RONDA-32 pieza 1b: el espacio hace que el <li> lea
+        // "2 · Renglones · falta" (estaba pegado, "Renglones· falta").
+        marca.textContent = ' · falta';
       } else if (marca) {
         li.removeChild(marca);
       }

@@ -15,6 +15,10 @@
  *   - un paquete que "ya estaba" no dice nada del paquete que sale hoy. Lo que
  *     importa es lo que arma tools/empaquetar-generador.js ahora.
  *
+ * ORDEN-RONDA-32 pieza 1c·d: el paquete se arma con --ronda 32 y se prueba que
+ * diga de qué versión salió — el config/aplicacion.js con "r32-…", VERSION.txt
+ * y el LEEME.txt de la prueba piloto.
+ *
  * Se arma una sola vez en before() y todas las afirmaciones leen esa carpeta, en
  * vez de copiar 25 MB por cada caso.
  */
@@ -66,7 +70,10 @@ function declaradosEnElGenerador() {
 before(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sgc-paquete-'));
   const destino = path.join(dir, 'SGC-Generador');
-  informe = ejecutar(destino);
+  // --ronda 32: el paquete de esta ronda dice "r32-<commit>". La ronda también
+  // podría salir del último INFORME-RONDA-NN.md, pero acá se fija para que la
+  // versión probada sea la de la ronda en curso (ORDEN-RONDA-32 pieza 1c).
+  informe = ejecutar(destino, ['--ronda', '32']);
   paquete = listar(destino);
 });
 
@@ -94,6 +101,12 @@ test('el paquete existe y trae generador.html con todo lo que el documento decla
   for (const relativo of declarados) {
     assert.ok(paquete.indexOf(relativo) !== -1, 'el paquete no trae ' + relativo +
       ', que generador.html declara');
+    if (relativo === 'config/aplicacion.js') {
+      // ORDEN-RONDA-32 pieza 1c: la versión del paquete se escribe ahí
+      // ("r32-…"), así que no es byte a byte el del repositorio. Se prueba en
+      // "el paquete dice de qué versión salió".
+      continue;
+    }
     // Y el del paquete es el MISMO archivo, byte a byte: la montura de
     // tests/helpers/generador-montura.js abre el generador.html del repositorio
     // y hace el alta, los valores, la impresión y la exportación contra esos
@@ -130,8 +143,51 @@ test('el paquete existe y trae generador.html con todo lo que el documento decla
   const leeme = fs.readFileSync(path.join(destino, 'LEEME.txt'), 'utf8');
   assert.ok(/generador\.html/.test(leeme), 'el LEEME tiene que decir cuál archivo abrir');
   assert.ok(/Chrome/i.test(leeme), 'el LEEME tiene que decir con qué abrirlo');
-  assert.ok(/No hace falta instalar nada/i.test(leeme),
+  assert.ok(/No necesita instalar nada/i.test(leeme),
     'el LEEME tiene que decir que no hay que instalar nada');
+});
+
+test('el paquete dice de qué versión salió: r32-…, VERSION.txt y el LEEME de la prueba piloto', () => {
+  const destino = path.join(dir, 'SGC-Generador');
+
+  // config/aplicacion.js (el del paquete) trae la versión "r32-<commit corto>";
+  // es la que lee sello.versionGenerador en cada JSON exportado.
+  const config = fs.readFileSync(path.join(destino, 'config', 'aplicacion.js'), 'utf8');
+  const version = /"version"\s*:\s*"(r32-[0-9a-f]{7,})"/.exec(config);
+  assert.ok(version, 'el config/aplicacion.js del paquete trae "version": "r32-…": ' + config);
+  const commitCorto = version[1].slice(4);
+
+  // VERSION.txt: ronda, commit (el mismo del config), fecha y versión del catálogo.
+  const versiones = fs.readFileSync(path.join(destino, 'VERSION.txt'), 'utf8');
+  assert.ok(/ronda: 32/.test(versiones), 'VERSION.txt dice la ronda 32: ' + versiones);
+  assert.ok(versiones.indexOf('commit: ' + commitCorto) !== -1,
+    'VERSION.txt dice el mismo commit que el config: ' + versiones);
+  assert.ok(/fecha: \d{2}\/\d{2}\/\d{4}/.test(versiones),
+    'VERSION.txt dice la fecha del paquete: ' + versiones);
+  const manifiesto = JSON.parse(
+    fs.readFileSync(path.join(APP, 'catalogo', 'manifiesto.json'), 'utf8'));
+  assert.ok(versiones.indexOf('catalogo: ' + manifiesto.catalogoVersion) !== -1,
+    'VERSION.txt dice la versión del catálogo vigente: ' + versiones);
+
+  // El LEEME del paquete es el de la prueba piloto (con el avance), y dice su
+  // versión arriba.
+  const leeme = fs.readFileSync(path.join(destino, 'LEEME.txt'), 'utf8');
+  assert.ok(/Guardar avance/.test(leeme),
+    'el LEEME tiene que hablar del avance ("Guardar avance"): ' + leeme.slice(0, 200));
+  assert.ok(leeme.indexOf('Versión: ' + version[1] + ' · ') !== -1,
+    'el LEEME dice la versión del paquete arriba: ' + leeme.slice(0, 80));
+  assert.ok(!/Escribí tu nombre/.test(leeme),
+    'el LEEME viejo (del servidor) no viaja: ' + leeme.slice(0, 200));
+
+  // La única diferencia del config/aplicacion.js con el del repositorio es la
+  // versión: todo lo demás queda igual.
+  const sinVersion = (t) => t.replace(/("version"\s*:\s*")[^"]*(")/, '$1@$2');
+  const configRepo = fs.readFileSync(path.join(APP, 'config', 'aplicacion.js'), 'utf8');
+  assert.strictEqual(
+    sinVersion(config),
+    sinVersion(configRepo),
+    'el config/aplicacion.js del paquete sólo cambia la versión'
+  );
 });
 
 test('no contiene server/, tests/, datos/, ni los .json, ni lo que habla con el servidor', () => {
@@ -151,7 +207,7 @@ test('no contiene server/, tests/, datos/, ni los .json, ni lo que habla con el 
 
   const carpetas = new Set(paquete.map((r) => r.split('/')[0]));
   assert.deepStrictEqual(Array.from(carpetas).sort(),
-    ['LEEME.txt', 'catalogo', 'config', 'css', 'generador.html', 'js'],
+    ['LEEME.txt', 'VERSION.txt', 'catalogo', 'config', 'css', 'generador.html', 'js'],
     'las carpetas de primer nivel del paquete son las que tiene que tener');
 });
 

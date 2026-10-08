@@ -39,9 +39,18 @@
  * El informe final dice cuántas archivos son y cuántos bytes pesan, que es lo
  * que va al INFORME-RONDA-28.md.
  *
- * Uso:
- *   node tools/empaquetar-generador.js [--destino <carpeta>] [--json] [--forzar]
+ * ORDEN-RONDA-32 pieza 1c·d: el paquete dice de qué versión salió. Escribe en el
+ * destino el `config/aplicacion.js` con `version` "r<NN>-<commit corto>"
+ * (ejemplo "r32-1a2b3c4"), un VERSION.txt con la ronda, el commit, la fecha y la
+ * versión del catálogo, y un LEEME.txt que es el de la prueba piloto, con la
+ * versión. Así ningún JSON exportado se queda sin decir de qué paquete vino
+ * (sello.versionGenerador).
  *
+ * Uso:
+ *   node tools/empaquetar-generador.js [--ronda <NN>] [--destino <carpeta>] [--json] [--forzar]
+ *
+ *   --ronda <NN>          la ronda del paquete ("r<NN>-<commit>"). Si no se pasa,
+ *                         sale del último INFORME-RONDA-NN.md del repositorio.
  *   --destino <carpeta>   dónde armar el paquete (por defecto dist/SGC-Generador).
  *   --json                imprime el informe como una línea JSON, para tests.
  *   --forzar              borra un destinoOccupado aunque no parezca un paquete.
@@ -53,6 +62,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 const RAIZ = path.resolve(__dirname, '..');
 const APP = path.join(RAIZ, 'app');
@@ -68,7 +78,7 @@ const EXCLUIDOS = ['server', 'tests', 'datos'];
 const MARCA = 'generador.html';
 
 function leerArgumentos(argv) {
-  const opciones = { destino: null, json: false, forzar: false };
+  const opciones = { destino: null, json: false, forzar: false, ronda: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--destino') {
       opciones.destino = argv[i + 1];
@@ -77,9 +87,73 @@ function leerArgumentos(argv) {
       opciones.json = true;
     } else if (argv[i] === '--forzar') {
       opciones.forzar = true;
+    } else if (argv[i] === '--ronda') {
+      const valor = Number(argv[i + 1]);
+      if (!Number.isInteger(valor) || valor < 1) {
+        throw new Error('--ronda espera un número entero positivo, no "' + argv[i + 1] + '"');
+      }
+      opciones.ronda = valor;
+      i++;
     }
   }
   return opciones;
+}
+
+/*
+ * ORDEN-RONDA-32 pieza 1c: la versión del paquete, "r<NN>-<commit corto>".
+ * La ronda sale del argumento --ronda, y si no se pasó, del último informe del
+ * repositorio; el commit corto es el de HEAD (lo que se está empaquetando).
+ */
+function rondaDelRepositorio() {
+  let mayor = 0;
+  for (const entrada of fs.readdirSync(RAIZ)) {
+    const m = /^INFORME-RONDA-(\d+)\.md$/.exec(entrada);
+    if (m) {
+      mayor = Math.max(mayor, Number(m[1]));
+    }
+  }
+  return mayor > 0 ? mayor : null;
+}
+
+function commitCorto() {
+  const res = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
+    cwd: RAIZ,
+    encoding: 'utf8'
+  });
+  const salida = (res.status === 0 && res.stdout) ? res.stdout.trim() : '';
+  return /^[0-9a-f]{7,}$/.test(salida) ? salida : '0000000';
+}
+
+function fechaHoy() {
+  const ahora = new Date();
+  const dia = String(ahora.getDate()).padStart(2, '0');
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  return dia + '/' + mes + '/' + ahora.getFullYear();
+}
+
+function versionDeCatalogo() {
+  try {
+    const manifiesto = JSON.parse(
+      fs.readFileSync(path.join(APP, 'catalogo', 'manifiesto.json'), 'utf8'));
+    if (manifiesto && typeof manifiesto.catalogoVersion === 'string') {
+      return manifiesto.catalogoVersion;
+    }
+  } catch (err) {
+    // se informa más abajo como "sin versión de catálogo"
+  }
+  return null;
+}
+
+function versionCompleta(ronda) {
+  const commit = commitCorto();
+  const numero = ronda || rondaDelRepositorio() || 0;
+  return {
+    ronda: numero,
+    commit: commit,
+    version: 'r' + numero + '-' + commit,
+    fecha: fechaHoy(),
+    catalogo: versionDeCatalogo()
+  };
 }
 
 /*
@@ -197,31 +271,56 @@ function plan(origen, destino) {
   return { destino: destino, copiar: copiar, fuera: fuera };
 }
 
-function leerLeeme() {
+function leerLeeme(version, fecha) {
+  // ORDEN-RONDA-32 pieza 1d: el LEEME.txt del paquete es el de la prueba piloto
+  // (antes vivía aparte como LEEME-PILOTO.txt). Sólo cambia la línea de versión.
   return [
-    'SGC · Generador de documentos',
+    'SGC · Generador de documentos · PRUEBA PILOTO',
+    'Versión: ' + version + ' · ' + fecha,
     '',
-    'Abrí generador.html con Chrome. No hace falta instalar nada.',
+    'QUÉ ES',
+    '  Una herramienta para armar el requerimiento (Solicitud de Gastos), la',
+    '  Especificación Técnica y su anexo, con los ítems del catálogo y los valores',
+    '  de referencia. No necesita instalar nada, ni internet, ni servidor.',
     '',
-    'Cómo se usa',
-    '  1. Abrí generador.html con doble clic (o con Chrome).',
-    '  2. Escribí tu nombre y elegí el rol Usuario.',
-    '  3. Cargá el requerimiento en el formulario, como siempre.',
-    '  4. Imprimí los documentos, o tocá "Exportar para Abastecimiento".',
+    'CÓMO SE ABRE',
+    '  1. Abrí la carpeta SGC-Generador y hacé doble clic en generador.html.',
+    '     Se abre con Chrome (o Edge). Si se abre con otro programa:',
+    '     clic derecho > Abrir con > Google Chrome.',
+    '  2. Completá grado, nombre, apellido y número de control, y elegí "Usuario".',
+    '     Abastecimiento y Contrataciones todavía no están habilitados.',
     '',
-    'Lo que hay que saber',
-    '  · Esta carpeta NO necesita servidor: no hay login, ni puerto, ni base de',
-    '    datos. Los archivos que se abren son de sólo lectura.',
-    '  · Lo que hagas queda en el archivo que exportes. Si cerrás la ventana sin',
-    '    exportar, el trabajo no quedó guardado en ninguna parte.',
-    '  · Para seguir más adelante: exportá, y después en la otra máquina usá',
-    '    "Importar" sobre el mismo archivo. Lo importado se sigue editando en el',
-    '    mismo formulario.',
-    '  · La plantilla vacía ("Descargar plantilla vacía") sirve para llenar el',
-    '    requerimiento en una planilla y volver a importarlo.',
+    'CÓMO SE TRABAJA',
+    '  · Paso 1, Identificación · Paso 2, Renglones del catálogo y documentos de',
+    '    referencia · Paso 3, Fundamentación · Paso 4, Revisión.',
+    '  · Cada renglón necesita DOS valores de referencia de fuentes distintas',
+    '    (presupuesto, u orden de compra / precio de plaza), o UN valor y un PDF de',
+    '    justificación de por qué no hay otro.',
+    '  · Los PDF se eligen desde tu PC: NO se suben a ningún lado. Se guarda el nombre,',
+    '    el tamaño y una huella que permite comprobar que el adjunto es el mismo. Los',
+    '    PDF se adjuntan como siempre, junto al requerimiento firmado.',
+    '  · Si un paso queda marcado "falta", podés seguir, pero no vas a poder exportar',
+    '    hasta completarlo.',
     '',
-    'Copia esta carpeta entera. El catálogo está en js/../catalogo: no lo borres.',
-    'La carpeta va tal cual, con su nombre y sus subcarpetas.',
+    'NO PIERDAS EL TRABAJO',
+    '  · Lo que cargás vive en esta ventana. Si la cerrás sin guardar, se pierde.',
+    '  · "Guardar avance" descarga un archivo .json en tu carpeta de Descargas, en',
+    '    cualquier paso. Para seguir otro día: abrí generador.html > Paso 1 >',
+    '    "Importar" > elegí ese archivo. Volvés al paso donde estabas.',
+    '  · No edites el .json a mano: si se modifica fuera del generador, no se puede',
+    '    volver a importar.',
+    '',
+    'AL TERMINAR',
+    '  · "Imprimir los documentos" → guardá como PDF para el sistema de firmas.',
+    '  · "Exportar para Abastecimiento" descarga el .json final. Durante la prueba',
+    '    piloto, mandáselo a la División Contrataciones junto con tus comentarios.',
+    '',
+    'QUÉ NOS SIRVE QUE NOS CUENTES',
+    '  Qué te trabó, qué no se entendía, qué faltó, y en qué paso. Si podés, mandá',
+    '  también el .json del avance o el final.',
+    '',
+    'ESTA CARPETA ES DE SÓLO LECTURA. No guardes archivos adentro: todo lo que',
+    'descargues va a tu carpeta de Descargas.',
     ''
   ].join('\r\n');
 }
@@ -247,6 +346,9 @@ function problemasDePaquete(destino, declarados, cantidadCatalogo) {
   }
   if (!hay('catalogo/codigos.js')) {
     problemas.push('falta catalogo/codigos.js, el índice de códigos');
+  }
+  if (!hay('VERSION.txt')) {
+    problemas.push('falta VERSION.txt, la versión del paquete (ORDEN-RONDA-32)');
   }
 
   const contar = (extension) => {
@@ -299,7 +401,14 @@ function enMegabytes(bytes) {
 }
 
 function main() {
-  const opciones = leerArgumentos(process.argv.slice(2));
+  let opciones;
+  try {
+    opciones = leerArgumentos(process.argv.slice(2));
+  } catch (err) {
+    console.error('empaquetar-generador: ' + err.message);
+    process.exit(1);
+    return;
+  }
   const destino = opciones.destino ? path.resolve(opciones.destino) : path.join(RAIZ, 'dist', 'SGC-Generador');
 
   let trabajo;
@@ -324,6 +433,7 @@ function main() {
   }
 
   let bytes = 0;
+  let version = versionCompleta(opciones.ronda);
   try {
     fs.mkdirSync(destino, { recursive: true });
     for (const item of trabajo.copiar) {
@@ -332,14 +442,44 @@ function main() {
       fs.copyFileSync(item.desde, hacia);
       bytes += fs.statSync(hacia).size;
     }
-    fs.writeFileSync(path.join(destino, 'LEEME.txt'), Buffer.from(leerLeeme(), 'utf8'));
+    /*
+     * ORDEN-RONDA-32 pieza 1c: cada JSON exportado dice de qué paquete salió
+     * (sello.versionGenerador lee config/aplicacion.js). La versión se escribe
+     * en el config/aplicacion.js DEL PAQUETE, nunca en el del repositorio.
+     */
+    const configRuta = path.join(destino, 'config', 'aplicacion.js');
+    const configAntes = fs.statSync(configRuta).size;
+    const configEscrito = fs.readFileSync(configRuta, 'utf8')
+      .replace(/("version"\s*:\s*")[^"]*(")/, '$1' + version.version + '$2');
+    fs.writeFileSync(configRuta, configEscrito);
+    // El bucle ya contó el config copiado (el del repositorio): suma el delta
+    // de la versión escrita, no el archivo dos veces.
+    bytes += fs.statSync(configRuta).size - configAntes;
+    fs.writeFileSync(path.join(destino, 'LEEME.txt'),
+      Buffer.from(leerLeeme(version.version, version.fecha), 'utf8'));
   } catch (err) {
     console.error('empaquetar-generador: no se pudo copiar: ' + err.message);
     process.exit(1);
     return;
   }
 
+  try {
+    fs.writeFileSync(path.join(destino, 'VERSION.txt'), Buffer.from([
+      'SGC Generador · versión ' + version.version,
+      'ronda: ' + version.ronda,
+      'commit: ' + version.commit,
+      'fecha: ' + version.fecha,
+      'catalogo: ' + (version.catalogo || 'sin manifiesto'),
+      ''
+    ].join('\r\n'), 'utf8'));
+  } catch (err) {
+    console.error('empaquetar-generador: no se pudo escribir VERSION.txt: ' + err.message);
+    process.exit(1);
+    return;
+  }
+
   bytes += fs.statSync(path.join(destino, 'LEEME.txt')).size;
+  bytes += fs.statSync(path.join(destino, 'VERSION.txt')).size;
 
   const problemas = problemasDePaquete(destino, declarados, cantidadCatalogo);
   if (problemas.length > 0) {
@@ -353,9 +493,13 @@ function main() {
 
   const informe = {
     destino: destino,
+    version: version.version,
+    ronda: version.ronda,
+    commit: version.commit,
+    versionCatalogo: version.catalogo,
     declarados: declarados.length,
     catalogo: cantidadCatalogo,
-    archivos: trabajo.copiar.length + 1,
+    archivos: trabajo.copiar.length + 2,
     bytes: bytes,
     mb: enMegabytes(bytes),
     excluidos: trabajo.fuera
@@ -365,11 +509,14 @@ function main() {
     console.log(JSON.stringify(informe));
     return;
   }
+  console.log('empaquetar-generador: ' + version.version + ' · ' + version.fecha +
+    ' · catálogo ' + (version.catalogo || 'sin versión'));
   console.log('empaquetar-generador: ' + MARCA + ' + ' + declarados.length +
     ' archivo(s) declarados + ' + cantidadCatalogo + ' archivo(s) de catálogo en .js');
   console.log('empaquetar-generador: ' + informe.archivos + ' archivo(s), ' +
     informe.bytes + ' bytes (' + informe.mb + ' MB) en ' + destino);
   console.log('empaquetar-generador: sin ' + EXCLUIDOS.join('/') + ' y sin .json');
+  console.log('empaquetar-generador: VERSION.txt y el LEEME.txt de la prueba piloto');
   console.log('empaquetar-generador: abrí ' + path.join(destino, MARCA) + ' con doble clic.');
 }
 
