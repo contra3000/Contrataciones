@@ -15,8 +15,8 @@
  *    vigente (98201747) y un renglón con el código vacío, que muestra cómo se
  *    deja el código que no se sabe;
  *  - importada con el código del segundo completado, entra sin errores;
- *  - con el segundo vacío, sale "Renglón 2: falta el código del catálogo" y no
- *    se carga nada;
+ *  - con el segundo vacío, el renglón entra "por buscar" (RONDA-33) en vez de
+ *    rechazar la plantilla;
  *  - importar() ignora "instrucciones" explícitamente.
  */
 
@@ -83,15 +83,15 @@ test('RONDA-32 pieza 2 · la plantilla baja con "instrucciones" y dos renglones'
     'la plantilla trae el campo instrucciones');
   assert.ok(plantilla.instrucciones.length > 100,
     'las instrucciones tienen que decirle al asistente qué hacer, no ser un saludo');
-  assert.ok(/no inventes códigos/i.test(plantilla.instrucciones),
+  assert.ok(/nunca inventes/i.test(plantilla.instrucciones),
     'le dice que no invente códigos de catálogo');
-  assert.ok(/la pone .*el catálogo ONC/i.test(plantilla.instrucciones),
+  assert.ok(/no escribas descripciones[^.]*las pone el catálogo/i.test(plantilla.instrucciones),
     'le dice que no escriba la descripción del ítem');
-  assert.ok(/aclaración/.test(plantilla.instrucciones) && /256/.test(plantilla.instrucciones),
-    'le dice el tope de la aclaración y que no repita ni nombre marcas');
-  assert.ok(/cantidad es un número/.test(plantilla.instrucciones),
+  assert.ok(/256 caracteres/.test(plantilla.instrucciones),
+    'le dice el tope de la aclaración');
+  assert.ok(/"cantidad": un número/i.test(plantilla.instrucciones),
     'le dice que la cantidad es un número');
-  assert.ok(/la misma forma/.test(plantilla.instrucciones),
+  assert.ok(/con esta misma forma/i.test(plantilla.instrucciones),
     'le pide que devuelva sólo el JSON, con la misma forma');
 
   // Dos renglones: un modelo de papelería con un código real y uno vacío.
@@ -123,7 +123,7 @@ test('RONDA-32 pieza 2 · con el código del segundo completado, entra sin error
       JSON.stringify(renglones.map(function (r) { return r.codigo + ' → ' + r.item; })));
 });
 
-test('RONDA-32 pieza 2 · con el segundo vacío, sale el mensaje del renglón 2 y no se carga nada', async () => {
+test('RONDA-32 pieza 2 (ronda 33) · con el segundo vacío, el renglón entra por buscar', async () => {
   await entrarComoUsuario();
 
   const plantilla = await bajar();
@@ -131,10 +131,14 @@ test('RONDA-32 pieza 2 · con el segundo vacío, sale el mensaje del renglón 2 
     'el renglón 2 baja con el código vacío');
 
   const msj = await importar(plantilla);
-  assert.match(msj, /Renglón 2: falta el código del catálogo/,
-    'el mensaje nombra el renglón 2 y qué le falta: ' + msj);
-  assert.strictEqual(SGC().catalogo.renglones.obtener().length, 0,
-    'un renglón sin código no carga nada');
+  assert.match(msj, /Plantilla importada/,
+    'RONDA-33: un renglón sin código ya no rechaza la plantilla: ' + msj);
+  const renglones = SGC().catalogo.renglones.obtener();
+  assert.strictEqual(renglones.length, 2, 'entran los dos renglones');
+  assert.notStrictEqual(renglones[0].porBuscar, true,
+    'el primero, con código, no queda por buscar');
+  assert.strictEqual(renglones[1].porBuscar, true,
+    'el segundo, sin código, queda por buscar');
 });
 
 test('RONDA-32 pieza 2 · importar() ignora "instrucciones" explícitamente', async () => {

@@ -146,6 +146,15 @@
           <button id="sgc-btn-modelo" type="button">Descargar plantilla vacía</button>
           <label class="etiqueta-inline" for="sgc-archivo-modelo">Importar</label>
           <input id="sgc-archivo-modelo" type="file" accept=".json,application/json">
+          <!-- ORDEN-RONDA-33 pieza 1: además del archivo, se puede pegar el
+               texto que devolvió el asistente (aunque venga envuelto en un
+               bloque de código). -->
+          <button id="sgc-btn-pegar" type="button">Pegar texto</button>
+          <div id="sgc-pegar-panel" class="pegar-panel" hidden>
+            <label for="sgc-pegar-json">Pegá acá lo que te devolvió el asistente</label>
+            <textarea id="sgc-pegar-json" rows="6" spellcheck="false"></textarea>
+            <button id="sgc-btn-cargar-pegado" type="button">Cargar lo pegado</button>
+          </div>
           <p id="sgc-fasttrack-msj" class="fasttrack-msj" role="status" aria-live="polite" hidden></p>
         </div>
 

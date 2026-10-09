@@ -168,11 +168,10 @@ test('la plantilla se baja con su formato y se puede volver a subir vacía de va
     'bajar la plantilla no pide nada por red: ' + m.red.llamadas.join(', '));
 
   // Subida tal cual. ORDEN-RONDA-32 pieza 2: la plantilla trae un renglón con
-  // el código vacío a propósito (para mostrar cómo se deja el que no se sabe),
-  // y un código vacío no entra — dice "Renglón N: falta el código del
-  // catálogo". Para "la bajé y la volví a subir", se completa ese código con
-  // uno real antes de importar; es justo lo que la orden pide que haga la
-  // persona (o el asistente).
+  // el código vacío a propósito (para mostrar cómo se deja el que no se sabe).
+  // RONDA-33: ese renglón entraría "por buscar" sin código; acá se completa con
+  // uno real, que es lo que la orden pide que haga la persona (o el asistente),
+  // para probar la bajada y subida de la plantilla llena.
   const completa = JSON.parse(JSON.stringify(plantilla));
   completa.renglones[1].codigo = completa.renglones[0].codigo;
   const respuesta = await importarTexto(JSON.stringify(completa));
@@ -291,7 +290,7 @@ test('corregir un campo y un renglón después de importar se ve en el JSON expo
 // Archivos que no entran
 // ---------------------------------------------------------------------------
 
-test('un código que no existe en el catálogo se dice con su renglón y no carga nada', async () => {
+test('un código que no existe queda por buscar, con su aviso, y no se pierde nada', async () => {
   await entrarComoUsuario();
 
   const antes = m.documento.getElementById('sgc-lista-renglones').children.length;
@@ -309,13 +308,13 @@ test('un código que no existe en el catálogo se dice con su renglón y no carg
   };
   const respuesta = await importarTexto(JSON.stringify(plantilla));
 
-  assert.match(respuesta, /Renglón 2/, 'el error dice en qué renglón está: ' + respuesta);
-  assert.match(respuesta, /9\.9\.9-0000\.0/, 'el error dice qué código no existe: ' + respuesta);
-  assert.match(respuesta, /no existe en el cat/, 'el error dice por qué: ' + respuesta);
-  assert.strictEqual(m.documento.getElementById('sgc-lista-renglones').children.length, antes,
-    'no se cargó ningún renglón: nada a medias');
-  assert.strictEqual(SGC().generadorPresupuestos.listar().length, 0,
-    'tampoco se tocó el resto del formulario');
+  assert.match(respuesta, /Renglón 2/, 'el aviso dice en qué renglón está: ' + respuesta);
+  assert.match(respuesta, /9\.9\.9-0000\.0/, 'el aviso dice qué código no está: ' + respuesta);
+  assert.match(respuesta, /quedó para buscar/, 'el aviso dice qué pasó con ese renglón: ' + respuesta);
+  const renglones = renglonesEnPantalla();
+  assert.strictEqual(renglones.length, antes + 2, 'entran los dos renglones: nada a medias');
+  assert.strictEqual(renglones[0].codigo, '2.9.6-1115.1', 'el primero entra con su código del catálogo');
+  assert.strictEqual(renglones[1].porBuscar, true, 'el segundo, sin código en el catálogo, queda por buscar');
 });
 
 test('un renglón con un solo valor de referencia se rechaza con el texto de la ronda 26',

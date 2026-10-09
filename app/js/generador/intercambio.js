@@ -252,14 +252,21 @@
     var lista = Array.isArray(expediente.renglones) ? expediente.renglones : [];
     for (var i = 0; i < lista.length; i++) {
       var r = lista[i];
-      renglones.push({
+      var renglonExportado = {
         codigo: r.codigo,
         item: typeof r.item === 'string' ? r.item : '',
         cantidad: r.cantidad,
         unidad: r.unidad,
         aclaracion: typeof r.aclaracion === 'string' ? r.aclaracion : '',
         valoresReferencia: valoresDeRenglon(r)
-      });
+      };
+      // ORDEN-RONDA-33: un renglón "por buscar" viaja como tal (código vacío y
+      // el texto buscado), para que al reimportar el avance siga en la lista.
+      if (r.porBuscar === true) {
+        renglonExportado.porBuscar = true;
+        renglonExportado.buscar = typeof r.buscar === 'string' ? r.buscar : '';
+      }
+      renglones.push(renglonExportado);
     }
     var presupuestos = [];
     var listaP = Array.isArray(expediente.presupuestos) ? expediente.presupuestos : [];
@@ -455,14 +462,20 @@
     var lista = Array.isArray(e.renglones) ? e.renglones : [];
     for (var i = 0; i < lista.length; i++) {
       var r = esObjeto(lista[i]) ? lista[i] : {};
-      renglones.push({
+      var renglon = {
         codigo: typeof r.codigo === 'string' ? r.codigo.trim() : '',
         item: typeof r.item === 'string' ? r.item : '',
         cantidad: r.cantidad,
         unidad: typeof r.unidad === 'string' ? r.unidad : '',
         aclaracion: typeof r.aclaracion === 'string' ? r.aclaracion : '',
         valoresReferencia: Array.isArray(r.valoresReferencia) ? r.valoresReferencia : []
-      });
+      };
+      // ORDEN-RONDA-33: se conserva la marca de "por buscar" si el archivo la trae.
+      if (r.porBuscar === true) {
+        renglon.porBuscar = true;
+        renglon.buscar = typeof r.buscar === 'string' ? r.buscar : '';
+      }
+      renglones.push(renglon);
     }
     var presupuestos = [];
     var listaP = Array.isArray(e.presupuestos) ? e.presupuestos : [];
@@ -513,7 +526,7 @@
           objetivo: d.fundamentacion.objetivo || ''
         },
         renglones: d.renglones.map(function (r) {
-          return {
+          var renglon = {
             codigo: r.codigo,
             item: '', // plantilla: la descripción la pone el catálogo (arreglo h1, ronda 32)
             cantidad: r.cantidad,
@@ -521,6 +534,13 @@
             aclaracion: r.aclaracion || '',
             valoresReferencia: []
           };
+          // ORDEN-RONDA-33: un renglón sin código de la plantilla entra "por
+          // buscar" y conserva el texto con el que se lo buscará.
+          if (r.porBuscar === true) {
+            renglon.porBuscar = true;
+            renglon.buscar = typeof r.buscar === 'string' ? r.buscar : '';
+          }
+          return renglon;
         }),
         presupuestos: []
       }
@@ -612,7 +632,10 @@
     if (esAvance) {
       return { errores: [], datos: datos };
     }
-    var revision = SGC.views.pasos.validarPaso('revision', datos);
+    // ORDEN-RONDA-33 pieza 1: un renglón sin código ya no invalida el archivo:
+    // entra "por buscar" y se elige en pantalla. Por eso la validación del
+    // núcleo se pide con permiso.
+    var revision = SGC.views.pasos.validarPaso('revision', datos, { permitirPorBuscar: true });
     var errores = [];
     for (var i = 0; i < revision.errores.length; i++) {
       var e = revision.errores[i];
@@ -827,14 +850,36 @@
     var pendientes = [];
     for (var i = 0; i < cuerpo.renglones.length; i++) {
       (function (indice, renglon) {
+        // ORDEN-RONDA-33: un renglón que ya viene "por buscar" (sin código) se
+        // queda así; su código vacío no es un error.
+        if (renglon.porBuscar === true) {
+          renglon.codigo = '';
+          if (typeof renglon.buscar !== 'string') {
+            renglon.buscar = '';
+          }
+          return;
+        }
         if (typeof renglon.codigo !== 'string' || renglon.codigo.trim() === '') {
-          errores.push('Renglón ' + (indice + 1) + ': falta el código del catálogo.');
+          // Ronda 33: sin código el renglón entra por buscar, no rechaza el archivo.
+          renglon.codigo = '';
+          renglon.item = '';
+          renglon.porBuscar = true;
+          if (typeof renglon.buscar !== 'string') {
+            renglon.buscar = '';
+          }
           return;
         }
         pendientes.push(SGC.catalogo.carga.resolverCodigo(renglon.codigo).then(function (item) {
           if (!item) {
-            errores.push('Renglón ' + (indice + 1) + ': el código ' + renglon.codigo +
-              ' no existe en el catálogo.');
+            // Ronda 33: un código que no existe queda por buscar, con su aviso.
+            avisos.push('Renglón ' + (indice + 1) + ': el código ' + renglon.codigo +
+              ' no está en el catálogo; quedó para buscar');
+            if (typeof renglon.buscar !== 'string' || renglon.buscar.trim() === '') {
+              renglon.buscar = renglon.codigo;
+            }
+            renglon.codigo = '';
+            renglon.item = '';
+            renglon.porBuscar = true;
             return;
           }
           var texto = textoDeItem(item);

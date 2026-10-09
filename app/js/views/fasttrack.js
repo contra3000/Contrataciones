@@ -45,22 +45,34 @@
       dependenciaSolicitante: 'División Usuario',
       justificacion: 'Se necesita reponer insumos en uso corriente.',
       objetivo: '',
-      // ORDEN-RONDA-32 pieza 2: un texto para el asistente de IA que llena la
+      // ORDEN-RONDA-33 pieza 1: las reglas para el asistente de IA que llena la
       // plantilla. No es parte del requerimiento: importar() lo ignora, y eso
-      // se prueba en ronda-32-p2.
-      instrucciones: 'Rellená este JSON y devolvemelo tal cual, con la misma forma, sin ' +
-        'agregar ni quitar campos.\nNo inventes códigos de catálogo: usá sólo los que te ' +
-        'pase la persona (sacados del buscador del generador o de un requerimiento anterior). ' +
-        'Si no te dan el código, dejalo vacío.\nNo escribas la descripción del ítem: la pone ' +
-        'el catálogo ONC.\nLa aclaración no repite la descripción ni nombra marcas, y tiene ' +
-        'hasta 256 caracteres.\nLa cantidad es un número; la unidad, un texto corto como "UN" ' +
-        'o "KG".',
+      // se prueba en ronda-32-p2 / ronda-33-p1.
+      instrucciones: [
+        'Sos un asistente que completa esta plantilla de requerimiento del SGC a partir de',
+        'los documentos que te adjunta la persona (Word, Excel, PDF, correos). Reglas:',
+        '1) Devolvé SÓLO el JSON, con esta misma forma, sin texto antes ni después.',
+        '2) titulo: qué se compra, en pocas palabras. anio: el año en cuatro dígitos.',
+        'dependenciaSolicitante: la dependencia que pide. justificacion: por qué se',
+        'necesita, con lo que digan los documentos.',
+        '3) renglones: uno por cada bien o servicio distinto. "codigo": copialo SÓLO si',
+        'en los documentos aparece un código del catálogo ONC con la forma 2.9.6-1115.1;',
+        'si no aparece, dejalo vacío (""). Nunca inventes ni completes un código.',
+        '"buscar": el nombre del producto en dos a cuatro palabras, como se buscaría en un',
+        'catálogo (por ejemplo "resma papel A4"). "cantidad": un número. "unidad": corta',
+        '(UN, KG, M, L, CAJA); si no se sabe, vacía. "aclaracion": sólo lo que el producto',
+        'tiene que cumplir y no está en su nombre (medidas, normas, compatibilidades), sin',
+        'marcas y hasta 256 caracteres.',
+        '4) No escribas descripciones de ítems: las pone el catálogo.',
+        '5) Si algo no está en los documentos, dejá el campo vacío. No lo inventes.',
+        '6) Los precios y los presupuestos no van en este JSON: se cargan aparte en el SGC.'
+      ].join('\n'),
       renglones: [
-        // Un renglón modelo creíble de papelería, con un código real del
-        // catálogo vigente (versión 98201747), y un renglón con el código
+        // ORDEN-RONDA-33 pieza 1: un renglón con un código real del catálogo
+        // vigente (versión 98201747) y su "buscar", y un renglón con el código
         // vacío, que muestra cómo se deja el código que no se sabe.
-        { codigo: '2.3.1-6563.129', cantidad: 2, unidad: 'UN', aclaracion: '' },
-        { codigo: '', cantidad: 1, unidad: 'UN', aclaracion: '' }
+        { codigo: '2.3.1-6563.129', buscar: 'resma papel A4', cantidad: 2, unidad: 'UN', aclaracion: '' },
+        { codigo: '', buscar: 'resma papel A4', cantidad: 1, unidad: 'UN', aclaracion: '' }
       ]
     };
   }
@@ -136,9 +148,28 @@
         continue;
       }
       var valido = true;
+      // ORDEN-RONDA-33 pieza 1: un renglón sin código ya no rechaza el archivo.
+      // Entra "por buscar": la persona elige el ítem del catálogo desde el
+      // formulario. No se le exigen cantidad ni unidad; sólo la aclaración
+      // respeta el máximo.
       if (typeof r.codigo !== 'string' || r.codigo.trim() === '') {
-        errores.push(prefijo + 'falta el código del catálogo');
-        valido = false;
+        var aclaracionPorBuscar = typeof r.aclaracion === 'string' ? r.aclaracion : '';
+        if (SGC.core.utils.contarCaracteres(aclaracionPorBuscar) > maxAclaracionTotal()) {
+          errores.push(prefijo + 'la aclaración supera los ' + maxAclaracionTotal() + ' caracteres');
+          aclaracionesLargas++;
+          continue;
+        }
+        var cantidadPorBuscar = (typeof r.cantidad === 'number' && r.cantidad > 0) ? r.cantidad : '';
+        renglones.push({
+          codigo: '',
+          item: '',
+          buscar: typeof r.buscar === 'string' ? r.buscar.trim() : '',
+          cantidad: cantidadPorBuscar,
+          unidad: typeof r.unidad === 'string' ? r.unidad.trim() : '',
+          aclaracion: aclaracionPorBuscar,
+          porBuscar: true
+        });
+        continue;
       }
       if (typeof r.cantidad !== 'number' || !(r.cantidad > 0)) {
         errores.push(prefijo + 'la cantidad debe ser un número positivo');

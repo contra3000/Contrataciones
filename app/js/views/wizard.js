@@ -313,26 +313,45 @@ function descripcionOperador(operador) {
     irAPaso(paso, false);
   }
 
+  /*
+   * ORDEN-RONDA-33 pieza 1: el texto pegado de un asistente suele venir
+   * envuelto en un bloque ```json ... ``` o con una frase antes o después. Se
+   * recorta a lo que hay entre la primera llave y la última para que ese caso no
+   * falle, sin inventar nada: si no hay llaves, se intenta tal cual.
+   */
+  function textoEntreLlaves(texto) {
+    var inicio = texto.indexOf('{');
+    var fin = texto.lastIndexOf('}');
+    if (inicio === -1 || fin === -1 || fin < inicio) {
+      return texto;
+    }
+    return texto.slice(inicio, fin + 1);
+  }
+
+  function procesarTexto(texto) {
+    estado.dom.fasttrackMsj.hidden = true;
+    leerArchivo(textoEntreLlaves(String(texto))).then(function (resultado) {
+      if (!resultado || !resultado.ok) {
+        avisarFasttrack('No se pudo importar el archivo:\n' +
+          ((resultado && resultado.errores) || ['el archivo no se pudo leer']).join('\n'));
+        return;
+      }
+      aplicarImportacion(resultado);
+    }).catch(function (err) {
+      avisarFasttrack('No se pudo validar el archivo: ' +
+        (err && err.message ? err.message : 'error de red') +
+        '. El archivo no se importa.');
+    });
+  }
+
   function importarModelo() {
     var archivo = estado.dom.archivoModelo.files && estado.dom.archivoModelo.files[0];
     if (!archivo) {
       return;
     }
-    estado.dom.fasttrackMsj.hidden = true;
     var lector = new FileReader();
     lector.onload = function () {
-      leerArchivo(String(lector.result)).then(function (resultado) {
-        if (!resultado || !resultado.ok) {
-          avisarFasttrack('No se pudo importar el archivo:\n' +
-            ((resultado && resultado.errores) || ['el archivo no se pudo leer']).join('\n'));
-          return;
-        }
-        aplicarImportacion(resultado);
-      }).catch(function (err) {
-        avisarFasttrack('No se pudo validar el archivo: ' +
-          (err && err.message ? err.message : 'error de red') +
-          '. El archivo no se importa.');
-      });
+      procesarTexto(lector.result);
     };
     lector.readAsText(archivo);
   }
@@ -402,6 +421,23 @@ function descripcionOperador(operador) {
     estado.dom.archivoModelo = qs(raiz, '#sgc-archivo-modelo');
     estado.dom.fasttrackMsj = qs(raiz, '#sgc-fasttrack-msj');
     estado.dom.archivoModelo.addEventListener('change', importarModelo);
+    // ORDEN-RONDA-33 pieza 1: pegar el texto del asistente sin pasar por un
+    // archivo. Vive sólo en la pantalla del generador; en la aplicación con
+    // servidor estos elementos no existen y no se engancha nada.
+    var botonPegar = qs(raiz, '#sgc-btn-pegar');
+    var panelPegar = qs(raiz, '#sgc-pegar-panel');
+    if (botonPegar && panelPegar) {
+      botonPegar.addEventListener('click', function () {
+        panelPegar.hidden = !panelPegar.hidden;
+      });
+    }
+    var campoPegar = qs(raiz, '#sgc-pegar-json');
+    var botonCargarPegado = qs(raiz, '#sgc-btn-cargar-pegado');
+    if (campoPegar && botonCargarPegado) {
+      botonCargarPegado.addEventListener('click', function () {
+        procesarTexto(campoPegar.value);
+      });
+    }
     qs(raiz, '#sgc-btn-modelo').addEventListener('click', descargarModelo);
     qs(raiz, '#sgc-btn-retomar').addEventListener('click', function () {
       var registro = borrador.leer(storage());

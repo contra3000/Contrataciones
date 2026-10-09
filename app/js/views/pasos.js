@@ -67,7 +67,8 @@
     return null;
   }
 
-  function validarRenglones(datos) {
+  function validarRenglones(datos, opciones) {
+    var permitirPorBuscar = opciones && opciones.permitirPorBuscar === true;
     var errores = [];
     var renglones = Array.isArray(datos.renglones) ? datos.renglones : [];
     if (renglones.length === 0) {
@@ -75,6 +76,16 @@
       return { valido: false, errores: errores };
     }
     for (var i = 0; i < renglones.length; i++) {
+      // ORDEN-RONDA-33: un renglón "por buscar" no tiene código todavía. Al
+      // importar (permitirPorBuscar) se deja pasar; al avanzar se frena con el
+      // motivo exacto, para que la vista lleve a ese renglón.
+      if (renglones[i].porBuscar === true) {
+        if (!permitirPorBuscar) {
+          errores.push(errorCampo('renglones[' + i + ']',
+            'Renglón ' + (i + 1) + ': falta elegir el ítem del catálogo'));
+        }
+        continue;
+      }
       var r = SGC.core.validacion.validarRenglon(renglones[i]);
       if (!r.valido) {
         for (var j = 0; j < r.errores.length; j++) {
@@ -101,10 +112,10 @@
     };
   }
 
-  function validarRevision(datos) {
+  function validarRevision(datos, opciones) {
     var chequeos = [
       validarIdentificacion(datos),
-      validarRenglones(datos),
+      validarRenglones(datos, opciones),
       validarFundamentacion(datos)
     ];
     var errores = [];
@@ -121,12 +132,12 @@
     revision: validarRevision
   };
 
-  function validarPaso(idPaso, datos) {
+  function validarPaso(idPaso, datos, opciones) {
     var validador = VALIDADORES[idPaso];
     if (!validador) {
       return { valido: false, errores: [errorCampo(null, 'Paso desconocido: ' + idPaso)] };
     }
-    return validador(datos);
+    return validador(datos, opciones);
   }
 
   function datosParaPersistir(datos, operador, catalogoVersion) {
