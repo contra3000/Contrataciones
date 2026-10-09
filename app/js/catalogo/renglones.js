@@ -45,10 +45,23 @@
     siguienteId: 1,
     dom: {},
     onCambio: null,
-    suscriptor: null
+    suscriptor: null,
+    // ORDEN-RONDA-33 pieza 2: el renglón "por buscar" que está esperando que se
+    // elija un ítem del buscador. El próximo ítem elegido lo Reemplaza en vez de
+    // agregar uno nuevo.
+    destinoPorBuscar: null
   };
 
+  // Un renglón "por buscar" todavía no tiene código: no se le aplican las
+  // reglas de forma del renglón (eso lo mostrará la fila en rojo).
+  function esPorBuscar(renglon) {
+    return renglon && renglon.porBuscar === true;
+  }
+
   function erroresDeRenglon(renglon) {
+    if (esPorBuscar(renglon)) {
+      return [];
+    }
     var v = SGC.core.validacion.validarRenglon({
       codigo: renglon.codigo,
       cantidad: renglon.cantidad,
@@ -63,8 +76,9 @@
   }
 
   function filaRenglon(renglon) {
+    var porBuscar = esPorBuscar(renglon);
     var li = document.createElement('li');
-    li.className = 'renglon';
+    li.className = porBuscar ? 'renglon renglon-por-buscar' : 'renglon';
 
     var cab = document.createElement('div');
     cab.className = 'renglon-cab';
@@ -73,9 +87,26 @@
     codigo.textContent = renglon.codigo;
     var item = document.createElement('span');
     item.className = 'renglon-item';
-    item.textContent = renglon.item;
+    item.textContent = porBuscar
+      ? 'Falta elegir el ítem del catálogo — buscado como: «' + (renglon.buscar || '') + '»'
+      : renglon.item;
     cab.appendChild(codigo);
     cab.appendChild(item);
+    if (porBuscar) {
+      var btnBuscar = document.createElement('button');
+      btnBuscar.type = 'button';
+      btnBuscar.className = 'buscar';
+      btnBuscar.setAttribute('data-buscar', '');
+      btnBuscar.setAttribute('aria-label', 'Buscar el ítem del renglón por buscar');
+      btnBuscar.textContent = 'Buscar';
+      btnBuscar.addEventListener('click', function () {
+        estado.destinoPorBuscar = renglon;
+        if (SGC.catalogo.buscador && typeof SGC.catalogo.buscador.buscar === 'function') {
+          SGC.catalogo.buscador.buscar(renglon.buscar || '');
+        }
+      });
+      cab.appendChild(btnBuscar);
+    }
     li.appendChild(cab);
 
     var editor = document.createElement('div');
@@ -167,6 +198,9 @@
       if (indice !== -1) {
         estado.renglones.splice(indice, 1);
       }
+      if (estado.destinoPorBuscar === renglon) {
+        estado.destinoPorBuscar = null;
+      }
       li.remove();
       actualizarResumen();
     });
@@ -203,7 +237,34 @@
     }
   }
 
+  // Vuelve a dibujar la lista entera, en orden. Se usa al reemplazar un renglón
+  // por buscar: el DOM del stub no tiene insertBefore ni replaceChild, así que
+  // la forma portable es vaciar y volver a poner todas las filas (como cargar).
+  function reconstruirLista() {
+    estado.dom.listaRenglones.textContent = '';
+    for (var i = 0; i < estado.renglones.length; i++) {
+      estado.dom.listaRenglones.appendChild(filaRenglon(estado.renglones[i]));
+    }
+  }
+
   function agregar(resultado) {
+    // ORDEN-RONDA-33 pieza 2: si había un renglón esperando ("Buscar"), el ítem
+    // elegido lo reemplaza en su lugar, conservando cantidad, unidad y
+    // aclaración que la persona ya hubiera escrito.
+    if (estado.destinoPorBuscar) {
+      var destino = estado.destinoPorBuscar;
+      estado.destinoPorBuscar = null;
+      if (estado.renglones.indexOf(destino) !== -1) {
+        destino.codigo = resultado.codigo;
+        destino.item = resultado.item;
+        delete destino.porBuscar;
+        delete destino.buscar;
+        reconstruirLista();
+        actualizarResumen();
+        notificar();
+        return;
+      }
+    }
     var renglon = {
       id: estado.siguienteId++,
       codigo: resultado.codigo,
@@ -224,6 +285,7 @@
 
   function cargar(lista) {
     estado.renglones = [];
+    estado.destinoPorBuscar = null;
     estado.dom.listaRenglones.textContent = '';
     for (var i = 0; i < lista.length; i++) {
       // RONDA-25 pieza 6: el editor de renglones vuelve a cargar los que ya
@@ -253,6 +315,7 @@
 
   function vaciar() {
     estado.renglones = [];
+    estado.destinoPorBuscar = null;
     estado.dom.listaRenglones.textContent = '';
     actualizarResumen();
     notificar();
@@ -270,6 +333,7 @@
     estado.dom.resumen = dom.resumen;
     estado.renglones = [];
     estado.siguienteId = 1;
+    estado.destinoPorBuscar = null;
     estado.dom.listaRenglones.textContent = '';
     if (dom.onCambio) {
       estado.onCambio = dom.onCambio;

@@ -104,6 +104,17 @@
     var expediente = expedienteLocal(datos);
     var r = SGC.core.validacion.validarParaAvanzar(expediente);
     var items = SGC.core.validacion.itemsFaltantes(r);
+    // ORDEN-RONDA-33 pieza 2: un renglón "por buscar" no tiene ítem elegido, y
+    // la exportación final no lo acepta. El núcleo ya lo marca por sus valores,
+    // pero el motivo tiene que decir también que falta elegir el ítem.
+    var renglones = Array.isArray(expediente.renglones) ? expediente.renglones : [];
+    for (var i = 0; i < renglones.length; i++) {
+      if (renglones[i] && renglones[i].porBuscar === true) {
+        r.valido = false;
+        items.push('elegir el ítem del catálogo en los renglones por buscar');
+        break;
+      }
+    }
     if (items.length === 0 && !r.valido) {
       items.push('el requerimiento todavía no está completo');
     }

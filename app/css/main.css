@@ -278,6 +278,22 @@ mark {
   margin-bottom: 10px;
 }
 
+/* ORDEN-RONDA-33 pieza 2: un renglón que todavía no tiene ítem elegido se ve
+   en rojo y con su botón "Buscar" para destrabarlo. */
+.renglon-por-buscar {
+  border-color: var(--color-error);
+  background-color: var(--color-fondo-suave);
+}
+
+.renglon-por-buscar .renglon-item {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.renglon-cab .buscar {
+  margin-left: auto;
+}
+
 .renglon-cab {
   display: flex;
   gap: 12px;

@@ -324,6 +324,26 @@
 
   SGC.catalogo.buscador = {
     montar: montar,
+    /*
+     * ORDEN-RONDA-33 pieza 2: poner un texto en el campo de clases desde otro
+     * lado de la pantalla (el botón "Buscar" de un renglón por buscar), como si
+     * la persona lo hubiera escrito: corre la misma búsqueda y deja el foco en
+     * el buscador para que elija la clase y el ítem.
+     */
+    buscar: function (texto) {
+      var campo = estado.dom.campoClases;
+      if (!campo) {
+        return;
+      }
+      campo.value = texto === undefined || texto === null ? '' : String(texto);
+      alEscribirClases();
+      if (typeof campo.focus === 'function') {
+        campo.focus();
+      }
+      if (typeof campo.scrollIntoView === 'function') {
+        campo.scrollIntoView({ block: 'center' });
+      }
+    },
     obtenerEstado: function () {
       return estado;
     }

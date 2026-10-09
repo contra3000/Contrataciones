@@ -71,6 +71,12 @@
     if (!fila) {
       return null;
     }
+    // ORDEN-RONDA-33 pieza 2: el error de un renglón por buscar lleva al botón
+    // "Buscar" de esa fila, que es lo que destraba el paso.
+    if (/ítem del catálogo/i.test(e.mensaje)) {
+      var botonBuscar = fila.querySelectorAll('[data-buscar]');
+      return botonBuscar.length > 0 ? botonBuscar[0] : null;
+    }
     var etiqueta = null;
     if (/unidad/i.test(e.mensaje)) {
       etiqueta = 'Unidad de medida';
