@@ -52,6 +52,9 @@
   }
 
   function camposTituloDelError(mensaje) {
+    if (mensaje.indexOf('PAC') !== -1) {
+      return 'pac';
+    }
     if (mensaje.indexOf('trimestre') !== -1) {
       return 'trimestre';
     }

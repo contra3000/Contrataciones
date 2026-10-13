@@ -39,6 +39,7 @@
 
   function sincronizarDesdeFormulario() {
     formulario.sincronizar(estado);
+    actualizarPac();
   }
 
   function guardarBorrador() {
@@ -369,6 +370,110 @@ function descripcionOperador(operador) {
     URL.revokeObjectURL(url);
   }
 
+  /*
+   * ORDEN-RONDA-34 pieza 2: el proceso del PAC en Identificación.
+   *
+   * El desplegable se llena con los procesos de config/pac.js (los 39) más
+   * "no-autorizado". Elegir un proceso copia su trimestre al campo Trimestre,
+   * que la persona puede cambiar. La justificación del PAC aparece cuando el
+   * pedido no está autorizado, o cuando el preventivo supera el monto del
+   * proceso (en pesos, con el total válido de los valores cargados; en dólares,
+   * con el preventivo en USD que se carga a mano). El preventivo en dólares sólo
+   * se ve en los procesos en dólares.
+   *
+   * Todo esto vive acá dentro y sólo se engancha si #sgc-pac existe: la
+   * aplicación con servidor no lo tiene (ADR-044).
+   */
+  function poblarSelectPac(select) {
+    var procesos = SGC.core.validacion.procesosDelPac();
+    for (var i = 0; i < procesos.length; i++) {
+      var opcion = document.createElement('option');
+      opcion.value = String(procesos[i].numero);
+      opcion.textContent = SGC.renders.documento.detalleDeProcesoPac(procesos[i]);
+      select.appendChild(opcion);
+    }
+    var noAutorizado = document.createElement('option');
+    noAutorizado.value = 'no-autorizado';
+    noAutorizado.textContent = 'No autorizado en el PAC';
+    select.appendChild(noAutorizado);
+  }
+
+  function aplicarTrimestreDelPac() {
+    var nodoPac = estado.dom.campos.pac;
+    var nodoTrimestre = estado.dom.campos.trimestre;
+    if (!nodoPac || !nodoTrimestre) {
+      return;
+    }
+    var proceso = SGC.core.validacion.procesoDelPac(nodoPac.value);
+    if (proceso) {
+      nodoTrimestre.value = String(proceso.trimestre);
+    }
+  }
+
+  // Los renglones con sus valores: el preventivo total en pesos sale de los
+  // valores cargados, no de la lista pelada (que no los trae).
+  function renglonesParaPreventivo() {
+    if (SGC.generadorValores && typeof SGC.generadorValores.renglonesConValores === 'function') {
+      return SGC.generadorValores.renglonesConValores();
+    }
+    return (estado.datos && estado.datos.renglones) || [];
+  }
+
+  function actualizarPac() {
+    var nodoPac = estado.dom.campos.pac;
+    var camposPac = estado.dom.camposPac;
+    if (!nodoPac || !camposPac) {
+      return;
+    }
+    var identificacion = estado.datos.identificacion || {};
+    var pac = identificacion.pac || {};
+    var numero = nodoPac.value;
+    var proceso = SGC.core.validacion.procesoDelPac(numero);
+
+    var esUsd = !!(proceso && proceso.moneda === 'USD');
+    camposPac.usd.hidden = !esUsd;
+    if (!esUsd && estado.dom.campos.pacPreventivoUsd) {
+      estado.dom.campos.pacPreventivoUsd.value = '';
+      if (identificacion.pac) {
+        identificacion.pac.preventivoUsd = null;
+      }
+    }
+
+    var mostrarJustificacion = numero === 'no-autorizado';
+    var decidible = true;
+    if (!mostrarJustificacion && proceso) {
+      if (proceso.moneda === 'USD') {
+        var usd = pac.preventivoUsd;
+        if (typeof usd === 'number' && isFinite(usd)) {
+          mostrarJustificacion = usd > proceso.monto;
+        } else {
+          decidible = false;
+        }
+      } else {
+        var total = SGC.core.requerimiento.preventivoContratacion(renglonesParaPreventivo());
+        if (total.valido) {
+          mostrarJustificacion = total.total > proceso.monto;
+        } else {
+          decidible = false;
+        }
+      }
+    }
+    if (!decidible) {
+      // Sin preventivo calculable no se decide ni se toca el campo: por
+      // ejemplo, la importación dispone primero los renglones y después los
+      // valores (alImportar/fijar), y la justificación que el archivo traía no
+      // puede perderse en el ínterin.
+      return;
+    }
+    camposPac.justificacion.hidden = !mostrarJustificacion;
+    if (!mostrarJustificacion && estado.dom.campos.pacJustificacion) {
+      estado.dom.campos.pacJustificacion.value = '';
+      if (identificacion.pac) {
+        identificacion.pac.justificacion = '';
+      }
+    }
+  }
+
   function montar(raiz, opciones) {
     estado.dom.raiz = raiz;
     // ORDEN-RONDA-28 §4: quien lo monta puede cambiar sólo la lectura del
@@ -426,6 +531,36 @@ function descripcionOperador(operador) {
     var nodoErrorTrimestre = qs(raiz, '#sgc-error-trimestre');
     if (nodoErrorTrimestre) {
       estado.dom.errores.trimestre = nodoErrorTrimestre;
+    }
+    // ORDEN-RONDA-34 pieza 2: el PAC. Sólo el generador tiene estos nodos; la
+    // aplicación con servidor no, y acá no se engancha nada (ADR-044).
+    var nodoPac = qs(raiz, '#sgc-pac');
+    if (nodoPac) {
+      estado.dom.campos.pac = nodoPac;
+      poblarSelectPac(nodoPac);
+      nodoPac.addEventListener('change', function () {
+        aplicarTrimestreDelPac();
+        sincronizarDesdeFormulario();
+      });
+      var nodoPacPreventivoUsd = qs(raiz, '#sgc-pac-preventivo-usd');
+      if (nodoPacPreventivoUsd) {
+        estado.dom.campos.pacPreventivoUsd = nodoPacPreventivoUsd;
+        nodoPacPreventivoUsd.addEventListener('input', sincronizarDesdeFormulario);
+      }
+      var nodoPacJustificacion = qs(raiz, '#sgc-pac-justificacion');
+      if (nodoPacJustificacion) {
+        estado.dom.campos.pacJustificacion = nodoPacJustificacion;
+        nodoPacJustificacion.addEventListener('input', sincronizarDesdeFormulario);
+      }
+      var campoUsd = qs(raiz, '#sgc-pac-preventivo-usd-campo');
+      var campoJustificacion = qs(raiz, '#sgc-pac-justificacion-campo');
+      if (campoUsd && campoJustificacion) {
+        estado.dom.camposPac = { usd: campoUsd, justificacion: campoJustificacion };
+      }
+    }
+    var nodoErrorPac = qs(raiz, '#sgc-error-pac');
+    if (nodoErrorPac) {
+      estado.dom.errores.pac = nodoErrorPac;
     }
     estado.dom.borradorAviso = qs(raiz, '#sgc-borrador-aviso');
     estado.dom.borradorInfo = qs(raiz, '#sgc-borrador-info');

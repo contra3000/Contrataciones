@@ -78,6 +78,8 @@
       renglones: renglones,
       justificacion: fundamentacion.justificacion || campos.justificacion || '—',
       objetivo: fundamentacion.objetivo || campos.objetivo || '',
+      // ORDEN-RONDA-34 pieza 2: el proceso del PAC del expediente (o null).
+      pac: datos.pac || null,
       operadorNombre: nombreSolicitante,
       operadorEmail: operadorEmail || '—',
       fecha: datos.fechaCreacion || '',
@@ -90,6 +92,29 @@
 
   function campo(nombre, valor) {
     return '<dt>' + esc(nombre) + '</dt><dd>' + esc(valor) + '</dd>';
+  }
+
+  // ORDEN-RONDA-34 pieza 2: el PAC. El monto y el detalle del proceso salen con
+  // el MISMO texto en el desplegable del generador (views/wizard.js) y en el
+  // requerimiento impreso (renders/requerimiento.js): una sola implementación.
+  function montoAr(n) {
+    if (typeof n !== 'number' || !isFinite(n)) {
+      return '—';
+    }
+    var partes = n.toFixed(2).split('.');
+    return partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + partes[1];
+  }
+
+  // "4 · Insumos médicos VIIBA · Contratación Directa · 1° trimestre · $ 1.029.094,70",
+  // o "USD 21.466,00" en los procesos en dólares.
+  function detalleDeProcesoPac(proceso) {
+    if (!proceso || typeof proceso !== 'object') {
+      return '';
+    }
+    var monto = proceso.moneda === 'USD' ? 'USD ' + montoAr(proceso.monto) : '$ ' + montoAr(proceso.monto);
+    return String(proceso.numero) + ' · ' + (proceso.nombre || '') + ' · ' +
+      (proceso.procedimiento || '') + ' · ' + String(proceso.trimestre) +
+      '° trimestre · ' + monto;
   }
 
   // ---------------------------------------------------------------------------
@@ -379,6 +404,8 @@
     esc: esc,
     modelo: modelo,
     campo: campo,
+    montoAr: montoAr,
+    detalleDeProcesoPac: detalleDeProcesoPac,
     ESTILOS: ESTILOS,
     LEYENDA_ADR016: LEYENDA_ADR016,
     LEYENDA_ADR023: LEYENDA_ADR023,

@@ -107,6 +107,24 @@
     } else if (m.base.vigencia) {
       pares.push(['Vigencia', m.base.vigencia]);
     }
+    // ORDEN-RONDA-34 pieza 2d: el proceso del PAC, en estos renglones y sólo si
+    // el expediente lo trae. Sin pac, el documento sale igual que siempre.
+    var pac = m.base.pac;
+    if (pac) {
+      if (pac.numero === 'no-autorizado') {
+        pares.push(['PAC 2026', 'No autorizado en el PAC']);
+      } else if (pac.proceso) {
+        pares.push(['PAC 2026', 'Proceso ' + d.detalleDeProcesoPac(pac.proceso)]);
+      }
+      if (pac.proceso && pac.proceso.moneda === 'USD' &&
+          typeof pac.preventivoUsd === 'number' && isFinite(pac.preventivoUsd)) {
+        pares.push(['Preventivo en dólares', 'USD ' + d.montoAr(pac.preventivoUsd)]);
+      }
+      var justificacionPac = typeof pac.justificacion === 'string' ? pac.justificacion : '';
+      if (justificacionPac !== '') {
+        pares.push(['Justificación del PAC', justificacionPac]);
+      }
+    }
     return pares;
   }
 

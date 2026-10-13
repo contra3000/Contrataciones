@@ -279,6 +279,18 @@ async function arrancar() {
     documento.getElementById(id).value = String(valor);
   };
 
+  /*
+   * ORDEN-RONDA-34 pieza 2: elegir un proceso del PAC como lo elige una
+   * persona. m.setear no alcanza: el cambio de #sgc-pac es el que copia el
+   * trimestre del proceso al campo Trimestre y sincroniza el formulario.
+   */
+  m.elegirPac = function (numero) {
+    const select = documento.getElementById('sgc-pac');
+    select.value = String(numero);
+    select.emit('change', { target: select });
+    return select;
+  };
+
   m.mousedown = function (id) {
     documento.getElementById(id).emit('mousedown', { preventDefault() {} });
   };

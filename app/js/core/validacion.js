@@ -26,6 +26,43 @@
     return SGC.core.config.MAX_ACLARACION_TOTAL;
   }
 
+  // ORDEN-RONDA-34 pieza 2: el PAC 2026, del que sale la lista de procesos del
+  // desplegable de Identificación. La configuración llega como .js hermano
+  // (config/pac.js, escrito por tools/build-config.js) y sólo existe en el
+  // generador: con servidor, SGC.cargaConfig no está y todo esto queda vacío
+  // (ADR-044: la aplicación con servidor no conoce #sgc-pac).
+  function pacConfig() {
+    if (SGC.cargaConfig && typeof SGC.cargaConfig.obtener === 'function') {
+      var config = SGC.cargaConfig.obtener('config/pac.json');
+      if (config && Array.isArray(config.procesos)) {
+        return config;
+      }
+    }
+    return null;
+  }
+
+  function procesosDelPac() {
+    var config = pacConfig();
+    return config ? config.procesos : [];
+  }
+
+  function procesoDelPac(numero) {
+    if (numero === undefined || numero === null || numero === '') {
+      return null;
+    }
+    var n = Number(numero);
+    if (!isFinite(n)) {
+      return null;
+    }
+    var procesos = procesosDelPac();
+    for (var i = 0; i < procesos.length; i++) {
+      if (procesos[i].numero === n) {
+        return procesos[i];
+      }
+    }
+    return null;
+  }
+
   function obtenerEstado(expediente) {
     var id = SGC.core.utils.idEstado(expediente);
     if (id === null) {
@@ -255,6 +292,18 @@
         (typeof campos.trimestre !== 'string' || !/^[1-4]$/.test(campos.trimestre))) {
       errores.push('Elegí el trimestre para el que se pide');
     }
+    // ORDEN-RONDA-34 pieza 2: el proceso del PAC es obligatorio con el mismo
+    // trato que el trimestre: sólo cuando el campo existe (el generador lo
+    // escribe en cada sincronización; la aplicación con servidor no lo arma).
+    // Vale un proceso del PAC o "no-autorizado"; vacío o desconocido, no.
+    if (campos.pac !== undefined && campos.pac !== null) {
+      var numeroPac = campos.pac && typeof campos.pac.numero === 'string' ? campos.pac.numero : '';
+      if (numeroPac === '') {
+        errores.push('Elegí el proceso del PAC 2026');
+      } else if (numeroPac !== 'no-autorizado' && procesoDelPac(numeroPac) === null) {
+        errores.push('Elegí el proceso del PAC 2026');
+      }
+    }
     return { valido: errores.length === 0, errores: errores };
   }
 
@@ -344,6 +393,8 @@
     validarFundamentacion: validarFundamentacion,
     validarJustificaciones: validarJustificaciones,
     validarRequerimiento: validarRequerimiento,
-    validarEncabezado: validarEncabezado
+    validarEncabezado: validarEncabezado,
+    procesosDelPac: procesosDelPac,
+    procesoDelPac: procesoDelPac
   };
 })(typeof window !== 'undefined' ? window : globalThis);

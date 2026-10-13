@@ -239,6 +239,25 @@
     return salida;
   }
 
+  // ORDEN-RONDA-34 pieza 2e: la forma del PAC que viaja en el JSON:
+  // {numero, preventivoUsd (número o null), justificacion}. Sin número no hay
+  // pac, y un archivo sin pac entra igual.
+  function pacExportado(valor) {
+    if (!esObjeto(valor)) {
+      return null;
+    }
+    var numero = valor.numero === undefined || valor.numero === null ? '' : String(valor.numero);
+    if (numero === '') {
+      return null;
+    }
+    return {
+      numero: numero,
+      preventivoUsd: typeof valor.preventivoUsd === 'number' && isFinite(valor.preventivoUsd)
+        ? valor.preventivoUsd : null,
+      justificacion: typeof valor.justificacion === 'string' ? valor.justificacion : ''
+    };
+  }
+
   /*
    * El contenido del archivo. Sale del expediente local que ya compone
    * documentos.js, que es lo mismo que se imprime: si el papel y el JSON
@@ -300,6 +319,10 @@
       // para elegir).
       trimestre: datos.identificacion && typeof datos.identificacion.trimestre === 'string'
         ? datos.identificacion.trimestre : '',
+      // ORDEN-RONDA-34 pieza 2e: el proceso del PAC (o ninguno), siempre en la
+      // forma del pacExportado: sin número, queda null y el archivo no habla del
+      // PAC.
+      pac: pacExportado(expediente.datos.pac),
       campos: {
         operador: campos.operador || '',
         dependenciaSolicitante: campos.dependenciaSolicitante || '',
@@ -496,6 +519,9 @@
         // ORDEN-RONDA-34 pieza 1: un JSON sin `trimestre` (de la ronda 33 o una
         // plantilla) entra igual: el campo queda para elegir.
         trimestre: typeof e.trimestre === 'string' ? e.trimestre : '',
+        // ORDEN-RONDA-34 pieza 2e: el PAC que el archivo trae, en la misma forma
+        // normalizada con la que sale (un archivo sin pac da null).
+        pac: pacExportado(e.pac),
         campos: {
           operador: typeof campos.operador === 'string' ? campos.operador : '',
           dependenciaSolicitante: typeof campos.dependenciaSolicitante === 'string'
@@ -633,6 +659,44 @@
       datos.identificacion.trimestre = trimestre;
     }
     /*
+     * ORDEN-RONDA-34 pieza 2e: el PAC entra sólo si el archivo lo trae con un
+     * número conocido. Un número que no está en el PAC no rechaza el archivo:
+     * se avisa y el campo queda para elegir de nuevo. Igual que el trimestre,
+     * un archivo sin pac entra y el campo queda para elegir.
+     */
+    var avisosPac = [];
+    var pac = null;
+    var pacCrudo = cuerpo.pac;
+    if (esObjeto(pacCrudo) && typeof pacCrudo.numero === 'string' && pacCrudo.numero !== '') {
+      var numeroPac = pacCrudo.numero;
+      if (numeroPac === 'no-autorizado') {
+        pac = {
+          numero: numeroPac,
+          preventivoUsd: null,
+          justificacion: typeof pacCrudo.justificacion === 'string' ? pacCrudo.justificacion : ''
+        };
+      } else {
+        var procesoPac = SGC.core.validacion.procesoDelPac(numeroPac);
+        if (procesoPac) {
+          pac = {
+            numero: numeroPac,
+            preventivoUsd: typeof pacCrudo.preventivoUsd === 'number' && isFinite(pacCrudo.preventivoUsd)
+              ? pacCrudo.preventivoUsd : null,
+            justificacion: typeof pacCrudo.justificacion === 'string' ? pacCrudo.justificacion : ''
+          };
+        } else {
+          avisosPac.push('el proceso ' + numeroPac + ' no está en el PAC 2026: elegilo de nuevo');
+        }
+      }
+    }
+    if (pac) {
+      // El PAC vive en identificacion.pac, que es donde lo lee el formulario
+      // (wizard-formulario.js aplicar/sincronizar) y donde lo vuelve a buscar
+      // documentos.js (pacDelWizard) para el expediente que se imprime y se
+      // exporta: un solo lugar para los datos del PAC del asistente.
+      datos.identificacion.pac = pac;
+    }
+    /*
      * ORDEN-RONDA-30 §2. A un avance NO se le pide que esté completo, y esto es
      * lo que se lo pedía: validarPaso('revision') exige título, año,
      * dependencia, al menos un renglón con su unidad y la justificación, o sea
@@ -645,7 +709,7 @@
      * (verificarHuella). Lo que le falte se ve apenas se abre el formulario.
      */
     if (esAvance) {
-      return { errores: [], datos: datos };
+      return { errores: [], datos: datos, avisos: avisosPac };
     }
     // ORDEN-RONDA-33 pieza 1: un renglón sin código ya no invalida el archivo:
     // entra "por buscar" y se elige en pantalla. Por eso la validación del
@@ -656,7 +720,7 @@
       var e = revision.errores[i];
       errores.push(e.campo ? e.campo + ': ' + e.mensaje : e.mensaje);
     }
-    return { errores: errores, datos: datos };
+    return { errores: errores, datos: datos, avisos: avisosPac };
   }
 
   /*
@@ -757,7 +821,8 @@
         if (!verificacion.ok) {
           return { ok: false, errores: verificacion.errores };
         }
-        avisos = avisos.concat(verificacion.avisos).concat(resolucion.avisos);
+        avisos = avisos.concat(verificacion.avisos).concat(resolucion.avisos)
+          .concat(conNucleo.avisos);
         if (version !== null) {
           // La versión se recuerda sólo si el archivo entró: un archivo rechazado
           // no corrió el contador.

@@ -12,10 +12,11 @@
  * El hermano llama a SGC.cargaConfig.recibir('<ruta lógica>', <datos>). El
  * módulo que la recibe es app/js/generador/config-carga.js.
  *
- * Sólo se envuelven los archivos que la aplicación pide en el navegador. Hoy es
- * uno solo:
+ * Sólo se envuelven los archivos que la aplicación pide en el navegador. Hoy son
+ * dos:
  *
  *   config/aplicacion.json -> app/config/aplicacion.js
+ *   config/pac.json         -> app/config/pac.js
  *
  * No se envuelven palabras.json, plantillas-v1.json, servidor.json ni
  * usuarios.ejemplo.json: los lee el servidor (o, el padrón, la montura de tests
@@ -43,7 +44,7 @@ const RAIZ = path.resolve(__dirname, '..');
 
 // Los archivos que la aplicación lee en el navegador. No es una lista de todo
 // lo que hay en config/: es lo que de verdad viaja al cliente.
-const ARCHIVOS = ['aplicacion.json'];
+const ARCHIVOS = ['aplicacion.json', 'pac.json'];
 
 const NOMBRE_FUNCION = 'SGC.cargaConfig.recibir';
 

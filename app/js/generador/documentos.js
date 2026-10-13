@@ -80,6 +80,78 @@
   }
 
   /*
+   * ORDEN-RONDA-34 pieza 2: el PAC del wizard, resuelto para los documentos.
+   * Queda {numero, preventivoUsd, justificacion, proceso}, donde `proceso` es el
+   * del PAC (o null si no está autorizado). Si no hay número elegido, o el
+   * número no está en el PAC, no hay pac: el documento sale como siempre.
+   */
+  function pacDelWizard(datosWizard) {
+    var identificacion = datosWizard && typeof datosWizard.identificacion === 'object'
+      ? datosWizard.identificacion : {};
+    var pac = identificacion.pac;
+    if (!pac || typeof pac !== 'object') {
+      return null;
+    }
+    var numero = pac.numero === undefined || pac.numero === null ? '' : String(pac.numero);
+    if (numero === '') {
+      return null;
+    }
+    var resultado = {
+      numero: numero,
+      preventivoUsd: null,
+      justificacion: typeof pac.justificacion === 'string' ? pac.justificacion : '',
+      proceso: null
+    };
+    if (numero !== 'no-autorizado') {
+      resultado.proceso = SGC.core.validacion.procesoDelPac(numero);
+      if (resultado.proceso === null) {
+        return null;
+      }
+    }
+    if (resultado.proceso && resultado.proceso.moneda === 'USD' &&
+        typeof pac.preventivoUsd === 'number' && isFinite(pac.preventivoUsd)) {
+      resultado.preventivoUsd = pac.preventivoUsd;
+    }
+    return resultado;
+  }
+
+  // ORDEN-RONDA-34 pieza 2c: lo que falta para exportar por el PAC, en las
+  // palabras de la orden. Sólo se piden cuando el expediente trae pac.
+  function itemsDelPac(expediente) {
+    var pac = expediente && expediente.datos ? expediente.datos.pac : null;
+    if (!pac) {
+      return [];
+    }
+    var items = [];
+    var justificacion = typeof pac.justificacion === 'string' ? pac.justificacion.trim() : '';
+    if (pac.numero === 'no-autorizado') {
+      if (justificacion === '') {
+        items.push('justificar el pedido no autorizado en el PAC');
+      }
+      return items;
+    }
+    var proceso = pac.proceso;
+    if (!proceso) {
+      return items;
+    }
+    if (proceso.moneda === 'USD') {
+      if (pac.preventivoUsd === null || pac.preventivoUsd === undefined) {
+        items.push('cargar el preventivo en dólares del proceso ' + proceso.numero + ' del PAC');
+      } else if (pac.preventivoUsd > proceso.monto && justificacion === '') {
+        items.push('justificar el preventivo que supera el monto del proceso ' +
+          proceso.numero + ' del PAC');
+      }
+    } else {
+      var total = SGC.core.requerimiento.preventivoContratacion(expediente.renglones || []);
+      if (total.valido && total.total > proceso.monto && justificacion === '') {
+        items.push('justificar el preventivo que supera el monto del proceso ' +
+          proceso.numero + ' del PAC');
+      }
+    }
+    return items;
+  }
+
+  /*
    * El expediente local. Misma forma que el del servidor:
    *   {estado, campos, entregables, renglones, datos}
    * donde `datos` es lo que leen los renders (renders/documento.js modelo) y
@@ -109,6 +181,10 @@
       finalidad: datosIniciales.campos.justificacion || '',
       trimestre: trimestre
     };
+    // ORDEN-RONDA-34 pieza 2: el proceso del PAC (o su ausencia) viaja en el
+    // expediente para el documento impreso y para el JSON. Sin pac elegido,
+    // queda null y los documentos salen igual que antes.
+    datosIniciales.pac = pacDelWizard(datosWizard);
     var resultado = {
       estado: { id: ESTADO },
       titulo: datosIniciales.titulo,
@@ -157,6 +233,13 @@
         items.push('elegir el ítem del catálogo en los renglones por buscar');
         break;
       }
+    }
+    // ORDEN-RONDA-34 pieza 2c: el PAC también frena la exportación, con su
+    // motivo. El avance se guarda igual (exportarAvance no mira esta revisión).
+    var itemsPac = itemsDelPac(expediente);
+    if (itemsPac.length > 0) {
+      r.valido = false;
+      items = items.concat(itemsPac);
     }
     if (items.length === 0 && !r.valido) {
       items.push('el requerimiento todavía no está completo');

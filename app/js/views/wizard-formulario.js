@@ -24,6 +24,22 @@
     return nodo ? nodo.value : '';
   }
 
+  // ORDEN-RONDA-34 pieza 2: el preventivo en dólares, de texto a número. Vacío
+  // es null (no cargado); lo que no sea un número positivo es NaN y se trata
+  // como no cargado. Acepta el punto de miles y la coma decimal como se escribe
+  // acá.
+  function numeroDeTexto(valor) {
+    var s = String(valor === undefined || valor === null ? '' : valor).trim();
+    if (s === '') {
+      return null;
+    }
+    s = s.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+    if (!/^\d+(\.\d+)?$/.test(s)) {
+      return NaN;
+    }
+    return Number(s);
+  }
+
   function sincronizar(estado) {
     estado.datos.identificacion.titulo = leerCampo(estado, 'titulo');
     estado.datos.identificacion.anio = leerCampo(estado, 'anio');
@@ -33,6 +49,19 @@
     // error y el campo nunca llega a la validación.
     if (campoInput(estado, 'trimestre')) {
       estado.datos.identificacion.trimestre = leerCampo(estado, 'trimestre');
+    }
+    // ORDEN-RONDA-34 pieza 2: el PAC, en la misma forma que viaja en el JSON
+    // ({numero, preventivoUsd, justificacion}). Igual que el trimestre, sólo se
+    // escribe si el nodo existe (generador).
+    if (campoInput(estado, 'pac')) {
+      var usd = campoInput(estado, 'pacPreventivoUsd')
+        ? numeroDeTexto(leerCampo(estado, 'pacPreventivoUsd')) : null;
+      estado.datos.identificacion.pac = {
+        numero: leerCampo(estado, 'pac'),
+        preventivoUsd: (typeof usd === 'number' && isFinite(usd)) ? usd : null,
+        justificacion: campoInput(estado, 'pacJustificacion')
+          ? leerCampo(estado, 'pacJustificacion') : ''
+      };
     }
     estado.datos.fundamentacion.justificacion = leerCampo(estado, 'justificacion');
     estado.datos.fundamentacion.objetivo = leerCampo(estado, 'objetivo');
@@ -47,6 +76,17 @@
     campoInput(estado, 'dependenciaSolicitante').value = id.dependenciaSolicitante || '';
     if (campoInput(estado, 'trimestre')) {
       campoInput(estado, 'trimestre').value = id.trimestre || '';
+    }
+    if (campoInput(estado, 'pac')) {
+      var pac = id.pac && typeof id.pac === 'object' ? id.pac : {};
+      campoInput(estado, 'pac').value = pac.numero || '';
+      if (campoInput(estado, 'pacPreventivoUsd')) {
+        campoInput(estado, 'pacPreventivoUsd').value =
+          typeof pac.preventivoUsd === 'number' ? String(pac.preventivoUsd) : '';
+      }
+      if (campoInput(estado, 'pacJustificacion')) {
+        campoInput(estado, 'pacJustificacion').value = pac.justificacion || '';
+      }
     }
     campoInput(estado, 'justificacion').value = fund.justificacion || '';
     campoInput(estado, 'objetivo').value = fund.objetivo || '';

@@ -99,6 +99,7 @@ async function altaCompleta(nombre) {
   m.escribir('sgc-anio', '2026');
   m.escribir('sgc-dependencia', 'División Usuario');
   m.setear('sgc-trimestre', '1'); // ORDEN-RONDA-34: el trimestre es obligatorio en Identificación
+  m.elegirPac('1'); // ORDEN-RONDA-34 pieza 2: el proceso del PAC es obligatorio en Identificación
   d.getElementById('sgc-siguiente').click();
   await m.esperar(() => !d.getElementById('sgc-paso-renglones').hidden, 20000,
     'paso de renglones visible');

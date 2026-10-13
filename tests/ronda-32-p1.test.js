@@ -130,6 +130,7 @@ test('RONDA-32 pieza 1b · el paso pendiente dice "· falta" con espacio', async
   m.escribir('sgc-anio', '2026');
   m.escribir('sgc-dependencia', 'División Usuario');
   m.setear('sgc-trimestre', '1'); // ORDEN-RONDA-34: el trimestre es obligatorio en Identificación
+  m.elegirPac('1'); // ORDEN-RONDA-34 pieza 2: el proceso del PAC es obligatorio en Identificación
   m.documento.getElementById('sgc-siguiente').click();
   await m.esperar(() => !m.documento.getElementById('sgc-paso-renglones').hidden, 20000,
     'paso de renglones visible');

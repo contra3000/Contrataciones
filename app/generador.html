@@ -184,6 +184,30 @@
           </select>
           <p id="sgc-error-trimestre" class="error-campo" role="alert" hidden></p>
         </div>
+        <!-- ORDEN-RONDA-34 pieza 2: el proceso del PAC 2026 al que corresponde
+             el requerimiento, o "No autorizado en el PAC". Es obligatorio para
+             pasar de Identificación. Elegir un proceso completa el trimestre con
+             el del PAC (y la persona lo puede cambiar). Si el preventivo supera
+             el monto del proceso, o el pedido no está autorizado, se pide la
+             justificación del PAC. Es del generador: la aplicación con servidor
+             no lo tiene (ADR-044). -->
+        <div class="campo">
+          <label for="sgc-pac">Proceso del PAC 2026</label>
+          <select id="sgc-pac" required>
+            <option value="">Elegí el proceso del PAC</option>
+          </select>
+          <p id="sgc-error-pac" class="error-campo" role="alert" hidden></p>
+        </div>
+        <div class="campo" id="sgc-pac-preventivo-usd-campo" hidden>
+          <label for="sgc-pac-preventivo-usd">Preventivo en dólares</label>
+          <input id="sgc-pac-preventivo-usd" type="text" inputmode="decimal" autocomplete="off">
+          <p id="sgc-error-pac-preventivo-usd" class="error-campo" role="alert" hidden></p>
+        </div>
+        <div class="campo" id="sgc-pac-justificacion-campo" hidden>
+          <label for="sgc-pac-justificacion">Justificación del PAC</label>
+          <textarea id="sgc-pac-justificacion" rows="3"></textarea>
+          <p id="sgc-error-pac-justificacion" class="error-campo" role="alert" hidden></p>
+        </div>
         <div class="campo">
           <label for="sgc-dependencia">Dependencia solicitante</label>
           <input id="sgc-dependencia" type="text" autocomplete="off" required>
@@ -397,6 +421,7 @@
        que la recibe va antes que ella. -->
   <script src="js/generador/config-carga.js"></script>
   <script src="config/aplicacion.js"></script>
+  <script src="config/pac.js"></script>
 
   <!-- ORDEN-RONDA-28 §3: el rol Usuario del generador. Son tres piezas y
        ninguna repite una regla: los presupuestos son referencias (no hay
