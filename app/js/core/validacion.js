@@ -247,6 +247,14 @@
     if (typeof campos.operador !== 'string' || campos.operador.trim() === '') {
       errores.push('El operador es obligatorio');
     }
+    // ORDEN-RONDA-34 pieza 1: el trimestre es obligatorio sólo cuando el campo
+    // existe. En la aplicación con servidor nunca se arma (no tiene #sgc-trimestre)
+    // y no se exige; en el generador el formulario lo escribe en cada
+    // sincronización, así que llega aunque sea ''.
+    if (campos.trimestre !== undefined &&
+        (typeof campos.trimestre !== 'string' || !/^[1-4]$/.test(campos.trimestre))) {
+      errores.push('Elegí el trimestre para el que se pide');
+    }
     return { valido: errores.length === 0, errores: errores };
   }
 

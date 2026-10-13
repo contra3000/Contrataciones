@@ -52,6 +52,9 @@
   }
 
   function camposTituloDelError(mensaje) {
+    if (mensaje.indexOf('trimestre') !== -1) {
+      return 'trimestre';
+    }
     if (mensaje.indexOf('título') !== -1) {
       return 'titulo';
     }

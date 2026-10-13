@@ -28,6 +28,12 @@
     estado.datos.identificacion.titulo = leerCampo(estado, 'titulo');
     estado.datos.identificacion.anio = leerCampo(estado, 'anio');
     estado.datos.identificacion.dependenciaSolicitante = leerCampo(estado, 'dependenciaSolicitante');
+    // ORDEN-RONDA-34 pieza 1: el trimestre es del generador (ADR-044). La
+    // aplicación con servidor no tiene el nodo; si no existe, se saltea sin
+    // error y el campo nunca llega a la validación.
+    if (campoInput(estado, 'trimestre')) {
+      estado.datos.identificacion.trimestre = leerCampo(estado, 'trimestre');
+    }
     estado.datos.fundamentacion.justificacion = leerCampo(estado, 'justificacion');
     estado.datos.fundamentacion.objetivo = leerCampo(estado, 'objetivo');
     estado.datos.renglones = SGC.catalogo.renglones.obtener();
@@ -39,6 +45,9 @@
     campoInput(estado, 'titulo').value = id.titulo || '';
     campoInput(estado, 'anio').value = id.anio || '';
     campoInput(estado, 'dependenciaSolicitante').value = id.dependenciaSolicitante || '';
+    if (campoInput(estado, 'trimestre')) {
+      campoInput(estado, 'trimestre').value = id.trimestre || '';
+    }
     campoInput(estado, 'justificacion').value = fund.justificacion || '';
     campoInput(estado, 'objetivo').value = fund.objetivo || '';
   }

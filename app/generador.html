@@ -168,6 +168,22 @@
           <input id="sgc-anio" type="text" inputmode="numeric" maxlength="4" autocomplete="off" required>
           <p id="sgc-error-anio" class="error-campo" role="alert" hidden></p>
         </div>
+        <!-- ORDEN-RONDA-34 pieza 1: el trimestre para el que se pide (1° a 4°),
+             obligatorio para pasar de Identificación. Define la vigencia de los
+             documentos (último día del trimestre del año del requerimiento) y
+             viaja en el JSON exportado. Es del generador: la aplicación con
+             servidor no lo tiene (ADR-044). -->
+        <div class="campo">
+          <label for="sgc-trimestre">Trimestre</label>
+          <select id="sgc-trimestre" required>
+            <option value="">Elegí el trimestre</option>
+            <option value="1">1° trimestre</option>
+            <option value="2">2° trimestre</option>
+            <option value="3">3° trimestre</option>
+            <option value="4">4° trimestre</option>
+          </select>
+          <p id="sgc-error-trimestre" class="error-campo" role="alert" hidden></p>
+        </div>
         <div class="campo">
           <label for="sgc-dependencia">Dependencia solicitante</label>
           <input id="sgc-dependencia" type="text" autocomplete="off" required>

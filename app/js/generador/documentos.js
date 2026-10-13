@@ -48,11 +48,48 @@
     return est && est.manifiesto ? est.manifiesto.catalogoVersion : null;
   }
 
+  // ORDEN-RONDA-34 pieza 1: la constante del lugar. Vive una sola vez, en
+  // config/aplicacion.json (la lee SGC.cargaConfig, como la versión del
+  // generador en intercambio.js).
+  function lugarEntrega() {
+    if (SGC.cargaConfig && typeof SGC.cargaConfig.obtener === 'function') {
+      var config = SGC.cargaConfig.obtener('config/aplicacion.json');
+      if (config && typeof config.lugarEntrega === 'string' && config.lugarEntrega !== '') {
+        return config.lugarEntrega;
+      }
+    }
+    return '';
+  }
+
+  // El último día del trimestre pedido, en dd/mm/aaaa: 31/03, 30/06, 30/09 o
+  // 31/12 del año del requerimiento (ORDEN-RONDA-34 pieza 1).
+  function ultimoDiaDelTrimestre(anio, trimestre) {
+    var dias = { 1: '31/03/', 2: '30/06/', 3: '30/09/', 4: '31/12/' };
+    var dia = dias[String(trimestre)];
+    var y = String(anio === undefined || anio === null ? '' : anio);
+    if (!dia || !/^\d{4}$/.test(y)) {
+      return '—';
+    }
+    return dia + y;
+  }
+
+  function trimestreElegido(datosWizard) {
+    var identificacion = datosWizard && typeof datosWizard.identificacion === 'object'
+      ? datosWizard.identificacion : {};
+    return typeof identificacion.trimestre === 'string' ? identificacion.trimestre : '';
+  }
+
   /*
    * El expediente local. Misma forma que el del servidor:
-   *   {expedienteId, estado, campos, entregables, renglones, datos}
+   *   {estado, campos, entregables, renglones, datos}
    * donde `datos` es lo que leen los renders (renders/documento.js modelo) y
    * `campos`/`entregables` lo que mira la validación del núcleo.
+   *
+   * ORDEN-RONDA-34 pieza 1: el expediente local no lleva `expedienteId`: el
+   * identificador interno no se muestra en ningún documento (el Jefe, 13/10), y
+   * los renders ya caen en '—' cuando no está. En `datos.identificacion` salen
+   * el lugar (una sola constante), la vigencia (el último día del trimestre en
+   * dd/mm/aaaa), la finalidad (la misma justificación) y el trimestre elegido.
    */
   function expedienteLocal(datos) {
     var datosWizard = datos || {};
@@ -65,8 +102,14 @@
     // imprime el documento), igual que en el expediente del servidor.
     datosIniciales.renglones = renglones;
     datosIniciales.presupuestos = presupuestos;
+    var trimestre = trimestreElegido(datosWizard);
+    datosIniciales.identificacion = {
+      lugar: lugarEntrega(),
+      vigencia: ultimoDiaDelTrimestre(datosIniciales.anio, trimestre),
+      finalidad: datosIniciales.campos.justificacion || '',
+      trimestre: trimestre
+    };
     var resultado = {
-      expedienteId: estado.operador ? ('generador-' + estado.operador.email) : 'generador',
       estado: { id: ESTADO },
       titulo: datosIniciales.titulo,
       fechaCreacion: new Date().toISOString(),

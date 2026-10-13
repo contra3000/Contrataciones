@@ -416,6 +416,17 @@ function descripcionOperador(operador) {
       dependenciaSolicitante: qs(raiz, '#sgc-error-dependencia'),
       justificacion: qs(raiz, '#sgc-error-justificacion')
     };
+    // ORDEN-RONDA-34 pieza 1: el trimestre es del generador (ADR-044). Se
+    // registra SÓLO si el elemento existe: la aplicación con servidor no lo
+    // tiene, y el bucle de más abajo no puede pedirle un escuchador a null.
+    var nodoTrimestre = qs(raiz, '#sgc-trimestre');
+    if (nodoTrimestre) {
+      estado.dom.campos.trimestre = nodoTrimestre;
+    }
+    var nodoErrorTrimestre = qs(raiz, '#sgc-error-trimestre');
+    if (nodoErrorTrimestre) {
+      estado.dom.errores.trimestre = nodoErrorTrimestre;
+    }
     estado.dom.borradorAviso = qs(raiz, '#sgc-borrador-aviso');
     estado.dom.borradorInfo = qs(raiz, '#sgc-borrador-info');
     estado.dom.archivoModelo = qs(raiz, '#sgc-archivo-modelo');

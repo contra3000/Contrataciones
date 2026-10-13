@@ -295,6 +295,11 @@
     return {
       titulo: String(expediente.titulo || ''),
       anio: String(datos.anio || ''),
+      // ORDEN-RONDA-34 pieza 1: el trimestre viaja junto al año ("" si todavía
+      // no se eligió: el archivo sigue entrando igual, sólo que el campo queda
+      // para elegir).
+      trimestre: datos.identificacion && typeof datos.identificacion.trimestre === 'string'
+        ? datos.identificacion.trimestre : '',
       campos: {
         operador: campos.operador || '',
         dependenciaSolicitante: campos.dependenciaSolicitante || '',
@@ -488,6 +493,9 @@
       cuerpo: {
         titulo: typeof e.titulo === 'string' ? e.titulo : '',
         anio: e.anio === undefined || e.anio === null ? '' : String(e.anio),
+        // ORDEN-RONDA-34 pieza 1: un JSON sin `trimestre` (de la ronda 33 o una
+        // plantilla) entra igual: el campo queda para elegir.
+        trimestre: typeof e.trimestre === 'string' ? e.trimestre : '',
         campos: {
           operador: typeof campos.operador === 'string' ? campos.operador : '',
           dependenciaSolicitante: typeof campos.dependenciaSolicitante === 'string'
@@ -617,6 +625,13 @@
         objetivo: cuerpo.campos.objetivo
       }
     };
+    // ORDEN-RONDA-34 pieza 1: el trimestre entra sólo si el archivo lo trae y
+    // no está vacío. Un JSON sin `trimestre` no se rechaza: el campo queda para
+    // elegir (y es cuando se vuelve obligatorio, como recién importado).
+    var trimestre = typeof cuerpo.trimestre === 'string' ? cuerpo.trimestre.trim() : '';
+    if (trimestre !== '') {
+      datos.identificacion.trimestre = trimestre;
+    }
     /*
      * ORDEN-RONDA-30 §2. A un avance NO se le pide que esté completo, y esto es
      * lo que se lo pedía: validarPaso('revision') exige título, año,
