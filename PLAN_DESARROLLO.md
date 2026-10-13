@@ -1,7 +1,7 @@
 # PLAN DE DESARROLLO — SGC (Sistema de Gestión de Contrataciones)
 
 División Contrataciones Moreno · VII Brigada Aérea
-Última actualización: **2026-10-09** · ronda 32 aprobada (9/9) · ronda 33 = plantilla para asistentes con renglones "por buscar" · piloto sigue con r31-h1 · la tabla §0 es la única fuente del estado
+Última actualización: **2026-10-13** · ronda 33 probada por el Jefe y registrada · **ronda 34 = los dos primeros de la cola §0.1** (campos de los documentos + PAC) · corte del 13/10: Abastecimiento proyectado en las rondas 37-38 y Contrataciones en las 38-39 · la tabla §0 y la cola §0.1 son la única fuente del estado
 Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · [`AUDITORIA_InstruccionesCodigo.md`](AUDITORIA_InstruccionesCodigo.md) · [`BITACORA_DECISIONES.md`](BITACORA_DECISIONES.md) · [`RELEVAMIENTO_ENTORNO.md`](RELEVAMIENTO_ENTORNO.md)
 
 > **Cómo se mantiene este archivo.** Cada hito tiene casillas de verificación. Al terminar una tarea se marca `[x]` y se actualiza la línea de estado del hito y la fecha de arriba. Toda decisión de arquitectura que se tome en el camino se registra en `BITACORA_DECISIONES.md`, no acá.
@@ -39,9 +39,67 @@ Documentos relacionados: [`FullScopeDoc.md`](Contrataciones/FullScopeDoc.md) · 
 | H25 | **Controles automáticos y entorno de prueba** | ⬜ **Nuevo, 2026-09-23** — aprobado por el Jefe: entorno de prueba con siete roles, matriz de permisos como test, `estado-ciclo` | H24 |
 | H26 | **Del requerimiento al trámite: SCo y proceso** | ✅ **Ronda 26 hecha**: número de SCo (COMPR.AR) requerido y hermanos visibles. **Ronda 27 hecha (30/09)**: registro de SCo en `datos/sco/`, movimiento en bloque todo-o-nada con restauración desde `hist/`, devolución en bloque a Fase 1 sin deshacer la SCo, ANEXO I por SCo con renglones sumados y desglose por unidad, `ANALISIS_SCo` exigiéndolo, y el tablero con una tarjeta por SCo desde que la SCo sale de `SOLICITUD_CONTRATACION`. **Ronda 27 aprobada 02/10.** El proceso (nº de procedimiento COMPR.AR) en Confección de proyectos **se pospone** hasta que salga el puerto (ADR-044): la aplicación con servidor queda congelada en la ronda 27. ADR-043 aceptada 29/09, asentada 30/09 | H24 |
 | H10 | **Puesta en uso, por hitos** | 🟡 Paquete, servicio y respaldo hechos (ciclo 15). **Etapas definidas por el Jefe el 2026-09-23**, ver H10. **02/10: usar un puerto en el servidor requiere un trámite largo** → mientras tanto, H27 | H9 |
-| H27 | **Generador de documentación sin servidor** | 🔵 **Prioridad desde 2026-10-02** (ADR-044). ✅ **28 (G1)**: generador sin red, rol Usuario, intercambio JSON, paquete. 🟡 **29**: ✅ suite sin carrera, identidad (grado, nombre, apellido, N° de control), documentos sin firma; ❌ guardar avance y presupuestos (sesión cortada; 10 tests rotos). ✅ **30**: presupuestos distintos de verdad + errores a la vista; guardar avance que descarga (06/10). **31**: documentos de referencia (PDF con huella y tipo: presupuesto / precio de plaza / justificación; 1 valor + justificación alcanza; fecha con calendario; leyenda de adjuntos) + lo que traba y no se ve (anexo de EETT, recarga vieja, año sólo dígitos, ir al campo con error, paso marcado "falta"). ✅ **31** (08/10). **Piloto en nodos** desde el 08/10 con `SGC-Generador-ronda31-h1.zip`. ✅ **32**: h1 en el repo, versión r<NN>-<commit> en cada JSON, LEEME al día (09/10). **33**: plantilla para asistentes de IA con renglones "por buscar", "Buscar" que reemplaza, "Pegar texto". **34**: PAC y OCA. **35**: Abastecimiento. **36**: Contrataciones. Actualización semestral (`ACTUALIZACION-SEMESTRAL\`); el raspador espera el script o la URL | H26 |
+| H27 | **Generador de documentación sin servidor** | 🔵 **Prioridad desde 2026-10-02** (ADR-044). ✅ **28 (G1)**: generador sin red, rol Usuario, intercambio JSON, paquete. 🟡 **29**: ✅ suite sin carrera, identidad (grado, nombre, apellido, N° de control), documentos sin firma; ❌ guardar avance y presupuestos (sesión cortada; 10 tests rotos). ✅ **30**: presupuestos distintos de verdad + errores a la vista; guardar avance que descarga (06/10). **31**: documentos de referencia (PDF con huella y tipo: presupuesto / precio de plaza / justificación; 1 valor + justificación alcanza; fecha con calendario; leyenda de adjuntos) + lo que traba y no se ve (anexo de EETT, recarga vieja, año sólo dígitos, ir al campo con error, paso marcado "falta"). ✅ **31** (08/10). **Piloto en nodos** desde el 08/10 con `SGC-Generador-ronda31-h1.zip`. ✅ **32**: h1 en el repo, versión r<NN>-<commit> en cada JSON, LEEME al día (09/10). ✅ **33**: plantilla para asistentes de IA con renglones "por buscar", "Buscar" que reemplaza, "Pegar texto" (09/10; automatizada 14/14; prueba del Jefe 13/10: anda, con 3 pedidos que entraron a la cola). **34** (orden 13/10): trimestre y campos de los documentos + PAC. **Proyección por la cola §0.1:** 35 OCA + códigos; 36 búsqueda de ítems + lista; **37-38 Abastecimiento; 38-39 Contrataciones**. Actualización semestral (`ACTUALIZACION-SEMESTRAL\`); el raspador espera el script o la URL | H26 |
 
 > **Cómo leer este plan.** Esta tabla es **la única fuente del estado**. Las casillas `[ ]` de cada sección son el plan original: la mayoría no se marcó al terminar y **no se mantienen**. Si una casilla contradice la tabla, vale la tabla.
+
+## 0.1 · Cola de prioridades (única, estricta)
+
+> **Regla:** cada ronda toma **los dos primeros ítems** de la cola, y ninguno más. El
+> orden **no se discute ronda a ronda**: sale de los niveles de abajo y, dentro de cada
+> nivel, de la **fecha en que el ítem se registró** (el más viejo primero). Lo que aparece
+> durante una ronda **se registra acá con su fecha y su nivel antes de decidir nada**, y
+> espera su turno. Sólo un **N1** puede pasar adelante de una orden ya escrita, si todavía
+> no se despachó. **El Jefe puede reordenar, y su decisión queda escrita con fecha**
+> (columna "Decisión"). Si un ítem no entra en una pieza, **se parte en la cola, en su
+> mismo lugar** (7a, 7b…), y la ronda toma las dos primeras partes. Un hallazgo que toca
+> **el mismo código y el mismo paso** que un ítem ya registrado se suma a ese ítem.
+>
+> **Corte del 13/10 (decisión del Jefe):** los **N3 registrados después del 2026-10-13**
+> van **detrás de Abastecimiento y Contrataciones** (ítems N4). Los N1 y N2 siguen
+> pasando adelante. Así los roles nuevos tienen fecha y los pedidos nuevos no los empujan
+> sin fin.
+
+| Nivel | Qué entra, con criterio que se puede comprobar |
+|---|---|
+| **N1 · Bloquea** | Una persona del piloto no puede terminar o exportar un requerimiento; se pierden datos; o la suite da rojo |
+| **N2 · Documento mal** | Un documento impreso o el JSON dice algo falso, o deja vacío algo que tendría que llevar |
+| **N3 · Pedido del Jefe sobre el rol en uso** (Usuario) | Lo pidió el Jefe con fecha, y no es N1 ni N2 |
+| **N4 · Rol siguiente** | Abastecimiento y después Contrataciones, en el orden del circuito |
+| **N5 · Mantenimiento** | La actualización semestral, la deuda técnica y la aplicación con servidor, congelada hasta el puerto |
+| **Espera** | No se puede empezar sin un dato de alguien. Queda anotado en su lugar, pero **se saltea** hasta que el dato llega |
+
+### La cola al 2026-10-13
+
+Registrado el 13/10, **antes de decidir la ronda 34**: la prueba del Jefe de la 33 (`PRUEBAS-JEFE\DEVOLUCION-RONDA-33.md`) y lo que el revisor reprodujo en Chromium (`repro34.js`).
+
+| # | Nivel | Registrado | Ítem | Estado / Decisión | Ronda |
+|---|---|---|---|---|---|
+| 1 | N2 | 2026-10-09 | **Campos de los documentos del generador que quedan en "—".** Decisión del Jefe (13/10): Expediente y Expediente Nº dicen "—" (sale el identificador interno `generador-J C · 1`); Lugar y Lugar de entrega dicen "VII Brigada Aérea - Moreno"; Vigencia es **el último día del trimestre** para el que se pide; Finalidad (EETT) es **la justificación** del requerimiento. **El trimestre:** campo en Identificación, que se llena con el del proceso del PAC y se puede cambiar (Jefe, 13/10) | Diseño cerrado (13/10) | **34** (orden escrita 13/10) |
+| 2 | N3 | 2026-10-02 | **El PAC en Identificación:** desplegable de procesos, "No autorizado en el PAC", y justificación si el preventivo supera el monto del proceso. **Los procesos en USD piden el preventivo en dólares** y se compara contra el PAC (Jefe, 13/10). El Jefe lo volvió a pedir el 13/10 | Diseño cerrado (13/10) | **34** (orden escrita 13/10) |
+| 3 | N3 | 2026-10-02 | **La modalidad común u OCA**, con su justificación y la línea normativa (Decreto 1030/2016, art. 25 inc. c). Se corrige la cita de `renders/requerimiento.js:49`. "Objetivo" sale. El Jefe lo volvió a pedir el 13/10 | Diseño cerrado | 35 |
+| 4 | N3 | 2026-10-13 | **Códigos con separadores raros.** En los Word vienen como `3.3.3   1627  36`, con tabulaciones, guiones o puntos de más; hoy entran "por buscar" aunque el ítem `3.3.3-1627.36` existe. El importador los normaliza y las instrucciones lo dicen. **Se suma (revisor, 13/10):** un renglón con un código que no existe **pierde las palabras de "buscar"** del asistente, y "Buscar" pone el código en el buscador (`views/fasttrack.js:194`, `generador/intercambio.js:878`) | — | 35 |
+| 5 | N3 | 2026-10-13 | **"Buscar" no encuentra el ítem.** Busca sólo en clases y rubros, exige todas las palabras y no entiende las abreviaturas del catálogo: "mantenimiento recarga matafuego" da 0, y el ítem es "MANT. Y REPAR. MATAFUEGO". El Jefe pide **buscar directo el ítem**, también para la carga a mano (159.366 ítems en el catálogo) | — | 36 |
+| 6 | N3 | 2026-10-13 | **La lista de ítems no se cierra al elegir uno**, y cada clic de más suma otro renglón (medido: 3 clics → 2 renglones de más) | — | 36 |
+| 7a | N4 | 2026-10-02 | **Abastecimiento (G2) · entrada:** el rol Abastecimiento en el generador, que importa varios JSON de requerimiento y los lista | Partes estimadas: se ajustan al escribir su orden | 37 |
+| 7b | N4 | 2026-10-02 | **Abastecimiento (G2) · consolidado:** la consolidación pasa al núcleo (`server/sco.js:799`) y el ANEXO I sale con los renglones sumados y el desglose | | 37 |
+| 7c | N4 | 2026-10-02 | **Abastecimiento (G2) · salida:** el número de SCo y el JSON de la SCo exportado | | 38 |
+| 8a | N4 | 2026-10-02 | **Contrataciones (G3) · entrada:** importa varias SCo y carga el número de procedimiento de COMPR.AR | | 38 |
+| 8b | N4 | 2026-10-02 | **Contrataciones (G3) · salida:** el YAML del pliego consolidado para el generador de la UOC | | 39 |
+| 9 | N5 | 2026-10-03 | **Actualización semestral en una sola herramienta:** PAC + catálogo + paquete | **Espera:** el raspador necesita el script completo o la URL del catálogo de COMPR.AR (el Jefe) | — |
+| 10 | N5 | 2026-10-09 | **Pregunta del auditor 33:** un código inexistente entra "por buscar" en el generador, pero el Fast-Track de la aplicación con servidor lo rechaza | Congelada hasta el puerto | — |
+| 11 | N5 | 2026-09-29 | **Aplicación con servidor:** R53 (el PUT sin guardia), R56 (las plantillas del pliego sin pantalla) y las 4 notas del ciclo 27 | Congelada hasta el puerto | — |
+
+**La columna "Ronda" es una proyección**, no un compromiso: dos ítems por ronda en el orden de la cola. **Sólo la mueve un N1 o un N2 nuevo**, o una decisión del Jefe. Un N3 nuevo entra después del 8b.
+
+**Hechos y salidos de la cola:** la prueba del Jefe de la ronda 33 (13/10: "Pegar texto" y "Buscar" reemplazan el renglón con su cantidad y su aclaración).
+
+**Esperan una decisión del Jefe**, y no ocupan lugar en la cola:
+
+- ¿"ANEXO 1" o "ANEXO I"?;
+- corregir el borrador de ayudas;
+- el logo oficial de la FAA;
+- el trámite del puerto con Informática.
 
 > ### ⚠️ Sigue pendiente
 > **Rescate del scraper del catálogo** (ADR-018). Al 2026-08-20 se conserva **sólo un fragmento**: el bloque `page.evaluate()` de un script Puppeteer/Playwright, ya versionado en `Contrataciones/tools/scraper-catalogo/`. **Falta** la URL de origen, el arranque del navegador, el bucle de paginación y la escritura de salida. Ver el README de esa carpeta.
