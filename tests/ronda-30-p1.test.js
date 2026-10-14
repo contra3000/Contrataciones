@@ -101,6 +101,7 @@ async function irAlPasoRenglones() {
   m.escribir('sgc-dependencia', 'División Usuario');
   m.setear('sgc-trimestre', '1'); // ORDEN-RONDA-34: el trimestre es obligatorio en Identificación
   m.elegirPac('1'); // ORDEN-RONDA-34 pieza 2: el proceso del PAC es obligatorio en Identificación
+  m.escribir('sgc-lugar-entrega', 'Depósito de Intendencia, VII Brigada Aérea'); // ORDEN-RONDA-35 pieza 1: el lugar de entrega también
   d.getElementById('sgc-siguiente').click();
   await m.esperar(() => !d.getElementById('sgc-paso-renglones').hidden, 20000,
     'paso de renglones visible');
