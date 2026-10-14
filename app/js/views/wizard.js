@@ -425,37 +425,21 @@ function descripcionOperador(operador) {
     if (!nodoPac || !camposPac) {
       return;
     }
-    var identificacion = estado.datos.identificacion || {};
-    var pac = identificacion.pac || {};
     var numero = nodoPac.value;
     var proceso = SGC.core.validacion.procesoDelPac(numero);
 
-    var esUsd = !!(proceso && proceso.moneda === 'USD');
-    camposPac.usd.hidden = !esUsd;
-    if (!esUsd && estado.dom.campos.pacPreventivoUsd) {
-      estado.dom.campos.pacPreventivoUsd.value = '';
-      if (identificacion.pac) {
-        identificacion.pac.preventivoUsd = null;
-      }
-    }
-
+    // ORDEN-RONDA-35 pieza 2a: se eliminó el campo "Preventivo en dólares". En
+    // TODOS los procesos —en dólares o no— el preventivo sale de los valores de
+    // referencia y se compara contra el monto del proceso, así que la
+    // justificación se decide siempre igual.
     var mostrarJustificacion = numero === 'no-autorizado';
     var decidible = true;
     if (!mostrarJustificacion && proceso) {
-      if (proceso.moneda === 'USD') {
-        var usd = pac.preventivoUsd;
-        if (typeof usd === 'number' && isFinite(usd)) {
-          mostrarJustificacion = usd > proceso.monto;
-        } else {
-          decidible = false;
-        }
+      var total = SGC.core.requerimiento.preventivoContratacion(renglonesParaPreventivo());
+      if (total.valido) {
+        mostrarJustificacion = total.total > proceso.monto;
       } else {
-        var total = SGC.core.requerimiento.preventivoContratacion(renglonesParaPreventivo());
-        if (total.valido) {
-          mostrarJustificacion = total.total > proceso.monto;
-        } else {
-          decidible = false;
-        }
+        decidible = false;
       }
     }
     if (!decidible) {
@@ -468,6 +452,7 @@ function descripcionOperador(operador) {
     camposPac.justificacion.hidden = !mostrarJustificacion;
     if (!mostrarJustificacion && estado.dom.campos.pacJustificacion) {
       estado.dom.campos.pacJustificacion.value = '';
+      var identificacion = estado.datos.identificacion || {};
       if (identificacion.pac) {
         identificacion.pac.justificacion = '';
       }
@@ -554,20 +539,16 @@ function descripcionOperador(operador) {
         aplicarTrimestreDelPac();
         sincronizarDesdeFormulario();
       });
-      var nodoPacPreventivoUsd = qs(raiz, '#sgc-pac-preventivo-usd');
-      if (nodoPacPreventivoUsd) {
-        estado.dom.campos.pacPreventivoUsd = nodoPacPreventivoUsd;
-        nodoPacPreventivoUsd.addEventListener('input', sincronizarDesdeFormulario);
-      }
       var nodoPacJustificacion = qs(raiz, '#sgc-pac-justificacion');
       if (nodoPacJustificacion) {
         estado.dom.campos.pacJustificacion = nodoPacJustificacion;
         nodoPacJustificacion.addEventListener('input', sincronizarDesdeFormulario);
       }
-      var campoUsd = qs(raiz, '#sgc-pac-preventivo-usd-campo');
+      // ORDEN-RONDA-35 pieza 2a: se eliminó el campo "Preventivo en dólares", así
+      // que del bloque del PAC sólo queda la justificación.
       var campoJustificacion = qs(raiz, '#sgc-pac-justificacion-campo');
-      if (campoUsd && campoJustificacion) {
-        estado.dom.camposPac = { usd: campoUsd, justificacion: campoJustificacion };
+      if (campoJustificacion) {
+        estado.dom.camposPac = { justificacion: campoJustificacion };
       }
     }
     var nodoErrorPac = qs(raiz, '#sgc-error-pac');

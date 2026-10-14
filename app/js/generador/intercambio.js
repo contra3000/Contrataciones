@@ -239,9 +239,10 @@
     return salida;
   }
 
-  // ORDEN-RONDA-34 pieza 2e: la forma del PAC que viaja en el JSON:
-  // {numero, preventivoUsd (número o null), justificacion}. Sin número no hay
-  // pac, y un archivo sin pac entra igual.
+  // ORDEN-RONDA-34 pieza 2e (ORDEN-RONDA-35 pieza 2a): la forma del PAC que
+  // viaja en el JSON: {numero, justificacion}. Sin número no hay pac, y un
+  // archivo sin pac entra igual. Ya no lleva el preventivo en dólares escrito a
+  // mano: la moneda sale del proceso y el preventivo, de los valores.
   function pacExportado(valor) {
     if (!esObjeto(valor)) {
       return null;
@@ -252,8 +253,6 @@
     }
     return {
       numero: numero,
-      preventivoUsd: typeof valor.preventivoUsd === 'number' && isFinite(valor.preventivoUsd)
-        ? valor.preventivoUsd : null,
       justificacion: typeof valor.justificacion === 'string' ? valor.justificacion : ''
     };
   }
@@ -323,6 +322,10 @@
       // viaja para que el avance lo recupere ("" si todavía no lo escribió).
       lugarEntrega: datos.identificacion && typeof datos.identificacion.lugarEntrega === 'string'
         ? datos.identificacion.lugarEntrega : '',
+      // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido, resuelta por el
+      // expediente local. Viaja para que quien lea el archivo sepa en qué moneda
+      // están los montos, y para que el avance la recupere.
+      moneda: datos.moneda === 'USD' ? 'USD' : 'ARS',
       // ORDEN-RONDA-34 pieza 2e: el proceso del PAC (o ninguno), siempre en la
       // forma del pacExportado: sin número, queda null y el archivo no habla del
       // PAC.
@@ -489,6 +492,14 @@
   // comparación entre lo que entró y lo que sale sea directa.
   function cuerpoDeExportado(crudo) {
     var e = crudo.expediente;
+    // ORDEN-RONDA-35 pieza 2a: un avance de la 34 traía el preventivo en dólares
+    // cargado a mano (pac.preventivoUsd). Se ignora —el preventivo ahora sale de
+    // los valores de referencia— y se avisa, para que nadie crea que se perdió.
+    var avisos = [];
+    if (esObjeto(e.pac) && typeof e.pac.preventivoUsd === 'number' &&
+        isFinite(e.pac.preventivoUsd)) {
+      avisos.push('el preventivo en dólares ahora sale de los valores de referencia');
+    }
     var campos = esObjeto(e.campos) ? e.campos : {};
     var renglones = [];
     var lista = Array.isArray(e.renglones) ? e.renglones : [];
@@ -538,7 +549,10 @@
         },
         renglones: renglones,
         presupuestos: presupuestos
-      }
+      },
+      // ORDEN-RONDA-35 pieza 2a: avisos propios de la lectura del archivo (hoy
+      // sólo el preventivo en dólares que quedó obsoleto).
+      avisos: avisos
     };
   }
 
@@ -686,7 +700,6 @@
       if (numeroPac === 'no-autorizado') {
         pac = {
           numero: numeroPac,
-          preventivoUsd: null,
           justificacion: typeof pacCrudo.justificacion === 'string' ? pacCrudo.justificacion : ''
         };
       } else {
@@ -694,8 +707,6 @@
         if (procesoPac) {
           pac = {
             numero: numeroPac,
-            preventivoUsd: typeof pacCrudo.preventivoUsd === 'number' && isFinite(pacCrudo.preventivoUsd)
-              ? pacCrudo.preventivoUsd : null,
             justificacion: typeof pacCrudo.justificacion === 'string' ? pacCrudo.justificacion : ''
           };
         } else {
@@ -841,7 +852,7 @@
           return { ok: false, errores: verificacion.errores };
         }
         avisos = avisos.concat(verificacion.avisos).concat(resolucion.avisos)
-          .concat(conNucleo.avisos);
+          .concat(conNucleo.avisos).concat(armado.avisos || []);
         if (version !== null) {
           // La versión se recuerda sólo si el archivo entró: un archivo rechazado
           // no corrió el contador.

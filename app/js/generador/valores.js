@@ -32,6 +32,7 @@
     porId: {},
     renglones: [],
     presupuestos: [],
+    moneda: null,
     alCambio: null
   };
 
@@ -52,7 +53,17 @@
   // (Re)arma el bloque para la lista de renglones de ahora. Se llama cada vez
   // que cambia la lista y también al entrar, porque el renglón recién agregado
   // nace con sus dos filas vacías (así lo deja la vista, ORDEN-RONDA-26 p5).
-  function sincronizar(renglones, presupuestos) {
+  // (Re)arma el bloque para la lista de renglones de ahora. Se llama cada vez
+  // que cambia la lista y también al entrar, porque el renglón recién agregado
+  // nace con sus dos filas vacías (así lo deja la vista, ORDEN-RONDA-26 p5).
+  //
+  // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido viaja hasta la vista
+  // para que el bloque hable en dólares cuando el proceso es en dólares. Se
+  // recuerda entre llamadas: un renglón que cambia no puede olvidar la moneda.
+  function sincronizar(renglones, presupuestos, moneda) {
+    if (moneda !== undefined) {
+      estado.moneda = moneda;
+    }
     estado.renglones = Array.isArray(renglones) ? renglones : [];
     estado.presupuestos = Array.isArray(presupuestos) ? presupuestos : [];
     var guardados = estado.renglones.map(function (r) {
@@ -60,7 +71,7 @@
       return Array.isArray(guardado) ? guardado : null;
     });
     valores.fijarDatos(estado.renglones, estado.presupuestos, guardados, null,
-      { mostrarOca: false, editable: true });
+      { mostrarOca: false, editable: true, moneda: estado.moneda });
     guardar();
   }
 
@@ -128,9 +139,11 @@
     errores: function () {
       return valores.errores();
     },
-    fijar: function (renglones, presupuestos, valoresPorRenglon) {
+    fijar: function (renglones, presupuestos, valoresPorRenglon, moneda) {
       // Importar o retomar (pieza 4): los valores llegan del archivo, en el
-      // mismo orden que los renglones.
+      // mismo orden que los renglones. ORDEN-RONDA-35 pieza 2a: la moneda,
+      // también (el avance exportado la trae; sus valores y el PAC ya estaban
+      // resueltos, así que se saltea el ínterin en que la lista no está).
       estado.porId = {};
       for (var i = 0; i < (renglones || []).length; i++) {
         var r = renglones[i];
@@ -139,7 +152,7 @@
             ? valoresPorRenglon[i] : [];
         }
       }
-      sincronizar(renglones, presupuestos);
+      sincronizar(renglones, presupuestos, moneda);
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -84,6 +84,11 @@
       objetivo: fundamentacion.objetivo || campos.objetivo || '',
       // ORDEN-RONDA-34 pieza 2: el proceso del PAC del expediente (o null).
       pac: datos.pac || null,
+      // ORDEN-RONDA-35 pieza 2a: la moneda del documento. Manda la del
+      // expediente si el generador ya la resolvió; si no, la del proceso del
+      // PAC; y si no hay ninguna de las dos —la aplicación con servidor, los
+      // documentos viejos— es ARS, que es como salían siempre (ADR-044).
+      moneda: monedaDe(datos),
       operadorNombre: nombreSolicitante,
       operadorEmail: operadorEmail || '—',
       fecha: datos.fechaCreacion || '',
@@ -96,6 +101,21 @@
 
   function campo(nombre, valor) {
     return '<dt>' + esc(nombre) + '</dt><dd>' + esc(valor) + '</dd>';
+  }
+
+  // ORDEN-RONDA-35 pieza 2a: la moneda del documento. Manda la del expediente
+  // si el generador ya la resolvió; si no, la del proceso del PAC; y si no hay
+  // ninguna de las dos —la aplicación con servidor, los documentos viejos— es
+  // ARS, que es como salían siempre (ADR-044).
+  function monedaDe(datos) {
+    if (datos && (datos.moneda === 'USD' || datos.moneda === 'ARS')) {
+      return datos.moneda;
+    }
+    var pac = datos && datos.pac;
+    if (pac && pac.proceso && pac.proceso.moneda === 'USD') {
+      return 'USD';
+    }
+    return 'ARS';
   }
 
   // ORDEN-RONDA-34 pieza 2: el PAC. El monto y el detalle del proceso salen con

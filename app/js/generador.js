@@ -306,6 +306,17 @@
     // la pantalla del servidor).
     SGC.catalogo.renglones.alCambiar(sincronizarValores);
     SGC.views.wizard.alRender(publicarDatos);
+    // ORDEN-RONDA-35 pieza 2a: cambiar el proceso del PAC cambia la moneda del
+    // bloque de valores (y del impreso), así que se vuelve a publicar y a
+    // sincronizar. El asistente ya actualiza sus datos en su propio escuchador
+    // del PAC; éste corre después y lee esos datos ya escritos.
+    var selectorPac = porId('sgc-pac');
+    if (selectorPac) {
+      selectorPac.addEventListener('change', function () {
+        publicarDatos();
+        sincronizarValores();
+      });
+    }
     sincronizarValores();
     pintarPasosPendientes();
   }
@@ -317,8 +328,10 @@
   }
 
   function sincronizarValores() {
+    // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido viaja al bloque de
+    // valores, para que diga "USD" en un proceso en dólares y "$" en el resto.
     SGC.generadorValores.sincronizar(renglonesDelAsistente(),
-      SGC.generadorPresupuestos.listar());
+      SGC.generadorPresupuestos.listar(), SGC.generadorDocumentos.monedaActual());
   }
 
   // Los documentos del paso 4 se calculan sobre los datos que el asistente tiene
@@ -530,10 +543,18 @@
       },
       alImportar: function (resultado) {
         SGC.generadorPresupuestos.cargar(resultado.presupuestos);
+        // ORDEN-RONDA-35 pieza 2a: la moneda del archivo importado la determina
+        // su proceso del PAC (el archivo ya no trae un preventivo en dólares a
+        // mano). Se lee de resultado.datos, que es lo que aplicarImportacion ya
+        // dejó como datos del asistente.
+        var identificacion = resultado.datos && resultado.datos.identificacion
+          ? resultado.datos.identificacion : {};
+        var numeroPac = identificacion.pac ? identificacion.pac.numero : '';
         SGC.generadorValores.fijar(
           SGC.catalogo.renglones.obtener(),
           SGC.generadorPresupuestos.listar(),
-          resultado.valoresPorRenglon
+          resultado.valoresPorRenglon,
+          SGC.core.validacion.monedaDelProceso(numeroPac)
         );
       }
     });

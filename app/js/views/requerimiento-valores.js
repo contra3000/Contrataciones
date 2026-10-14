@@ -28,6 +28,7 @@
     avisos: [],
     mostrarOca: false,
     editable: false,
+    moneda: 'ARS',
     onCambio: null
   };
 
@@ -76,6 +77,9 @@
     });
     estado.mostrarOca = op.mostrarOca === true;
     estado.editable = op.editable === true;
+    // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido. Sin proceso en
+    // dólares es ARS, que es como salían los valores siempre (ADR-044).
+    estado.moneda = op.moneda === 'USD' ? 'USD' : 'ARS';
     if (SGC.views.requerimientoOca &&
         typeof SGC.views.requerimientoOca.fijar === 'function') {
       SGC.views.requerimientoOca.fijar(estado.renglones, cantidadesGuardadas, estado.mostrarOca);
@@ -90,6 +94,12 @@
     var texto = n.toFixed(2);
     var partes = texto.split('.');
     return partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + partes[1];
+  }
+
+  // ORDEN-RONDA-35 pieza 2a: la moneda del bloque de valores. "USD" en los
+  // procesos en dólares, "$" en todo lo demás (también sin moneda).
+  function simbolo() {
+    return estado.moneda === 'USD' ? 'USD' : '$';
   }
 
   // El renglón temporal con lo que hay en pantalla: es lo que se le pasa a las
@@ -245,8 +255,8 @@
       if (prev.promedio === null && prev.preventivo === null) {
         linea.textContent = 'Sin valores suficientes: cargá al menos dos cotizaciones o una base "total".';
       } else {
-        linea.textContent = 'Promedio unitario: $ ' + monto(prev.promedio) +
-          ' · Preventivo del renglón: $ ' + monto(prev.preventivo);
+        linea.textContent = 'Promedio unitario: ' + simbolo() + ' ' + monto(prev.promedio) +
+          ' · Preventivo del renglón: ' + simbolo() + ' ' + monto(prev.preventivo);
       }
       var t = req.preventivoContratacion([renglonTemporal(i)]);
       if (t.valido && typeof t.total === 'number') {
@@ -260,7 +270,7 @@
       }
       var total = req.preventivoContratacion(todos);
       estado.dom.total.textContent = total.valido && estado.renglones.length > 0
-        ? 'Valor preventivo de la contratación: $ ' + monto(total.total)
+        ? 'Valor preventivo de la contratación: ' + simbolo() + ' ' + monto(total.total)
         : 'Valor preventivo de la contratación: —';
     }
     if (typeof estado.onCambio === 'function') {

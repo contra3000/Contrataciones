@@ -60,6 +60,12 @@
     return partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + partes[1];
   }
 
+  // ORDEN-RONDA-35 pieza 2a: "USD " en los procesos en dólares y "$ " en todo
+  // lo demás —también sin moneda, que es como siempre salió— (ADR-044).
+  function prefijoMoneda(moneda) {
+    return moneda === 'USD' ? 'USD ' : '$ ';
+  }
+
   function modelo(expediente) {
     var base = d.modelo(expediente);
     var info = req.requerimientoDe(expediente);
@@ -116,10 +122,10 @@
       } else if (pac.proceso) {
         pares.push(['PAC 2026', 'Proceso ' + d.detalleDeProcesoPac(pac.proceso)]);
       }
-      if (pac.proceso && pac.proceso.moneda === 'USD' &&
-          typeof pac.preventivoUsd === 'number' && isFinite(pac.preventivoUsd)) {
-        pares.push(['Preventivo en dólares', 'USD ' + d.montoAr(pac.preventivoUsd)]);
-      }
+      // ORDEN-RONDA-35 pieza 2a: la fila "Preventivo en dólares" ya no se
+      // imprime. El preventivo de un proceso en dólares sale de los valores de
+      // referencia, como el de cualquier otro, y se ve en el total del
+      // requerimiento (en USD).
       var justificacionPac = typeof pac.justificacion === 'string' ? pac.justificacion : '';
       if (justificacionPac !== '') {
         pares.push(['Justificación del PAC', justificacionPac]);
@@ -244,8 +250,9 @@
     partes.push('<h2>Valor preventivo</h2>');
     var total = req.preventivoContratacion(m.renglones);
     if (total.valido && m.renglones.length > 0) {
-      partes.push('<p class="doc-total">Total general: $ ' + formatearMonto(total.total) + '</p>');
-      partes.push('<p class="doc-total-letras">' + d.esc(req.totalEnLetras(total.total)) + '</p>');
+      partes.push('<p class="doc-total">Total general: ' + prefijoMoneda(m.base.moneda) +
+        formatearMonto(total.total) + '</p>');
+      partes.push('<p class="doc-total-letras">' + d.esc(req.totalEnLetras(total.total, m.base.moneda)) + '</p>');
     } else {
       partes.push('<p class="doc-total">Sin valores de referencia: el promedio se carga contra los presupuestos adjuntos.</p>');
     }
@@ -331,8 +338,9 @@
     d.h2Dom(contenedor, 'Valor preventivo');
     var total = req.preventivoContratacion(m.renglones);
     if (total.valido && m.renglones.length > 0) {
-      d.pDom(contenedor, 'doc-total', 'Total general: $ ' + formatearMonto(total.total));
-      d.pDom(contenedor, 'doc-total-letras', req.totalEnLetras(total.total));
+      d.pDom(contenedor, 'doc-total', 'Total general: ' + prefijoMoneda(m.base.moneda) +
+        formatearMonto(total.total));
+      d.pDom(contenedor, 'doc-total-letras', req.totalEnLetras(total.total, m.base.moneda));
     } else {
       d.pDom(contenedor, 'doc-total',
         'Sin valores de referencia: el promedio se carga contra los presupuestos adjuntos.');

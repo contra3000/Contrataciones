@@ -159,6 +159,17 @@ test('totalEnLetras: la fórmula oficial con ceros, unidades, decenas compuestas
     'el redondeo de centavos 100 pasa al entero');
 });
 
+test('totalEnLetras: en un proceso en dólares dice DÓLARES ESTADOUNIDENSES', () => {
+  // ORDEN-RONDA-35 pieza 2a: la moneda del proceso del PAC. USD sólo si el
+  // proceso es en dólares; cualquier otra cosa (incluido ARS o sin moneda) sigue
+  // diciendo PESOS, como siempre (ADR-044).
+  assert.equal(req.totalEnLetras(1000, 'USD'),
+    'LA SUMA DE: DÓLARES ESTADOUNIDENSES MIL CON 00/100.-');
+  assert.equal(req.totalEnLetras(1000, 'ARS'), 'LA SUMA DE: PESOS MIL CON 00/100.-');
+  assert.equal(req.totalEnLetras(1000), 'LA SUMA DE: PESOS MIL CON 00/100.-',
+    'sin moneda se comporta como siempre');
+});
+
 test('ocaActiva se enciende por modalidad, por el campo oca o por cantidadMaxima', () => {
   assert.equal(req.ocaActiva({ oca: true }, []), true);
   assert.equal(req.ocaActiva({ oca: false }, [{ cantidadMaxima: 5 }]), false,

@@ -370,7 +370,11 @@
   }
 
   // Total en letras con la fórmula oficial. Acepta el cero.
-  function totalEnLetras(monto) {
+  // ORDEN-RONDA-35 pieza 2a: `moneda` es la del proceso del PAC. En un proceso
+  // en dólares la suma se lee "DÓLARES ESTADOUNIDENSES ..."; en cualquier otro
+  // caso —y sin el dato— dice PESOS como siempre, así la aplicación con
+  // servidor y los documentos viejos salen idénticos (ADR-044).
+  function totalEnLetras(monto, moneda) {
     var numero = typeof monto === 'number' && isFinite(monto) ? monto : 0;
     if (numero < 0) {
       numero = 0;
@@ -381,7 +385,8 @@
       enteros += 1;
       centavos = 0;
     }
-    return 'LA SUMA DE: PESOS ' + palabrasEntero(enteros) +
+    var etiqueta = moneda === 'USD' ? 'DÓLARES ESTADOUNIDENSES' : 'PESOS';
+    return 'LA SUMA DE: ' + etiqueta + ' ' + palabrasEntero(enteros) +
       ' CON ' + (centavos < 10 ? '0' : '') + centavos + '/100.-';
   }
 

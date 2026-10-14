@@ -80,10 +80,12 @@
   }
 
   /*
-   * ORDEN-RONDA-34 pieza 2: el PAC del wizard, resuelto para los documentos.
-   * Queda {numero, preventivoUsd, justificacion, proceso}, donde `proceso` es el
-   * del PAC (o null si no está autorizado). Si no hay número elegido, o el
-   * número no está en el PAC, no hay pac: el documento sale como siempre.
+   * ORDEN-RONDA-34 pieza 2 (ORDEN-RONDA-35 pieza 2a): el PAC del wizard,
+   * resuelto para los documentos. Queda {numero, justificacion, proceso}, donde
+   * `proceso` es el del PAC (o null si no está autorizado). Si no hay número
+   * elegido, o el número no está en el PAC, no hay pac: el documento sale como
+   * siempre. Ya no lleva el preventivo en dólares escrito a mano: la moneda sale
+   * del proceso y el preventivo, de los valores de referencia.
    */
   function pacDelWizard(datosWizard) {
     var identificacion = datosWizard && typeof datosWizard.identificacion === 'object'
@@ -98,7 +100,6 @@
     }
     var resultado = {
       numero: numero,
-      preventivoUsd: null,
       justificacion: typeof pac.justificacion === 'string' ? pac.justificacion : '',
       proceso: null
     };
@@ -108,11 +109,19 @@
         return null;
       }
     }
-    if (resultado.proceso && resultado.proceso.moneda === 'USD' &&
-        typeof pac.preventivoUsd === 'number' && isFinite(pac.preventivoUsd)) {
-      resultado.preventivoUsd = pac.preventivoUsd;
-    }
     return resultado;
+  }
+
+  // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido en el wizard. Manda
+  // el proceso del PAC; sin proceso (o con "No autorizado") es ARS. El bloque de
+  // valores de referencia y el PAC la comparten, para no decir "USD" en un lado
+  // y "$" en el otro.
+  function monedaDe(datosWizard) {
+    var identificacion = datosWizard && typeof datosWizard.identificacion === 'object'
+      ? datosWizard.identificacion : {};
+    var pac = identificacion.pac;
+    var numero = pac && pac.numero !== undefined && pac.numero !== null ? pac.numero : '';
+    return SGC.core.validacion.monedaDelProceso(numero);
   }
 
   // ORDEN-RONDA-34 pieza 2c: lo que falta para exportar por el PAC, en las
@@ -134,19 +143,13 @@
     if (!proceso) {
       return items;
     }
-    if (proceso.moneda === 'USD') {
-      if (pac.preventivoUsd === null || pac.preventivoUsd === undefined) {
-        items.push('cargar el preventivo en dólares del proceso ' + proceso.numero + ' del PAC');
-      } else if (pac.preventivoUsd > proceso.monto && justificacion === '') {
-        items.push('justificar el preventivo que supera el monto del proceso ' +
-          proceso.numero + ' del PAC');
-      }
-    } else {
-      var total = SGC.core.requerimiento.preventivoContratacion(expediente.renglones || []);
-      if (total.valido && total.total > proceso.monto && justificacion === '') {
-        items.push('justificar el preventivo que supera el monto del proceso ' +
-          proceso.numero + ' del PAC');
-      }
+    // ORDEN-RONDA-35 pieza 2a: el preventivo de un proceso en dólares sale de
+    // los valores de referencia, como el de cualquier otro. La comparación con
+    // el monto del proceso —y el mismo motivo— vale para las dos monedas.
+    var total = SGC.core.requerimiento.preventivoContratacion(expediente.renglones || []);
+    if (total.valido && total.total > proceso.monto && justificacion === '') {
+      items.push('justificar el preventivo que supera el monto del proceso ' +
+        proceso.numero + ' del PAC');
     }
     return items;
   }
@@ -192,6 +195,10 @@
     // expediente para el documento impreso y para el JSON. Sin pac elegido,
     // queda null y los documentos salen igual que antes.
     datosIniciales.pac = pacDelWizard(datosWizard);
+    // ORDEN-RONDA-35 pieza 2a: la moneda del proceso viaja en el expediente,
+    // resuelta una sola vez, para que el documento impreso y el JSON digan lo
+    // mismo. Sin procesos en dólares (o sin PAC) es ARS, como siempre.
+    datosIniciales.moneda = monedaDe(datosWizard);
     var resultado = {
       estado: { id: ESTADO },
       titulo: datosIniciales.titulo,
@@ -309,8 +316,14 @@
    */
   function imprimir(datos) {
     var info = revision(datos);
+    // ORDEN-RONDA-35 pieza 2d: Imprimir frena también cuando el PAC tiene algo
+    // pendiente (el preventivo que supera el monto del proceso, sin
+    // justificación). Antes sólo miraba los campos y los renglones, así que
+    // dejaba imprimir un papel que el botón Exportar no dejaba exportar.
+    var itemsPac = itemsDelPac(info.expediente);
     if (info.revision.faltantes.campos.length > 0 ||
-        (info.revision.faltantes.renglones && info.revision.faltantes.renglones.length > 0)) {
+        (info.revision.faltantes.renglones && info.revision.faltantes.renglones.length > 0) ||
+        itemsPac.length > 0) {
       // Falta algo de fondo: el texto del botón de exportar lo dice, y componer
       // un documento incompleto sería imprimir un papel inútil.
       actualizar();
@@ -414,6 +427,11 @@
     },
     expedienteLocal: function () {
       return expedienteLocal(estado.datosActuales || {});
+    },
+    // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido ahora, para que el
+    // bloque de valores de referencia hable en la misma moneda que el PAC.
+    monedaActual: function () {
+      return monedaDe(estado.datosActuales || {});
     },
     revision: function () {
       return revision(estado.datosActuales || {});

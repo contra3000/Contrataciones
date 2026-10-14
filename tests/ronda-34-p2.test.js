@@ -11,8 +11,8 @@
  *     "No autorizado en el PAC"; el proceso 22 muestra "USD".
  *  2. Elegir el proceso 3 completa el trimestre con el 1°, y la persona
  *     puede cambiarlo; "Siguiente" pasa.
- *  3. El campo "Preventivo en dólares" se ve con el proceso 22 (USD) y no
- *     con el 4 (ARS).
+ *  3. (ORDEN-RONDA-35 pieza 2a) Ya no hay campo manual "Preventivo en
+ *     dólares": se eliminó de la pantalla.
  *  4. Proceso 4 (ARS, $ 1.029.094,70): con un preventivo que lo supera
  *     ($ 2.100.000) aparece el campo de justificación y la exportación
  *     queda frenada nombrando el proceso; con la justificación, exporta.
@@ -20,8 +20,9 @@
  *     y la justificación del PAC.
  *  6. El JSON exportado trae pac.numero "4" y la justificación; el avance
  *     que se guarda la trae también y, reimportado, el campo la muestra.
- *  7. Proceso 22 (USD 21.466,00): con un preventivo de USD 30.000 no
- *     exporta sin justificación; con USD 1.000 exporta.
+ *  7. Proceso 22 (USD 21.466,00): el preventivo sale de los valores (como
+ *     en cualquier proceso); con valores dentro del monto exporta, y con
+ *     valores que lo superan pide la justificación.
  *  8. "No autorizado en el PAC": sin justificación no exporta, y el
  *     documento impreso lo dice.
  */
@@ -37,10 +38,11 @@ const justificacion = 'Se necesita reponer insumos de papelería.';
 const JUSTIFICACION_PAC = 'El proceso 4 cubre la reposición de insumos de papelería.';
 
 // El proceso del PAC viaja como `pac` (sólo si la persona lo eligió), en la
-// forma en que lo exporta el generador: { numero, preventivoUsd, justificacion }.
-const proceso4 = { numero: '4', preventivoUsd: null, justificacion: '' };
-const proceso22 = { numero: '22', preventivoUsd: null, justificacion: '' };
-const noAutorizado = { numero: 'no-autorizado', preventivoUsd: null, justificacion: '' };
+// forma en que lo exporta el generador: { numero, justificacion }. Ya no lleva
+// el preventivo en dólares escrito a mano (ORDEN-RONDA-35 pieza 2a).
+const proceso4 = { numero: '4', justificacion: '' };
+const proceso22 = { numero: '22', justificacion: '' };
+const noAutorizado = { numero: 'no-autorizado', justificacion: '' };
 
 let m = null;
 
@@ -226,17 +228,19 @@ test('RONDA-34 pieza 2b · elegir el proceso 3 completa el trimestre con el 1°,
     'y el proceso del PAC quedó cargado con el 3');
 });
 
-test('RONDA-34 pieza 2c · "Preventivo en dólares" se ve con el proceso 22 (USD) y no con el 4', async () => {
+test('RONDA-35 pieza 2a · ya no hay campo manual "Preventivo en dólares"', async () => {
   const d = m.documento;
   await entrarComoUsuario();
 
   m.elegirPac('22');
-  assert.strictEqual(d.getElementById('sgc-pac-preventivo-usd-campo').hidden, false,
-    'con un proceso en dólares aparece el campo');
+  assert.strictEqual(d.getElementById('sgc-pac-preventivo-usd-campo'), null,
+    'el campo del preventivo en dólares se eliminó de la pantalla');
+  assert.strictEqual(d.getElementById('sgc-pac-preventivo-usd'), null,
+    'y el input tampoco está');
 
   m.elegirPac('4');
-  assert.strictEqual(d.getElementById('sgc-pac-preventivo-usd-campo').hidden, true,
-    'y con uno en pesos, no');
+  assert.strictEqual(d.getElementById('sgc-pac-preventivo-usd-campo'), null,
+    'tampoco reaparece con un proceso en pesos');
 });
 
 test('RONDA-34 pieza 2d · proceso 4 y preventivo que lo supera: exportar frenado con el motivo del PAC, y con la justificación exporta', async () => {
@@ -334,39 +338,41 @@ test('RONDA-34 pieza 2f · el JSON exportado y el avance traen pac.numero "4" y 
     JUSTIFICACION_PAC, 'y la justificación que traía');
 });
 
-test('RONDA-34 pieza 2g · el proceso 22 (USD 21.466,00): 30.000 sin justificación no exporta; 1.000 exporta', async () => {
+test('RONDA-35 pieza 2a · el proceso 22 calcula el preventivo de los valores, en USD', async () => {
+  // USD 1.000 (10 × 100): dentro del monto del proceso 22 (USD 21.466), exporta.
   await entrarComoUsuario();
-  await importarTexto(exportadoConPac(proceso22, { cantidad: 1, valor: 1000 }));
-  await hastaRevision();
-
-  const d = m.documento;
-  let v = exportarVista();
-  assert.strictEqual(v.boton.disabled, true, 'sin preventivo en dólares no exporta');
-  assert.match(v.msj.textContent, /cargar el preventivo en dólares del proceso 22 del PAC/,
-    'el motivo es el del orden: ' + v.msj.textContent);
-
+  await importarTexto(exportadoConPac(proceso22, { cantidad: 10, valor: 100 }));
   await hastaIdentificacion();
-  assert.strictEqual(d.getElementById('sgc-pac-preventivo-usd-campo').hidden, false,
-    'el campo de dólares está para cargar');
-  m.escribir('sgc-pac-preventivo-usd', '30000');
-  assert.strictEqual(d.getElementById('sgc-pac-justificacion-campo').hidden, false,
-    '30.000 supera los 21.466: aparece la justificación');
-
-  await desdeIdentificacionHastaRevision();
-  v = exportarVista();
-  assert.strictEqual(v.boton.disabled, true, 'sigue sin exportar');
-  assert.match(v.msj.textContent, /justificar el preventivo que supera el monto del proceso 22 del PAC/,
-    'ahora el motivo es la justificación: ' + v.msj.textContent);
-
-  await hastaIdentificacion();
-  m.escribir('sgc-pac-preventivo-usd', '1000');
-  assert.strictEqual(d.getElementById('sgc-pac-justificacion-campo').hidden, true,
-    '1.000 no supera el monto: la justificación no hace falta');
+  assert.strictEqual(m.documento.getElementById('sgc-pac-preventivo-usd'), null,
+    'ya no hay campo manual de preventivo en dólares');
+  assert.strictEqual(m.documento.getElementById('sgc-pac-justificacion-campo').hidden, true,
+    'USD 1.000 no supera los 21.466: no pide justificación');
+  const bloque = m.documento.getElementById('sgc-req-valores').textContent;
+  assert.match(bloque, /USD/, 'el bloque de valores dice USD: ' + bloque.slice(0, 140));
+  assert.doesNotMatch(bloque, /\$ ?1\.000,00/,
+    'y no dice el mismo monto en pesos: ' + bloque.slice(0, 140));
   await desdeIdentificacionHastaRevision();
   await imprimir();
+  let v = exportarVista();
+  assert.strictEqual(v.boton.disabled, false, 'dentro del monto, exporta');
 
+  // USD 30.000 (10 × 3.000): supera el monto, pide la justificación.
+  await entrarComoUsuario();
+  await importarTexto(exportadoConPac(proceso22, { cantidad: 10, valor: 3000 }));
+  await hastaRevision();
   v = exportarVista();
-  assert.strictEqual(v.boton.disabled, false, 'con el preventivo dentro del monto exporta');
+  assert.strictEqual(v.boton.disabled, true, 'supera el monto sin justificación: no exporta');
+  assert.match(v.msj.textContent, /justificar el preventivo que supera el monto del proceso 22 del PAC/,
+    'con las palabras de la orden: ' + v.msj.textContent);
+
+  await hastaIdentificacion();
+  assert.strictEqual(m.documento.getElementById('sgc-pac-justificacion-campo').hidden, false,
+    'y aparece el campo de justificación');
+  m.escribir('sgc-pac-justificacion', 'Se agregan herramientas del segundo semestre.');
+  await desdeIdentificacionHastaRevision();
+  await imprimir();
+  v = exportarVista();
+  assert.strictEqual(v.boton.disabled, false, 'con la justificación exporta');
 });
 
 test('RONDA-34 pieza 2h · "No autorizado en el PAC": sin justificación no exporta, y el documento impreso lo dice', async () => {
