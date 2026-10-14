@@ -175,8 +175,15 @@
     datosIniciales.renglones = renglones;
     datosIniciales.presupuestos = presupuestos;
     var trimestre = trimestreElegido(datosWizard);
+    // ORDEN-RONDA-35 pieza 1: el "Lugar" del requerimiento sigue fijo (la
+    // constante) y la EETT imprime el lugar de entrega que escribió la persona.
+    // Se guardan por separado para que un arreglo del lugar de entrega no toque
+    // el requerimiento (que la aplicación con servidor sigue armando igual).
+    var lugar = datosWizard && typeof datosWizard.identificacion === 'object'
+      ? datosWizard.identificacion : {};
     datosIniciales.identificacion = {
       lugar: lugarEntrega(),
+      lugarEntrega: typeof lugar.lugarEntrega === 'string' ? lugar.lugarEntrega.trim() : '',
       vigencia: ultimoDiaDelTrimestre(datosIniciales.anio, trimestre),
       finalidad: datosIniciales.campos.justificacion || '',
       trimestre: trimestre
@@ -240,6 +247,24 @@
     if (itemsPac.length > 0) {
       r.valido = false;
       items = items.concat(itemsPac);
+    }
+    // ORDEN-RONDA-35 pieza 1: con la marca del generador, la Identificación
+    // frena la exportación igual que frena "Siguiente": el trimestre, el proceso
+    // del PAC y el lugar de entrega se piden aunque el archivo importado no los
+    // traiga (un exportado de la 33, por ejemplo). Sin la marca, nada cambia.
+    if (SGC.core.validacion.exigirIdentificacionCompleta &&
+        SGC.core.validacion.exigirIdentificacionCompleta()) {
+      var identificacion = SGC.views.pasos.validarPaso('identificacion', datos || {});
+      if (!identificacion.valido) {
+        r.valido = false;
+        for (var k = 0; k < identificacion.errores.length; k++) {
+          var err = identificacion.errores[k];
+          items.push(err.mensaje);
+          if (err.campo && r.faltantes.campos.indexOf(err.campo) === -1) {
+            r.faltantes.campos.push(err.campo);
+          }
+        }
+      }
     }
     if (items.length === 0 && !r.valido) {
       items.push('el requerimiento todavía no está completo');

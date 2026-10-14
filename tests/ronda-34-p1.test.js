@@ -32,6 +32,10 @@ const RAIZ = path.join(__dirname, '..');
 const CODIGO_PAPELERIA = '2.3.1-6563.129';
 const ITEM_PAPELERIA = 'Resma papel A4';
 const justificacion = 'Se necesita reponer insumos de papelería.';
+// ORDEN-RONDA-35 pieza 1: el archivo de estas pruebas trae el lugar de entrega
+// que escribe la persona y un proceso del PAC (4, en pesos, que no supera su
+// monto): sin eso la Identificación ya no deja exportar ni imprimir.
+const LUGAR_ENTREGA = 'Depósito de Intendencia, VII Brigada Aérea';
 
 let m = null;
 
@@ -66,6 +70,8 @@ function exportadoCompleto(trimestre) {
       titulo: 'Resmas A4',
       anio: '2026',
       trimestre: trimestre,
+      lugarEntrega: LUGAR_ENTREGA,
+      pac: { numero: '4', justificacion: '' },
       campos: {
         operador: 'ana.perez@faa.mil.ar',
         dependenciaSolicitante: 'División Usuario',
@@ -172,8 +178,10 @@ test('RONDA-34 pieza 1b · elegido el 2° trimestre, los documentos dicen la vig
   const impreso = d.getElementById('sgc-generador-impresion').textContent;
   assert.ok(impreso.includes('30/06/2026'),
     'la vigencia es el último día del 2° trimestre del 2026: ' + impreso);
-  assert.strictEqual(apariciones(impreso, 'VII Brigada Aérea - Moreno'), 2,
-    'el lugar sale en el Requerimiento y en la EETT, con la constante de config');
+  assert.strictEqual(apariciones(impreso, 'VII Brigada Aérea - Moreno'), 1,
+    'el Lugar del Requerimiento sigue siendo la constante de config, una sola vez: ' + impreso);
+  assert.ok(impreso.includes(LUGAR_ENTREGA),
+    'y la EETT imprime el lugar de entrega que escribió la persona: ' + impreso);
   assert.strictEqual(apariciones(impreso, justificacion), 2,
     'la justificación sale en la EETT como Fundamentación y como Finalidad');
   assert.ok(!impreso.includes('generador-'),

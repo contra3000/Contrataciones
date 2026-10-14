@@ -78,6 +78,7 @@ function exportadoConPac(pac, opciones) {
       titulo: 'Resmas A4',
       anio: '2026',
       trimestre: '1',
+      lugarEntrega: 'Depósito de Intendencia, VII Brigada Aérea',
       pac: pac,
       campos: {
         operador: 'ana.perez@faa.mil.ar',
@@ -201,6 +202,8 @@ test('RONDA-34 pieza 2b · elegir el proceso 3 completa el trimestre con el 1°,
   m.escribir('sgc-titulo', 'Resmas A4');
   m.escribir('sgc-anio', '2026');
   m.escribir('sgc-dependencia', 'División Usuario');
+  // ORDEN-RONDA-35 pieza 1: la Identificación también pide el lugar de entrega.
+  m.escribir('sgc-lugar-entrega', 'Depósito de Intendencia, VII Brigada Aérea');
 
   m.elegirPac('3');
   const trime = d.getElementById('sgc-trimestre');

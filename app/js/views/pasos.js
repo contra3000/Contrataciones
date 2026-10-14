@@ -40,9 +40,9 @@
     return { campo: campo, mensaje: mensaje };
   }
 
-  function validarIdentificacion(datos) {
+  function validarIdentificacion(datos, opciones) {
     var campos = datos.identificacion || {};
-    var r = SGC.core.validacion.validarIdentificacion(campos);
+    var r = SGC.core.validacion.validarIdentificacion(campos, opciones);
     return {
       valido: r.valido,
       errores: r.errores.map(function (mensaje) {
@@ -57,6 +57,10 @@
     }
     if (mensaje.indexOf('trimestre') !== -1) {
       return 'trimestre';
+    }
+    // ORDEN-RONDA-35 pieza 1: el lugar de entrega, en el mismo esquema.
+    if (mensaje.indexOf('lugar de entrega') !== -1) {
+      return 'lugarEntrega';
     }
     if (mensaje.indexOf('título') !== -1) {
       return 'titulo';
@@ -120,7 +124,7 @@
 
   function validarRevision(datos, opciones) {
     var chequeos = [
-      validarIdentificacion(datos),
+      validarIdentificacion(datos, opciones),
       validarRenglones(datos, opciones),
       validarFundamentacion(datos)
     ];

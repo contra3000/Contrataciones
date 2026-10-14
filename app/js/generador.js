@@ -353,7 +353,8 @@
       var nombre = campos[i];
       var paso = 'revision';
       if (nombre === 'titulo' || nombre === 'anio' ||
-          nombre === 'dependenciaSolicitante' || nombre === 'operador') {
+          nombre === 'dependenciaSolicitante' || nombre === 'operador' ||
+          nombre === 'trimestre' || nombre === 'pac' || nombre === 'lugarEntrega') {
         paso = 'identificacion';
       } else if (nombre === 'justificacion' || nombre === 'objetivo') {
         paso = 'fundamentacion';
@@ -458,6 +459,12 @@
     if (!contenedor) {
       throw new Error('No se encontró el contenedor #app');
     }
+
+    // ORDEN-RONDA-35 pieza 1: la marca del generador. A partir de acá la
+    // Identificación exige trimestre, proceso del PAC y lugar de entrega aunque
+    // el archivo importado no los traiga (un exportado de la 33, por ejemplo).
+    // La aplicación con servidor no pasa por acá y todo sigue igual (ADR-044).
+    SGC.core.validacion.exigirIdentificacionCompleta(true);
 
     estado.dom.identidad = porId('sgc-generador-identidad');
     estado.dom.grado = porId('sgc-generador-grado');

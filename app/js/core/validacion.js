@@ -63,6 +63,36 @@
     return null;
   }
 
+  // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido. USD sólo si el
+  // proceso del PAC es en dólares; cualquier otro caso —incluido "No autorizado
+  // en el PAC" y la ausencia de proceso— es ARS. La moneda no es un campo: se
+  // deriva del proceso, para que el documento y el JSON no puedan contradecir
+  // al PAC.
+  function monedaDelProceso(numero) {
+    var proceso = procesoDelPac(numero);
+    return proceso && proceso.moneda === 'USD' ? 'USD' : 'ARS';
+  }
+
+  /*
+   * ORDEN-RONDA-35 pieza 1: la marca del generador.
+   *
+   * El trimestre, el proceso del PAC y el lugar de entrega son obligatorios en
+   * el generador, y su ausencia no se puede detectar "porque el campo existe":
+   * un requerimiento exportado antes de la ronda 34 entra sin ellos y hay que
+   * pedirlos igual. Sin la marca —la aplicación con servidor nunca la pone—
+   * todo sigue como hoy: cada campo se exige sólo si está presente, y la
+   * importación de un archivo viejo lo saltea de forma explícita
+   * (opciones.exigirCompleto === false).
+   */
+  var identificacionCompleta = false;
+
+  function exigirIdentificacionCompleta(valor) {
+    if (valor !== undefined) {
+      identificacionCompleta = valor === true;
+    }
+    return identificacionCompleta;
+  }
+
   function obtenerEstado(expediente) {
     var id = SGC.core.utils.idEstado(expediente);
     if (id === null) {
@@ -267,11 +297,17 @@
   // Validación del paso Identificación del wizard (ORDEN-RONDA-05 §3.1): el
   // operador viene del padrón y se guarda como correo; el año debe tener
   // cuatro dígitos.
-  function validarIdentificacion(campos) {
+  function validarIdentificacion(campos, opciones) {
     var errores = [];
     if (!campos || typeof campos !== 'object') {
       return { valido: false, errores: ['Faltan los campos de identificación'] };
     }
+    // ORDEN-RONDA-35 pieza 1: con la marca del generador, el trimestre, el PAC
+    // y el lugar de entrega se exigen siempre, traiga o no el campo el archivo.
+    // `opciones.exigirCompleto === false` es la excepción de la importación: un
+    // archivo viejo entra y los campos quedan para completar en pantalla.
+    var marcar = opciones && opciones.exigirCompleto === false
+      ? false : identificacionCompleta;
     if (typeof campos.titulo !== 'string' || campos.titulo.trim() === '') {
       errores.push('El título del requerimiento es obligatorio');
     }
@@ -284,25 +320,30 @@
     if (typeof campos.operador !== 'string' || campos.operador.trim() === '') {
       errores.push('El operador es obligatorio');
     }
-    // ORDEN-RONDA-34 pieza 1: el trimestre es obligatorio sólo cuando el campo
-    // existe. En la aplicación con servidor nunca se arma (no tiene #sgc-trimestre)
-    // y no se exige; en el generador el formulario lo escribe en cada
-    // sincronización, así que llega aunque sea ''.
-    if (campos.trimestre !== undefined &&
+    // ORDEN-RONDA-34 pieza 1: el trimestre es obligatorio cuando el campo existe
+    // (el generador lo escribe en cada sincronización). ORDEN-RONDA-35: con la
+    // marca del generador se exige aunque el archivo no lo traiga.
+    if ((marcar || campos.trimestre !== undefined) &&
         (typeof campos.trimestre !== 'string' || !/^[1-4]$/.test(campos.trimestre))) {
       errores.push('Elegí el trimestre para el que se pide');
     }
     // ORDEN-RONDA-34 pieza 2: el proceso del PAC es obligatorio con el mismo
-    // trato que el trimestre: sólo cuando el campo existe (el generador lo
-    // escribe en cada sincronización; la aplicación con servidor no lo arma).
-    // Vale un proceso del PAC o "no-autorizado"; vacío o desconocido, no.
-    if (campos.pac !== undefined && campos.pac !== null) {
+    // trato que el trimestre. Vale un proceso del PAC o "no-autorizado"; vacío
+    // o desconocido, no. ORDEN-RONDA-35: la marca lo exige aunque falte.
+    if (marcar || (campos.pac !== undefined && campos.pac !== null)) {
       var numeroPac = campos.pac && typeof campos.pac.numero === 'string' ? campos.pac.numero : '';
       if (numeroPac === '') {
         errores.push('Elegí el proceso del PAC 2026');
       } else if (numeroPac !== 'no-autorizado' && procesoDelPac(numeroPac) === null) {
         errores.push('Elegí el proceso del PAC 2026');
       }
+    }
+    // ORDEN-RONDA-35 pieza 1: el lugar de entrega de la EETT lo escribe la
+    // persona. Es obligatorio en el generador (marca) y, sin ella, sólo si el
+    // campo existe, como los otros.
+    if ((marcar || campos.lugarEntrega !== undefined) &&
+        (typeof campos.lugarEntrega !== 'string' || campos.lugarEntrega.trim() === '')) {
+      errores.push('Escribí el lugar de entrega');
     }
     return { valido: errores.length === 0, errores: errores };
   }
@@ -395,6 +436,8 @@
     validarRequerimiento: validarRequerimiento,
     validarEncabezado: validarEncabezado,
     procesosDelPac: procesosDelPac,
-    procesoDelPac: procesoDelPac
+    procesoDelPac: procesoDelPac,
+    monedaDelProceso: monedaDelProceso,
+    exigirIdentificacionCompleta: exigirIdentificacionCompleta
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -319,6 +319,10 @@
       // para elegir).
       trimestre: datos.identificacion && typeof datos.identificacion.trimestre === 'string'
         ? datos.identificacion.trimestre : '',
+      // ORDEN-RONDA-35 pieza 1: el lugar de entrega lo escribe la persona y
+      // viaja para que el avance lo recupere ("" si todavía no lo escribió).
+      lugarEntrega: datos.identificacion && typeof datos.identificacion.lugarEntrega === 'string'
+        ? datos.identificacion.lugarEntrega : '',
       // ORDEN-RONDA-34 pieza 2e: el proceso del PAC (o ninguno), siempre en la
       // forma del pacExportado: sin número, queda null y el archivo no habla del
       // PAC.
@@ -519,6 +523,9 @@
         // ORDEN-RONDA-34 pieza 1: un JSON sin `trimestre` (de la ronda 33 o una
         // plantilla) entra igual: el campo queda para elegir.
         trimestre: typeof e.trimestre === 'string' ? e.trimestre : '',
+        // ORDEN-RONDA-35 pieza 1: el lugar de entrega, igual que el trimestre:
+        // un JSON sin él entra y el campo queda para escribir.
+        lugarEntrega: typeof e.lugarEntrega === 'string' ? e.lugarEntrega : '',
         // ORDEN-RONDA-34 pieza 2e: el PAC que el archivo trae, en la misma forma
         // normalizada con la que sale (un archivo sin pac da null).
         pac: pacExportado(e.pac),
@@ -658,6 +665,13 @@
     if (trimestre !== '') {
       datos.identificacion.trimestre = trimestre;
     }
+    // ORDEN-RONDA-35 pieza 1: el lugar de entrega entra sólo si el archivo lo
+    // trae y no está vacío. Un JSON sin él se importa igual: el campo queda para
+    // escribir (y pasa a ser obligatorio, como recién importado).
+    var lugarEntrega = typeof cuerpo.lugarEntrega === 'string' ? cuerpo.lugarEntrega.trim() : '';
+    if (lugarEntrega !== '') {
+      datos.identificacion.lugarEntrega = lugarEntrega;
+    }
     /*
      * ORDEN-RONDA-34 pieza 2e: el PAC entra sólo si el archivo lo trae con un
      * número conocido. Un número que no está en el PAC no rechaza el archivo:
@@ -714,7 +728,12 @@
     // ORDEN-RONDA-33 pieza 1: un renglón sin código ya no invalida el archivo:
     // entra "por buscar" y se elige en pantalla. Por eso la validación del
     // núcleo se pide con permiso.
-    var revision = SGC.views.pasos.validarPaso('revision', datos, { permitirPorBuscar: true });
+    // ORDEN-RONDA-35 pieza 1: `exigirCompleto:false` es la excepción de la
+    // importación: un archivo viejo sin trimestre, PAC ni lugar de entrega entra
+    // igual (y después la pantalla los pide). Sólo la marca del generador los
+    // exige, y acá se la desactiva para esta validación puntual.
+    var revision = SGC.views.pasos.validarPaso('revision', datos,
+      { permitirPorBuscar: true, exigirCompleto: false });
     var errores = [];
     for (var i = 0; i < revision.errores.length; i++) {
       var e = revision.errores[i];

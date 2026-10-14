@@ -74,6 +74,10 @@
       dependencia: identificacion.dependenciaSolicitante || campos.dependenciaSolicitante || '—',
       finalidad: identificacion.finalidad || '—',
       lugar: identificacion.lugar || '—',
+      // ORDEN-RONDA-35 pieza 1: el lugar de entrega que escribió la persona,
+      // para la EETT. Vacío (no '—') cuando no hay: los documentos que no lo
+      // usan salen igual que siempre, y la EETT cae al `lugar` de siempre.
+      lugarEntrega: identificacion.lugarEntrega || '',
       vigencia: identificacion.vigencia || datos.fechaLimite || '—',
       renglones: renglones,
       justificacion: fundamentacion.justificacion || campos.justificacion || '—',

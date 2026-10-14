@@ -213,6 +213,17 @@
           <input id="sgc-dependencia" type="text" autocomplete="off" required>
           <p id="sgc-error-dependencia" class="error-campo" role="alert" hidden></p>
         </div>
+        <!-- ORDEN-RONDA-35 pieza 1: el lugar de entrega de la EETT lo escribe la
+             persona (el Jefe, 14/10). Es obligatorio en el generador, y viaja en
+             el JSON para que el avance lo recupere. El "Lugar" del requerimiento
+             sigue fijo en config/aplicacion.json. Es del generador: la
+             aplicación con servidor no lo tiene (ADR-044). -->
+        <div class="campo">
+          <label for="sgc-lugar-entrega">Lugar de entrega</label>
+          <input id="sgc-lugar-entrega" type="text" autocomplete="off"
+                 placeholder="Ej.: Depósito de Intendencia, VII Brigada Aérea" required>
+          <p id="sgc-error-lugar-entrega" class="error-campo" role="alert" hidden></p>
+        </div>
       </section>
 
       <section id="sgc-paso-renglones" class="paso-panel" aria-labelledby="sgc-titulo-paso-2" hidden>

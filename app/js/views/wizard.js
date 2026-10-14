@@ -532,6 +532,18 @@ function descripcionOperador(operador) {
     if (nodoErrorTrimestre) {
       estado.dom.errores.trimestre = nodoErrorTrimestre;
     }
+    // ORDEN-RONDA-35 pieza 1: el lugar de entrega lo escribe la persona y la
+    // EETT lo imprime. Se registra SÓLO si el elemento existe: la aplicación
+    // con servidor no lo tiene, y el bucle de los escuchadores no puede pedirle
+    // uno a null.
+    var nodoLugarEntrega = qs(raiz, '#sgc-lugar-entrega');
+    if (nodoLugarEntrega) {
+      estado.dom.campos.lugarEntrega = nodoLugarEntrega;
+    }
+    var nodoErrorLugarEntrega = qs(raiz, '#sgc-error-lugar-entrega');
+    if (nodoErrorLugarEntrega) {
+      estado.dom.errores.lugarEntrega = nodoErrorLugarEntrega;
+    }
     // ORDEN-RONDA-34 pieza 2: el PAC. Sólo el generador tiene estos nodos; la
     // aplicación con servidor no, y acá no se engancha nada (ADR-044).
     var nodoPac = qs(raiz, '#sgc-pac');

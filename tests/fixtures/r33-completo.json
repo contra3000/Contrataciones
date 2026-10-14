@@ -1,0 +1,100 @@
+{
+  "sello": {
+    "formato": "sgc-requerimiento/1",
+    "versionGenerador": "r33-24a2f07",
+    "versionCatalogo": "98201747",
+    "rol": "generador",
+    "grado": "Primer Teniente",
+    "nombre": "Juan",
+    "apellido": "Contreras",
+    "numeroControl": 12345,
+    "fecha": "2026-10-13T18:12:21.524Z",
+    "version": 1,
+    "estado": "para-abastecimiento",
+    "paso": 0,
+    "huella": "191b6423d3933474063ee75949ef58c2738a5911ded1267573e517baf1b87c87"
+  },
+  "expediente": {
+    "titulo": "Resmas A4",
+    "anio": "2026",
+    "campos": {
+      "operador": "Juan Contreras · 12.345",
+      "dependenciaSolicitante": "División Contrataciones",
+      "justificacion": "Se necesita papel para el área.",
+      "objetivo": ""
+    },
+    "renglones": [
+      {
+        "codigo": "2.9.9-8292.1",
+        "item": "DISPENSER P/PAPEL HIGIENICO; MATERIAL: PLASTICO TERMOFORMADO, MEDIDA: 26 X 27 X 13,5 Cm, USO: ROLLO DE 10 Cm",
+        "cantidad": 1,
+        "unidad": "UN",
+        "aclaracion": "Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. Aclaración larga. ",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 100
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 110
+          }
+        ]
+      },
+      {
+        "codigo": "4.3.3-9927.1",
+        "item": "MAQUINAS P/ENSAYOS DE TINTAS; TIPO DE ESAYO: TINTAS FUNCIONALES, ACCESORIOS: CON, TIPO DE ENSAYO: TINTAS FUNCIONALES",
+        "cantidad": 1,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 50
+          },
+          {
+            "presupuestoId": "ref-3",
+            "justificacion": true,
+            "base": "",
+            "valor": ""
+          }
+        ]
+      }
+    ],
+    "presupuestos": [
+      {
+        "id": "ref-1",
+        "nombreOriginal": "presupuesto-libreria-sur.pdf",
+        "proveedor": "Librería Sur",
+        "fecha": "2026-02-12",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "bytes": 46,
+        "sha256": "76bf077c7126eb1cbc7699f0c6256c4bebf7f2fdf9053d066116360eddacd6b9"
+      },
+      {
+        "id": "ref-2",
+        "nombreOriginal": "oc-perfeccionada-2026.pdf",
+        "proveedor": "OC 12/2026",
+        "fecha": "2026-02-12",
+        "tipo": "precio-plaza",
+        "referencia": true,
+        "bytes": 43,
+        "sha256": "3198602e3ff2e280ac6121f6d6e21d1bb94dfab81ca0f81e5b0816610ddad9af"
+      },
+      {
+        "id": "ref-3",
+        "nombreOriginal": "justificacion-sin-segundo.pdf",
+        "proveedor": "División Contrataciones",
+        "fecha": "2026-02-12",
+        "tipo": "justificacion",
+        "referencia": true,
+        "bytes": 47,
+        "sha256": "9bf22a0a7cb66b758366257b2ad4a2a2e20a47082855f0d90e1b4a1348098b88"
+      }
+    ]
+  }
+}

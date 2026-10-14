@@ -37,7 +37,7 @@
     partes.push(d.campo('Expediente', m.id));
     partes.push(d.campo('Dependencia solicitante', m.dependencia));
     partes.push(d.campo('Finalidad', m.finalidad));
-    partes.push(d.campo('Lugar de entrega', m.lugar));
+    partes.push(d.campo('Lugar de entrega', m.lugarEntrega || m.lugar));
     partes.push(d.campo('Vigencia', m.vigencia));
     partes.push('</dl>');
     partes.push('<h2>Renglones</h2>');
@@ -68,7 +68,7 @@
       ['Expediente', m.id],
       ['Dependencia solicitante', m.dependencia],
       ['Finalidad', m.finalidad],
-      ['Lugar de entrega', m.lugar],
+      ['Lugar de entrega', m.lugarEntrega || m.lugar],
       ['Vigencia', m.vigencia]
     ]);
     d.h2Dom(contenedor, 'Renglones');

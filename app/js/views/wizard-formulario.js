@@ -50,6 +50,11 @@
     if (campoInput(estado, 'trimestre')) {
       estado.datos.identificacion.trimestre = leerCampo(estado, 'trimestre');
     }
+    // ORDEN-RONDA-35 pieza 1: el lugar de entrega lo escribe la persona. Igual
+    // que el trimestre, sólo se escribe si el nodo existe (generador).
+    if (campoInput(estado, 'lugarEntrega')) {
+      estado.datos.identificacion.lugarEntrega = leerCampo(estado, 'lugarEntrega');
+    }
     // ORDEN-RONDA-34 pieza 2: el PAC, en la misma forma que viaja en el JSON
     // ({numero, preventivoUsd, justificacion}). Igual que el trimestre, sólo se
     // escribe si el nodo existe (generador).
@@ -76,6 +81,9 @@
     campoInput(estado, 'dependenciaSolicitante').value = id.dependenciaSolicitante || '';
     if (campoInput(estado, 'trimestre')) {
       campoInput(estado, 'trimestre').value = id.trimestre || '';
+    }
+    if (campoInput(estado, 'lugarEntrega')) {
+      campoInput(estado, 'lugarEntrega').value = id.lugarEntrega || '';
     }
     if (campoInput(estado, 'pac')) {
       var pac = id.pac && typeof id.pac === 'object' ? id.pac : {};
