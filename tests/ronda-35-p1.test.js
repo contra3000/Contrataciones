@@ -12,7 +12,7 @@
  *     el paso "1 · Identificación" queda marcado "· falta".
  *  2. Elegidos el trimestre, el proceso del PAC y el lugar de entrega, imprime y
  *     exporta: el JSON trae los tres, la EETT dice el lugar que se escribió y el
- *     requerimiento sigue con la constante de config.
+ *     requerimiento ya no lleva la fila "Lugar" (ORDEN-RONDA-36 pieza 2).
  *  3. Lo mismo con un avance de la ronda 31 (sin trimestre ni PAC): entra y no
  *     exporta hasta completar la Identificación.
  *  4. Con el lugar de entrega vacío, "Siguiente" no pasa y deja el foco en
@@ -189,8 +189,10 @@ test('RONDA-35 pieza 1b · con trimestre, PAC y lugar, imprime y exporta: el JSO
   const impreso = d.getElementById('sgc-generador-impresion').textContent;
   assert.ok(impreso.includes(LUGAR),
     'la EETT dice el lugar que se escribió: ' + impreso);
-  assert.ok(impreso.includes(CONSTANTE),
-    'el requerimiento sigue con la constante de config: ' + impreso);
+  // ORDEN-RONDA-36 pieza 2: el requerimiento del generador ya no lleva la fila
+  // "Lugar"; la constante salió de config/aplicacion.json.
+  assert.strictEqual(impreso.includes(CONSTANTE), false,
+    'el requerimiento ya no imprime la constante de config: ' + impreso);
 });
 
 test('RONDA-35 pieza 1c · un avance de la 31, sin trimestre ni PAC, entra y no exporta hasta completar la Identificación', async () => {

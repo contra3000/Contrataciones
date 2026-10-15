@@ -73,7 +73,11 @@
       titulo: datos.titulo || '—',
       dependencia: identificacion.dependenciaSolicitante || campos.dependenciaSolicitante || '—',
       finalidad: identificacion.finalidad || '—',
-      lugar: identificacion.lugar || '—',
+      // ORDEN-RONDA-36 pieza 2: el requerimiento deja de mostrar "Lugar". En el
+      // generador no hay `identificacion.lugar`, así que la fila se saltea
+      // (paresEncabezado no agrega el par vacío). La aplicación con servidor
+      // sigue trayendo su `lugar` en los datos y lo imprime igual byte a byte.
+      lugar: identificacion.lugar || '',
       // ORDEN-RONDA-35 pieza 1: el lugar de entrega que escribió la persona,
       // para la EETT. Vacío (no '—') cuando no hay: los documentos que no lo
       // usan salen igual que siempre, y la EETT cae al `lugar` de siempre.

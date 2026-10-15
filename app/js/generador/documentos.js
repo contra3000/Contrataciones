@@ -48,19 +48,6 @@
     return est && est.manifiesto ? est.manifiesto.catalogoVersion : null;
   }
 
-  // ORDEN-RONDA-34 pieza 1: la constante del lugar. Vive una sola vez, en
-  // config/aplicacion.json (la lee SGC.cargaConfig, como la versión del
-  // generador en intercambio.js).
-  function lugarEntrega() {
-    if (SGC.cargaConfig && typeof SGC.cargaConfig.obtener === 'function') {
-      var config = SGC.cargaConfig.obtener('config/aplicacion.json');
-      if (config && typeof config.lugarEntrega === 'string' && config.lugarEntrega !== '') {
-        return config.lugarEntrega;
-      }
-    }
-    return '';
-  }
-
   // El último día del trimestre pedido, en dd/mm/aaaa: 31/03, 30/06, 30/09 o
   // 31/12 del año del requerimiento (ORDEN-RONDA-34 pieza 1).
   function ultimoDiaDelTrimestre(anio, trimestre) {
@@ -176,14 +163,13 @@
     datosIniciales.renglones = renglones;
     datosIniciales.presupuestos = presupuestos;
     var trimestre = trimestreElegido(datosWizard);
-    // ORDEN-RONDA-35 pieza 1: el "Lugar" del requerimiento sigue fijo (la
-    // constante) y la EETT imprime el lugar de entrega que escribió la persona.
-    // Se guardan por separado para que un arreglo del lugar de entrega no toque
-    // el requerimiento (que la aplicación con servidor sigue armando igual).
+    // ORDEN-RONDA-36 pieza 2: el requerimiento del generador ya no lleva
+    // "Lugar" (la constante salió de config/aplicacion.json). El lugar de
+    // entrega que escribe la persona queda sólo en la EETT. La aplicación con
+    // servidor no cambia: su `identificacion.lugar` sigue en sus datos.
     var lugar = datosWizard && typeof datosWizard.identificacion === 'object'
       ? datosWizard.identificacion : {};
     datosIniciales.identificacion = {
-      lugar: lugarEntrega(),
       lugarEntrega: typeof lugar.lugarEntrega === 'string' ? lugar.lugarEntrega.trim() : '',
       vigencia: ultimoDiaDelTrimestre(datosIniciales.anio, trimestre),
       finalidad: datosIniciales.campos.justificacion || '',

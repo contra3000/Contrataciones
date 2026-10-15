@@ -10,9 +10,9 @@
  *  1. "Siguiente" no pasa sin elegir el trimestre para el que se pide: el mot
  *     vive en el campo, que queda marcado y enfocado.
  *  2. Elegido el trimestre, los documentos piden como decidió el Jefe el
- *     13/10: Expediente "—", Lugar "VII Brigada Aérea - Moreno" (la constante
- *     de config/aplicacion.json), Vigencia el último día del trimestre, y en
- *     la EETT la Finalidad es la misma justificación.
+ *     13/10: Expediente "—", Vigencia el último día del trimestre, y en
+ *     la EETT la Finalidad es la misma justificación. (ORDEN-RONDA-36 pieza 2:
+ *     el requerimiento ya no muestra la fila "Lugar".)
  *  3. El JSON exportado lleva el trimestre y, al reimportarlo, el campo lo
  *     muestra de nuevo.
  *  4. Un archivo de la ronda 33 (sin trimestre) entra igual: el campo queda
@@ -180,8 +180,11 @@ test('RONDA-34 pieza 1b · elegido el 2° trimestre, los documentos dicen la vig
   const impreso = d.getElementById('sgc-generador-impresion').textContent;
   assert.ok(impreso.includes('30/06/2026'),
     'la vigencia es el último día del 2° trimestre del 2026: ' + impreso);
-  assert.strictEqual(apariciones(impreso, 'VII Brigada Aérea - Moreno'), 1,
-    'el Lugar del Requerimiento sigue siendo la constante de config, una sola vez: ' + impreso);
+  // ORDEN-RONDA-36 pieza 2: el requerimiento del generador ya no lleva la fila
+  // "Lugar" (la constante salió de config/aplicacion.json); el lugar de entrega
+  // queda sólo en la EETT.
+  assert.strictEqual(apariciones(impreso, 'VII Brigada Aérea - Moreno'), 0,
+    'el requerimiento ya no imprime la constante de config: ' + impreso);
   assert.ok(impreso.includes(LUGAR_ENTREGA),
     'y la EETT imprime el lugar de entrega que escribió la persona: ' + impreso);
   assert.strictEqual(apariciones(impreso, justificacion), 2,
