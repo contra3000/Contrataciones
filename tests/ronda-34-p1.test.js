@@ -33,8 +33,10 @@ const CODIGO_PAPELERIA = '2.3.1-6563.129';
 const ITEM_PAPELERIA = 'Resma papel A4';
 const justificacion = 'Se necesita reponer insumos de papelería.';
 // ORDEN-RONDA-35 pieza 1: el archivo de estas pruebas trae el lugar de entrega
-// que escribe la persona y un proceso del PAC (4, en pesos, que no supera su
-// monto): sin eso la Identificación ya no deja exportar ni imprimir.
+// que escribe la persona. ORDEN-RONDA-36 pieza 1: el proceso del PAC tiene que
+// ser coherente con el trimestre que se prueba —el 2— para que no haya causa
+// de justificación: el proceso 8 es del 2° trimestre y su monto (4.601.377,15)
+// no lo supera el preventivo de estos renglones.
 const LUGAR_ENTREGA = 'Depósito de Intendencia, VII Brigada Aérea';
 
 let m = null;
@@ -71,7 +73,7 @@ function exportadoCompleto(trimestre) {
       anio: '2026',
       trimestre: trimestre,
       lugarEntrega: LUGAR_ENTREGA,
-      pac: { numero: '4', justificacion: '' },
+      pac: { numero: '8', justificacion: '' },
       campos: {
         operador: 'ana.perez@faa.mil.ar',
         dependenciaSolicitante: 'División Usuario',

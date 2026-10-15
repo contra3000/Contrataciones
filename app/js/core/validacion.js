@@ -73,6 +73,108 @@
     return proceso && proceso.moneda === 'USD' ? 'USD' : 'ARS';
   }
 
+  // ORDEN-RONDA-36 pieza 1: el monto del PAC con su moneda, con el mismo texto
+  // que el requerimiento impreso y el desplegable ('USD ' o '$ '). Es una copia
+  // mínima de renders/documento.js montoAr para no depender de la capa de
+  // renders desde el núcleo.
+  function montoDelPac(n, moneda) {
+    var texto;
+    if (typeof n === 'number' && isFinite(n)) {
+      var partes = n.toFixed(2).split('.');
+      texto = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + partes[1];
+    } else {
+      texto = '—';
+    }
+    return (moneda === 'USD' ? 'USD ' : '$ ') + texto;
+  }
+
+  /*
+   * ORDEN-RONDA-36 pieza 1: las causas por las que hay que justificar el PAC.
+   *
+   * `identificacion` es {anio, trimestre, pac} (el pac, a su vez, {numero,
+   * justificacion}). `renglones` son los renglones del requerimiento, con sus
+   * valores, para el preventivo.
+   *
+   * Devuelve {requerida, motivos, items}:
+   *  - requerida: hay al menos una causa, así que el campo va a la vista y es
+   *    obligatorio en Fundamentación;
+   *  - motivos: una frase por causa cumplida, para mostrar arriba del campo;
+   *  - items: los motivos que faltan (sólo cuando la justificación está vacía),
+   *    con las palabras que usa la exportación.
+   *
+   * Las causas son: el pedido no está autorizado en el PAC; el año del
+   * requerimiento no es el del PAC; el trimestre elegido no es el del proceso;
+   * y el preventivo supera el monto del proceso (en pesos o en dólares). La
+   * justificación escrita no cambia las causas: sólo hace que items quede vacío.
+   *
+   * ADR-044: con servidor, pacConfig() es null y no hay proceso, así que esta
+   * cuenta no produce nada y todo queda como hoy.
+   */
+  function causasDelPac(identificacion, renglones) {
+    var vacio = { requerida: false, motivos: [], items: [] };
+    var id = identificacion && typeof identificacion === 'object' ? identificacion : {};
+    var pac = id.pac && typeof id.pac === 'object' ? id.pac : null;
+    if (!pac) {
+      return vacio;
+    }
+    var numero = pac.numero === undefined || pac.numero === null ? '' : String(pac.numero);
+    if (numero === '') {
+      return vacio;
+    }
+    var justificacion = typeof pac.justificacion === 'string' ? pac.justificacion.trim() : '';
+    // Fuera del PAC: como hoy, sin proceso con el que comparar. Es la única causa
+    // que se decide sin el PAC (no hay año ni trimestre contra los que medir).
+    if (numero === 'no-autorizado') {
+      return {
+        requerida: true,
+        motivos: ['El pedido no está autorizado en el PAC.'],
+        items: justificacion === '' ? ['justificar el pedido no autorizado en el PAC'] : []
+      };
+    }
+    var proceso = procesoDelPac(numero);
+    if (!proceso) {
+      return vacio;
+    }
+    var motivos = [];
+    var items = [];
+    var config = pacConfig();
+    var anioPac = config && config.anio !== undefined && config.anio !== null
+      ? String(config.anio) : '';
+    var anio = id.anio === undefined || id.anio === null ? '' : String(id.anio);
+    if (anioPac !== '' && anio !== '' && anio !== anioPac) {
+      motivos.push('El requerimiento es del año ' + anio + ' y el PAC es de ' + anioPac + '.');
+      if (justificacion === '') {
+        items.push('justificar por qué se pide para el año ' + anio +
+          ' si el PAC es de ' + anioPac);
+      }
+    }
+    var trimestre = id.trimestre === undefined || id.trimestre === null
+      ? '' : String(id.trimestre);
+    if (trimestre !== '' && String(proceso.trimestre) !== trimestre) {
+      motivos.push('Se pide para el ' + trimestre + '° trimestre y el PAC prevé el proceso ' +
+        proceso.numero + ' para el ' + proceso.trimestre + '°.');
+      if (justificacion === '') {
+        items.push('justificar por qué se pide para el ' + trimestre +
+          '° trimestre y el proceso ' + proceso.numero + ' del PAC prevé el ' +
+          proceso.trimestre + '°');
+      }
+    }
+    // El preventivo supera el monto del proceso. Sólo cuenta si hay un
+    // preventivo válido (todos los renglones con valores); si no, no se puede
+    // comparar y no es una causa.
+    var total = SGC.core.requerimiento.preventivoContratacion(renglones || []);
+    if (total.valido && total.total > proceso.monto) {
+      motivos.push('El preventivo (' + montoDelPac(total.total, proceso.moneda) +
+        ') supera el monto del proceso ' + proceso.numero + ' del PAC (' +
+        montoDelPac(proceso.monto, proceso.moneda) + ').');
+      if (justificacion === '') {
+        items.push('justificar el preventivo que supera el monto del proceso ' +
+          proceso.numero + ' del PAC');
+      }
+    }
+    return { requerida: motivos.length > 0, motivos: motivos, items: items };
+  }
+
   /*
    * ORDEN-RONDA-35 pieza 1: la marca del generador.
    *
@@ -438,6 +540,7 @@
     procesosDelPac: procesosDelPac,
     procesoDelPac: procesoDelPac,
     monedaDelProceso: monedaDelProceso,
+    causasDelPac: causasDelPac,
     exigirIdentificacionCompleta: exigirIdentificacionCompleta
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -111,22 +111,63 @@
     return { valido: errores.length === 0, errores: errores };
   }
 
-  function validarFundamentacion(datos) {
+  // ORDEN-RONDA-36 pieza 1d: la justificación del PAC es obligatoria en
+  // Fundamentación cuando hay una causa. La cuenta de causas es la del núcleo
+  // (core/validacion.js causasDelPac), la misma que decide la exportación; acá
+  // sólo se traduce a un error con campo `pacJustificacion` para que la vista
+  // enfoque el textarea y marque el bloque.
+  function identificacionDelPac(datos) {
+    var identificacion = datos.identificacion || {};
+    return {
+      anio: identificacion.anio,
+      trimestre: identificacion.trimestre,
+      pac: identificacion.pac
+    };
+  }
+
+  function justificacionDelPac(datos) {
+    var identificacion = datos.identificacion || {};
+    var pac = identificacion.pac;
+    return pac && typeof pac.justificacion === 'string' ? pac.justificacion.trim() : '';
+  }
+
+  // Los renglones con sus valores salen del generador de valores cuando está
+  // (el generador los escribe ahí, no en la lista pelada); con servidor, de la
+  // propia lista. Sólo hace falta para la causa del monto.
+  function renglonesParaCausas(datos) {
+    if (SGC.generadorValores && typeof SGC.generadorValores.renglonesConValores === 'function') {
+      return SGC.generadorValores.renglonesConValores();
+    }
+    return Array.isArray(datos.renglones) ? datos.renglones : [];
+  }
+
+  function validarFundamentacion(datos, opciones) {
     var campos = datos.fundamentacion || {};
     var r = SGC.core.validacion.validarFundamentacion(campos);
-    return {
-      valido: r.valido,
-      errores: r.errores.map(function (mensaje) {
-        return errorCampo('justificacion', mensaje);
-      })
-    };
+    var errores = r.errores.map(function (mensaje) {
+      return errorCampo('justificacion', mensaje);
+    });
+    // ORDEN-RONDA-36 pieza 1d: con la marca y una causa, la justificación del
+    // PAC es obligatoria. `opciones.exigirCompleto === false` es la excepción de
+    // la importación (igual que la Identificación): un archivo entra y la
+    // pantalla pide después lo que le falte, incluida la justificación del PAC.
+    var marcar = !(opciones && opciones.exigirCompleto === false);
+    if (marcar) {
+      var causas = SGC.core.validacion.causasDelPac(
+        identificacionDelPac(datos), renglonesParaCausas(datos));
+      if (causas.requerida && justificacionDelPac(datos) === '') {
+        errores.push(errorCampo('pacJustificacion',
+          'Justificá el PAC: ' + causas.motivos.join(' ')));
+      }
+    }
+    return { valido: errores.length === 0, errores: errores };
   }
 
   function validarRevision(datos, opciones) {
     var chequeos = [
       validarIdentificacion(datos, opciones),
       validarRenglones(datos, opciones),
-      validarFundamentacion(datos)
+      validarFundamentacion(datos, opciones)
     ];
     var errores = [];
     for (var i = 0; i < chequeos.length; i++) {

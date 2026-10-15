@@ -187,21 +187,15 @@
         <!-- ORDEN-RONDA-34 pieza 2: el proceso del PAC 2026 al que corresponde
              el requerimiento, o "No autorizado en el PAC". Es obligatorio para
              pasar de Identificación. Elegir un proceso completa el trimestre con
-             el del PAC (y la persona lo puede cambiar). Si el preventivo supera
-             el monto del proceso, o el pedido no está autorizado, se pide la
-             justificación del PAC. Es del generador: la aplicación con servidor
-             no lo tiene (ADR-044). -->
+             el del PAC (y la persona lo puede cambiar). La justificación del PAC
+             —cuando haga falta— vive en Fundamentación (ORDEN-RONDA-36). Es del
+             generador: la aplicación con servidor no lo tiene (ADR-044). -->
         <div class="campo">
           <label for="sgc-pac">Proceso del PAC 2026</label>
           <select id="sgc-pac" required>
             <option value="">Elegí el proceso del PAC</option>
           </select>
           <p id="sgc-error-pac" class="error-campo" role="alert" hidden></p>
-        </div>
-        <div class="campo" id="sgc-pac-justificacion-campo" hidden>
-          <label for="sgc-pac-justificacion">Justificación del PAC</label>
-          <textarea id="sgc-pac-justificacion" rows="3"></textarea>
-          <p id="sgc-error-pac-justificacion" class="error-campo" role="alert" hidden></p>
         </div>
         <div class="campo">
           <label for="sgc-dependencia">Dependencia solicitante</label>
@@ -316,6 +310,19 @@
           <label for="sgc-justificacion">Justificación del requerimiento</label>
           <textarea id="sgc-justificacion" rows="4" required></textarea>
           <p id="sgc-error-justificacion" class="error-campo" role="alert" hidden></p>
+        </div>
+        <!-- ORDEN-RONDA-36 pieza 1: la justificación del PAC vive acá, en
+             Fundamentación, no en Identificación. Aparece cuando hay una causa:
+             el pedido no está autorizado, el año no es el del PAC, el trimestre
+             elegido no es el del proceso, o el preventivo supera el monto del
+             proceso. El texto de arriba dice cuál/es hay que justificar; el
+             campo es obligatorio mientras esté a la vista, y lo escrito no se
+             borra si la causa desaparece. Es del generador (ADR-044). -->
+        <div class="campo" id="sgc-pac-justificacion-campo" hidden>
+          <p id="sgc-pac-justificacion-motivos" class="req-ayuda" hidden></p>
+          <label for="sgc-pac-justificacion">Justificación del PAC</label>
+          <textarea id="sgc-pac-justificacion" rows="3"></textarea>
+          <p id="sgc-error-pac-justificacion" class="error-campo" role="alert" hidden></p>
         </div>
         <div class="campo">
           <label for="sgc-objetivo">Objetivo (opcional)</label>

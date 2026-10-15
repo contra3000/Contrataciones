@@ -12,8 +12,9 @@
  *     MIL", sin "PESOS" ni "$ 1.000,00".
  *  2. Un proceso en pesos (4) exporta con "moneda": "ARS" y el impreso sigue
  *     en "$ 1.000,00" y "PESOS MIL".
- *  3. "Imprimir" frena cuando el preventivo supera el monto del proceso y no
- *     hay justificación: no compone nada y dice por qué (el caso del PDF del
+ *  3. Con el preventivo por encima del monto del proceso 32, la justificación
+ *     del PAC (ORDEN-RONDA-36 pieza 1, ahora en Fundamentación) frena el
+ *     avance y "Imprimir": no compone nada y dice por qué (el caso del PDF del
  *     Jefe, proceso 32).
  *  4. Un avance de la ronda 34 con "preventivoUsd" cargado a mano entra, con
  *     el aviso de que el preventivo ahora sale de los valores de referencia.
@@ -28,6 +29,11 @@ const CODIGO_PAPELERIA = '2.3.1-6563.129';
 const ITEM_PAPELERIA = 'Resma papel A4';
 const justificacion = 'Se necesita reponer insumos de papelería.';
 const LUGAR = 'Depósito de Intendencia, VII Brigada Aérea';
+
+// ORDEN-RONDA-36 pieza 1: el trimestre del archivo tiene que ser el del proceso
+// del PAC. Si no, la pieza 1 pide justificación por trimestre y estos tests
+// —que son sobre la moneda— dejarían de medir lo que miden.
+const TRIMESTRE_DEL_PROCESO = { '4': '1', '8': '2', '22': '3', '32': '3' };
 
 let m = null;
 
@@ -64,7 +70,7 @@ function exportadoConPac(pac, opciones) {
     expediente: {
       titulo: 'Resmas A4',
       anio: '2026',
-      trimestre: '1',
+      trimestre: TRIMESTRE_DEL_PROCESO[String(pac.numero)] || '1',
       lugarEntrega: LUGAR,
       pac: o.legacyPreventivoUsd === undefined
         ? pac
@@ -180,14 +186,25 @@ test('RONDA-35 pieza 2b · el proceso 4 (ARS) exporta moneda ARS y el impreso si
     'el JSON exportado dice moneda ARS');
 });
 
-test('RONDA-35 pieza 2c · "Imprimir" frena con el PAC superado y sin justificación (proceso 32)', async () => {
+test('RONDA-35 pieza 2c · el PAC superado pide la justificación en Fundamentación y frena Imprimir (proceso 32)', async () => {
   await entrarComoUsuario();
   // 560 × 189.285,71 = 106.000.000: supera los $ 762.637,50 del proceso 32.
   await importarTexto(exportadoConPac({ numero: '32', justificacion: '' },
     { cantidad: 560, valor: 189285.71 }));
-  await hastaRevision();
 
+  // ORDEN-RONDA-36 pieza 1: el monto superado es causa de la justificación del
+  // PAC, que vive en Fundamentación; sin ella no se avanza ni se imprime.
   const d = m.documento;
+  d.getElementById('sgc-siguiente').click();
+  await m.esperar(() => !d.getElementById('sgc-paso-fundamentacion').hidden, 20000,
+    'paso de fundamentación visible');
+
+  assert.strictEqual(d.getElementById('sgc-pac-justificacion-campo').hidden, false,
+    'con el monto superado aparece el campo de justificación');
+  assert.match(d.getElementById('sgc-pac-justificacion-motivos').textContent,
+    /proceso 32/, 'y el texto nombra el proceso 32');
+
+  // "Imprimir" no compone nada y el motivo nombra el PAC.
   d.getElementById('sgc-btn-imprimir').click();
   await m.esperar(() => d.getElementById('sgc-exportar-msj').hidden === false, 20000,
     'no apareció el motivo');
@@ -197,6 +214,11 @@ test('RONDA-35 pieza 2c · "Imprimir" frena con el PAC superado y sin justificac
   assert.match(d.getElementById('sgc-exportar-msj').textContent,
     /justificar el preventivo que supera el monto del proceso 32 del PAC/,
     'y el motivo es el del PAC: ' + d.getElementById('sgc-exportar-msj').textContent);
+
+  // Y "Siguiente" tampoco pasa de Fundamentación.
+  d.getElementById('sgc-siguiente').click();
+  assert.strictEqual(d.getElementById('sgc-paso-fundamentacion').hidden, false,
+    'sin justificar el PAC no se avanza');
 });
 
 test('RONDA-35 pieza 2a · un avance de la 34 con "preventivoUsd" entra, con el aviso', async () => {

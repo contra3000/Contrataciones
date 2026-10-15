@@ -369,7 +369,8 @@
           nombre === 'dependenciaSolicitante' || nombre === 'operador' ||
           nombre === 'trimestre' || nombre === 'pac' || nombre === 'lugarEntrega') {
         paso = 'identificacion';
-      } else if (nombre === 'justificacion' || nombre === 'objetivo') {
+      } else if (nombre === 'justificacion' || nombre === 'objetivo' ||
+                 nombre === 'pacJustificacion') {
         paso = 'fundamentacion';
       }
       pendientes[paso] = true;

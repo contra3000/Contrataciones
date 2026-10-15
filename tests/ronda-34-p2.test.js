@@ -44,6 +44,12 @@ const proceso4 = { numero: '4', justificacion: '' };
 const proceso22 = { numero: '22', justificacion: '' };
 const noAutorizado = { numero: 'no-autorizado', justificacion: '' };
 
+// ORDEN-RONDA-36 pieza 1: el trimestre del archivo tiene que ser el del proceso
+// del PAC. Si no, la pieza 1 pide justificación por trimestre y estos tests
+// —que son sobre el PAC y la moneda— dejarían de medir lo que miden. El mapa
+// cubre los números que usan estos casos; el resto cae en el 1°.
+const TRIMESTRE_DEL_PROCESO = { '4': '1', '8': '2', '22': '3', '32': '3' };
+
 let m = null;
 
 before(async () => {
@@ -79,7 +85,7 @@ function exportadoConPac(pac, opciones) {
     expediente: {
       titulo: 'Resmas A4',
       anio: '2026',
-      trimestre: '1',
+      trimestre: TRIMESTRE_DEL_PROCESO[String(pac.numero)] || '1',
       lugarEntrega: 'Depósito de Intendencia, VII Brigada Aérea',
       pac: pac,
       campos: {
@@ -243,29 +249,53 @@ test('RONDA-35 pieza 2a · ya no hay campo manual "Preventivo en dólares"', asy
     'tampoco reaparece con un proceso en pesos');
 });
 
-test('RONDA-34 pieza 2d · proceso 4 y preventivo que lo supera: exportar frenado con el motivo del PAC, y con la justificación exporta', async () => {
+test('RONDA-34 pieza 2d · proceso 4 y preventivo que lo supera: la justificación del PAC en Fundamentación frena y desbloquea', async () => {
   await entrarComoUsuario();
   const respuesta = await importarTexto(exportadoConPac(proceso4));
   assert.match(respuesta, /Requerimiento importado/, 'el archivo entra: ' + respuesta);
-  await hastaRevision();
 
-  let v = exportarVista();
-  assert.strictEqual(v.boton.disabled, true, 'sin justificación no se exporta');
-  assert.strictEqual(v.msj.hidden, false, 'el motivo se dice');
-  assert.match(v.msj.textContent, /justificar el preventivo que supera el monto del proceso 4 del PAC/,
-    'con las palabras de la orden: ' + v.msj.textContent);
+  // ORDEN-RONDA-36 pieza 1: la justificación del PAC vive ahora en
+  // Fundamentación y es obligatoria cuando hay causa (acá, el monto superado).
+  const d = m.documento;
+  d.getElementById('sgc-siguiente').click();
+  await m.esperar(() => !d.getElementById('sgc-paso-fundamentacion').hidden, 20000,
+    'paso de fundamentación visible');
 
-  await hastaIdentificacion();
-  assert.strictEqual(v.d.getElementById('sgc-pac-justificacion-campo').hidden, false,
+  const campoPac = d.getElementById('sgc-pac-justificacion-campo');
+  assert.strictEqual(campoPac.hidden, false,
     'el preventivo supera el monto del proceso: el campo de justificación aparece');
-  assert.strictEqual(v.d.getElementById('sgc-pac-justificacion').value, '',
+  const motivos = d.getElementById('sgc-pac-justificacion-motivos').textContent;
+  assert.match(motivos, /supera/i, 'el texto dice que supera el monto: ' + motivos);
+  assert.match(motivos, /proceso 4/, 'y nombra el proceso 4: ' + motivos);
+  assert.strictEqual(d.getElementById('sgc-pac-justificacion').value, '',
     'recién aparece vacío');
 
+  // El motivo del freno de exportar/exportar se arma igual, aunque el paso 4 no
+  // esté a la vista todavía.
+  assert.strictEqual(d.getElementById('sgc-exportar-msj').hidden, false, 'el motivo se dice');
+  assert.match(d.getElementById('sgc-exportar-msj').textContent,
+    /justificar el preventivo que supera el monto del proceso 4 del PAC/,
+    'con las palabras de la orden: ' + d.getElementById('sgc-exportar-msj').textContent);
+
+  // Sin la justificación, "Siguiente" no pasa de Fundamentación: el foco va al
+  // campo y queda marcado.
+  d.getElementById('sgc-siguiente').click();
+  assert.strictEqual(d.getElementById('sgc-paso-fundamentacion').hidden, false,
+    'sin justificar el PAC no se avanza');
+  assert.strictEqual(d.getElementById('sgc-error-pac-justificacion').hidden, false,
+    'el motivo se dice junto al campo');
+  assert.strictEqual(d.activeElement, d.getElementById('sgc-pac-justificacion'),
+    'y el foco queda en el campo');
+  assert.strictEqual(d.getElementById('sgc-pac-justificacion').classList.contains('campo-con-error'),
+    true, 'que queda marcado con la clase campo-con-error');
+
   m.escribir('sgc-pac-justificacion', JUSTIFICACION_PAC);
-  await desdeIdentificacionHastaRevision();
+  d.getElementById('sgc-siguiente').click();
+  await m.esperar(() => !d.getElementById('sgc-paso-revision').hidden, 20000,
+    'paso de revisión visible');
   await imprimir();
 
-  v = exportarVista();
+  const v = exportarVista();
   assert.strictEqual(v.boton.disabled, false,
     'con la justificación cargada y los documentos compuestos, exporta');
 
@@ -359,43 +389,71 @@ test('RONDA-35 pieza 2a · el proceso 22 calcula el preventivo de los valores, e
   // USD 30.000 (10 × 3.000): supera el monto, pide la justificación.
   await entrarComoUsuario();
   await importarTexto(exportadoConPac(proceso22, { cantidad: 10, valor: 3000 }));
-  await hastaRevision();
-  v = exportarVista();
-  assert.strictEqual(v.boton.disabled, true, 'supera el monto sin justificación: no exporta');
-  assert.match(v.msj.textContent, /justificar el preventivo que supera el monto del proceso 22 del PAC/,
-    'con las palabras de la orden: ' + v.msj.textContent);
+  const d = m.documento;
+  d.getElementById('sgc-siguiente').click();
+  await m.esperar(() => !d.getElementById('sgc-paso-fundamentacion').hidden, 20000,
+    'paso de fundamentación visible');
 
-  await hastaIdentificacion();
-  assert.strictEqual(m.documento.getElementById('sgc-pac-justificacion-campo').hidden, false,
-    'y aparece el campo de justificación');
+  // ORDEN-RONDA-36 pieza 1: el monto superado es causa de la justificación del
+  // PAC, que ahora vive en Fundamentación y frena el avance.
+  assert.strictEqual(d.getElementById('sgc-pac-justificacion-campo').hidden, false,
+    'USD 30.000 supera los 21.466: aparece el campo de justificación');
+  const motivos = d.getElementById('sgc-pac-justificacion-motivos').textContent;
+  assert.match(motivos, /proceso 22/, 'y el texto nombra el proceso 22: ' + motivos);
+  assert.match(d.getElementById('sgc-exportar-msj').textContent,
+    /justificar el preventivo que supera el monto del proceso 22 del PAC/,
+    'la exportación queda frenada con las palabras de la orden: ' +
+      d.getElementById('sgc-exportar-msj').textContent);
+
+  // Sin la justificación, "Siguiente" no pasa de Fundamentación.
+  d.getElementById('sgc-siguiente').click();
+  assert.strictEqual(d.getElementById('sgc-paso-fundamentacion').hidden, false,
+    'sin justificar el PAC no se avanza');
+
   m.escribir('sgc-pac-justificacion', 'Se agregan herramientas del segundo semestre.');
-  await desdeIdentificacionHastaRevision();
+  d.getElementById('sgc-siguiente').click();
+  await m.esperar(() => !d.getElementById('sgc-paso-revision').hidden, 20000,
+    'paso de revisión visible');
   await imprimir();
   v = exportarVista();
   assert.strictEqual(v.boton.disabled, false, 'con la justificación exporta');
 });
 
-test('RONDA-34 pieza 2h · "No autorizado en el PAC": sin justificación no exporta, y el documento impreso lo dice', async () => {
+test('RONDA-34 pieza 2h · "No autorizado en el PAC": la justificación en Fundamentación frena y desbloquea, y el documento impreso lo dice', async () => {
   await entrarComoUsuario();
   await importarTexto(exportadoConPac(noAutorizado));
-  await hastaRevision();
 
-  let v = exportarVista();
-  assert.strictEqual(v.boton.disabled, true, 'sin justificación no exporta');
-  assert.match(v.msj.textContent, /justificar el pedido no autorizado en el PAC/,
-    'con las palabras de la orden: ' + v.msj.textContent);
+  // ORDEN-RONDA-36 pieza 1: la justificación del PAC vive en Fundamentación y
+  // es obligatoria cuando el pedido no está autorizado.
+  const d = m.documento;
+  d.getElementById('sgc-siguiente').click();
+  await m.esperar(() => !d.getElementById('sgc-paso-fundamentacion').hidden, 20000,
+    'paso de fundamentación visible');
 
-  await hastaIdentificacion();
-  assert.strictEqual(v.d.getElementById('sgc-pac-justificacion-campo').hidden, false,
-    'y aparece el campo de justificación');
+  assert.strictEqual(d.getElementById('sgc-pac-justificacion-campo').hidden, false,
+    'no autorizado: aparece el campo de justificación');
+  assert.match(d.getElementById('sgc-pac-justificacion-motivos').textContent,
+    /no está autorizado en el PAC/, 'y el texto lo dice');
+  assert.match(d.getElementById('sgc-exportar-msj').textContent,
+    /justificar el pedido no autorizado en el PAC/,
+    'la exportación queda frenada con las palabras de la orden: ' +
+      d.getElementById('sgc-exportar-msj').textContent);
+
+  // Sin la justificación, "Siguiente" no pasa de Fundamentación.
+  d.getElementById('sgc-siguiente').click();
+  assert.strictEqual(d.getElementById('sgc-paso-fundamentacion').hidden, false,
+    'sin justificar el PAC no se avanza');
+
   m.escribir('sgc-pac-justificacion', 'El pedido no estaba en el PAC 2026.');
-  await desdeIdentificacionHastaRevision();
+  d.getElementById('sgc-siguiente').click();
+  await m.esperar(() => !d.getElementById('sgc-paso-revision').hidden, 20000,
+    'paso de revisión visible');
   await imprimir();
 
-  v = exportarVista();
+  const v = exportarVista();
   assert.strictEqual(v.boton.disabled, false, 'con la justificación exporta');
 
-  const impreso = v.d.getElementById('sgc-generador-impresion').textContent;
+  const impreso = d.getElementById('sgc-generador-impresion').textContent;
   assert.ok(impreso.includes('PAC 2026') && impreso.includes('No autorizado en el PAC'),
     'el documento lo dice: ' + impreso);
 });

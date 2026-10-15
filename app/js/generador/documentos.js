@@ -124,34 +124,32 @@
     return SGC.core.validacion.monedaDelProceso(numero);
   }
 
-  // ORDEN-RONDA-34 pieza 2c: lo que falta para exportar por el PAC, en las
-  // palabras de la orden. Sólo se piden cuando el expediente trae pac.
+  /*
+   * ORDEN-RONDA-36 pieza 1: lo que falta para exportar por el PAC (y por lo
+   * tanto lo que frena "Imprimir" y "Exportar"). Las causas —fuera del PAC,
+   * año, trimestre y monto— y sus palabras viven en el núcleo
+   * (core/validacion.js causasDelPac), que es la MISMA cuenta que decide la
+   * visibilidad y la obligación del campo en Fundamentación. Acá sólo se le
+   * pasa la identificación del expediente y sus renglones.
+   */
+  function identificacionDelPac(expediente) {
+    var datos = expediente && expediente.datos ? expediente.datos : {};
+    var identificacion = datos.identificacion && typeof datos.identificacion === 'object'
+      ? datos.identificacion : {};
+    return {
+      anio: datos.anio,
+      trimestre: identificacion.trimestre,
+      pac: datos.pac
+    };
+  }
+
   function itemsDelPac(expediente) {
     var pac = expediente && expediente.datos ? expediente.datos.pac : null;
     if (!pac) {
       return [];
     }
-    var items = [];
-    var justificacion = typeof pac.justificacion === 'string' ? pac.justificacion.trim() : '';
-    if (pac.numero === 'no-autorizado') {
-      if (justificacion === '') {
-        items.push('justificar el pedido no autorizado en el PAC');
-      }
-      return items;
-    }
-    var proceso = pac.proceso;
-    if (!proceso) {
-      return items;
-    }
-    // ORDEN-RONDA-35 pieza 2a: el preventivo de un proceso en dólares sale de
-    // los valores de referencia, como el de cualquier otro. La comparación con
-    // el monto del proceso —y el mismo motivo— vale para las dos monedas.
-    var total = SGC.core.requerimiento.preventivoContratacion(expediente.renglones || []);
-    if (total.valido && total.total > proceso.monto && justificacion === '') {
-      items.push('justificar el preventivo que supera el monto del proceso ' +
-        proceso.numero + ' del PAC');
-    }
-    return items;
+    return SGC.core.validacion.causasDelPac(
+      identificacionDelPac(expediente), expediente.renglones || []).items;
   }
 
   /*
@@ -195,6 +193,21 @@
     // expediente para el documento impreso y para el JSON. Sin pac elegido,
     // queda null y los documentos salen igual que antes.
     datosIniciales.pac = pacDelWizard(datosWizard);
+    // ORDEN-RONDA-36 pieza 1e: lo escrito se conserva en el formulario, pero
+    // sólo viaja —y sólo se imprime— mientras haya una causa. Sin causa, el
+    // documento sale sin "Justificación del PAC" aunque la persona haya escrito
+    // algo (la causa pudo desaparecer al corregir el trimestre, el año o los
+    // valores). La cuenta es la del núcleo, la misma que la de la pantalla.
+    if (datosIniciales.pac) {
+      var causasPac = SGC.core.validacion.causasDelPac({
+        anio: datosIniciales.anio,
+        trimestre: trimestre,
+        pac: datosIniciales.pac
+      }, renglones);
+      if (!causasPac.requerida) {
+        datosIniciales.pac.justificacion = '';
+      }
+    }
     // ORDEN-RONDA-35 pieza 2a: la moneda del proceso viaja en el expediente,
     // resuelta una sola vez, para que el documento impreso y el JSON digan lo
     // mismo. Sin procesos en dólares (o sin PAC) es ARS, como siempre.
@@ -254,6 +267,12 @@
     if (itemsPac.length > 0) {
       r.valido = false;
       items = items.concat(itemsPac);
+      // ORDEN-RONDA-36 pieza 1d: la justificación del PAC es del paso
+      // Fundamentación; marcar el campo hace que el paso quede con "· falta"
+      // (generador.js pasosPendientes) y que Imprimir frene junto con Exportar.
+      if (r.faltantes.campos.indexOf('pacJustificacion') === -1) {
+        r.faltantes.campos.push('pacJustificacion');
+      }
     }
     // ORDEN-RONDA-35 pieza 1: con la marca del generador, la Identificación
     // frena la exportación igual que frena "Siguiente": el trimestre, el proceso

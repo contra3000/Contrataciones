@@ -84,6 +84,11 @@
     estado.dom.siguiente.hidden = estado.paso === pasos.PASOS.length - 1;
     estado.dom.persistir.hidden = estado.paso !== pasos.PASOS.length - 1;
     mostrarErrores([]);
+    // ORDEN-RONDA-36 pieza 1: la visibilidad de la justificación del PAC y el
+    // texto de sus causas se recalcula al entrar a cualquier paso. Así una
+    // importación (que abre en Renglones) deja el bloque como corresponde sin
+    // esperar a que la persona escriba algo.
+    actualizarPac();
     if (estado.paso === pasos.PASOS.length - 1) {
       renderRevision();
     }
@@ -419,43 +424,35 @@ function descripcionOperador(operador) {
     return (estado.datos && estado.datos.renglones) || [];
   }
 
+  /*
+   * ORDEN-RONDA-36 pieza 1: la justificación del PAC vive en Fundamentación y
+   * aparece por cuatro causas: el pedido no está autorizado, el año del
+   * requerimiento no es el del PAC, el trimestre elegido no es el del proceso, o
+   * el preventivo supera el monto del proceso. La cuenta —y las frases— son del
+   * núcleo (core/validacion.js causasDelPac), la misma que decide el freno de la
+   * exportación.
+   *
+   * Lo escrito NO se borra cuando la causa desaparece: se oculta el campo (y
+   * deja de imprimirse y de exportarse), pero el texto queda por si la causa
+   * vuelve. Sin camposPac (la aplicación con servidor no tiene el bloque) no se
+   * hace nada (ADR-044).
+   */
   function actualizarPac() {
     var nodoPac = estado.dom.campos.pac;
     var camposPac = estado.dom.camposPac;
     if (!nodoPac || !camposPac) {
       return;
     }
-    var numero = nodoPac.value;
-    var proceso = SGC.core.validacion.procesoDelPac(numero);
-
-    // ORDEN-RONDA-35 pieza 2a: se eliminó el campo "Preventivo en dólares". En
-    // TODOS los procesos —en dólares o no— el preventivo sale de los valores de
-    // referencia y se compara contra el monto del proceso, así que la
-    // justificación se decide siempre igual.
-    var mostrarJustificacion = numero === 'no-autorizado';
-    var decidible = true;
-    if (!mostrarJustificacion && proceso) {
-      var total = SGC.core.requerimiento.preventivoContratacion(renglonesParaPreventivo());
-      if (total.valido) {
-        mostrarJustificacion = total.total > proceso.monto;
-      } else {
-        decidible = false;
-      }
-    }
-    if (!decidible) {
-      // Sin preventivo calculable no se decide ni se toca el campo: por
-      // ejemplo, la importación dispone primero los renglones y después los
-      // valores (alImportar/fijar), y la justificación que el archivo traía no
-      // puede perderse en el ínterin.
-      return;
-    }
-    camposPac.justificacion.hidden = !mostrarJustificacion;
-    if (!mostrarJustificacion && estado.dom.campos.pacJustificacion) {
-      estado.dom.campos.pacJustificacion.value = '';
-      var identificacion = estado.datos.identificacion || {};
-      if (identificacion.pac) {
-        identificacion.pac.justificacion = '';
-      }
+    var identificacion = estado.datos.identificacion || {};
+    var causas = SGC.core.validacion.causasDelPac({
+      anio: identificacion.anio,
+      trimestre: identificacion.trimestre,
+      pac: identificacion.pac
+    }, renglonesParaPreventivo());
+    camposPac.justificacion.hidden = !causas.requerida;
+    if (camposPac.motivos) {
+      camposPac.motivos.textContent = causas.motivos.join(' ');
+      camposPac.motivos.hidden = causas.motivos.length === 0;
     }
   }
 
@@ -544,16 +541,26 @@ function descripcionOperador(operador) {
         estado.dom.campos.pacJustificacion = nodoPacJustificacion;
         nodoPacJustificacion.addEventListener('input', sincronizarDesdeFormulario);
       }
-      // ORDEN-RONDA-35 pieza 2a: se eliminó el campo "Preventivo en dólares", así
-      // que del bloque del PAC sólo queda la justificación.
+      // ORDEN-RONDA-36 pieza 1: `justificacion` es el bloque entero (lo que se
+      // muestra u oculta en Fundamentación) y `motivos`, el texto que explica
+      // cada causa.
       var campoJustificacion = qs(raiz, '#sgc-pac-justificacion-campo');
       if (campoJustificacion) {
-        estado.dom.camposPac = { justificacion: campoJustificacion };
+        estado.dom.camposPac = {
+          justificacion: campoJustificacion,
+          motivos: qs(raiz, '#sgc-pac-justificacion-motivos')
+        };
       }
     }
     var nodoErrorPac = qs(raiz, '#sgc-error-pac');
     if (nodoErrorPac) {
       estado.dom.errores.pac = nodoErrorPac;
+    }
+    // ORDEN-RONDA-36 pieza 1d: el error de la justificación del PAC vive en
+    // Fundamentación. Se registra SÓLO si el nodo existe (generador).
+    var nodoErrorPacJustificacion = qs(raiz, '#sgc-error-pac-justificacion');
+    if (nodoErrorPacJustificacion) {
+      estado.dom.errores.pacJustificacion = nodoErrorPacJustificacion;
     }
     estado.dom.borradorAviso = qs(raiz, '#sgc-borrador-aviso');
     estado.dom.borradorInfo = qs(raiz, '#sgc-borrador-info');
