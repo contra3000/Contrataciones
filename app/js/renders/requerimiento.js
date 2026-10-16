@@ -113,6 +113,14 @@
     } else if (m.base.vigencia) {
       pares.push(['Vigencia', m.base.vigencia]);
     }
+    // ORDEN-RONDA-37 pieza 1: el requerimiento repite el lugar de entrega que
+    // escribió la persona, el mismo texto que la EETT (mismo campo, no pueden
+    // contradecirse). Va sólo si el expediente lo trae, igual que las filas del
+    // PAC: en la aplicación con servidor no viene y sale igual byte a byte.
+    var lugarEntrega = typeof m.base.lugarEntrega === 'string' ? m.base.lugarEntrega : '';
+    if (lugarEntrega !== '') {
+      pares.push(['Lugar de entrega', lugarEntrega]);
+    }
     // ORDEN-RONDA-34 pieza 2d: el proceso del PAC, en estos renglones y sólo si
     // el expediente lo trae. Sin pac, el documento sale igual que siempre.
     var pac = m.base.pac;
