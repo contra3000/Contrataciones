@@ -251,10 +251,17 @@
     if (numero === '') {
       return null;
     }
-    return {
+    var salida = {
       numero: numero,
       justificacion: typeof valor.justificacion === 'string' ? valor.justificacion : ''
     };
+    // ORDEN-RONDA-37 pieza 2: las causas que cubría la justificación viajan con
+    // el PAC, para que al reimportar el pedido no vuelva como si nadie hubiera
+    // justificado. Sin claves guardadas no se agrega nada.
+    if (Array.isArray(valor.causas)) {
+      salida.causas = valor.causas;
+    }
+    return salida;
   }
 
   /*
@@ -702,6 +709,9 @@
           numero: numeroPac,
           justificacion: typeof pacCrudo.justificacion === 'string' ? pacCrudo.justificacion : ''
         };
+        if (Array.isArray(pacCrudo.causas)) {
+          pac.causas = pacCrudo.causas;
+        }
       } else {
         var procesoPac = SGC.core.validacion.procesoDelPac(numeroPac);
         if (procesoPac) {
@@ -709,6 +719,12 @@
             numero: numeroPac,
             justificacion: typeof pacCrudo.justificacion === 'string' ? pacCrudo.justificacion : ''
           };
+          // ORDEN-RONDA-37 pieza 2: las causas que el archivo trae viajan al
+          // formulario; sin ellas, la justificación escrita pide revisión (nadie
+          // sabe qué causas cubría).
+          if (Array.isArray(pacCrudo.causas)) {
+            pac.causas = pacCrudo.causas;
+          }
         } else {
           avisosPac.push('el proceso ' + numeroPac + ' no está en el PAC 2026: elegilo de nuevo');
         }

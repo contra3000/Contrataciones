@@ -318,10 +318,18 @@
              proceso. El texto de arriba dice cuál/es hay que justificar; el
              campo es obligatorio mientras esté a la vista, y lo escrito no se
              borra si la causa desaparece. Es del generador (ADR-044). -->
+        <!-- ORDEN-RONDA-37 pieza 2: si las causas cambiaron desde que se
+             escribió la justificación, arriba del campo aparece el aviso y el
+             botón para dar la justificación por buena (o se la reescribe, que
+             también la pone al día). -->
         <div class="campo" id="sgc-pac-justificacion-campo" hidden>
           <p id="sgc-pac-justificacion-motivos" class="req-ayuda" hidden></p>
+          <p id="sgc-pac-justificacion-aviso" class="error-campo" role="alert" hidden></p>
           <label for="sgc-pac-justificacion">Justificación del PAC</label>
           <textarea id="sgc-pac-justificacion" rows="3"></textarea>
+          <button type="button" id="sgc-pac-justificacion-confirmar" hidden>
+            La justificación sigue valiendo
+          </button>
           <p id="sgc-error-pac-justificacion" class="error-campo" role="alert" hidden></p>
         </div>
         <div class="campo">

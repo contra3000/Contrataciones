@@ -48,12 +48,21 @@
     // preventivo en dólares escrito a mano: la moneda sale del proceso y el
     // preventivo, de los valores de referencia. Igual que el trimestre, sólo se
     // escribe si el nodo existe (generador).
+    //
+    // ORDEN-RONDA-37 pieza 2: `causas` no sale de un campo (se guarda cuando se
+    // escribe o se confirma la justificación), así que reconstruir el pac no lo
+    // puede perder: si venía con claves, siguen viajando.
     if (campoInput(estado, 'pac')) {
-      estado.datos.identificacion.pac = {
+      var pacAnterior = estado.datos.identificacion.pac;
+      var pac = {
         numero: leerCampo(estado, 'pac'),
         justificacion: campoInput(estado, 'pacJustificacion')
           ? leerCampo(estado, 'pacJustificacion') : ''
       };
+      if (pacAnterior && Array.isArray(pacAnterior.causas)) {
+        pac.causas = pacAnterior.causas;
+      }
+      estado.datos.identificacion.pac = pac;
     }
     estado.datos.fundamentacion.justificacion = leerCampo(estado, 'justificacion');
     estado.datos.fundamentacion.objetivo = leerCampo(estado, 'objetivo');

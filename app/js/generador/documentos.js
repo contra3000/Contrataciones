@@ -90,6 +90,12 @@
       justificacion: typeof pac.justificacion === 'string' ? pac.justificacion : '',
       proceso: null
     };
+    // ORDEN-RONDA-37 pieza 2: las causas que cubría la justificación viajan con
+    // el PAC (es lo que el formulario guardó y lo que la exportación escribe),
+    // para que al reimportar se sepa si la justificación sigue al día.
+    if (Array.isArray(pac.causas)) {
+      resultado.causas = pac.causas;
+    }
     if (numero !== 'no-autorizado') {
       resultado.proceso = SGC.core.validacion.procesoDelPac(numero);
       if (resultado.proceso === null) {
@@ -135,8 +141,27 @@
     if (!pac) {
       return [];
     }
+    var causas = SGC.core.validacion.causasDelPac(
+      identificacionDelPac(expediente), expediente.renglones || []);
+    var items = causas.items.slice();
+    // ORDEN-RONDA-37 pieza 2: si la causa cambió desde que se escribió la
+    // justificación, hay que revisarla antes de imprimir y de exportar. Es la
+    // misma cuenta que frena "Siguiente" en Fundamentación (views/pasos.js).
+    if (causas.revisar) {
+      items.push('revisar la justificación del PAC: cambiaron las causas');
+    }
+    return items;
+  }
+
+  // ORDEN-RONDA-37 pieza 2: la justificación del PAC quedó desactualizada
+  // (hay causa y las claves no son las que se guardaron). Mira la misma cuenta
+  // que itemsDelPac, sobre el expediente que se acaba de componer.
+  function revisionPacPendiente(expediente) {
+    if (!expediente || !expediente.datos || !expediente.datos.pac) {
+      return false;
+    }
     return SGC.core.validacion.causasDelPac(
-      identificacionDelPac(expediente), expediente.renglones || []).items;
+      identificacionDelPac(expediente), expediente.renglones || []).revisar === true;
   }
 
   /*
@@ -366,6 +391,14 @@
     }
     var info = revision(estado.datosActuales || {});
     estado.dom.exportar.disabled = !info.revision.valido;
+    // ORDEN-RONDA-37 pieza 2: si cambiaron las causas desde que se escribió la
+    // justificación, el documento compuesto ya no puede salir —Imprimir y
+    // Exportar están frenados—, así que se descarta: si quedara a la vista,
+    // mostraría una justificación vieja. Vuelve a componerse al apretar
+    // "Imprimir" con la justificación revisada.
+    if (revisionPacPendiente(info.expediente)) {
+      SGC.renders.documento.limpiar(estado.dom.impresion);
+    }
     var msj = estado.dom.exportarMsj;
     if (msj) {
       if (info.revision.valido) {

@@ -1,0 +1,77 @@
+{
+  "sello": {
+    "formato": "sgc-requerimiento/1",
+    "versionGenerador": "r36-bf3ba2d",
+    "versionCatalogo": "98201747",
+    "rol": "generador",
+    "grado": "Primer Teniente",
+    "nombre": "Juan",
+    "apellido": "Contreras",
+    "numeroControl": 12345,
+    "fecha": "2026-10-16T13:25:01.624Z",
+    "version": 1,
+    "estado": "avance",
+    "paso": 3,
+    "huella": "5cb3a235aeb2ad812bf0c6e8dffcd8c6e27db227360042bdfa0e0d3804ee5cf7"
+  },
+  "expediente": {
+    "titulo": "Prueba PAC",
+    "anio": "2026",
+    "trimestre": "1",
+    "lugarEntrega": "Depósito de Intendencia, Hangar 3",
+    "moneda": "ARS",
+    "pac": {
+      "numero": "4",
+      "justificacion": "Se suman dos trimestres por la demora del proceso anterior."
+    },
+    "campos": {
+      "operador": "Juan Contreras · 12.345",
+      "dependenciaSolicitante": "X",
+      "justificacion": "Justificación del requerimiento.",
+      "objetivo": ""
+    },
+    "renglones": [
+      {
+        "codigo": "2.9.9-8292.1",
+        "item": "DISPENSER P/PAPEL HIGIENICO; MATERIAL: PLASTICO TERMOFORMADO, MEDIDA: 26 X 27 X 13,5 Cm, USO: ROLLO DE 10 Cm",
+        "cantidad": 20000,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 100
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 100
+          }
+        ]
+      }
+    ],
+    "presupuestos": [
+      {
+        "id": "ref-1",
+        "nombreOriginal": "a.pdf",
+        "proveedor": "A",
+        "fecha": "2026-02-12",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "bytes": 23,
+        "sha256": "14cea4dcbd5590ed9cc71e22698f1dd825780c47ab83c72150954dbac4673dbe"
+      },
+      {
+        "id": "ref-2",
+        "nombreOriginal": "b.pdf",
+        "proveedor": "B",
+        "fecha": "2026-02-12",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "bytes": 23,
+        "sha256": "1f8be6f6f8eece9c780db0cecddef2097448efbe1b7f731a8d3d750640c82df2"
+      }
+    ]
+  }
+}

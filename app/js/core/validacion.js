@@ -88,19 +88,56 @@
     return (moneda === 'USD' ? 'USD ' : '$ ') + texto;
   }
 
+  // ORDEN-RONDA-37 pieza 2: dos causas son las mismas cuando traen las mismas
+  // claves, sin importar el orden en que se enumeren. Sin claves guardadas no
+  // hay con qué comparar, así que nunca son iguales.
+  function mismasClaves(guardadas, actuales) {
+    if (!Array.isArray(guardadas)) {
+      return false;
+    }
+    if (guardadas.length !== actuales.length) {
+      return false;
+    }
+    var a = guardadas.slice().map(String).sort();
+    var b = actuales.slice().map(String).sort();
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // ORDEN-RONDA-37 pieza 2: la cuenta de las causas cumplidas se cierra con la
+  // pregunta de si hay que volver a mirar la justificación. Sólo importa
+  // cuando hay una causa Y hay justificación escrita: sin causa no hay nada que
+  // revisar, y sin justificación lo que falta es escribirla (items lo dice).
+  function cerrarCausas(causas, justificacion, pac) {
+    causas.revisar = causas.requerida && justificacion !== '' &&
+      !mismasClaves(pac.causas, causas.claves);
+    return causas;
+  }
+
   /*
-   * ORDEN-RONDA-36 pieza 1: las causas por las que hay que justificar el PAC.
+   * ORDEN-RONDA-36 pieza 1 (ORDEN-RONDA-37 pieza 2): las causas por las que hay
+   * que justificar el PAC.
    *
    * `identificacion` es {anio, trimestre, pac} (el pac, a su vez, {numero,
-   * justificacion}). `renglones` son los renglones del requerimiento, con sus
-   * valores, para el preventivo.
+   * justificacion, causas}). `renglones` son los renglones del requerimiento,
+   * con sus valores, para el preventivo.
    *
-   * Devuelve {requerida, motivos, items}:
+   * Devuelve {requerida, motivos, items, claves, revisar}:
    *  - requerida: hay al menos una causa, así que el campo va a la vista y es
    *    obligatorio en Fundamentación;
    *  - motivos: una frase por causa cumplida, para mostrar arriba del campo;
    *  - items: los motivos que faltan (sólo cuando la justificación está vacía),
-   *    con las palabras que usa la exportación.
+   *    con las palabras que usa la exportación;
+   *  - claves: la clave de cada causa cumplida, en el orden en que se enumeran
+   *    ('fuera-del-pac', 'anio', 'trimestre', 'monto'), que es lo que guarda la
+   *    justificación en pac.causas;
+   *  - revisar: la causa cambió desde que se guardó la justificación
+   *    (ORDEN-RONDA-37 pieza 2). Una justificación escrita sin claves guardadas
+   *    también cuenta: nadie las guardó, no se puede saber qué causas cubrió.
    *
    * Las causas son: el pedido no está autorizado en el PAC; el año del
    * requerimiento no es el del PAC; el trimestre elegido no es el del proceso;
@@ -111,7 +148,7 @@
    * cuenta no produce nada y todo queda como hoy.
    */
   function causasDelPac(identificacion, renglones) {
-    var vacio = { requerida: false, motivos: [], items: [] };
+    var vacio = { requerida: false, motivos: [], items: [], claves: [], revisar: false };
     var id = identificacion && typeof identificacion === 'object' ? identificacion : {};
     var pac = id.pac && typeof id.pac === 'object' ? id.pac : null;
     if (!pac) {
@@ -125,11 +162,12 @@
     // Fuera del PAC: como hoy, sin proceso con el que comparar. Es la única causa
     // que se decide sin el PAC (no hay año ni trimestre contra los que medir).
     if (numero === 'no-autorizado') {
-      return {
+      return cerrarCausas({
         requerida: true,
         motivos: ['El pedido no está autorizado en el PAC.'],
-        items: justificacion === '' ? ['justificar el pedido no autorizado en el PAC'] : []
-      };
+        items: justificacion === '' ? ['justificar el pedido no autorizado en el PAC'] : [],
+        claves: ['fuera-del-pac']
+      }, justificacion, pac);
     }
     var proceso = procesoDelPac(numero);
     if (!proceso) {
@@ -137,12 +175,14 @@
     }
     var motivos = [];
     var items = [];
+    var claves = [];
     var config = pacConfig();
     var anioPac = config && config.anio !== undefined && config.anio !== null
       ? String(config.anio) : '';
     var anio = id.anio === undefined || id.anio === null ? '' : String(id.anio);
     if (anioPac !== '' && anio !== '' && anio !== anioPac) {
       motivos.push('El requerimiento es del año ' + anio + ' y el PAC es de ' + anioPac + '.');
+      claves.push('anio');
       if (justificacion === '') {
         items.push('justificar por qué se pide para el año ' + anio +
           ' si el PAC es de ' + anioPac);
@@ -153,6 +193,7 @@
     if (trimestre !== '' && String(proceso.trimestre) !== trimestre) {
       motivos.push('Se pide para el ' + trimestre + '° trimestre y el PAC prevé el proceso ' +
         proceso.numero + ' para el ' + proceso.trimestre + '°.');
+      claves.push('trimestre');
       if (justificacion === '') {
         items.push('justificar por qué se pide para el ' + trimestre +
           '° trimestre y el proceso ' + proceso.numero + ' del PAC prevé el ' +
@@ -167,12 +208,15 @@
       motivos.push('El preventivo (' + montoDelPac(total.total, proceso.moneda) +
         ') supera el monto del proceso ' + proceso.numero + ' del PAC (' +
         montoDelPac(proceso.monto, proceso.moneda) + ').');
+      claves.push('monto');
       if (justificacion === '') {
         items.push('justificar el preventivo que supera el monto del proceso ' +
           proceso.numero + ' del PAC');
       }
     }
-    return { requerida: motivos.length > 0, motivos: motivos, items: items };
+    return cerrarCausas({
+      requerida: motivos.length > 0, motivos: motivos, items: items, claves: claves
+    }, justificacion, pac);
   }
 
   /*

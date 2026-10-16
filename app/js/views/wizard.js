@@ -424,6 +424,46 @@ function descripcionOperador(operador) {
     return (estado.datos && estado.datos.renglones) || [];
   }
 
+  // ORDEN-RONDA-37 pieza 2: el aviso que pide revisar la justificación del PAC
+  // cuando las causas cambiaron desde que se la escribió.
+  var AVISO_CAUSAS_PAC = 'Cambiaron las causas desde que escribiste la justificación: revisala.';
+
+  /*
+   * ORDEN-RONDA-37 pieza 2: las claves de las causas que la justificación está
+   * cubriendo se guardan en el pac (pac.causas) cuando la persona escribe o
+   * cuando confirma que la justificación sigue valiendo. Es el único momento en
+   * que se sabe qué causas tenía a la vista: por eso no se guardan al
+   * sincronizar ni al importar.
+   */
+  function guardarCausasPac() {
+    var identificacion = estado.datos.identificacion || {};
+    var pac = identificacion.pac;
+    if (!pac || typeof pac !== 'object') {
+      return;
+    }
+    pac.causas = SGC.core.validacion.causasDelPac({
+      anio: identificacion.anio,
+      trimestre: identificacion.trimestre,
+      pac: pac
+    }, renglonesParaPreventivo()).claves;
+  }
+
+  /*
+   * Lo que pasa cuando la persona escribe la justificación del PAC o confirma
+   * que sigue valiendo: se sincroniza, se guardan las causas de ahora y se
+   * recalcula la pantalla (el aviso, la marca del campo y el freno de la
+   * exportación). Con el generador montado el recálculo publica los datos, para
+   * que Exportar se actualice sin esperar a un cambio de paso.
+   */
+  function escribirJustificacionDelPac() {
+    sincronizarDesdeFormulario();
+    guardarCausasPac();
+    actualizarPac();
+    if (typeof estado.alRender === 'function') {
+      estado.alRender(estado.paso);
+    }
+  }
+
   /*
    * ORDEN-RONDA-36 pieza 1: la justificación del PAC vive en Fundamentación y
    * aparece por cuatro causas: el pedido no está autorizado, el año del
@@ -453,6 +493,26 @@ function descripcionOperador(operador) {
     if (camposPac.motivos) {
       camposPac.motivos.textContent = causas.motivos.join(' ');
       camposPac.motivos.hidden = causas.motivos.length === 0;
+    }
+    // ORDEN-RONDA-37 pieza 2: el aviso, la marca del campo y el botón de
+    // confirmar siguen al pedido de revisión. El aviso se vacía cuando no hay
+    // nada que revisar: el bloque queda oculto, y `textContent` se lee desde
+    // afuera aunque esté oculto.
+    var revisar = causas.revisar === true;
+    if (camposPac.aviso) {
+      camposPac.aviso.textContent = revisar ? AVISO_CAUSAS_PAC : '';
+      camposPac.aviso.hidden = !revisar;
+    }
+    if (camposPac.confirmar) {
+      camposPac.confirmar.hidden = !revisar;
+    }
+    var textarea = estado.dom.campos.pacJustificacion;
+    if (textarea && textarea.classList) {
+      if (revisar) {
+        textarea.classList.add('campo-con-error');
+      } else {
+        textarea.classList.remove('campo-con-error');
+      }
     }
   }
 
@@ -539,17 +599,25 @@ function descripcionOperador(operador) {
       var nodoPacJustificacion = qs(raiz, '#sgc-pac-justificacion');
       if (nodoPacJustificacion) {
         estado.dom.campos.pacJustificacion = nodoPacJustificacion;
-        nodoPacJustificacion.addEventListener('input', sincronizarDesdeFormulario);
+        // ORDEN-RONDA-37 pieza 2: al escribir se guardan las causas de ahora, así
+        // que lo escrito queda al día (y no pide revisión).
+        nodoPacJustificacion.addEventListener('input', escribirJustificacionDelPac);
       }
       // ORDEN-RONDA-36 pieza 1: `justificacion` es el bloque entero (lo que se
       // muestra u oculta en Fundamentación) y `motivos`, el texto que explica
-      // cada causa.
+      // cada causa. ORDEN-RONDA-37 pieza 2: `aviso` es el pedido de revisar y
+      // `confirmar`, el botón que da la justificación por buena.
       var campoJustificacion = qs(raiz, '#sgc-pac-justificacion-campo');
       if (campoJustificacion) {
         estado.dom.camposPac = {
           justificacion: campoJustificacion,
-          motivos: qs(raiz, '#sgc-pac-justificacion-motivos')
+          motivos: qs(raiz, '#sgc-pac-justificacion-motivos'),
+          aviso: qs(raiz, '#sgc-pac-justificacion-aviso'),
+          confirmar: qs(raiz, '#sgc-pac-justificacion-confirmar')
         };
+        if (estado.dom.camposPac.confirmar) {
+          estado.dom.camposPac.confirmar.addEventListener('click', escribirJustificacionDelPac);
+        }
       }
     }
     var nodoErrorPac = qs(raiz, '#sgc-error-pac');

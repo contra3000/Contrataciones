@@ -159,6 +159,14 @@
         errores.push(errorCampo('pacJustificacion',
           'Justificá el PAC: ' + causas.motivos.join(' ')));
       }
+      // ORDEN-RONDA-37 pieza 2: si la causa cambió desde que se escribió la
+      // justificación, hay que revisarla antes de seguir: la misma cuenta de la
+      // exportación (documentos.js itemsDelPac) frena Imprimir y Exportar, y
+      // acá se frena "Siguiente" con error en el propio campo.
+      if (causas.revisar) {
+        errores.push(errorCampo('pacJustificacion',
+          'Revisá la justificación del PAC: cambiaron las causas.'));
+      }
     }
     return { valido: errores.length === 0, errores: errores };
   }
