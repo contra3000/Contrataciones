@@ -258,7 +258,7 @@ test('RONDA-38 pieza 2c · con OCA, sin justificación: Fundamentación dice "fa
   const v = vista();
   assert.strictEqual(v.campoOca.hidden, false,
     'con la modalidad OCA la justificación aparece');
-  assert.match(v.guia.textContent, /Decreto 1030\/2016, art\. 25\s+inc\. c/,
+  assert.match(v.guia.textContent, /Decreto 1030\/2016, arts?\. 25\s+inc\. c/,
     'la guía de la norma acompaña el campo: ' + v.guia.textContent.trim());
   assert.ok(d.getElementById('sgc-pasos').querySelector('[data-paso="fundamentacion"]')
     .textContent.match(/falta/),

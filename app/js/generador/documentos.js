@@ -196,6 +196,10 @@
   // máxima de cada renglón. El expediente lleva la marca `requerimiento.oca` y
   // la justificación (expedienteLocal); acá se dice, con las mismas palabras de
   // la exportación, qué falta. Sin OCA no hay nada que frenar.
+  // ORDEN-RONDA-39 pieza 1a: con OCA la cantidad del renglón es el máximo del
+  // contrato (Decreto 1030/2016 art. 112); la cantidad máxima por Solicitud de
+  // Provisión no puede superarla, y la mínima no puede superar la máxima. Estas
+  // reglas van en el generador, no en core/ (ADR-044).
   function itemsOca(expediente) {
     var datos = expediente && expediente.datos ? expediente.datos : {};
     var rq = datos.requerimiento;
@@ -212,6 +216,27 @@
       if (r && (r.cantidadMaxima === undefined || r.cantidadMaxima === null)) {
         items.push('Renglón ' + (i + 1) +
           ': falta la cantidad máxima por Solicitud de Provisión');
+        continue;
+      }
+      // La máxima no puede superar la cantidad del renglón (el tope del
+      // contrato).
+      if (r && typeof r.cantidad === 'number' && typeof r.cantidadMaxima === 'number' &&
+          r.cantidadMaxima > r.cantidad) {
+        items.push('Renglón ' + (i + 1) +
+          ': la cantidad máxima por Solicitud de Provisión (' + r.cantidadMaxima +
+          ') no puede superar la cantidad del renglón (' + r.cantidad + ')');
+        continue;
+      }
+      // La mínima contra la máxima: la regla vive en el núcleo
+      // (core/requerimiento.js validarCantidades), pero el generador la aplica
+      // acá porque core/ no se toca (ADR-044).
+      if (r && SGC.core && SGC.core.requerimiento &&
+          typeof SGC.core.requerimiento.validarCantidades === 'function') {
+        var errores = SGC.core.requerimiento.validarCantidades(r);
+        if (errores.length > 0) {
+          items.push('Renglón ' + (i + 1) + ': ' + errores[0]);
+          continue;
+        }
       }
     }
     return items;

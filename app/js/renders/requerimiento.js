@@ -49,10 +49,11 @@
   // ORDEN-RONDA-38 pieza 2c: la cita de la causal de la OCA pasa a nombrar
   // sólo el Decreto 1030/2016, art. 25 inc. c), con el mismo texto de la guía
   // que muestra la pantalla del generador.
+  // ORDEN-RONDA-39 pieza 1b: se agrega art. 111 (la OCA en sí).
   var CAUSAL_OCA_NORMATIVA =
     'La causal de la Orden de Compra Abierta está en el Decreto 1030/2016, ' +
-    'art. 25 inc. c): cuando no se puede prefijar con suficiente precisión la ' +
-    'cantidad de unidades a adquirir o las fechas o plazos de entrega.';
+    'arts. 25 inc. c) y 111: cuando no se puede prefijar con suficiente precisión ' +
+    'la cantidad de unidades a adquirir o las fechas o plazos de entrega.';
 
   function formatearMonto(n) {
     if (typeof n !== 'number' || !isFinite(n)) {

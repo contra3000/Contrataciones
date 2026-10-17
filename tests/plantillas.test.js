@@ -254,7 +254,8 @@ test('el requerimiento descompone el código, imprime el preventivo en letras y 
     'la justificación de OCA se imprime');
   // ORDEN-RONDA-38 pieza 2c: la cita de la causal pasa a nombrar sólo el
   // Decreto 1030/2016, art. 25 inc. c).
-  assert.ok(html.includes('Decreto 1030/2016, art. 25 inc. c)'), 'la causal como ayuda');
+  // ORDEN-RONDA-39 pieza 1b: se agrega art. 111.
+  assert.ok(html.includes('Decreto 1030/2016, arts. 25 inc. c) y 111'), 'la causal como ayuda');
   assert.ok(!html.includes('1023/01'), 'ya no cita el Decreto 1023/01');
   assert.ok(!html.includes('Art. 111'), 'ya no cita el Art. 111');
   assert.ok(html.includes('Cantidad máxima (por Solicitud de Provisión)'),
