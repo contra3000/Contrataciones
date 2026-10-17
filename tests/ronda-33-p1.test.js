@@ -67,14 +67,26 @@ async function pegar(texto) {
 
 // Las instrucciones de la orden, tal como están en su blockquote: se leen del
 // propio archivo para que la comparación sea contra la orden publicada.
+// ORDEN-RONDA-39 pieza 2c: la regla 3 cambió (el código ahora se copia tal como
+// aparezca y el SGC lo acomoda), así que se aplica esa enmienda sobre el texto
+// de la orden 33.
+const REGLA_33_CODIGO = '"codigo": copialo SÓLO si en los documentos aparece un ' +
+  'código del catálogo ONC con la forma 2.9.6-1115.1; si no aparece, dejalo vacío ' +
+  '("").';
+const REGLA_39_CODIGO = '"codigo": copialo tal como aparezca en los documentos, ' +
+  'aunque tenga espacios, tabulaciones, puntos o guiones de más (por ejemplo ' +
+  '`3.3.3 1627 36`): el SGC lo acomoda. Si no aparece ningún código, dejalo vacío ' +
+  '("").';
+
 function instruccionesDeLaOrden() {
   const orden = fs.readFileSync(path.join(RAIZ, 'ordenes', 'ORDEN-RONDA-33.md'), 'utf8');
-  return orden.split(/\r?\n/)
+  const texto = orden.split(/\r?\n/)
     .filter((linea) => /^\s*>/.test(linea))
     .map((linea) => linea.replace(/^\s*>\s?/, ''))
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
+  return texto.replace(REGLA_33_CODIGO, REGLA_39_CODIGO);
 }
 
 function normalizar(texto) {

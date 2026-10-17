@@ -55,9 +55,10 @@
         '2) titulo: qué se compra, en pocas palabras. anio: el año en cuatro dígitos.',
         'dependenciaSolicitante: la dependencia que pide. justificacion: por qué se',
         'necesita, con lo que digan los documentos.',
-        '3) renglones: uno por cada bien o servicio distinto. "codigo": copialo SÓLO si',
-        'en los documentos aparece un código del catálogo ONC con la forma 2.9.6-1115.1;',
-        'si no aparece, dejalo vacío (""). Nunca inventes ni completes un código.',
+        '3) renglones: uno por cada bien o servicio distinto. "codigo": copialo tal como',
+        'aparezca en los documentos, aunque tenga espacios, tabulaciones, puntos o guiones',
+        'de más (por ejemplo `3.3.3 1627 36`): el SGC lo acomoda. Si no aparece ningún',
+        'código, dejalo vacío (""). Nunca inventes ni completes un código.',
         '"buscar": el nombre del producto en dos a cuatro palabras, como se buscaría en un',
         'catálogo (por ejemplo "resma papel A4"). "cantidad": un número. "unidad": corta',
         '(UN, KG, M, L, CAJA); si no se sabe, vacía. "aclaracion": sólo lo que el producto',
@@ -75,6 +76,27 @@
         { codigo: '', buscar: 'resma papel A4', cantidad: 1, unidad: 'UN', aclaracion: '' }
       ]
     };
+  }
+
+  /*
+   * ORDEN-RONDA-39 pieza 2a: normaliza un código del catálogo ONC que venga
+   * con separadores raros (espacios, tabulaciones, puntos o guiones de más).
+   * Si tiene la forma de 3 dígitos, un número y otro número, lo reescribe como
+   * d.d.d-NNNN.N. Si no coincide con esa forma, devuelve el código tal cual.
+   */
+  function normalizarCodigo(codigo) {
+    if (typeof codigo !== 'string') {
+      return codigo;
+    }
+    var limpio = codigo.replace(/[\s.\-]+/g, ' ').trim();
+    var partes = limpio.split(' ');
+    if (partes.length === 3 &&
+        /^\d{1,2}\.\d{1,2}\.\d{1,2}$/.test(partes[0]) &&
+        /^\d+$/.test(partes[1]) &&
+        /^\d+$/.test(partes[2])) {
+      return partes[0] + '-' + partes[1] + '.' + partes[2];
+    }
+    return codigo;
   }
 
   function esObjeto(valor) {
@@ -140,6 +162,7 @@
     var renglones = [];
     var inexistentes = [];
     var aclaracionesLargas = 0;
+    var acomodados = 0;
     for (var i = 0; i < (Array.isArray(crudo.renglones) ? crudo.renglones.length : 0); i++) {
       var r = crudo.renglones[i];
       var prefijo = 'Renglón ' + (i + 1) + ': ';
@@ -188,12 +211,34 @@
       if (!valido) {
         continue;
       }
-      if (!verificarCodigo(r.codigo.trim())) {
-        inexistentes.push(r.codigo.trim());
+      // ORDEN-RONDA-39 pieza 2a: el código se normaliza antes de validarlo
+      // contra el catálogo, para que venga con separadores raros entre.
+      var codigoOriginal = r.codigo.trim();
+      var codigo = normalizarCodigo(codigoOriginal);
+      if (codigo !== codigoOriginal) {
+        acomodados++;
+      }
+      if (!verificarCodigo(codigo)) {
+        // ORDEN-RONDA-39 pieza 2b: un código que no existe queda "por buscar",
+        // conservando el `buscar` del asistente. Sólo si no hay `buscar`, se
+        // usa el código como texto de búsqueda.
+        var buscarParaEste = typeof r.buscar === 'string' && r.buscar.trim() !== ''
+          ? r.buscar.trim() : codigo;
+        renglones.push({
+          codigo: '',
+          item: '',
+          buscar: buscarParaEste,
+          cantidad: r.cantidad,
+          unidad: r.unidad.trim(),
+          aclaracion: aclaracion,
+          porBuscar: true
+        });
+        inexistentes.push(codigo);
+        continue;
       }
       renglones.push({
-        codigo: r.codigo.trim(),
-        item: r.codigo.trim(),
+        codigo: codigo,
+        item: codigo,
         cantidad: r.cantidad,
         unidad: r.unidad.trim(),
         aclaracion: aclaracion
@@ -211,6 +256,7 @@
 
     return {
       ok: true,
+      acomodados: acomodados,
       datos: {
         identificacion: {
           titulo: titulo,

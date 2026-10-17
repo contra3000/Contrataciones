@@ -611,6 +611,7 @@
     }
     var d = estructural.datos;
     return {
+      acomodados: estructural.acomodados || 0,
       cuerpo: {
         titulo: d.identificacion.titulo,
         anio: d.identificacion.anio,
@@ -892,6 +893,13 @@
     var sello = forma === 'exportado' && esObjeto(crudo.sello) ? crudo.sello : null;
 
     var avisos = [];
+    // ORDEN-RONDA-39 pieza 2a: si el importador acomodó códigos con separadores
+    // raros, se avisa cuántos.
+    if (armado.acomodados > 0) {
+      avisos.push(armado.acomodados === 1
+        ? '1 código se acomodó a la forma del catálogo.'
+        : armado.acomodados + ' códigos se acomodaron a la forma del catálogo.');
+    }
     var version = null;
     /*
      * ORDEN-RONDA-30 §2. El sello dice si este archivo es un avance. Los archivos
