@@ -73,6 +73,7 @@ function exportadoCompleto(trimestre) {
       anio: '2026',
       trimestre: trimestre,
       lugarEntrega: LUGAR_ENTREGA,
+      modalidad: 'comun', // ORDEN-RONDA-38 pieza 2a: la modalidad es obligatoria en Identificación
       pac: { numero: '8', justificacion: '' },
       campos: {
         operador: 'ana.perez@faa.mil.ar',

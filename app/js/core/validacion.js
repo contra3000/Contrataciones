@@ -257,6 +257,16 @@
     return identificacionCompleta;
   }
 
+  // ORDEN-RONDA-38 pieza 2: la modalidad de compra es común u orden de compra
+  // abierta (OCA). Vive en identificacion.modalidad y sólo existe en el
+  // generador: con servidor no está, así que siempre es falsa y nada cambia
+  // (ADR-044). Es el único lugar donde se decide "con OCA".
+  function modalidadOca(datos) {
+    var identificacion = datos && typeof datos.identificacion === 'object'
+      ? datos.identificacion : {};
+    return identificacion.modalidad === 'oca';
+  }
+
   function obtenerEstado(expediente) {
     var id = SGC.core.utils.idEstado(expediente);
     if (id === null) {
@@ -509,6 +519,14 @@
         (typeof campos.lugarEntrega !== 'string' || campos.lugarEntrega.trim() === '')) {
       errores.push('Escribí el lugar de entrega');
     }
+    // ORDEN-RONDA-38 pieza 2a: la modalidad (común u OCA) es obligatoria con la
+    // marca del generador, y sin ella sólo si el campo existe, como los otros.
+    // El mensaje lleva la palabra "modalidad" para que la vista le ponga el foco
+    // al campo.
+    if ((marcar || campos.modalidad !== undefined) &&
+        campos.modalidad !== 'comun' && campos.modalidad !== 'oca') {
+      errores.push('Elegí la modalidad de compra');
+    }
     return { valido: errores.length === 0, errores: errores };
   }
 
@@ -603,6 +621,7 @@
     procesoDelPac: procesoDelPac,
     monedaDelProceso: monedaDelProceso,
     causasDelPac: causasDelPac,
-    exigirIdentificacionCompleta: exigirIdentificacionCompleta
+    exigirIdentificacionCompleta: exigirIdentificacionCompleta,
+    modalidadOca: modalidadOca
   };
 })(typeof window !== 'undefined' ? window : globalThis);

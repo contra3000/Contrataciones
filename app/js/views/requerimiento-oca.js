@@ -80,7 +80,7 @@
     inMax.step = 'any';
     inMax.value = c.maxima;
     inMax.setAttribute('data-oca-max', String(i));
-    inMax.setAttribute('aria-label', 'Cantidad máxima del renglón ' + (i + 1));
+    inMax.setAttribute('aria-label', 'Cantidad máxima por Solicitud de Provisión');
     lblMax.appendChild(inMax);
     div.appendChild(lblMax);
     var lblMin = doc.createElement('label');
@@ -91,7 +91,7 @@
     inMin.step = 'any';
     inMin.value = c.minima;
     inMin.setAttribute('data-oca-min', String(i));
-    inMin.setAttribute('aria-label', 'Cantidad mínima del renglón ' + (i + 1));
+    inMin.setAttribute('aria-label', 'Cantidad mínima');
     lblMin.appendChild(inMin);
     div.appendChild(lblMin);
     return div;

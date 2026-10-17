@@ -46,10 +46,13 @@
     'Cantidad máxima (por Solicitud de Provisión)', 'Cantidad mínima (opcional)'
   ];
 
+  // ORDEN-RONDA-38 pieza 2c: la cita de la causal de la OCA pasa a nombrar
+  // sólo el Decreto 1030/2016, art. 25 inc. c), con el mismo texto de la guía
+  // que muestra la pantalla del generador.
   var CAUSAL_OCA_NORMATIVA =
-    'La causal de la OCA está en el Art. 25 inc. c) del Decreto 1023/01 y en el ' +
-    'Art. 111 del Decreto 1030/16: cuando no se pudiere prefijar con suficiente ' +
-    'precisión la cantidad de unidades o las fechas o plazos de entrega.';
+    'La causal de la Orden de Compra Abierta está en el Decreto 1030/2016, ' +
+    'art. 25 inc. c): cuando no se puede prefijar con suficiente precisión la ' +
+    'cantidad de unidades a adquirir o las fechas o plazos de entrega.';
 
   function formatearMonto(n) {
     if (typeof n !== 'number' || !isFinite(n)) {

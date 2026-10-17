@@ -102,6 +102,7 @@ function archivo(o) {
       anio: o.anio || '2026',
       trimestre: o.trimestre || '1',
       lugarEntrega: LUGAR,
+      modalidad: 'comun', // ORDEN-RONDA-38 pieza 2a: la modalidad es obligatoria en Identificación
       pac: pac,
       campos: {
         operador: 'ana.perez@faa.mil.ar',

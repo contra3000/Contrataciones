@@ -167,6 +167,7 @@ test('RONDA-35 pieza 1b · con trimestre, PAC y lugar, imprime y exporta: el JSO
   assert.strictEqual(d.getElementById('sgc-trimestre').value, '1',
     'el proceso 1 trae su trimestre');
   m.escribir('sgc-lugar-entrega', LUGAR);
+  m.elegirModalidad('comun'); // ORDEN-RONDA-38 pieza 2a: la modalidad es obligatoria en Identificación
 
   d.getElementById('sgc-siguiente').click();
   assert.strictEqual(pasoVisible(), 'renglones', 'la Identificación completa deja pasar');

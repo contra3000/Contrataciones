@@ -93,6 +93,7 @@ function archivo(o) {
       anio: o.anio || '2026',
       trimestre: o.trimestre || '1',
       lugarEntrega: LUGAR,
+      modalidad: 'comun', // ORDEN-RONDA-38 pieza 2a: la modalidad es obligatoria en Identificación
       pac: { numero: o.pac, justificacion: '' },
       campos: {
         operador: 'ana.perez@faa.mil.ar',
@@ -350,6 +351,13 @@ test('RONDA-37 pieza 2f · un avance de la 36 con justificación y sin claves pi
 
   v.confirmar.click();
   assert.strictEqual(v.aviso.textContent, '', 'al confirmar, se va el aviso');
+
+  // ORDEN-RONDA-38 pieza 2a: el avance de la 36 no trae modalidad, que ahora es
+  // obligatoria en Identificación; se elige antes de exportar.
+  await ir('identificacion');
+  m.elegirModalidad('comun');
+  await ir('fundamentacion');
+
   d.getElementById('sgc-siguiente').click();
   await m.esperar(() => pasoVisible() === 'revision', 20000, 'con la revisión hecha, avanza');
   await imprimir();

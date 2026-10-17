@@ -297,6 +297,14 @@
         renglonExportado.porBuscar = true;
         renglonExportado.buscar = typeof r.buscar === 'string' ? r.buscar : '';
       }
+      // ORDEN-RONDA-38 pieza 2e: con la modalidad OCA, cada renglón viaja con su
+      // cantidad máxima y mínima (los números que imprime el requerimiento).
+      if (typeof r.cantidadMaxima === 'number') {
+        renglonExportado.cantidadMaxima = r.cantidadMaxima;
+      }
+      if (typeof r.cantidadMinima === 'number') {
+        renglonExportado.cantidadMinima = r.cantidadMinima;
+      }
       renglones.push(renglonExportado);
     }
     var presupuestos = [];
@@ -339,6 +347,13 @@
       // expediente local. Viaja para que quien lea el archivo sepa en qué moneda
       // están los montos, y para que el avance la recupere.
       moneda: datos.moneda === 'USD' ? 'USD' : 'ARS',
+      // ORDEN-RONDA-38 pieza 2e: la modalidad de compra ("comun" | "oca" | "") y,
+      // con OCA, la justificación de la modalidad. Viajan para que el avance las
+      // recupere.
+      modalidad: datos.modalidad === 'oca' ? 'oca'
+        : (datos.modalidad === 'comun' ? 'comun' : ''),
+      ocaJustificacion: typeof datos.ocaJustificacion === 'string'
+        ? datos.ocaJustificacion : '',
       // ORDEN-RONDA-34 pieza 2e: el proceso del PAC (o ninguno), siempre en la
       // forma del pacExportado: sin número, queda null y el archivo no habla del
       // PAC.
@@ -531,6 +546,13 @@
         renglon.porBuscar = true;
         renglon.buscar = typeof r.buscar === 'string' ? r.buscar : '';
       }
+      // ORDEN-RONDA-38 pieza 2e: las cantidades de la OCA, si el archivo las trae.
+      if (typeof r.cantidadMaxima === 'number') {
+        renglon.cantidadMaxima = r.cantidadMaxima;
+      }
+      if (typeof r.cantidadMinima === 'number') {
+        renglon.cantidadMinima = r.cantidadMinima;
+      }
       renglones.push(renglon);
     }
     var presupuestos = [];
@@ -550,6 +572,11 @@
         // ORDEN-RONDA-35 pieza 1: el lugar de entrega, igual que el trimestre:
         // un JSON sin él entra y el campo queda para escribir.
         lugarEntrega: typeof e.lugarEntrega === 'string' ? e.lugarEntrega : '',
+        // ORDEN-RONDA-38 pieza 2e: la modalidad de compra y la justificación de
+        // la OCA, si el archivo las trae. Un archivo de la 37 no las trae.
+        modalidad: e.modalidad === 'oca' ? 'oca'
+          : (e.modalidad === 'comun' ? 'comun' : ''),
+        ocaJustificacion: typeof e.ocaJustificacion === 'string' ? e.ocaJustificacion : '',
         // ORDEN-RONDA-34 pieza 2e: el PAC que el archivo trae, en la misma forma
         // normalizada con la que sale (un archivo sin pac da null).
         pac: pacExportado(e.pac),
@@ -587,6 +614,10 @@
       cuerpo: {
         titulo: d.identificacion.titulo,
         anio: d.identificacion.anio,
+        // ORDEN-RONDA-38 pieza 2e: la plantilla no trae modalidad (se elige en
+        // pantalla) ni justificación de la OCA.
+        modalidad: '',
+        ocaJustificacion: '',
         campos: {
           operador: d.identificacion.operador || '',
           dependenciaSolicitante: d.identificacion.dependenciaSolicitante,
@@ -682,9 +713,29 @@
       renglones: cuerpo.renglones,
       fundamentacion: {
         justificacion: cuerpo.campos.justificacion,
-        objetivo: cuerpo.campos.objetivo
+        objetivo: cuerpo.campos.objetivo,
+        // ORDEN-RONDA-38 pieza 2e: la justificación de la OCA que el archivo
+        // traiga (vacía si no la trae).
+        ocaJustificacion: typeof cuerpo.ocaJustificacion === 'string'
+          ? cuerpo.ocaJustificacion : ''
       }
     };
+    // ORDEN-RONDA-38 pieza 2e: la modalidad entra sólo si el archivo la trae
+    // como "comun" u "oca". Un archivo de la 37 no la trae y el campo queda para
+    // elegir (y pasa a ser obligatorio, como recién importado).
+    var modalidad = typeof cuerpo.modalidad === 'string' ? cuerpo.modalidad.trim() : '';
+    if (modalidad === 'comun' || modalidad === 'oca') {
+      datos.identificacion.modalidad = modalidad;
+    }
+    // ORDEN-RONDA-38 pieza 2e: las cantidades de la OCA por renglón, para que el
+    // bloque de valores las restaure (intercambio las devuelve; generador.js las
+    // pasa a generadorValores.fijar).
+    var cantidadesPorRenglon = cuerpo.renglones.map(function (r) {
+      return {
+        maxima: typeof r.cantidadMaxima === 'number' ? r.cantidadMaxima : undefined,
+        minima: typeof r.cantidadMinima === 'number' ? r.cantidadMinima : undefined
+      };
+    });
     // ORDEN-RONDA-34 pieza 1: el trimestre entra sólo si el archivo lo trae y
     // no está vacío. Un JSON sin `trimestre` no se rechaza: el campo queda para
     // elegir (y es cuando se vuelve obligatorio, como recién importado).
@@ -764,7 +815,13 @@
      * (verificarHuella). Lo que le falte se ve apenas se abre el formulario.
      */
     if (esAvance) {
-      return { errores: [], datos: datos, avisos: avisosPac };
+      return {
+        errores: [],
+        datos: datos,
+        avisos: avisosPac,
+        cantidadesPorRenglon: cantidadesPorRenglon,
+        modalidad: modalidad
+      };
     }
     // ORDEN-RONDA-33 pieza 1: un renglón sin código ya no invalida el archivo:
     // entra "por buscar" y se elige en pantalla. Por eso la validación del
@@ -780,7 +837,8 @@
       var e = revision.errores[i];
       errores.push(e.campo ? e.campo + ': ' + e.mensaje : e.mensaje);
     }
-    return { errores: errores, datos: datos, avisos: avisosPac };
+    return { errores: errores, datos: datos, avisos: avisosPac,
+      cantidadesPorRenglon: cantidadesPorRenglon, modalidad: modalidad };
   }
 
   /*
@@ -896,6 +954,9 @@
           datos: conNucleo.datos,
           presupuestos: cuerpo.presupuestos,
           valoresPorRenglon: valoresPorRenglon,
+          // ORDEN-RONDA-38 pieza 2e: las cantidades de la OCA y la modalidad,
+          // para que el generador restaure el bloque (generador.js alImportar).
+          cantidadesPorRenglon: conNucleo.cantidadesPorRenglon,
           version: version,
           avisos: avisos,
           mensaje: esAvance

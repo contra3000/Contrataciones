@@ -317,6 +317,18 @@
         sincronizarValores();
       });
     }
+    // ORDEN-RONDA-38 pieza 2: cambiar la modalidad de compra enciende o apaga el
+    // bloque de la OCA (las cantidades de cada renglón) y la justificación de la
+    // OCA. El asistente ya escribió la modalidad en sus datos en su propio
+    // escuchador; éste corre después, publica (frena o habilita Imprimir y
+    // Exportar) y re-sincroniza el bloque de valores.
+    var selectorModalidad = porId('sgc-modalidad');
+    if (selectorModalidad) {
+      selectorModalidad.addEventListener('change', function () {
+        publicarDatos();
+        sincronizarValores();
+      });
+    }
     sincronizarValores();
     pintarPasosPendientes();
   }
@@ -330,8 +342,11 @@
   function sincronizarValores() {
     // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido viaja al bloque de
     // valores, para que diga "USD" en un proceso en dólares y "$" en el resto.
+    // ORDEN-RONDA-38 pieza 2: la modalidad "orden de compra abierta" enciende las
+    // cantidades de la OCA en cada renglón.
     SGC.generadorValores.sincronizar(renglonesDelAsistente(),
-      SGC.generadorPresupuestos.listar(), SGC.generadorDocumentos.monedaActual());
+      SGC.generadorPresupuestos.listar(), SGC.generadorDocumentos.monedaActual(),
+      SGC.generadorDocumentos.modalidadActual() === 'oca');
   }
 
   // Los documentos del paso 4 se calculan sobre los datos que el asistente tiene
@@ -370,7 +385,7 @@
           nombre === 'trimestre' || nombre === 'pac' || nombre === 'lugarEntrega') {
         paso = 'identificacion';
       } else if (nombre === 'justificacion' || nombre === 'objetivo' ||
-                 nombre === 'pacJustificacion') {
+                 nombre === 'pacJustificacion' || nombre === 'ocaJustificacion') {
         paso = 'fundamentacion';
       }
       pendientes[paso] = true;
@@ -555,7 +570,12 @@
           SGC.catalogo.renglones.obtener(),
           SGC.generadorPresupuestos.listar(),
           resultado.valoresPorRenglon,
-          SGC.core.validacion.monedaDelProceso(numeroPac)
+          SGC.core.validacion.monedaDelProceso(numeroPac),
+          // ORDEN-RONDA-38 pieza 2e: las cantidades de la OCA y la modalidad
+          // viajan en el archivo importado y se restauran acá, igual que los
+          // valores.
+          resultado.cantidadesPorRenglon,
+          identificacion.modalidad === 'oca'
         );
       }
     });

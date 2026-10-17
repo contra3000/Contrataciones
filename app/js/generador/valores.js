@@ -30,9 +30,16 @@
 
   var estado = {
     porId: {},
+    // ORDEN-RONDA-38 pieza 2e: las cantidades de la OCA por id de renglón
+    // ({maxima, minima}), para que viajen al JSON y vuelvan. Viven acá igual que
+    // los valores, por id y no por posición.
+    cantidadesPorId: {},
     renglones: [],
     presupuestos: [],
     moneda: null,
+    // ORDEN-RONDA-38 pieza 2: con la modalidad "orden de compra abierta" el
+    // bloque pide las cantidades de la OCA. Se recuerda entre llamadas.
+    mostrarOca: false,
     alCambio: null
   };
 
@@ -43,7 +50,15 @@
       if (!r || r.id === undefined || r.id === null) {
         continue;
       }
-      estado.porId[String(r.id)] = leido.valores[i] || [];
+      var clave = String(r.id);
+      estado.porId[clave] = leido.valores[i] || [];
+      // ORDEN-RONDA-38 pieza 2e: lo que `leer` da de cantidades es undefined
+      // cuando la OCA no está activa, así que sólo se pisa lo que hay: las
+      // cantidades ya cargadas sobreviven a un cambio de modalidad.
+      var c = leido.cantidades && leido.cantidades[i];
+      if (c && (c.maxima !== undefined || c.minima !== undefined)) {
+        estado.cantidadesPorId[clave] = { maxima: c.maxima, minima: c.minima };
+      }
     }
     if (typeof estado.alCambio === 'function') {
       estado.alCambio();
@@ -60,9 +75,14 @@
   // ORDEN-RONDA-35 pieza 2a: la moneda del proceso elegido viaja hasta la vista
   // para que el bloque hable en dólares cuando el proceso es en dólares. Se
   // recuerda entre llamadas: un renglón que cambia no puede olvidar la moneda.
-  function sincronizar(renglones, presupuestos, moneda) {
+  // ORDEN-RONDA-38 pieza 2: `mostrarOca` decide si el bloque pide las cantidades
+  // de la OCA (cantidad máxima por Solicitud de Provisión y cantidad mínima).
+  function sincronizar(renglones, presupuestos, moneda, mostrarOca) {
     if (moneda !== undefined) {
       estado.moneda = moneda;
+    }
+    if (mostrarOca !== undefined) {
+      estado.mostrarOca = mostrarOca === true;
     }
     estado.renglones = Array.isArray(renglones) ? renglones : [];
     estado.presupuestos = Array.isArray(presupuestos) ? presupuestos : [];
@@ -70,13 +90,20 @@
       var guardado = estado.porId[String(r && r.id)];
       return Array.isArray(guardado) ? guardado : null;
     });
-    valores.fijarDatos(estado.renglones, estado.presupuestos, guardados, null,
-      { mostrarOca: false, editable: true, moneda: estado.moneda });
+    var cantidades = estado.renglones.map(function (r) {
+      var c = estado.cantidadesPorId[String(r && r.id)];
+      return c || null;
+    });
+    valores.fijarDatos(estado.renglones, estado.presupuestos, guardados, cantidades,
+      { mostrarOca: estado.mostrarOca, editable: true, moneda: estado.moneda });
     guardar();
   }
 
   // Los renglones con sus valores, para el expediente local. Copia superficial
-  // por renglón: los valores son objetos del núcleo y no se tocan.
+  // por renglón: los valores son objetos del núcleo y no se tocan. ORDEN-RONDA-38
+  // pieza 2e: con la modalidad OCA cada renglón lleva además su cantidad máxima y
+  // mínima (los números que el núcleo espera), para que el requerimiento las
+  // imprima y el JSON las exporte.
   function renglonesConValores() {
     return estado.renglones.map(function (r) {
       var copia = {};
@@ -86,6 +113,17 @@
         }
       }
       copia.valoresReferencia = estado.porId[String(r.id)] || [];
+      if (estado.mostrarOca) {
+        var c = estado.cantidadesPorId[String(r.id)];
+        if (c) {
+          if (typeof c.maxima === 'number') {
+            copia.cantidadMaxima = c.maxima;
+          }
+          if (typeof c.minima === 'number') {
+            copia.cantidadMinima = c.minima;
+          }
+        }
+      }
       return copia;
     });
   }
@@ -135,24 +173,33 @@
     // renglón 1 de la anterior, que era otro renglón.
     limpiar: function () {
       estado.porId = {};
+      estado.cantidadesPorId = {};
     },
     errores: function () {
       return valores.errores();
     },
-    fijar: function (renglones, presupuestos, valoresPorRenglon, moneda) {
+    fijar: function (renglones, presupuestos, valoresPorRenglon, moneda,
+      cantidadesPorRenglon, mostrarOca) {
       // Importar o retomar (pieza 4): los valores llegan del archivo, en el
       // mismo orden que los renglones. ORDEN-RONDA-35 pieza 2a: la moneda,
       // también (el avance exportado la trae; sus valores y el PAC ya estaban
       // resueltos, así que se saltea el ínterin en que la lista no está).
+      // ORDEN-RONDA-38 pieza 2e: las cantidades de la OCA y la modalidad, también.
       estado.porId = {};
+      estado.cantidadesPorId = {};
       for (var i = 0; i < (renglones || []).length; i++) {
         var r = renglones[i];
         if (r && r.id !== undefined && r.id !== null) {
-          estado.porId[String(r.id)] = Array.isArray(valoresPorRenglon[i])
+          var clave = String(r.id);
+          estado.porId[clave] = Array.isArray(valoresPorRenglon[i])
             ? valoresPorRenglon[i] : [];
+          var c = cantidadesPorRenglon && cantidadesPorRenglon[i];
+          if (c && typeof c === 'object') {
+            estado.cantidadesPorId[clave] = c;
+          }
         }
       }
-      sincronizar(renglones, presupuestos, moneda);
+      sincronizar(renglones, presupuestos, moneda, mostrarOca);
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

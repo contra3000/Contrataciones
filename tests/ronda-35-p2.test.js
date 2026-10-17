@@ -72,6 +72,7 @@ function exportadoConPac(pac, opciones) {
       anio: '2026',
       trimestre: TRIMESTRE_DEL_PROCESO[String(pac.numero)] || '1',
       lugarEntrega: LUGAR,
+      modalidad: 'comun', // ORDEN-RONDA-38 pieza 2a: la modalidad es obligatoria en Identificación
       pac: o.legacyPreventivoUsd === undefined
         ? pac
         : { numero: pac.numero, preventivoUsd: o.legacyPreventivoUsd, justificacion: '' },

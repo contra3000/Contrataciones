@@ -123,6 +123,27 @@
     return SGC.core.validacion.monedaDelProceso(numero);
   }
 
+  // ORDEN-RONDA-38 pieza 2: la modalidad de compra del wizard, normalizada a
+  // 'oca', 'comun' o '' (sin elegir). Es del generador (ADR-044).
+  function modalidadDe(datosWizard) {
+    var identificacion = datosWizard && typeof datosWizard.identificacion === 'object'
+      ? datosWizard.identificacion : {};
+    if (identificacion.modalidad === 'oca') {
+      return 'oca';
+    }
+    if (identificacion.modalidad === 'comun') {
+      return 'comun';
+    }
+    return '';
+  }
+
+  function justificacionOcaDe(datosWizard) {
+    var fundamentacion = datosWizard && typeof datosWizard.fundamentacion === 'object'
+      ? datosWizard.fundamentacion : {};
+    return typeof fundamentacion.ocaJustificacion === 'string'
+      ? fundamentacion.ocaJustificacion.trim() : '';
+  }
+
   /*
    * ORDEN-RONDA-36 pieza 1: lo que falta para exportar por el PAC (y por lo
    * tanto lo que frena "Imprimir" y "Exportar"). Las causas —fuera del PAC,
@@ -168,6 +189,39 @@
     }
     return SGC.core.validacion.causasDelPac(
       identificacionDelPac(expediente), expediente.renglones || []).revisar === true;
+  }
+
+  // ORDEN-RONDA-38 pieza 2b: con la modalidad "orden de compra abierta", el
+  // requerimiento no sale sin la justificación de la OCA ni sin la cantidad
+  // máxima de cada renglón. El expediente lleva la marca `requerimiento.oca` y
+  // la justificación (expedienteLocal); acá se dice, con las mismas palabras de
+  // la exportación, qué falta. Sin OCA no hay nada que frenar.
+  function itemsOca(expediente) {
+    var datos = expediente && expediente.datos ? expediente.datos : {};
+    var rq = datos.requerimiento;
+    if (!rq || rq.oca !== true) {
+      return [];
+    }
+    var items = [];
+    if (ocaJustificacionFaltante(expediente)) {
+      items.push('justificar la modalidad orden de compra abierta');
+    }
+    var renglones = Array.isArray(expediente.renglones) ? expediente.renglones : [];
+    for (var i = 0; i < renglones.length; i++) {
+      var r = renglones[i];
+      if (r && (r.cantidadMaxima === undefined || r.cantidadMaxima === null)) {
+        items.push('Renglón ' + (i + 1) +
+          ': falta la cantidad máxima por Solicitud de Provisión');
+      }
+    }
+    return items;
+  }
+
+  function ocaJustificacionFaltante(expediente) {
+    var datos = expediente && expediente.datos ? expediente.datos : {};
+    var rq = datos.requerimiento;
+    return !!rq && rq.oca === true &&
+      (typeof rq.ocaJustificacion !== 'string' || rq.ocaJustificacion.trim() === '');
   }
 
   /*
@@ -229,6 +283,20 @@
     // resuelta una sola vez, para que el documento impreso y el JSON digan lo
     // mismo. Sin procesos en dólares (o sin PAC) es ARS, como siempre.
     datosIniciales.moneda = monedaDe(datosWizard);
+    // ORDEN-RONDA-38 pieza 2: la modalidad de compra viaja en el expediente.
+    // Con OCA, la justificación se imprime —el render la mira en
+    // `datos.requerimiento`— y la marca `requerimiento.oca` enciende el bloque
+    // de la OCA (la tabla de máximos y la nota de la causal). Sin OCA no se
+    // toca `requerimiento`, así que el documento sale como siempre.
+    var modalidad = modalidadDe(datosWizard);
+    datosIniciales.modalidad = modalidad;
+    datosIniciales.ocaJustificacion = modalidad === 'oca' ? justificacionOcaDe(datosWizard) : '';
+    if (modalidad === 'oca') {
+      datosIniciales.requerimiento = {
+        oca: true,
+        ocaJustificacion: justificacionOcaDe(datosWizard)
+      };
+    }
     var resultado = {
       estado: { id: ESTADO },
       titulo: datosIniciales.titulo,
@@ -289,6 +357,17 @@
       // (generador.js pasosPendientes) y que Imprimir frene junto con Exportar.
       if (r.faltantes.campos.indexOf('pacJustificacion') === -1) {
         r.faltantes.campos.push('pacJustificacion');
+      }
+    }
+    // ORDEN-RONDA-38 pieza 2b: con OCA, la justificación de la OCA y la cantidad
+    // máxima de cada renglón frenan la exportación, con su motivo.
+    var itemsOcaPendientes = itemsOca(expediente);
+    if (itemsOcaPendientes.length > 0) {
+      r.valido = false;
+      items = items.concat(itemsOcaPendientes);
+      if (ocaJustificacionFaltante(expediente) &&
+          r.faltantes.campos.indexOf('ocaJustificacion') === -1) {
+        r.faltantes.campos.push('ocaJustificacion');
       }
     }
     // ORDEN-RONDA-35 pieza 1: con la marca del generador, la Identificación
@@ -357,9 +436,13 @@
     // justificación). Antes sólo miraba los campos y los renglones, así que
     // dejaba imprimir un papel que el botón Exportar no dejaba exportar.
     var itemsPac = itemsDelPac(info.expediente);
+    // ORDEN-RONDA-38 pieza 2b: con OCA, Imprimir frena con el mismo motivo que
+    // Exportar (la justificación de la OCA y las cantidades máximas).
+    var itemsOcaPendientes = itemsOca(info.expediente);
     if (info.revision.faltantes.campos.length > 0 ||
         (info.revision.faltantes.renglones && info.revision.faltantes.renglones.length > 0) ||
-        itemsPac.length > 0) {
+        itemsPac.length > 0 ||
+        itemsOcaPendientes.length > 0) {
       // Falta algo de fondo: el texto del botón de exportar lo dice, y componer
       // un documento incompleto sería imprimir un papel inútil.
       actualizar();
@@ -476,6 +559,11 @@
     // bloque de valores de referencia hable en la misma moneda que el PAC.
     monedaActual: function () {
       return monedaDe(estado.datosActuales || {});
+    },
+    // ORDEN-RONDA-38 pieza 2: la modalidad de compra elegida ahora, para que el
+    // bloque de valores de referencia encienda las cantidades de la OCA.
+    modalidadActual: function () {
+      return modalidadDe(estado.datosActuales || {});
     },
     revision: function () {
       return revision(estado.datosActuales || {});

@@ -291,6 +291,52 @@ async function arrancar() {
     return select;
   };
 
+  /*
+   * ORDEN-RONDA-38 pieza 2: elegir la modalidad del select como lo elige una
+   * persona. El cambio de #sgc-modalidad es el que sincroniza el formulario y
+   * muestra u oculta el bloque de la OCA.
+   */
+  m.elegirModalidad = function (valor) {
+    const select = documento.getElementById('sgc-modalidad');
+    if (!select) {
+      throw new Error('elegirModalidad: no existe #sgc-modalidad en el generador');
+    }
+    select.value = String(valor);
+    select.emit('change', { target: select });
+    return select;
+  };
+
+  /*
+   * ORDEN-RONDA-38 pieza 2b: las cantidades de la OCA de un renglón, escritas
+   * por la pantalla. Igual que cargarValores: los campos viven en
+   * #sgc-req-valores y el contenedor escucha 'change' por delegación, así que
+   * se emite DIRECTAMENTE en el contenedor con `target` apuntando al campo.
+   *
+   * filasPorRenglon[i] = { maxima, minima }: lo que escribe una persona, renglón
+   * por renglón. Los campos ausentes no se tocan.
+   */
+  m.cargarOca = function (filasPorRenglon) {
+    const contenedor = documento.getElementById('sgc-req-valores');
+    if (!contenedor) {
+      throw new Error('cargarOca: no existe #sgc-req-valores en el generador');
+    }
+    filasPorRenglon.forEach(function (fila, i) {
+      const escribir = function (nombre, valor) {
+        if (valor === undefined || valor === null) {
+          return;
+        }
+        const elemento = contenedor.querySelector('[data-' + nombre + '="' + i + '"]');
+        if (!elemento) {
+          throw new Error('cargarOca: no existe el campo ' + nombre + ' del renglón ' + (i + 1));
+        }
+        elemento.value = String(valor);
+        contenedor.emit('change', { target: elemento });
+      };
+      escribir('oca-max', fila.maxima);
+      escribir('oca-min', fila.minima);
+    });
+  };
+
   m.mousedown = function (id) {
     documento.getElementById(id).emit('mousedown', { preventDefault() {} });
   };

@@ -68,8 +68,22 @@
       }
       estado.datos.identificacion.pac = pac;
     }
+    // ORDEN-RONDA-38 pieza 2a: la modalidad de compra (común u OCA). Es del
+    // generador: con servidor no hay nodo y no se toca (ADR-044).
+    if (campoInput(estado, 'modalidad')) {
+      estado.datos.identificacion.modalidad = leerCampo(estado, 'modalidad');
+    }
     estado.datos.fundamentacion.justificacion = leerCampo(estado, 'justificacion');
-    estado.datos.fundamentacion.objetivo = leerCampo(estado, 'objetivo');
+    // ORDEN-RONDA-38 pieza 2d: "Objetivo" ya no tiene campo en el generador,
+    // pero el JSON sigue llevándolo. Sólo se escribe si el nodo existe (con
+    // servidor), para no pisar con vacío un objetivo que traiga un archivo.
+    if (campoInput(estado, 'objetivo')) {
+      estado.datos.fundamentacion.objetivo = leerCampo(estado, 'objetivo');
+    }
+    // ORDEN-RONDA-38 pieza 2b: la justificación de la OCA (generador).
+    if (campoInput(estado, 'ocaJustificacion')) {
+      estado.datos.fundamentacion.ocaJustificacion = leerCampo(estado, 'ocaJustificacion');
+    }
     estado.datos.renglones = SGC.catalogo.renglones.obtener();
   }
 
@@ -92,8 +106,20 @@
         campoInput(estado, 'pacJustificacion').value = pac.justificacion || '';
       }
     }
+    // ORDEN-RONDA-38 pieza 2a: la modalidad, si el nodo existe (generador).
+    if (campoInput(estado, 'modalidad')) {
+      campoInput(estado, 'modalidad').value = id.modalidad || '';
+    }
     campoInput(estado, 'justificacion').value = fund.justificacion || '';
-    campoInput(estado, 'objetivo').value = fund.objetivo || '';
+    // ORDEN-RONDA-38 pieza 2d: "Objetivo" ya no tiene campo en el generador. Si
+    // no hay nodo, un objetivo importado se conserva en los datos (no se toca).
+    if (campoInput(estado, 'objetivo')) {
+      campoInput(estado, 'objetivo').value = fund.objetivo || '';
+    }
+    // ORDEN-RONDA-38 pieza 2b: la justificación de la OCA, si el nodo existe.
+    if (campoInput(estado, 'ocaJustificacion')) {
+      campoInput(estado, 'ocaJustificacion').value = fund.ocaJustificacion || '';
+    }
   }
 
   /*

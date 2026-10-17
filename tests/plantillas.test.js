@@ -252,7 +252,11 @@ test('el requerimiento descompone el código, imprime el preventivo en letras y 
   // OCA activada por cantidadMaxima: justificación y causal normativa.
   assert.ok(html.includes('No se puede prefijar la cantidad exacta'),
     'la justificación de OCA se imprime');
-  assert.ok(html.includes('Art. 25 inc. c) del Decreto 1023/01'), 'la causal como ayuda');
+  // ORDEN-RONDA-38 pieza 2c: la cita de la causal pasa a nombrar sólo el
+  // Decreto 1030/2016, art. 25 inc. c).
+  assert.ok(html.includes('Decreto 1030/2016, art. 25 inc. c)'), 'la causal como ayuda');
+  assert.ok(!html.includes('1023/01'), 'ya no cita el Decreto 1023/01');
+  assert.ok(!html.includes('Art. 111'), 'ya no cita el Art. 111');
   assert.ok(html.includes('Cantidad máxima (por Solicitud de Provisión)'),
     'la etiqueta del máximo explica su alcance');
   assert.ok(html.includes('Sin imputación'), 'la imputación vacía se anota');

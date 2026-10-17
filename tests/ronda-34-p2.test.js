@@ -87,6 +87,7 @@ function exportadoConPac(pac, opciones) {
       anio: '2026',
       trimestre: TRIMESTRE_DEL_PROCESO[String(pac.numero)] || '1',
       lugarEntrega: 'Depósito de Intendencia, VII Brigada Aérea',
+      modalidad: 'comun', // ORDEN-RONDA-38 pieza 2a: la modalidad es obligatoria en Identificación
       pac: pac,
       campos: {
         operador: 'ana.perez@faa.mil.ar',
@@ -212,6 +213,7 @@ test('RONDA-34 pieza 2b · elegir el proceso 3 completa el trimestre con el 1°,
   m.escribir('sgc-dependencia', 'División Usuario');
   // ORDEN-RONDA-35 pieza 1: la Identificación también pide el lugar de entrega.
   m.escribir('sgc-lugar-entrega', 'Depósito de Intendencia, VII Brigada Aérea');
+  m.elegirModalidad('comun'); // ORDEN-RONDA-38 pieza 2a: la modalidad es obligatoria en Identificación
 
   m.elegirPac('3');
   const trime = d.getElementById('sgc-trimestre');

@@ -40,6 +40,7 @@
   function sincronizarDesdeFormulario() {
     formulario.sincronizar(estado);
     actualizarPac();
+    actualizarOca();
   }
 
   function guardarBorrador() {
@@ -89,6 +90,9 @@
     // importación (que abre en Renglones) deja el bloque como corresponde sin
     // esperar a que la persona escriba algo.
     actualizarPac();
+    // ORDEN-RONDA-38 pieza 2b: lo mismo para el bloque de la justificación de la
+    // OCA, que sigue a la modalidad.
+    actualizarOca();
     if (estado.paso === pasos.PASOS.length - 1) {
       renderRevision();
     }
@@ -523,6 +527,19 @@ function descripcionOperador(operador) {
     }
   }
 
+  /*
+   * ORDEN-RONDA-38 pieza 2b: con la modalidad "orden de compra abierta" aparece
+   * en Fundamentación el bloque de la justificación de la OCA. Sin camposOca (la
+   * aplicación con servidor no tiene el bloque) no se hace nada (ADR-044).
+   */
+  function actualizarOca() {
+    var camposOca = estado.dom.camposOca;
+    if (!camposOca) {
+      return;
+    }
+    camposOca.justificacion.hidden = !SGC.core.validacion.modalidadOca(estado.datos);
+  }
+
   function montar(raiz, opciones) {
     estado.dom.raiz = raiz;
     // ORDEN-RONDA-28 §4: quien lo monta puede cambiar sólo la lectura del
@@ -561,9 +578,15 @@ function descripcionOperador(operador) {
       titulo: qs(raiz, '#sgc-titulo'),
       anio: qs(raiz, '#sgc-anio'),
       dependenciaSolicitante: qs(raiz, '#sgc-dependencia'),
-      justificacion: qs(raiz, '#sgc-justificacion'),
-      objetivo: qs(raiz, '#sgc-objetivo')
+      justificacion: qs(raiz, '#sgc-justificacion')
     };
+    // ORDEN-RONDA-38 pieza 2d: "Objetivo" sale de Fundamentación en el
+    // generador. Con servidor el nodo sigue existiendo: se registra sólo si
+    // está, y así el bucle de más abajo no le pide un escuchador a null.
+    var nodoObjetivo = qs(raiz, '#sgc-objetivo');
+    if (nodoObjetivo) {
+      estado.dom.campos.objetivo = nodoObjetivo;
+    }
     estado.dom.errores = {
       titulo: qs(raiz, '#sgc-error-titulo'),
       anio: qs(raiz, '#sgc-error-anio'),
@@ -636,6 +659,40 @@ function descripcionOperador(operador) {
     var nodoErrorPacJustificacion = qs(raiz, '#sgc-error-pac-justificacion');
     if (nodoErrorPacJustificacion) {
       estado.dom.errores.pacJustificacion = nodoErrorPacJustificacion;
+    }
+    // ORDEN-RONDA-38 pieza 2a: la modalidad de compra. Sólo el generador tiene
+    // estos nodos; la aplicación con servidor no, y acá no se engancha nada
+    // (ADR-044). Al cambiar, se sincroniza y se recalcula la pantalla: el bloque
+    // de la OCA se muestra u oculta, y el generador publica el resto (el freno
+    // de la exportación y las cantidades de cada renglón) por su cuenta.
+    var nodoModalidad = qs(raiz, '#sgc-modalidad');
+    if (nodoModalidad) {
+      estado.dom.campos.modalidad = nodoModalidad;
+      nodoModalidad.addEventListener('change', function () {
+        sincronizarDesdeFormulario();
+        if (typeof estado.alRender === 'function') {
+          estado.alRender(estado.paso);
+        }
+      });
+    }
+    var nodoErrorModalidad = qs(raiz, '#sgc-error-modalidad');
+    if (nodoErrorModalidad) {
+      estado.dom.errores.modalidad = nodoErrorModalidad;
+    }
+    // ORDEN-RONDA-38 pieza 2b: la justificación de la OCA, en Fundamentación. El
+    // bloque entero (`camposOca.justificacion`) es lo que se muestra u oculta
+    // según la modalidad.
+    var nodoOcaJustificacion = qs(raiz, '#sgc-oca-justificacion');
+    if (nodoOcaJustificacion) {
+      estado.dom.campos.ocaJustificacion = nodoOcaJustificacion;
+      var campoOca = qs(raiz, '#sgc-oca-justificacion-campo');
+      if (campoOca) {
+        estado.dom.camposOca = { justificacion: campoOca };
+      }
+    }
+    var nodoErrorOcaJustificacion = qs(raiz, '#sgc-error-oca-justificacion');
+    if (nodoErrorOcaJustificacion) {
+      estado.dom.errores.ocaJustificacion = nodoErrorOcaJustificacion;
     }
     estado.dom.borradorAviso = qs(raiz, '#sgc-borrador-aviso');
     estado.dom.borradorInfo = qs(raiz, '#sgc-borrador-info');

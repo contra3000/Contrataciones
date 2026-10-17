@@ -58,6 +58,11 @@
     if (mensaje.indexOf('trimestre') !== -1) {
       return 'trimestre';
     }
+    // ORDEN-RONDA-38 pieza 2a: la modalidad de compra ("Elegí la modalidad de
+    // compra"), en el mismo esquema.
+    if (mensaje.indexOf('modalidad') !== -1) {
+      return 'modalidad';
+    }
     // ORDEN-RONDA-35 pieza 1: el lugar de entrega, en el mismo esquema.
     if (mensaje.indexOf('lugar de entrega') !== -1) {
       return 'lugarEntrega';
@@ -166,6 +171,16 @@
       if (causas.revisar) {
         errores.push(errorCampo('pacJustificacion',
           'Revisá la justificación del PAC: cambiaron las causas.'));
+      }
+      // ORDEN-RONDA-38 pieza 2b: con la modalidad "orden de compra abierta", la
+      // justificación de la OCA es obligatoria en Fundamentación. Es la misma
+      // exigencia que frena Imprimir y Exportar (documentos.js itemsOca).
+      if (SGC.core.validacion.modalidadOca(datos)) {
+        var oca = campos.ocaJustificacion;
+        if (typeof oca !== 'string' || oca.trim() === '') {
+          errores.push(errorCampo('ocaJustificacion',
+            'Falta justificar la modalidad orden de compra abierta.'));
+        }
       }
     }
     return { valido: errores.length === 0, errores: errores };

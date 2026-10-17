@@ -197,6 +197,21 @@
           </select>
           <p id="sgc-error-pac" class="error-campo" role="alert" hidden></p>
         </div>
+        <!-- ORDEN-RONDA-38 pieza 2: la modalidad de compra. Común u orden de
+             compra abierta (OCA). Es obligatoria para pasar de Identificación, y
+             un archivo viejo sin modalidad la pide antes de exportar. Con OCA,
+             en Fundamentación se pide la justificación y en cada renglón la
+             cantidad máxima por Solicitud de Provisión. Es del generador: la
+             aplicación con servidor no la tiene (ADR-044). -->
+        <div class="campo">
+          <label for="sgc-modalidad">Modalidad</label>
+          <select id="sgc-modalidad" required>
+            <option value="">Elegí la modalidad</option>
+            <option value="comun">Común</option>
+            <option value="oca">Orden de compra abierta (OCA)</option>
+          </select>
+          <p id="sgc-error-modalidad" class="error-campo" role="alert" hidden></p>
+        </div>
         <div class="campo">
           <label for="sgc-dependencia">Dependencia solicitante</label>
           <input id="sgc-dependencia" type="text" autocomplete="off" required>
@@ -332,9 +347,21 @@
           </button>
           <p id="sgc-error-pac-justificacion" class="error-campo" role="alert" hidden></p>
         </div>
-        <div class="campo">
-          <label for="sgc-objetivo">Objetivo (opcional)</label>
-          <textarea id="sgc-objetivo" rows="3"></textarea>
+        <!-- ORDEN-RONDA-38 pieza 2d: "Objetivo" sale de Fundamentación. El JSON
+             sigue llevando objetivo: "" para que lo lean los archivos viejos, y
+             si un archivo trae un objetivo se importa y no se muestra. -->
+        <!-- ORDEN-RONDA-38 pieza 2b: con la modalidad "Orden de compra abierta"
+             se pide acá la justificación de la OCA, obligatoria, con el mismo
+             trato que la del PAC. Arriba va la guía de la norma. Es del
+             generador (ADR-044). -->
+        <div class="campo" id="sgc-oca-justificacion-campo" hidden>
+          <p id="sgc-oca-justificacion-guia" class="req-ayuda">La orden de compra abierta
+            se usa cuando no se puede prefijar con suficiente precisión la cantidad de
+            unidades a adquirir o las fechas o plazos de entrega (Decreto 1030/2016, art. 25
+            inc. c). Explicá por qué en este requerimiento no se puede.</p>
+          <label for="sgc-oca-justificacion">Justificación de la OCA</label>
+          <textarea id="sgc-oca-justificacion" rows="3"></textarea>
+          <p id="sgc-error-oca-justificacion" class="error-campo" role="alert" hidden></p>
         </div>
       </section>
 
@@ -434,6 +461,7 @@
   <script src="js/views/wizard-formulario.js"></script>
   <script src="js/views/wizard.js"></script>
   <script src="js/views/requerimiento-valores.js"></script>
+  <script src="js/views/requerimiento-oca.js"></script>
   <script src="js/adapters/repo.js"></script>
   <script src="js/adapters/repo.memoria.js"></script>
 
