@@ -470,6 +470,11 @@ function descripcionOperador(operador) {
     sincronizarDesdeFormulario();
     guardarCausasPac();
     actualizarPac();
+    var nodoErrorPacJustificacion = estado.dom && estado.dom.errores && estado.dom.errores.pacJustificacion;
+    if (nodoErrorPacJustificacion) {
+      nodoErrorPacJustificacion.textContent = '';
+      nodoErrorPacJustificacion.hidden = true;
+    }
     if (typeof estado.alRender === 'function') {
       estado.alRender(estado.paso);
     }
