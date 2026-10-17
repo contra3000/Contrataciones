@@ -108,13 +108,29 @@
     return true;
   }
 
+  // ORDEN-RONDA-38 pieza 1: además de las causas, el proceso justificado tiene
+  // que seguir siendo el de ahora. `pac.procesoJustificado` se guarda al escribir
+  // o confirmar la justificación (views/wizard.js), con el número del proceso de
+  // entonces (o `no-autorizado`). Si el proceso de ahora es otro, se pide
+  // revisar igual que cuando cambian las causas. Un archivo de la 37 con
+  // `pac.causas` y sin `pac.procesoJustificado` no pide revisar por eso: nadie
+  // guardó contra qué proceso se escribió, así que toma el de ahora.
+  function procesoJustificadoCambio(pac, numero) {
+    if (typeof pac.procesoJustificado !== 'string' || pac.procesoJustificado === '') {
+      return false;
+    }
+    return pac.procesoJustificado !== numero;
+  }
+
   // ORDEN-RONDA-37 pieza 2: la cuenta de las causas cumplidas se cierra con la
   // pregunta de si hay que volver a mirar la justificación. Sólo importa
   // cuando hay una causa Y hay justificación escrita: sin causa no hay nada que
   // revisar, y sin justificación lo que falta es escribirla (items lo dice).
+  // ORDEN-RONDA-38 pieza 1: también pide revisar si cambió el proceso del PAC.
   function cerrarCausas(causas, justificacion, pac) {
+    var numero = pac.numero === undefined || pac.numero === null ? '' : String(pac.numero);
     causas.revisar = causas.requerida && justificacion !== '' &&
-      !mismasClaves(pac.causas, causas.claves);
+      (!mismasClaves(pac.causas, causas.claves) || procesoJustificadoCambio(pac, numero));
     return causas;
   }
 
@@ -136,8 +152,10 @@
    *    ('fuera-del-pac', 'anio', 'trimestre', 'monto'), que es lo que guarda la
    *    justificación en pac.causas;
    *  - revisar: la causa cambió desde que se guardó la justificación
-   *    (ORDEN-RONDA-37 pieza 2). Una justificación escrita sin claves guardadas
-   *    también cuenta: nadie las guardó, no se puede saber qué causas cubrió.
+   *    (ORDEN-RONDA-37 pieza 2), o el proceso de ahora no es el que se guardó en
+   *    `pac.procesoJustificado` (ORDEN-RONDA-38 pieza 1). Una justificación
+   *    escrita sin claves guardadas también cuenta: nadie las guardó, no se puede
+   *    saber qué causas cubrió.
    *
    * Las causas son: el pedido no está autorizado en el PAC; el año del
    * requerimiento no es el del PAC; el trimestre elegido no es el del proceso;

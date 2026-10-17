@@ -96,6 +96,12 @@
     if (Array.isArray(pac.causas)) {
       resultado.causas = pac.causas;
     }
+    // ORDEN-RONDA-38 pieza 1: el proceso contra el que se escribió la
+    // justificación viaja con el PAC, por la misma razón: al reimportar, cambiar
+    // de proceso pide revisarla.
+    if (typeof pac.procesoJustificado === 'string') {
+      resultado.procesoJustificado = pac.procesoJustificado;
+    }
     if (numero !== 'no-autorizado') {
       resultado.proceso = SGC.core.validacion.procesoDelPac(numero);
       if (resultado.proceso === null) {

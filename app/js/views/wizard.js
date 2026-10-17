@@ -434,6 +434,11 @@ function descripcionOperador(operador) {
    * cuando confirma que la justificación sigue valiendo. Es el único momento en
    * que se sabe qué causas tenía a la vista: por eso no se guardan al
    * sincronizar ni al importar.
+   *
+   * ORDEN-RONDA-38 pieza 1: junto con las causas se guarda el proceso contra el
+   * que se escribió (pac.procesoJustificado, el número del proceso de ahora o
+   * `no-autorizado`). Así, al cambiar de proceso, la justificación pide revisión
+   * aunque las causas sean las mismas.
    */
   function guardarCausasPac() {
     var identificacion = estado.datos.identificacion || {};
@@ -446,6 +451,8 @@ function descripcionOperador(operador) {
       trimestre: identificacion.trimestre,
       pac: pac
     }, renglonesParaPreventivo()).claves;
+    pac.procesoJustificado = pac.numero === undefined || pac.numero === null
+      ? '' : String(pac.numero);
   }
 
   /*

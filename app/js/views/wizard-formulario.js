@@ -51,7 +51,8 @@
     //
     // ORDEN-RONDA-37 pieza 2: `causas` no sale de un campo (se guarda cuando se
     // escribe o se confirma la justificación), así que reconstruir el pac no lo
-    // puede perder: si venía con claves, siguen viajando.
+    // puede perder: si venía con claves, siguen viajando. ORDEN-RONDA-38 pieza 1:
+    // lo mismo con `procesoJustificado`, que se guarda en el mismo momento.
     if (campoInput(estado, 'pac')) {
       var pacAnterior = estado.datos.identificacion.pac;
       var pac = {
@@ -61,6 +62,9 @@
       };
       if (pacAnterior && Array.isArray(pacAnterior.causas)) {
         pac.causas = pacAnterior.causas;
+      }
+      if (pacAnterior && typeof pacAnterior.procesoJustificado === 'string') {
+        pac.procesoJustificado = pacAnterior.procesoJustificado;
       }
       estado.datos.identificacion.pac = pac;
     }

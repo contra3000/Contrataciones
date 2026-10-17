@@ -261,6 +261,12 @@
     if (Array.isArray(valor.causas)) {
       salida.causas = valor.causas;
     }
+    // ORDEN-RONDA-38 pieza 1: el proceso contra el que se escribió la
+    // justificación; sin él, un archivo viejo no pide revisar al cambiar de
+    // proceso.
+    if (typeof valor.procesoJustificado === 'string') {
+      salida.procesoJustificado = valor.procesoJustificado;
+    }
     return salida;
   }
 
@@ -712,6 +718,9 @@
         if (Array.isArray(pacCrudo.causas)) {
           pac.causas = pacCrudo.causas;
         }
+        if (typeof pacCrudo.procesoJustificado === 'string') {
+          pac.procesoJustificado = pacCrudo.procesoJustificado;
+        }
       } else {
         var procesoPac = SGC.core.validacion.procesoDelPac(numeroPac);
         if (procesoPac) {
@@ -724,6 +733,11 @@
           // sabe qué causas cubría).
           if (Array.isArray(pacCrudo.causas)) {
             pac.causas = pacCrudo.causas;
+          }
+          // ORDEN-RONDA-38 pieza 1: el proceso contra el que se escribió, en la
+          // misma forma.
+          if (typeof pacCrudo.procesoJustificado === 'string') {
+            pac.procesoJustificado = pacCrudo.procesoJustificado;
           }
         } else {
           avisosPac.push('el proceso ' + numeroPac + ' no está en el PAC 2026: elegilo de nuevo');
