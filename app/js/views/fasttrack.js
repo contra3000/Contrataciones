@@ -81,22 +81,23 @@
   /*
    * ORDEN-RONDA-39 pieza 2a: normaliza un código del catálogo ONC que venga
    * con separadores raros (espacios, tabulaciones, puntos o guiones de más).
-   * Si tiene la forma de 3 dígitos, un número y otro número, lo reescribe como
-   * d.d.d-NNNN.N. Si no coincide con esa forma, devuelve el código tal cual.
+   * Si tiene la forma de 3 dígitos, un número y otro número, separados por
+   * cualquiera de esos separadores, lo reescribe como d.d.d-NNNN.N conservando
+   * los dígitos tal como vinieron. Si no coincide con esa forma, devuelve el
+   * código tal cual.
    */
+  var FORMA_CODIGO = /^\s*(\d+)\s*[.\s-]\s*(\d+)\s*[.\s-]\s*(\d+)\s*[.\s-]\s*(\d+)\s*[.\s-]\s*(\d+)\s*$/;
+
   function normalizarCodigo(codigo) {
     if (typeof codigo !== 'string') {
       return codigo;
     }
-    var limpio = codigo.replace(/[\s.\-]+/g, ' ').trim();
-    var partes = limpio.split(' ');
-    if (partes.length === 3 &&
-        /^\d{1,2}\.\d{1,2}\.\d{1,2}$/.test(partes[0]) &&
-        /^\d+$/.test(partes[1]) &&
-        /^\d+$/.test(partes[2])) {
-      return partes[0] + '-' + partes[1] + '.' + partes[2];
+    var partes = FORMA_CODIGO.exec(codigo);
+    if (!partes) {
+      return codigo;
     }
-    return codigo;
+    return partes[1] + '.' + partes[2] + '.' + partes[3] + '-' +
+      partes[4] + '.' + partes[5];
   }
 
   function esObjeto(valor) {
@@ -236,9 +237,14 @@
         inexistentes.push(codigo);
         continue;
       }
+      // ORDEN-RONDA-39 pieza 2b: se conserva el `buscar` del asistente también
+      // en un renglón con código. El generador vuelve a verificar el código
+      // contra su catálogo y, si no existe, lo deja "por buscar" con este texto
+      // en lugar del código.
       renglones.push({
         codigo: codigo,
         item: codigo,
+        buscar: typeof r.buscar === 'string' ? r.buscar.trim() : '',
         cantidad: r.cantidad,
         unidad: r.unidad.trim(),
         aclaracion: aclaracion

@@ -204,9 +204,12 @@
     var datos = expediente && expediente.datos ? expediente.datos : {};
     var rq = datos.requerimiento;
     if (!rq || rq.oca !== true) {
-      return [];
+      return { items: [], renglones: [] };
     }
     var items = [];
+    // ORDEN-RONDA-39 pieza 1a: los renglones que frenan por sus cantidades, para
+    // que "2 · Renglones" quede con "· falta", como el paso de la justificación.
+    var renglonesEnFalta = [];
     if (ocaJustificacionFaltante(expediente)) {
       items.push('justificar la modalidad orden de compra abierta');
     }
@@ -216,6 +219,7 @@
       if (r && (r.cantidadMaxima === undefined || r.cantidadMaxima === null)) {
         items.push('Renglón ' + (i + 1) +
           ': falta la cantidad máxima por Solicitud de Provisión');
+        renglonesEnFalta.push('Renglón ' + (i + 1));
         continue;
       }
       // La máxima no puede superar la cantidad del renglón (el tope del
@@ -225,6 +229,7 @@
         items.push('Renglón ' + (i + 1) +
           ': la cantidad máxima por Solicitud de Provisión (' + r.cantidadMaxima +
           ') no puede superar la cantidad del renglón (' + r.cantidad + ')');
+        renglonesEnFalta.push('Renglón ' + (i + 1));
         continue;
       }
       // La mínima contra la máxima: la regla vive en el núcleo
@@ -235,11 +240,12 @@
         var errores = SGC.core.requerimiento.validarCantidades(r);
         if (errores.length > 0) {
           items.push('Renglón ' + (i + 1) + ': ' + errores[0]);
+          renglonesEnFalta.push('Renglón ' + (i + 1));
           continue;
         }
       }
     }
-    return items;
+    return { items: items, renglones: renglonesEnFalta };
   }
 
   function ocaJustificacionFaltante(expediente) {
@@ -386,13 +392,23 @@
     }
     // ORDEN-RONDA-38 pieza 2b: con OCA, la justificación de la OCA y la cantidad
     // máxima de cada renglón frenan la exportación, con su motivo.
-    var itemsOcaPendientes = itemsOca(expediente);
-    if (itemsOcaPendientes.length > 0) {
+    var ocaPendientes = itemsOca(expediente);
+    if (ocaPendientes.items.length > 0) {
       r.valido = false;
-      items = items.concat(itemsOcaPendientes);
+      items = items.concat(ocaPendientes.items);
       if (ocaJustificacionFaltante(expediente) &&
           r.faltantes.campos.indexOf('ocaJustificacion') === -1) {
         r.faltantes.campos.push('ocaJustificacion');
+      }
+      // ORDEN-RONDA-39 pieza 1a: un renglón con las cantidades de la OCA mal
+      // marca el paso "2 · Renglones" con "· falta".
+      if (!r.faltantes.renglones) {
+        r.faltantes.renglones = [];
+      }
+      for (var o = 0; o < ocaPendientes.renglones.length; o++) {
+        if (r.faltantes.renglones.indexOf(ocaPendientes.renglones[o]) === -1) {
+          r.faltantes.renglones.push(ocaPendientes.renglones[o]);
+        }
       }
     }
     // ORDEN-RONDA-35 pieza 1: con la marca del generador, la Identificación
@@ -463,11 +479,11 @@
     var itemsPac = itemsDelPac(info.expediente);
     // ORDEN-RONDA-38 pieza 2b: con OCA, Imprimir frena con el mismo motivo que
     // Exportar (la justificación de la OCA y las cantidades máximas).
-    var itemsOcaPendientes = itemsOca(info.expediente);
+    var ocaImpresion = itemsOca(info.expediente);
     if (info.revision.faltantes.campos.length > 0 ||
         (info.revision.faltantes.renglones && info.revision.faltantes.renglones.length > 0) ||
         itemsPac.length > 0 ||
-        itemsOcaPendientes.length > 0) {
+        ocaImpresion.items.length > 0) {
       // Falta algo de fondo: el texto del botón de exportar lo dice, y componer
       // un documento incompleto sería imprimir un papel inútil.
       actualizar();

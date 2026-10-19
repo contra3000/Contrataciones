@@ -211,6 +211,12 @@ test('RONDA-39 pieza 1a-2 · con OCA y máxima 10 (igual a la cantidad del rengl
     .querySelector('[data-paso="renglones"]');
   assert.ok(!/falta/.test(marcado.textContent),
     '"2 · Renglones" no queda en falta: ' + marcado.textContent);
+
+  const antesCompuestos = SGC().generadorDocumentos.expedienteLocal().entregables.length;
+  d.getElementById('sgc-btn-imprimir').click();
+  await m.esperar(
+    () => SGC().generadorDocumentos.expedienteLocal().entregables.length > antesCompuestos,
+    20000, 'los documentos se compusieron');
   assert.strictEqual(boton.disabled, false,
     'con la máxima igual al tope del renglón, exporta');
 
@@ -257,9 +263,12 @@ test('RONDA-39 pieza 1b · el requerimiento con OCA y la guía de Fundamentació
   await ir('renglones');
   m.cargarOca([{ maxima: 5, minima: 2 }]);
   await ir('fundamentacion');
+  m.escribir('sgc-oca-justificacion', JUSTIFICACION_OCA);
   await ir('revision');
 
   const antes = SGC().generadorDocumentos.expedienteLocal().entregables.length;
+  d.getElementById('sgc-btn-imprimir').click();
+  await m.esperar(() => SGC().generadorDocumentos.expedienteLocal().entregables.length > antes,
     20000, 'los documentos se compusieron');
 
   const impreso = SGC().generadorDocumentos.seccion().textContent.replace(/\s+/g, ' ');

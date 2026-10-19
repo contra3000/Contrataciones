@@ -636,10 +636,13 @@
           };
           // ORDEN-RONDA-33: un renglón sin código de la plantilla entra "por
           // buscar" y conserva el texto con el que se lo buscará.
+          // ORDEN-RONDA-39 pieza 2b: el `buscar` también se conserva en un
+          // renglón con código, para que si el código no existe en el catálogo
+          // local quede "por buscar" con ese texto y no con el código.
           if (r.porBuscar === true) {
             renglon.porBuscar = true;
-            renglon.buscar = typeof r.buscar === 'string' ? r.buscar : '';
           }
+          renglon.buscar = typeof r.buscar === 'string' ? r.buscar : '';
           return renglon;
         }),
         presupuestos: []
