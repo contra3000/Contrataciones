@@ -580,7 +580,7 @@
       }
     });
     SGC.views.wizard.fijarRepo(estado.repo);
-    SGC.catalogo.buscador.montar(porId('sgc-paso-renglones'));
+    SGC.catalogo.buscador.montar(porId('sgc-paso-renglones'), { cerrarListaAlElegir: true });
     SGC.views.wizard.vincularRenglones();
 
     var botones = estado.dom.roles.querySelectorAll('button');

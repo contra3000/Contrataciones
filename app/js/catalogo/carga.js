@@ -32,7 +32,8 @@
     clases: null,
     clasesPorId: {},
     fragmentos: {},
-    codigos: null
+    codigos: null,
+    busqueda: null
   };
 
   // Peticiones esperando su <script>: clave -> { resolver, rechazar }.
@@ -208,6 +209,29 @@
   }
 
   /*
+   * cargarBusqueda()
+   *
+   * El índice de búsqueda de ítems (catalogo/busqueda.js, ~20 MB) y el índice
+   * de códigos, que hace falta para mostrar la clase de cada coincidencia. No
+   * se pide al abrir: se pide la primera vez que la persona escribe en "Buscar
+   * ítem". Sólo lo usa el generador.
+   */
+  function cargarBusqueda() {
+    if (estado.busqueda) {
+      return Promise.resolve(estado.busqueda);
+    }
+    return unaSolaVez('busqueda', function () {
+      return Promise.all([
+        peticion('catalogo/busqueda.js'),
+        cargarCodigos()
+      ]).then(function (respuestas) {
+        estado.busqueda = respuestas[0];
+        return estado.busqueda;
+      });
+    });
+  }
+
+  /*
    * resolverCodigo(codigo) -> Promise<item|null>
    *
    * El ítem del catálogo para ese código, o null si no existe. Descarga el
@@ -238,6 +262,7 @@
     iniciar: iniciar,
     cargarClase: cargarClase,
     cargarCodigos: cargarCodigos,
+    cargarBusqueda: cargarBusqueda,
     resolverCodigo: resolverCodigo,
     obtenerEstado: function () {
       return estado;

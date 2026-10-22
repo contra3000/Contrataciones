@@ -147,6 +147,11 @@ function escribirJs(rutaDisco, rutaLogica, texto) {
   fs.writeFileSync(rutaJs, linea, 'utf8');
 }
 
+function escribirBusqueda(rutaDisco, rutaLogica, texto) {
+  const linea = 'SGC.catalogo.recibir(' + JSON.stringify(rutaLogica) + ',' + texto + ');\n';
+  fs.writeFileSync(rutaDisco, linea, 'utf8');
+}
+
 function main() {
   const opciones = leerArgumentos(process.argv.slice(2));
   if (!opciones.entrada || !opciones.salida) {
@@ -287,6 +292,17 @@ function main() {
   }
   escribirJson(path.join(opciones.salida, 'codigos.json'), 'catalogo/codigos.json', codigos);
 
+  /*
+   * catalogo/busqueda.js — los 159.366 ítems con su código y su texto, en el
+   * orden del catálogo. Sólo .js: la aplicación con servidor no lo usa y sobre
+   * file:// el generador lo carga con un <script>.
+   */
+  const indiceBusqueda = ordenados.map(function (r) {
+    return [r.codigo, r.item];
+  });
+  const rutaBusqueda = path.join(opciones.salida, 'busqueda.js');
+  escribirBusqueda(rutaBusqueda, 'catalogo/busqueda.js', JSON.stringify(indiceBusqueda));
+
   const manifiesto = {
     catalogoVersion: catalogoVersion,
     registros: registros.length,
@@ -302,8 +318,10 @@ function main() {
   console.log('catalogo: fragmento más grande ' + (fragmentoMasGrande / 1024).toFixed(0) + ' KB, total ' + (bytesTotal / 1024).toFixed(0) + ' KB');
   console.log('catalogo: índice de códigos ' + (Object.keys(codigos).length) + ' entradas (' +
     (fs.statSync(path.join(opciones.salida, 'codigos.json')).size / 1024 / 1024).toFixed(1) + ' MB) para resolver un código sin cargar el catálogo entero');
+  console.log('catalogo: índice de búsqueda ' + indiceBusqueda.length + ' ítems (' +
+    (fs.statSync(rutaBusqueda).size / 1024 / 1024).toFixed(1) + ' MB) en catalogo/busqueda.js');
   console.log('catalogo: catalogoVersion ' + catalogoVersion + ', generado ' + manifiesto.generado);
-  console.log('catalogo: ' + (totalFragmentos + 4) + ' archivos .js hermanos para file:// (uno por .json)');
+  console.log('catalogo: ' + (totalFragmentos + 5) + ' archivos .js para file:// (uno por .json y busqueda.js)');
   console.log('catalogo: listo en ' + segundos + ' s -> ' + opciones.salida);
 }
 

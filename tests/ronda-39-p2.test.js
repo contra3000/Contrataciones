@@ -117,14 +117,14 @@ test('RONDA-39 pieza 2b · un código inexistente conserva el "buscar" y "Buscar
   assert.strictEqual(renglones[0].buscar, 'matafuego',
     'conserva el "buscar" del asistente, no el código');
 
-  // "Buscar" lleva esas palabras al buscador de catálogo.
+  // "Buscar" lleva esas palabras al buscador de ítems del catálogo.
   const botonBuscar = m.documento.getElementById('sgc-lista-renglones')
     .querySelector('[data-buscar]');
   assert.ok(botonBuscar, 'el renglón por buscar muestra su botón "Buscar"');
   botonBuscar.click();
-  assert.strictEqual(m.documento.getElementById('sgc-campo-clases').value, 'matafuego',
-    'y "Buscar" pone "matafuego" en el buscador: ' +
-      m.documento.getElementById('sgc-campo-clases').value);
+  assert.strictEqual(m.documento.getElementById('sgc-buscar-item').value, 'matafuego',
+    'y "Buscar" pone "matafuego" en "Buscar ítem": ' +
+      m.documento.getElementById('sgc-buscar-item').value);
 });
 
 test('RONDA-39 pieza 2c · la plantilla trae las instrucciones nuevas del código', async () => {

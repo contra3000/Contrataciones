@@ -234,6 +234,18 @@
         <h2 id="sgc-titulo-paso-2">2 · Renglones</h2>
         <p id="sgc-estado" class="estado" role="status" aria-live="polite">Cargando catálogo…</p>
 
+        <div class="seccion-busqueda" aria-label="Búsqueda de ítems">
+          <label for="sgc-buscar-item" class="etiqueta">Buscar ítem</label>
+          <div class="caja-combobox">
+            <input id="sgc-buscar-item" type="search" role="combobox"
+                   aria-expanded="false" aria-controls="sgc-lista-buscar-item"
+                   aria-autocomplete="list" autocomplete="off"
+                   placeholder="Ej.: mantenimiento recarga matafuego">
+            <ul id="sgc-lista-buscar-item" role="listbox" class="desplegable" hidden></ul>
+          </div>
+          <p id="sgc-conteo-buscar-item" class="conteo"></p>
+        </div>
+
         <div class="seccion-busqueda" aria-label="Búsqueda de clases">
           <label for="sgc-campo-clases" class="etiqueta">Buscar clase o rubro</label>
           <div class="caja-combobox">
@@ -454,6 +466,7 @@
   <script src="js/catalogo/indice.js"></script>
   <script src="js/catalogo/carga.js"></script>
   <script src="js/catalogo/renglones.js"></script>
+  <script src="js/generador/busqueda-items.js"></script>
   <script src="js/catalogo/buscador.js"></script>
   <script src="js/views/pasos.js"></script>
   <script src="js/views/borrador.js"></script>

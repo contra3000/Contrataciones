@@ -109,16 +109,13 @@ test('RONDA-33 pieza 2 · "Buscar" llena el buscador y el ítem elegido reemplaz
 
     const fila2 = listaRenglones().children[1];
     fila2.querySelector('[data-buscar]').click();
-    assert.strictEqual(m.documento.getElementById('sgc-campo-clases').value, 'papel',
-      '"Buscar" puso el texto del renglón en el buscador');
+    assert.strictEqual(m.documento.getElementById('sgc-buscar-item').value, 'papel',
+      '"Buscar" puso el texto del renglón en "Buscar ítem"');
 
-    await m.esperar(() => m.documento.getElementById('sgc-opcion-clase-0'), 20000,
-      'opción de la clase renderizada');
-    m.mousedown('sgc-opcion-clase-0');
-    await m.esperar(() => m.documento.getElementById('sgc-opcion-item-0'), 30000,
-      'ítems de la clase cargados');
-    const elegido = SGC().catalogo.buscador.obtenerEstado().itemsFiltrados[0];
-    m.mousedown('sgc-opcion-item-0');
+    await m.esperar(() => m.documento.getElementById('sgc-opcion-buscar-item-0'), 60000,
+      'coincidencias del ítem renderizadas');
+    const elegido = SGC().catalogo.buscador.obtenerEstado().buscarItem[0];
+    m.mousedown('sgc-opcion-buscar-item-0');
     await m.esperar(() => SGC().catalogo.renglones.obtener()[1].porBuscar !== true, 20000,
       'el renglón 2 dejó de estar por buscar');
 

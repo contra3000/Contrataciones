@@ -269,8 +269,8 @@ test('el catálogo del paquete está completo y cada .js es un hermano capaz de 
     'el paquete tiene ' + delPaquete.length + ' archivos de catálogo y el repo ' + delRepo.length);
   assert.deepStrictEqual(delPaquete, delRepo, 'no son los mismos archivos de catálogo');
   assert.strictEqual(delPaquete.length,
-    listar(path.join(APP, 'catalogo')).filter((r) => /\.json$/i.test(r)).length,
-    'tiene que haber tantos .js como .json hay en el catálogo del repo');
+    listar(path.join(APP, 'catalogo')).filter((r) => /\.json$/i.test(r)).length + 1,
+    'tiene que haber tantos .js como .json hay en el catálogo del repo, más busqueda.js');
 
   // Cada hermano tiene que llamar a la puerta de entrada del catálogo: es lo
   // que carga.js espera cuando inyecta el <script> sobre file://. Con el

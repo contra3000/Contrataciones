@@ -30,6 +30,12 @@
     items: [],
     itemsFiltrados: [],
     itemActivo: -1,
+    buscarItem: [],
+    buscarItemTotal: 0,
+    buscarItemActivo: -1,
+    busquedaCargada: false,
+    busquedaCargando: false,
+    opciones: {},
     dom: {}
   };
 
@@ -180,7 +186,13 @@
     li.appendChild(texto);
     li.addEventListener('mousedown', function (ev) {
       ev.preventDefault();
+      if (estado.dom.listaItems.hidden) {
+        return;
+      }
       SGC.catalogo.renglones.agregar(resultado);
+      if (estado.opciones.cerrarListaAlElegir) {
+        cerrarListaItems();
+      }
     });
     return li;
   }
@@ -213,6 +225,170 @@
     estado.itemActivo = -1;
     estado.dom.campoItems.setAttribute('aria-activedescendant', '');
     estado.dom.campoItems.setAttribute('aria-expanded', 'false');
+  }
+
+  function claseDeCodigo(codigo) {
+    var catalogo = SGC.catalogo.carga.obtenerEstado();
+    var idClase = catalogo.codigos && catalogo.codigos[codigo];
+    var info = idClase && catalogo.clasesPorId[idClase];
+    return info ? info.clase : '';
+  }
+
+  function opcionBuscarItem(resultado, indice) {
+    var li = document.createElement('li');
+    li.id = 'sgc-opcion-buscar-item-' + indice;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', 'false');
+    li.tabIndex = -1;
+    var codigo = document.createElement('span');
+    codigo.className = 'opcion-codigo';
+    codigo.textContent = resultado.codigo;
+    var texto = document.createElement('span');
+    texto.className = 'opcion-titulo';
+    resaltar(texto, resultado.item, resultado.coincidencias);
+    var clase = document.createElement('span');
+    clase.className = 'opcion-detalle';
+    clase.textContent = claseDeCodigo(resultado.codigo);
+    li.appendChild(codigo);
+    li.appendChild(texto);
+    li.appendChild(clase);
+    li.addEventListener('mousedown', function (ev) {
+      ev.preventDefault();
+      if (estado.dom.listaBuscarItem.hidden) {
+        return;
+      }
+      elegirItemBusqueda(resultado);
+    });
+    return li;
+  }
+
+  function elegirItemBusqueda(resultado) {
+    SGC.catalogo.indice.registrarCodigos([resultado]);
+    SGC.catalogo.renglones.agregar(resultado);
+    cerrarListaBuscarItem();
+    if (estado.dom.campoBuscarItem && typeof estado.dom.campoBuscarItem.focus === 'function') {
+      estado.dom.campoBuscarItem.focus();
+    }
+  }
+
+  function renderBuscarItem() {
+    var lista = estado.dom.listaBuscarItem;
+    lista.textContent = '';
+    for (var i = 0; i < estado.buscarItem.length; i++) {
+      lista.appendChild(opcionBuscarItem(estado.buscarItem[i], i));
+    }
+    estado.buscarItemActivo = -1;
+    if (estado.buscarItem.length === 0) {
+      var vacio = document.createElement('li');
+      vacio.className = 'opcion-vacia';
+      vacio.textContent = 'Sin coincidencias';
+      lista.appendChild(vacio);
+    }
+    abrirLista(lista, estado.dom.campoBuscarItem);
+    var total = estado.buscarItemTotal;
+    var texto = total + ' coincidencia' + (total === 1 ? '' : 's');
+    if (total > LIMITE_ITEMS) {
+      texto += ' — se muestran las primeras ' + LIMITE_ITEMS;
+    }
+    estado.dom.conteoBuscarItem.textContent = texto;
+  }
+
+  function cerrarListaBuscarItem() {
+    var lista = estado.dom.listaBuscarItem;
+    if (!lista) {
+      return;
+    }
+    lista.hidden = true;
+    estado.buscarItemActivo = -1;
+    estado.dom.campoBuscarItem.setAttribute('aria-activedescendant', '');
+    estado.dom.campoBuscarItem.setAttribute('aria-expanded', 'false');
+  }
+
+  function marcarBuscarItemActivo(campo, lista) {
+    for (var i = 0; i < lista.children.length; i++) {
+      var op = lista.children[i];
+      var activa = i === estado.buscarItemActivo;
+      op.setAttribute('aria-selected', activa ? 'true' : 'false');
+      if (activa) {
+        op.classList.add('activo');
+      } else {
+        op.classList.remove('activo');
+      }
+    }
+    if (estado.buscarItemActivo >= 0 && estado.buscarItemActivo < estado.buscarItem.length) {
+      var id = 'sgc-opcion-buscar-item-' + estado.buscarItemActivo;
+      campo.setAttribute('aria-activedescendant', id);
+      var activaOp = qs(lista, '#' + id);
+      if (activaOp) {
+        activaOp.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }
+
+  function iniciarBusquedaItems() {
+    if (estado.busquedaCargando) {
+      return;
+    }
+    estado.busquedaCargando = true;
+    estado.dom.conteoBuscarItem.textContent = 'Cargando los ítems del catálogo.';
+    cerrarListaBuscarItem();
+    SGC.catalogo.carga.cargarBusqueda().then(function (datos) {
+      SGC.generadorBusqueda.montar(datos);
+      estado.busquedaCargada = true;
+      estado.busquedaCargando = false;
+      alEscribirBuscarItem();
+    }).catch(function (err) {
+      estado.busquedaCargando = false;
+      estado.dom.conteoBuscarItem.textContent =
+        'No se pudieron cargar los ítems del catálogo: ' + err.message;
+    });
+  }
+
+  function alEscribirBuscarItem() {
+    var valor = estado.dom.campoBuscarItem.value;
+    if (valor.trim() === '') {
+      estado.buscarItem = [];
+      estado.buscarItemTotal = 0;
+      cerrarListaBuscarItem();
+      estado.dom.conteoBuscarItem.textContent = '';
+      return;
+    }
+    if (!estado.busquedaCargada) {
+      iniciarBusquedaItems();
+      return;
+    }
+    var resultado = SGC.generadorBusqueda.buscar(valor, LIMITE_ITEMS);
+    estado.buscarItem = resultado.resultados;
+    estado.buscarItemTotal = resultado.total;
+    renderBuscarItem();
+  }
+
+  function tecladoBuscarItem(ev) {
+    var n = estado.buscarItem.length;
+    if (n === 0) {
+      if (ev.key === 'Escape') {
+        cerrarListaBuscarItem();
+      }
+      return;
+    }
+    if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      estado.buscarItemActivo = (estado.buscarItemActivo + 1) % n;
+      marcarBuscarItemActivo(estado.dom.campoBuscarItem, estado.dom.listaBuscarItem);
+    } else if (ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      estado.buscarItemActivo = (estado.buscarItemActivo - 1 + n) % n;
+      marcarBuscarItemActivo(estado.dom.campoBuscarItem, estado.dom.listaBuscarItem);
+    } else if (ev.key === 'Enter') {
+      ev.preventDefault();
+      if (estado.dom.listaBuscarItem.hidden) {
+        return;
+      }
+      var objetivo = estado.buscarItemActivo >= 0 ? estado.buscarItemActivo : 0;
+      elegirItemBusqueda(estado.buscarItem[objetivo]);
+    } else if (ev.key === 'Escape') {
+      cerrarListaBuscarItem();
+    }
   }
 
   function marcarItemActivo(campo, lista) {
@@ -279,8 +455,14 @@
       marcarItemActivo(estado.dom.campoItems, estado.dom.listaItems);
     } else if (ev.key === 'Enter') {
       ev.preventDefault();
+      if (estado.dom.listaItems.hidden) {
+        return;
+      }
       var objetivo = estado.itemActivo >= 0 ? estado.itemActivo : 0;
       SGC.catalogo.renglones.agregar(estado.itemsFiltrados[objetivo]);
+      if (estado.opciones.cerrarListaAlElegir) {
+        cerrarListaItems();
+      }
     } else if (ev.key === 'Escape') {
       cerrarListaItems();
     }
@@ -291,9 +473,14 @@
     estado.dom.campoClases.addEventListener('keydown', tecladoClases);
     estado.dom.campoItems.addEventListener('input', alEscribirItems);
     estado.dom.campoItems.addEventListener('keydown', tecladoItems);
+    if (estado.dom.campoBuscarItem) {
+      estado.dom.campoBuscarItem.addEventListener('input', alEscribirBuscarItem);
+      estado.dom.campoBuscarItem.addEventListener('keydown', tecladoBuscarItem);
+    }
   }
 
-  function montar(raiz) {
+  function montar(raiz, opciones) {
+    estado.opciones = opciones || {};
     estado.dom.raiz = raiz;
     estado.dom.estado = qs(raiz, '#sgc-estado');
     estado.dom.campoClases = qs(raiz, '#sgc-campo-clases');
@@ -304,6 +491,9 @@
     estado.dom.campoItems = qs(raiz, '#sgc-campo-items');
     estado.dom.listaItems = qs(raiz, '#sgc-lista-items');
     estado.dom.conteoItems = qs(raiz, '#sgc-conteo-items');
+    estado.dom.campoBuscarItem = qs(raiz, '#sgc-buscar-item');
+    estado.dom.listaBuscarItem = qs(raiz, '#sgc-lista-buscar-item');
+    estado.dom.conteoBuscarItem = qs(raiz, '#sgc-conteo-buscar-item');
     estado.dom.listaRenglones = qs(raiz, '#sgc-lista-renglones');
     estado.dom.resumen = qs(raiz, '#sgc-resumen');
     SGC.catalogo.renglones.montar({
@@ -331,12 +521,16 @@
      * el buscador para que elija la clase y el ítem.
      */
     buscar: function (texto) {
-      var campo = estado.dom.campoClases;
+      var campo = estado.dom.campoBuscarItem || estado.dom.campoClases;
       if (!campo) {
         return;
       }
       campo.value = texto === undefined || texto === null ? '' : String(texto);
-      alEscribirClases();
+      if (estado.dom.campoBuscarItem) {
+        alEscribirBuscarItem();
+      } else {
+        alEscribirClases();
+      }
       if (typeof campo.focus === 'function') {
         campo.focus();
       }
