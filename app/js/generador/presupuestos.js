@@ -44,6 +44,22 @@
    */
   function textoDe(p) {
     var utils = SGC.core.utils;
+    // ORDEN-RONDA-41 pieza 1c: un documento que vino en la plantilla no tiene
+    // archivo todavía. Se muestra por proveedor, fecha y tipo, y dice que falta
+    // el PDF (no "sin huella": todavía no hay nada que sellar).
+    if (p.sinPdf === true) {
+      var pendiente = [];
+      if (p.proveedor) {
+        pendiente.push(p.proveedor);
+      }
+      var fechaPendiente = utils.fechaCorta(p.fecha);
+      if (fechaPendiente) {
+        pendiente.push(fechaPendiente);
+      }
+      pendiente.push(utils.etiquetaDeTipo(utils.tipoDeDocumento(p)));
+      pendiente.push('falta el PDF');
+      return pendiente.join(' · ');
+    }
     var partes = [p.nombreOriginal];
     if (p.proveedor) {
       partes.push(p.proveedor);
@@ -82,11 +98,24 @@
         var texto = document.createElement('span');
         texto.textContent = textoDe(p);
         li.appendChild(texto);
+        // ORDEN-RONDA-41 pieza 1c: un documento "sin PDF" tiene su propio
+        // selector de archivo. Al elegirlo se calculan nombre, tamaño y huella,
+        // y el id no cambia: los valores de los renglones lo siguen citando.
+        if (p.sinPdf === true) {
+          var archivo = document.createElement('input');
+          archivo.type = 'file';
+          archivo.className = 'req-pdf';
+          archivo.setAttribute('data-pdf-de', p.id);
+          archivo.setAttribute('aria-label',
+            'Elegir el PDF del documento de ' + (p.proveedor || 'referencia'));
+          li.appendChild(archivo);
+        }
         var quitar = document.createElement('button');
         quitar.type = 'button';
         quitar.className = 'req-quitar-valor';
         quitar.setAttribute('data-quitar', p.id);
-        quitar.setAttribute('aria-label', 'Quitar el documento de referencia ' + p.nombreOriginal);
+        quitar.setAttribute('aria-label', 'Quitar el documento de referencia ' +
+          (p.nombreOriginal || p.proveedor || p.id));
         quitar.textContent = 'Quitar';
         li.appendChild(quitar);
         lista.appendChild(li);
@@ -184,6 +213,42 @@
     });
   }
 
+  /*
+   * ORDEN-RONDA-41 pieza 1c: completar el PDF de un documento que vino "sin
+   * PDF" en la plantilla. Es el mismo cálculo que agregar() —nombre, tamaño y
+   * SHA-256—, pero sobre un documento que ya existe: el id se conserva porque
+   * es lo que citan los valores de los renglones.
+   */
+  function completarPdf(id, archivo) {
+    if (!archivo || typeof archivo.name !== 'string' || archivo.name.trim() === '') {
+      avisar('Elegí el archivo del documento: el nombre del archivo es lo que se cita.');
+      return;
+    }
+    var utils = SGC.core.utils;
+    leerBytes(archivo).then(function (bytes) {
+      if (!bytes || typeof bytes.length !== 'number') {
+        throw new Error('no se pudieron leer los bytes del archivo');
+      }
+      return utils.sha256Hex(bytes).then(function (huella) {
+        for (var i = 0; i < estado.lista.length; i++) {
+          var p = estado.lista[i];
+          if (p.id === id) {
+            p.nombreOriginal = archivo.name.trim();
+            p.bytes = bytes.length;
+            p.sha256 = huella;
+            delete p.sinPdf;
+            break;
+          }
+        }
+        render();
+        avisar('');
+      });
+    }).catch(function (error) {
+      avisar('No se pudo leer el archivo: ' +
+        (error && error.message ? error.message : 'error de lectura'));
+    });
+  }
+
   function quitar(id) {
     for (var i = 0; i < estado.lista.length; i++) {
       if (estado.lista[i].id === id) {
@@ -213,7 +278,10 @@
         continue;
       }
       var nombre = typeof p.nombreOriginal === 'string' ? p.nombreOriginal.trim() : '';
-      if (nombre === '') {
+      // ORDEN-RONDA-41 pieza 1c: un documento "sin PDF" no tiene nombre de
+      // archivo todavía y, aun así, se conserva: es el que vino en la plantilla.
+      var sinPdf = p.sinPdf === true;
+      if (nombre === '' && !sinPdf) {
         continue;
       }
       var id = typeof p.id === 'string' ? p.id.trim() : '';
@@ -221,7 +289,7 @@
         id = idSiguiente(vistos);
       }
       vistos[id] = true;
-      estado.lista.push({
+      var documento = {
         id: id,
         nombreOriginal: nombre,
         proveedor: typeof p.proveedor === 'string' ? p.proveedor : '',
@@ -231,7 +299,11 @@
         bytes: typeof p.bytes === 'number' ? p.bytes : null,
         sha256: typeof p.sha256 === 'string' ? p.sha256 : '',
         referencia: true
-      });
+      };
+      if (sinPdf) {
+        documento.sinPdf = true;
+      }
+      estado.lista.push(documento);
     }
     render();
     return estado.lista.length;
@@ -279,6 +351,20 @@
         quitar(objetivo.getAttribute('data-quitar'));
       }
     });
+    // ORDEN-RONDA-41 pieza 1c: elegir el PDF de un documento "sin PDF". El
+    // cambio burbujea hasta la raíz, igual que el clic de "Quitar".
+    raiz.addEventListener('change', function (evento) {
+      var objetivo = evento && evento.target;
+      if (!objetivo || typeof objetivo.getAttribute !== 'function') {
+        return;
+      }
+      var id = objetivo.getAttribute('data-pdf-de');
+      if (!id) {
+        return;
+      }
+      var archivo = objetivo.files && objetivo.files.length > 0 ? objetivo.files[0] : null;
+      completarPdf(id, archivo);
+    });
   }
 
   SGC.generadorPresupuestos = {
@@ -288,12 +374,18 @@
       return estado.lista.map(function (p) {
         var copia = {
           id: p.id,
-          nombreOriginal: p.nombreOriginal,
           proveedor: p.proveedor,
           fecha: p.fecha,
           tipo: SGC.core.utils.tipoDeDocumento(p),
           referencia: true
         };
+        // ORDEN-RONDA-41 pieza 1c: el documento "sin PDF" viaja con su marca y
+        // sin nombre de archivo; el que ya tiene PDF, con su nombre.
+        if (p.sinPdf === true) {
+          copia.sinPdf = true;
+        } else {
+          copia.nombreOriginal = p.nombreOriginal;
+        }
         // bytes y huella no son obligatorios: un archivo importado de una
         // versión vieja no los trae, y en ese caso no se inventan.
         if (typeof p.bytes === 'number') {

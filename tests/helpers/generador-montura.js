@@ -493,6 +493,30 @@ async function arrancar() {
   };
 
   /*
+   * ORDEN-RONDA-41 pieza 1c: elegir el PDF de un documento que vino "sin PDF"
+   * en la plantilla. El selector vive en la lista (#sgc-presup-lista) y el
+   * cambio lo escucha #app por delegación; el stub no burbujea, así que se
+   * emite en #app con `target` apuntando al input, como haría el navegador.
+   */
+  m.elegirPdfDe = function (id, nombre, contenido) {
+    const lista = documento.getElementById('sgc-presup-lista');
+    if (!lista) {
+      throw new Error('elegirPdfDe: no existe #sgc-presup-lista');
+    }
+    const input = lista.querySelector('[data-pdf-de="' + id + '"]');
+    if (!input) {
+      throw new Error('elegirPdfDe: no existe el selector de PDF de ' + id);
+    }
+    const bytes = (contenido && typeof contenido === 'string')
+      ? new TextEncoder().encode(contenido) : null;
+    input.files = bytes
+      ? [{ name: nombre, contenido: contenido, bytes: bytes, size: bytes.length }]
+      : [{ name: nombre }];
+    documento.getElementById('app').emit('change', { target: input });
+    return input;
+  };
+
+  /*
    * ORDEN-RONDA-31 pieza 1: el camino completo de un documento de referencia,
    * por la pantalla: archivo elegido, tipo, proveedor, fecha, clic en Agregar,
    * y espera a que termine la lectura y la huella. Devuelve el documento ya

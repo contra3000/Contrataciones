@@ -37,8 +37,40 @@
    */
   var FORMATO = 'sgc-requerimiento/1';
 
+  /*
+   * ORDEN-RONDA-41 pieza 1a: la marca del generador. La plantilla que baja la
+   * aplicación con servidor no cambia ni un byte; la del generador suma los
+   * presupuestos y la regla 6 nueva. La marca es la misma que usa
+   * validacion.exigirIdentificacionCompleta (la pone generador.js al montar).
+   */
+  function conMarcaDelGenerador() {
+    return !!(SGC.core.validacion &&
+      typeof SGC.core.validacion.exigirIdentificacionCompleta === 'function' &&
+      SGC.core.validacion.exigirIdentificacionCompleta());
+  }
+
   function modelo() {
-    return {
+    var instrucciones = [
+      'Sos un asistente que completa esta plantilla de requerimiento del SGC a partir de',
+      'los documentos que te adjunta la persona (Word, Excel, PDF, correos). Reglas:',
+      '1) Devolvé SÓLO el JSON, con esta misma forma, sin texto antes ni después.',
+      '2) titulo: qué se compra, en pocas palabras. anio: el año en cuatro dígitos.',
+      'dependenciaSolicitante: la dependencia que pide. justificacion: por qué se',
+      'necesita, con lo que digan los documentos.',
+      '3) renglones: uno por cada bien o servicio distinto. "codigo": copialo tal como',
+      'aparezca en los documentos, aunque tenga espacios, tabulaciones, puntos o guiones',
+      'de más (por ejemplo `3.3.3 1627 36`): el SGC lo acomoda. Si no aparece ningún',
+      'código, dejalo vacío (""). Nunca inventes ni completes un código.',
+      '"buscar": el nombre del producto en dos a cuatro palabras, como se buscaría en un',
+      'catálogo (por ejemplo "resma papel A4"). "cantidad": un número. "unidad": corta',
+      '(UN, KG, M, L, CAJA); si no se sabe, vacía. "aclaracion": sólo lo que el producto',
+      'tiene que cumplir y no está en su nombre (medidas, normas, compatibilidades), sin',
+      'marcas y hasta 256 caracteres.',
+      '4) No escribas descripciones de ítems: las pone el catálogo.',
+      '5) Si algo no está en los documentos, dejá el campo vacío. No lo inventes.',
+      '6) Los precios y los presupuestos no van en este JSON: se cargan aparte en el SGC.'
+    ];
+    var plantilla = {
       formato: FORMATO,
       titulo: 'Adquisición de insumos para la División',
       anio: '2026',
@@ -48,26 +80,7 @@
       // ORDEN-RONDA-33 pieza 1: las reglas para el asistente de IA que llena la
       // plantilla. No es parte del requerimiento: importar() lo ignora, y eso
       // se prueba en ronda-32-p2 / ronda-33-p1.
-      instrucciones: [
-        'Sos un asistente que completa esta plantilla de requerimiento del SGC a partir de',
-        'los documentos que te adjunta la persona (Word, Excel, PDF, correos). Reglas:',
-        '1) Devolvé SÓLO el JSON, con esta misma forma, sin texto antes ni después.',
-        '2) titulo: qué se compra, en pocas palabras. anio: el año en cuatro dígitos.',
-        'dependenciaSolicitante: la dependencia que pide. justificacion: por qué se',
-        'necesita, con lo que digan los documentos.',
-        '3) renglones: uno por cada bien o servicio distinto. "codigo": copialo tal como',
-        'aparezca en los documentos, aunque tenga espacios, tabulaciones, puntos o guiones',
-        'de más (por ejemplo `3.3.3 1627 36`): el SGC lo acomoda. Si no aparece ningún',
-        'código, dejalo vacío (""). Nunca inventes ni completes un código.',
-        '"buscar": el nombre del producto en dos a cuatro palabras, como se buscaría en un',
-        'catálogo (por ejemplo "resma papel A4"). "cantidad": un número. "unidad": corta',
-        '(UN, KG, M, L, CAJA); si no se sabe, vacía. "aclaracion": sólo lo que el producto',
-        'tiene que cumplir y no está en su nombre (medidas, normas, compatibilidades), sin',
-        'marcas y hasta 256 caracteres.',
-        '4) No escribas descripciones de ítems: las pone el catálogo.',
-        '5) Si algo no está en los documentos, dejá el campo vacío. No lo inventes.',
-        '6) Los precios y los presupuestos no van en este JSON: se cargan aparte en el SGC.'
-      ].join('\n'),
+      instrucciones: instrucciones.join('\n'),
       renglones: [
         // ORDEN-RONDA-33 pieza 1: un renglón con un código real del catálogo
         // vigente (versión 98201747) y su "buscar", y un renglón con el código
@@ -76,6 +89,23 @@
         { codigo: '', buscar: 'resma papel A4', cantidad: 1, unidad: 'UN', aclaracion: '' }
       ]
     };
+    if (conMarcaDelGenerador()) {
+      instrucciones[17] = '6) presupuestos: uno por cada presupuesto u orden de compra adjunta, ' +
+        'con "proveedor", "fecha" (AAAA-MM-DD) y "tipo" ("presupuesto" o "precio-plaza"). ' +
+        'En "valores", poné el número de "renglon" y el "unitario" sólo con números: sin $ ' +
+        'ni puntos de miles, y con punto decimal. Si un presupuesto no cotiza un renglón, ' +
+        'ese renglón no va en sus valores. Nunca inventes un precio.';
+      plantilla.instrucciones = instrucciones.join('\n');
+      plantilla.presupuestos = [
+        {
+          proveedor: 'Librería Sur',
+          fecha: '2026-02-12',
+          tipo: 'presupuesto',
+          valores: [{ renglon: 1, unitario: 4500 }]
+        }
+      ];
+    }
+    return plantilla;
   }
 
   /*

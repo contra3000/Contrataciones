@@ -313,7 +313,6 @@
       var doc = listaP[j];
       var copiaDoc = {
         id: doc.id,
-        nombreOriginal: doc.nombreOriginal,
         proveedor: doc.proveedor || '',
         fecha: doc.fecha || '',
         // ORDEN-RONDA-31 pieza 1: cada documento lleva su TIPO (presupuesto /
@@ -323,6 +322,13 @@
         tipo: SGC.core.utils.tipoDeDocumento(doc),
         referencia: true
       };
+      // ORDEN-RONDA-41 pieza 1c: un documento de la plantilla viaja "sin PDF"
+      // (sin nombre ni huella) hasta que alguien elige el archivo.
+      if (doc.sinPdf === true) {
+        copiaDoc.sinPdf = true;
+      } else if (typeof doc.nombreOriginal === 'string') {
+        copiaDoc.nombreOriginal = doc.nombreOriginal;
+      }
       if (typeof doc.bytes === 'number') {
         copiaDoc.bytes = doc.bytes;
       }
@@ -610,8 +616,84 @@
       return { errores: estructural.errores };
     }
     var d = estructural.datos;
+    var renglones = d.renglones.map(function (r) {
+      var renglon = {
+        codigo: r.codigo,
+        item: '', // plantilla: la descripción la pone el catálogo (arreglo h1, ronda 32)
+        cantidad: r.cantidad,
+        unidad: r.unidad,
+        aclaracion: r.aclaracion || '',
+        valoresReferencia: []
+      };
+      // ORDEN-RONDA-33: un renglón sin código de la plantilla entra "por
+      // buscar" y conserva el texto con el que se lo buscará.
+      // ORDEN-RONDA-39 pieza 2b: el `buscar` también se conserva en un
+      // renglón con código, para que si el código no existe en el catálogo
+      // local quede "por buscar" con ese texto y no con el código.
+      if (r.porBuscar === true) {
+        renglon.porBuscar = true;
+      }
+      renglon.buscar = typeof r.buscar === 'string' ? r.buscar : '';
+      return renglon;
+    });
+    // ORDEN-RONDA-41 pieza 1b: los presupuestos de la plantilla entran como
+    // documentos "sin PDF" (la plantilla no trae los archivos), y sus valores
+    // unitarios quedan citados en el renglón que corresponde. Lo que no sirve
+    // se saltea con un aviso; no rechaza la plantilla.
+    var presupuestos = [];
+    var avisos = [];
+    var listaCruda = Array.isArray(crudo.presupuestos) ? crudo.presupuestos : [];
+    var numero = 0;
+    for (var p = 0; p < listaCruda.length; p++) {
+      var entrada = listaCruda[p];
+      if (!esObjeto(entrada)) {
+        continue;
+      }
+      var proveedor = typeof entrada.proveedor === 'string' ? entrada.proveedor.trim() : '';
+      if (proveedor === '') {
+        avisos.push('Un presupuesto no dice el proveedor: se saltea.');
+        continue;
+      }
+      var docId = 'ref-' + (++numero);
+      presupuestos.push({
+        id: docId,
+        proveedor: proveedor,
+        fecha: SGC.core.utils.fechaAIso(entrada.fecha),
+        tipo: entrada.tipo === 'precio-plaza' ? 'precio-plaza' : 'presupuesto',
+        sinPdf: true,
+        referencia: true
+      });
+      var valores = Array.isArray(entrada.valores) ? entrada.valores : [];
+      for (var v = 0; v < valores.length; v++) {
+        var valorCrudo = esObjeto(valores[v]) ? valores[v] : {};
+        var numeroRenglon = Number(valorCrudo.renglon);
+        var original = valorCrudo.unitario === undefined || valorCrudo.unitario === null
+          ? '(vacío)' : String(valorCrudo.unitario);
+        if (!isFinite(numeroRenglon) || Math.floor(numeroRenglon) !== numeroRenglon ||
+            numeroRenglon < 1 || numeroRenglon > renglones.length) {
+          avisos.push('El presupuesto de ' + proveedor + ' cita el renglón ' +
+            String(valorCrudo.renglon) + ' con el valor ' + original +
+            ', pero ese renglón no existe: se saltea ese valor.');
+          continue;
+        }
+        var valor = typeof valorCrudo.unitario === 'number'
+          ? valorCrudo.unitario : Number(String(valorCrudo.unitario).trim());
+        if (!isFinite(valor) || valor <= 0) {
+          avisos.push('El presupuesto de ' + proveedor + ' trae en el renglón ' +
+            numeroRenglon + ' el valor ' + original +
+            ', que no es un número mayor que 0: se saltea ese valor.');
+          continue;
+        }
+        renglones[numeroRenglon - 1].valoresReferencia.push({
+          presupuestoId: docId,
+          base: 'unitario',
+          valor: valor
+        });
+      }
+    }
     return {
       acomodados: estructural.acomodados || 0,
+      avisos: avisos,
       cuerpo: {
         titulo: d.identificacion.titulo,
         anio: d.identificacion.anio,
@@ -625,27 +707,8 @@
           justificacion: d.fundamentacion.justificacion,
           objetivo: d.fundamentacion.objetivo || ''
         },
-        renglones: d.renglones.map(function (r) {
-          var renglon = {
-            codigo: r.codigo,
-            item: '', // plantilla: la descripción la pone el catálogo (arreglo h1, ronda 32)
-            cantidad: r.cantidad,
-            unidad: r.unidad,
-            aclaracion: r.aclaracion || '',
-            valoresReferencia: []
-          };
-          // ORDEN-RONDA-33: un renglón sin código de la plantilla entra "por
-          // buscar" y conserva el texto con el que se lo buscará.
-          // ORDEN-RONDA-39 pieza 2b: el `buscar` también se conserva en un
-          // renglón con código, para que si el código no existe en el catálogo
-          // local quede "por buscar" con ese texto y no con el código.
-          if (r.porBuscar === true) {
-            renglon.porBuscar = true;
-          }
-          renglon.buscar = typeof r.buscar === 'string' ? r.buscar : '';
-          return renglon;
-        }),
-        presupuestos: []
+        renglones: renglones,
+        presupuestos: presupuestos
       }
     };
   }
@@ -942,7 +1005,11 @@
         return resolucion;
       }
       var conNucleo = revisarConElNucleo(cuerpo, esAvance);
-      var errores = resolucion.errores.concat(conNucleo.errores).concat(revisarValores(cuerpo, esAvance));
+      // ORDEN-RONDA-41 pieza 1b: a la plantilla no se le piden los dos valores
+      // por renglón. Los presupuestos vienen incompletos a propósito (falta el
+      // PDF y, a veces, el segundo valor); lo que falte se ve en la pantalla.
+      var errores = resolucion.errores.concat(conNucleo.errores)
+        .concat(revisarValores(cuerpo, esAvance || forma === 'plantilla'));
       if (errores.length > 0) {
         return { ok: false, errores: errores };
       }

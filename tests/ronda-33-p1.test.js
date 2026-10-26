@@ -77,6 +77,15 @@ const REGLA_39_CODIGO = '"codigo": copialo tal como aparezca en los documentos, 
   'aunque tenga espacios, tabulaciones, puntos o guiones de más (por ejemplo ' +
   '`3.3.3 1627 36`): el SGC lo acomoda. Si no aparece ningún código, dejalo vacío ' +
   '("").';
+// ORDEN-RONDA-41 pieza 1a: en el generador la regla 6 ya no dice que los
+// presupuestos no van en el JSON; ahora dice cómo vienen.
+const REGLA_33_PRECIOS =
+  '6) Los precios y los presupuestos no van en este JSON: se cargan aparte en el SGC.';
+const REGLA_41_PRESUPUESTOS = '6) presupuestos: uno por cada presupuesto u orden de compra adjunta, ' +
+  'con "proveedor", "fecha" (AAAA-MM-DD) y "tipo" ("presupuesto" o "precio-plaza"). ' +
+  'En "valores", poné el número de "renglon" y el "unitario" sólo con números: sin $ ' +
+  'ni puntos de miles, y con punto decimal. Si un presupuesto no cotiza un renglón, ' +
+  'ese renglón no va en sus valores. Nunca inventes un precio.';
 
 function instruccionesDeLaOrden() {
   const orden = fs.readFileSync(path.join(RAIZ, 'ordenes', 'ORDEN-RONDA-33.md'), 'utf8');
@@ -86,14 +95,15 @@ function instruccionesDeLaOrden() {
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
-  return texto.replace(REGLA_33_CODIGO, REGLA_39_CODIGO);
+  return texto.replace(REGLA_33_CODIGO, REGLA_39_CODIGO)
+    .replace(REGLA_33_PRECIOS, REGLA_41_PRESUPUESTOS);
 }
 
 function normalizar(texto) {
   return String(texto).replace(/\s+/g, ' ').trim();
 }
 
-test('RONDA-33 pieza 1 · la plantilla baja con las instrucciones de la orden, tal cual', async () => {
+test('RONDA-33 pieza 1 · la plantilla baja con las instrucciones de la orden 33 y la regla 6 de la 41', async () => {
   await entrarComoUsuario();
 
   const plantilla = await bajar();
@@ -101,7 +111,7 @@ test('RONDA-33 pieza 1 · la plantilla baja con las instrucciones de la orden, t
   assert.strictEqual(typeof plantilla.instrucciones, 'string',
     'la plantilla trae el campo instrucciones');
   assert.strictEqual(normalizar(plantilla.instrucciones), instruccionesDeLaOrden(),
-    'las instrucciones son el texto de ORDEN-RONDA-33, sin agregar ni quitar nada');
+    'las instrucciones son el texto de ORDEN-RONDA-33 con la regla 6 de ORDEN-RONDA-41');
 
   assert.ok(Array.isArray(plantilla.renglones) && plantilla.renglones.length === 2,
     'la plantilla trae dos renglones de ejemplo: ' + JSON.stringify(plantilla.renglones));

@@ -411,6 +411,28 @@
         }
       }
     }
+    // ORDEN-RONDA-41 pieza 1d: mientras quede un documento de referencia "sin
+    // PDF" (vino en la plantilla y todavía no se eligió el archivo), Imprimir y
+    // Exportar frenan, y el paso 2 queda en falta. El motivo nombra a los
+    // proveedores, que es lo que la persona tiene que ir a buscar.
+    var documentosSinPdf = [];
+    var presupuestos = Array.isArray(expediente.presupuestos) ? expediente.presupuestos : [];
+    for (var p = 0; p < presupuestos.length; p++) {
+      if (presupuestos[p] && presupuestos[p].sinPdf === true) {
+        documentosSinPdf.push(presupuestos[p].proveedor || presupuestos[p].id);
+      }
+    }
+    if (documentosSinPdf.length > 0) {
+      r.valido = false;
+      items.push('elegir el PDF de los documentos de referencia: ' +
+        documentosSinPdf.join(', '));
+      if (!r.faltantes.renglones) {
+        r.faltantes.renglones = [];
+      }
+      if (r.faltantes.renglones.indexOf('documentos de referencia') === -1) {
+        r.faltantes.renglones.push('documentos de referencia');
+      }
+    }
     // ORDEN-RONDA-35 pieza 1: con la marca del generador, la Identificación
     // frena la exportación igual que frena "Siguiente": el trimestre, el proceso
     // del PAC y el lugar de entrega se piden aunque el archivo importado no los
