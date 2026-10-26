@@ -535,6 +535,24 @@ mark {
   font-weight: 700;
 }
 
+/* ORDEN-RONDA-41 pieza 2: en el generador los pasos son botones. Se ven como
+ * el texto de siempre y ocupan todo el <li>, para que el clic sea cómodo. */
+.pasos li button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pasos li button:focus-visible {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
+}
+
 .paso-msj {
   color: var(--color-error);
   margin-bottom: 12px;

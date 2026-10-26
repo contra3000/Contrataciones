@@ -579,6 +579,24 @@
         );
       }
     });
+    // ORDEN-RONDA-41 pieza 2: la barra de pasos del generador se clickea. El
+    // clic burbujea hasta #sgc-pasos y de ahí sale el id del paso; la vista
+    // sincroniza el formulario y navega sin validar.
+    var pasosNav = porId('sgc-pasos');
+    if (pasosNav) {
+      pasosNav.addEventListener('click', function (evento) {
+        var objetivo = evento && evento.target;
+        var id = objetivo && typeof objetivo.getAttribute === 'function'
+          ? objetivo.getAttribute('data-ir-paso') : '';
+        if (!id && objetivo && objetivo.parentNode &&
+            typeof objetivo.parentNode.getAttribute === 'function') {
+          id = objetivo.parentNode.getAttribute('data-ir-paso');
+        }
+        if (id) {
+          SGC.views.wizard.irA(id);
+        }
+      });
+    }
     SGC.views.wizard.fijarRepo(estado.repo);
     SGC.catalogo.buscador.montar(porId('sgc-paso-renglones'), { cerrarListaAlElegir: true });
     SGC.views.wizard.vincularRenglones();

@@ -71,6 +71,21 @@
     renderPaso();
   }
 
+  /*
+   * ORDEN-RONDA-41 pieza 2: ir a un paso por su id, desde la barra de pasos.
+   * Sincroniza lo escrito y no valida, igual que "Anterior": lo que falta lo
+   * dicen la marca "· falta" y los frenos de Imprimir y Exportar.
+   */
+  function irA(idPaso) {
+    for (var i = 0; i < pasos.PASOS.length; i++) {
+      if (pasos.PASOS[i].id === idPaso) {
+        sincronizarDesdeFormulario();
+        irAPaso(i, false);
+        return;
+      }
+    }
+  }
+
   function renderPaso() {
     var i;
     for (i = 0; i < pasos.PASOS.length; i++) {
@@ -764,6 +779,7 @@ function descripcionOperador(operador) {
 
   SGC.views.wizard = {
     montar: montar,
+    irA: irA,
     seleccionarOperador: seleccionarOperador,
     alImportar: function (fn) {
       estado.alImportar = fn;
