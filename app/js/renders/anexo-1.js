@@ -203,43 +203,47 @@
     var a = anexo1DeImpresion(datos);
     var identificacion = (datos.identificacion && typeof datos.identificacion === 'object') ?
       datos.identificacion : {};
-    return {
-      expediente: expediente && expediente.expedienteId || identificacion.numero || '',
-      titulo: a.titulo || datos.titulo || '',
-      objeto: a.objeto || datos.titulo || '',
-      justificacion: a.justificacion || '',
-      empresasConsultadas: a.empresasConsultadas || [],
-      precioReferencia: a.precioReferencia || '',
-      monedaExtranjera: a.monedaExtranjera || '',
-      pacPrevisto: a.pacPrevisto || 'No',
-      pacNumeroOrden: a.pacNumeroOrden || '',
-      pacTrimestre: a.pacTrimestre || '',
-      unidadResponsable: a.unidadResponsable || '',
-      usuarioGde: a.usuarioGde || '',
-      unidadDireccion: a.unidadDireccion || '',
-      unidadTelefono: a.unidadTelefono || '',
-      unidadCorreo: a.unidadCorreo || '',
-      lugarEntrega: a.lugarEntrega || '',
-      lugarFacturacion: a.lugarFacturacion || '',
-      comisionRecepcion: a.comisionRecepcion || '',
-      personalTecnico: a.personalTecnico || '',
-      requisitosMinimos: a.requisitosMinimos || '',
-      visitaMuestra: a.visitaMuestra || '',
-      interadministrativa: a.interadministrativa || '',
-      bienesUso: a.bienesUso || '',
-      hardwareSoftware: a.hardwareSoftware || '',
-      reparacionesInfra: a.reparacionesInfra || '',
-      documentacionObligatoria: a.documentacionObligatoria || '',
-      criterioEvaluacion: a.criterioEvaluacion || '',
-      // Pieza 5: el renglón consolidado de la SCo y de qué SCo es, para que el
-      // documento impreso diga de qué SCo habla y no parezca el de un solo
-      // expediente. Con SCo pero sin ANEXO I guardado, el documento igual dice
-      // de qué SCo es: el que se está por aprobar se tiene que ver.
-      renglones: renglonesDeImpresion(datos),
-      numeroSCo: (datos.anexo1Sco && typeof datos.anexo1Sco === 'object')
-        ? (datos.anexo1Sco.numeroSCo || null)
-        : null
-    };
+    // ORDEN-RONDA-42 pieza 2c: se parte del modelo común de los documentos,
+    // como anexo-eett.js. Antes el encabezado y el pie salían con `undefined`
+    // porque faltaban `unidad`, `numero`, `id`, `estadoTitulo` y
+    // `catalogoVersion`. Lo que el ANEXO 1 ya definía se conserva igual.
+    var m = d.modelo(expediente);
+    m.expediente = expediente && expediente.expedienteId || identificacion.numero || '';
+    m.titulo = a.titulo || datos.titulo || '';
+    m.objeto = a.objeto || datos.titulo || '';
+    m.justificacion = a.justificacion || '';
+    m.empresasConsultadas = a.empresasConsultadas || [];
+    m.precioReferencia = a.precioReferencia || '';
+    m.monedaExtranjera = a.monedaExtranjera || '';
+    m.pacPrevisto = a.pacPrevisto || 'No';
+    m.pacNumeroOrden = a.pacNumeroOrden || '';
+    m.pacTrimestre = a.pacTrimestre || '';
+    m.unidadResponsable = a.unidadResponsable || '';
+    m.usuarioGde = a.usuarioGde || '';
+    m.unidadDireccion = a.unidadDireccion || '';
+    m.unidadTelefono = a.unidadTelefono || '';
+    m.unidadCorreo = a.unidadCorreo || '';
+    m.lugarEntrega = a.lugarEntrega || '';
+    m.lugarFacturacion = a.lugarFacturacion || '';
+    m.comisionRecepcion = a.comisionRecepcion || '';
+    m.personalTecnico = a.personalTecnico || '';
+    m.requisitosMinimos = a.requisitosMinimos || '';
+    m.visitaMuestra = a.visitaMuestra || '';
+    m.interadministrativa = a.interadministrativa || '';
+    m.bienesUso = a.bienesUso || '';
+    m.hardwareSoftware = a.hardwareSoftware || '';
+    m.reparacionesInfra = a.reparacionesInfra || '';
+    m.documentacionObligatoria = a.documentacionObligatoria || '';
+    m.criterioEvaluacion = a.criterioEvaluacion || '';
+    // Pieza 5: el renglón consolidado de la SCo y de qué SCo es, para que el
+    // documento impreso diga de qué SCo habla y no parezca el de un solo
+    // expediente. Con SCo pero sin ANEXO I guardado, el documento igual dice
+    // de qué SCo es: el que se está por aprobar se tiene que ver.
+    m.renglones = renglonesDeImpresion(datos);
+    m.numeroSCo = (datos.anexo1Sco && typeof datos.anexo1Sco === 'object')
+      ? (datos.anexo1Sco.numeroSCo || null)
+      : null;
+    return m;
   }
 
   function componer(expediente) {

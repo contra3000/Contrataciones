@@ -115,6 +115,22 @@
 
       <p id="sgc-abast-msj" class="error-global" role="alert" hidden></p>
       <ul id="sgc-abast-lista"></ul>
+
+      <h2>Consolidado</h2>
+      <p id="sgc-abast-unidades" class="aviso-clave" role="status" hidden></p>
+      <table id="sgc-abast-consolidado" hidden>
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Cantidad</th>
+            <th>Unidad</th>
+            <th>Desglose por expediente</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button id="sgc-abast-imprimir" type="button" disabled>Imprimir ANEXO I</button>
     </section>
 
     <!-- El asistente busca esta sección y esta lista al montarse (wizard.montar
@@ -476,6 +492,7 @@
   <script src="js/core/validacion.js"></script>
   <script src="js/core/requerimiento.js"></script>
   <script src="js/core/anexo-eett.js"></script>
+  <script src="js/core/consolidacion.js"></script>
   <script src="js/core/estados.js"></script>
   <script src="js/core/indicadores.js"></script>
   <script src="js/core/csv-seguro.js"></script>
@@ -483,6 +500,7 @@
   <script src="js/renders/especificacion-tecnica.js"></script>
   <script src="js/renders/requerimiento.js"></script>
   <script src="js/renders/anexo-eett.js"></script>
+  <script src="js/renders/anexo-1.js"></script>
   <script src="js/catalogo/indice.js"></script>
   <script src="js/catalogo/carga.js"></script>
   <script src="js/catalogo/renglones.js"></script>
