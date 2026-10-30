@@ -473,6 +473,26 @@ async function arrancar() {
   };
 
   /*
+   * ORDEN-RONDA-42 pieza 1: elegir varios requerimientos exportados en el
+   * <input type="file" multiple> de Abastecimiento. Cada uno es
+   * {nombre, contenido}. El FileReader del stub lee `contenido`.
+   */
+  m.elegirRequerimientos = function (lista) {
+    const input = documento.getElementById('sgc-abast-archivos');
+    if (!input) {
+      throw new Error('elegirRequerimientos: no existe #sgc-abast-archivos');
+    }
+    input.files = (lista || []).map(function (archivo) {
+      return {
+        name: archivo.nombre || 'requerimiento.json',
+        contenido: archivo.contenido
+      };
+    });
+    input.emit('change', { target: input });
+    return input;
+  };
+
+  /*
    * ORDEN-RONDA-31 pieza 1: elegir el archivo de un documento de referencia en
    * el <input type="file"> del generador (#sgc-presup-archivo). Nada se sube:
    * el módulo lee los bytes del archivo "elegido". Con `contenido` (un texto)

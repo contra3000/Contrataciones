@@ -1063,6 +1063,109 @@
   }
 
   /*
+   * ORDEN-RONDA-42 pieza 1b. Leer un requerimiento para Abastecimiento, sin
+   * tocar el asistente. No valida el contenido ni lo carga en pantalla: el rol
+   * Abastecimiento lo único que necesita es saber qué pidió cada dependencia.
+   *
+   * Acepta SÓLO un requerimiento exportado para Abastecimiento
+   * (`estado: "para-abastecimiento"`). Un avance, una plantilla, otro formato o
+   * una huella que no calza se rechazan con el motivo, porque el archivo que
+   * llega a la SCo tiene que ser el que revisó y exportó quien lo pidió.
+   *
+   * Vuelve una promesa de {ok:true, requerimiento} o {ok:false, errores}.
+   */
+  function leerRequerimiento(texto) {
+    var crudo = null;
+    try {
+      crudo = JSON.parse(texto);
+    } catch (e) {
+      return Promise.resolve({
+        ok: false,
+        errores: ['El archivo no es JSON válido: ' + (e && e.message ? e.message : 'no se pudo leer')]
+      });
+    }
+    if (!esObjeto(crudo)) {
+      return Promise.resolve({
+        ok: false,
+        errores: ['El archivo debe ser un objeto JSON, no un arreglo ni un valor suelto']
+      });
+    }
+
+    var forma = formaDeArchivo(crudo);
+    if (forma === 'plantilla') {
+      return Promise.resolve({
+        ok: false,
+        errores: ['es una plantilla: Abastecimiento recibe requerimientos exportados con su huella']
+      });
+    }
+    if (forma !== 'exportado') {
+      return Promise.resolve({
+        ok: false,
+        errores: ['no es un requerimiento exportado: no tiene los datos del expediente']
+      });
+    }
+
+    var sello = esObjeto(crudo.sello) ? crudo.sello : null;
+    var declarado = sello ? sello.formato : null;
+    if (declarado !== undefined && declarado !== null && declarado !== '' &&
+        declarado !== FORMATO) {
+      return Promise.resolve({
+        ok: false,
+        errores: ['El archivo es del formato "' + declarado + '" y este generador usa "' +
+          FORMATO + '". Actualizá el generador o exportá de nuevo.']
+      });
+    }
+    if (!sello) {
+      return Promise.resolve({
+        ok: false,
+        errores: ['el archivo no dice para qué se exportó: no tiene sello']
+      });
+    }
+    if (sello.estado === ESTADO_AVANCE) {
+      return Promise.resolve({
+        ok: false,
+        errores: ['es un avance: lo tiene que terminar y exportar quien lo pidió']
+      });
+    }
+    if (sello.estado !== ESTADO_ABASTECIMIENTO) {
+      return Promise.resolve({
+        ok: false,
+        errores: ['el archivo no está exportado para Abastecimiento']
+      });
+    }
+
+    var armado = cuerpoDeExportado(crudo);
+    var cuerpo = armado.cuerpo;
+    var e = crudo.expediente;
+    return verificarHuella(crudo, sello).then(function (verificacion) {
+      if (!verificacion.ok) {
+        return { ok: false, errores: verificacion.errores };
+      }
+      return {
+        ok: true,
+        requerimiento: {
+          huella: sello.huella,
+          version: sello.version,
+          titulo: cuerpo.titulo,
+          anio: cuerpo.anio,
+          dependenciaSolicitante: cuerpo.campos.dependenciaSolicitante,
+          moneda: e.moneda === 'USD' ? 'USD' : 'ARS',
+          lugarEntrega: cuerpo.lugarEntrega,
+          pac: cuerpo.pac,
+          renglones: cuerpo.renglones,
+          presupuestos: cuerpo.presupuestos
+        }
+      };
+    }).catch(function (err) {
+      return {
+        ok: false,
+        errores: ['No se pudo leer el archivo: ' +
+          (err && err.message ? err.message : 'error') + '.']
+      };
+    });
+  }
+
+  /*
    * La huella. Se verifica sólo si el archivo trae sello, que es lo que
    * distingue a un requerimiento exportado de una plantilla.
    *
@@ -1194,6 +1297,7 @@
     exportar: exportar,
     exportarAvance: exportarAvance,
     importar: importar,
+    leerRequerimiento: leerRequerimiento,
     // La página abierta es la sesión: al arrancar de cero se olvida qué se
     // exportó y qué se importó antes.
     reiniciar: function () {

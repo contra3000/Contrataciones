@@ -55,16 +55,19 @@
   if (!SGC.generadorIntercambio) {
     throw new Error('generador.js requiere el módulo de plantilla e intercambio (generador/intercambio.js)');
   }
+  if (!SGC.generadorAbastecimiento) {
+    throw new Error('generador.js requiere el rol Abastecimiento (generador/abastecimiento.js)');
+  }
 
   // El rol que ejecuta el primer estado del circuito: el mismo id que usa el
   // padrón de la aplicación con servidor (config.js ROLES[0]). Con el mismo id,
   // los permisos que el núcleo calcula dan lo mismo en las dos caras.
   var ROL_GENERADOR = 'generador';
+  var ROL_ABASTECIMIENTO = 'abastecimiento';
 
-  // Los otros dos roles del generador, con la ronda en la que llegan
-  // (ORDEN-RONDA-28 §2; ADR-044, tabla de rondas).
+  // ORDEN-RONDA-42 pieza 1: Abastecimiento ya entra; Contrataciones sigue con
+  // el aviso de la próxima versión (ADR-044, tabla de rondas).
   var ROLES_FUTUROS = {
-    abastecimiento: 'Abastecimiento (número de SCo y ANEXO I consolidado) está disponible en la próxima versión.',
     contrataciones: 'Contrataciones (número de procedimiento y pliego) está disponible en la próxima versión.'
   };
 
@@ -469,7 +472,7 @@
       return;
     }
     limpiarAviso();
-    if (rol !== ROL_GENERADOR) {
+    if (rol !== ROL_GENERADOR && rol !== ROL_ABASTECIMIENTO) {
       informar(ROLES_FUTUROS[rol] ||
         'Ese rol todavía no está en el generador.');
       return;
@@ -480,6 +483,10 @@
       return;
     }
     estado.operador = operadorDe(identidad.datos);
+    if (rol === ROL_ABASTECIMIENTO) {
+      SGC.generadorAbastecimiento.abrir(estado.operador);
+      return;
+    }
     abrirAlta();
   }
 
@@ -600,6 +607,10 @@
     SGC.views.wizard.fijarRepo(estado.repo);
     SGC.catalogo.buscador.montar(porId('sgc-paso-renglones'), { cerrarListaAlElegir: true });
     SGC.views.wizard.vincularRenglones();
+
+    // ORDEN-RONDA-42 pieza 1: la sección de Abastecimiento arranca vacía en cada
+    // sesión. No hay nada guardado entre sesiones: el JSON de la SCo es el 7c.
+    SGC.generadorAbastecimiento.montar();
 
     var botones = estado.dom.roles.querySelectorAll('button');
     for (var i = 0; i < botones.length; i++) {

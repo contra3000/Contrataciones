@@ -156,26 +156,21 @@ test('sin nombre no se entra', async () => {
   assert.match(error.textContent, /nombre/i, 'el error dice qué falta');
 });
 
-test('Abastecimiento y Contrataciones dicen que llegan en la próxima versión', async () => {
+test('Contrataciones dice que llega en la próxima versión', async () => {
   const d = m.documento;
-  for (const caso of [
-    { rol: 'abastecimiento', nombre: 'Abastecimiento' },
-    { rol: 'contrataciones', nombre: 'Contrataciones' }
-  ]) {
-    await arrancar();
-    m.setear('sgc-generador-nombre', 'Beto');
-    m.completarIdentidad();
-    m.elegirRol(caso.rol);
+  await arrancar();
+  m.setear('sgc-generador-nombre', 'Beto');
+  m.completarIdentidad();
+  m.elegirRol('contrataciones');
 
-    assert.strictEqual(d.getElementById('sgc-app').hidden, true,
-      caso.nombre + ' todavía no tiene vista: el alta no se abre');
-    const msj = d.getElementById('sgc-generador-msj');
-    assert.strictEqual(msj.hidden, false, caso.nombre + ' ve el aviso');
-    assert.match(msj.textContent, /próxima versión/,
-      caso.nombre + ': el aviso dice que llega en la próxima versión');
-    assert.ok(msj.textContent.indexOf(caso.nombre) === 0,
-      'el aviso empieza nombrando el rol: ' + msj.textContent);
-  }
+  assert.strictEqual(d.getElementById('sgc-app').hidden, true,
+    'Contrataciones todavía no tiene vista: el alta no se abre');
+  const msj = d.getElementById('sgc-generador-msj');
+  assert.strictEqual(msj.hidden, false, 'Contrataciones ve el aviso');
+  assert.match(msj.textContent, /próxima versión/,
+    'el aviso dice que llega en la próxima versión');
+  assert.ok(msj.textContent.indexOf('Contrataciones') === 0,
+    'el aviso empieza nombrando el rol: ' + msj.textContent);
 });
 
 test('la configuración llega como .js, y el .js versionado está al día', () => {

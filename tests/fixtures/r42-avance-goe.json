@@ -1,0 +1,75 @@
+{
+  "sello": {
+    "formato": "sgc-requerimiento/1",
+    "versionGenerador": "r41-1c112e5",
+    "versionCatalogo": "98201747",
+    "rol": "generador",
+    "grado": "Primer Teniente",
+    "nombre": "Juan",
+    "apellido": "Contreras",
+    "numeroControl": 12345,
+    "fecha": "2026-10-29T13:57:57.581Z",
+    "version": 1,
+    "estado": "avance",
+    "paso": 1,
+    "huella": "380123fefa6b87ad8ec649b138e6a7cc8232e72f6d535eaa7cb1d5be427c08f7"
+  },
+  "expediente": {
+    "titulo": "Avance GOE",
+    "anio": "2026",
+    "trimestre": "1",
+    "lugarEntrega": "Depósito de Intendencia, Hangar 3",
+    "moneda": "ARS",
+    "modalidad": "comun",
+    "ocaJustificacion": "",
+    "pac": {
+      "numero": "1",
+      "justificacion": ""
+    },
+    "campos": {
+      "operador": "Juan Contreras · 12.345",
+      "dependenciaSolicitante": "GOE",
+      "justificacion": "Necesidad de GOE.",
+      "objetivo": ""
+    },
+    "renglones": [
+      {
+        "codigo": "3.3.3-1627.36",
+        "item": "MANT. Y REPAR. MATAFUEGO; MANT. MATAFUEGO",
+        "cantidad": 1,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 15000
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 16000
+          }
+        ]
+      }
+    ],
+    "presupuestos": [
+      {
+        "id": "ref-1",
+        "proveedor": "Proveedor Uno",
+        "fecha": "2026-10-01",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "sinPdf": true
+      },
+      {
+        "id": "ref-2",
+        "proveedor": "Proveedor Dos",
+        "fecha": "2026-10-02",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "sinPdf": true
+      }
+    ]
+  }
+}

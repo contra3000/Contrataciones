@@ -1,0 +1,79 @@
+{
+  "sello": {
+    "formato": "sgc-requerimiento/1",
+    "versionGenerador": "r41-1c112e5",
+    "versionCatalogo": "98201747",
+    "rol": "generador",
+    "grado": "Primer Teniente",
+    "nombre": "Juan",
+    "apellido": "Contreras",
+    "numeroControl": 12345,
+    "fecha": "2026-10-29T13:57:50.222Z",
+    "version": 1,
+    "estado": "para-abastecimiento",
+    "paso": 0,
+    "huella": "1533dd5d275c3a503312b1dce9929c2d348fd636a5fc5c0eee2c16edaf22d321"
+  },
+  "expediente": {
+    "titulo": "Herramientas en dólares",
+    "anio": "2026",
+    "trimestre": "3",
+    "lugarEntrega": "Depósito de Intendencia, Hangar 3",
+    "moneda": "USD",
+    "modalidad": "comun",
+    "ocaJustificacion": "",
+    "pac": {
+      "numero": "22",
+      "justificacion": ""
+    },
+    "campos": {
+      "operador": "Juan Contreras · 12.345",
+      "dependenciaSolicitante": "Taller Aeronáutico",
+      "justificacion": "Necesidad de Taller Aeronáutico.",
+      "objetivo": ""
+    },
+    "renglones": [
+      {
+        "codigo": "2.9.6-1115.14",
+        "item": "TERMOSTATOS P/CALEFACTORES; MARCA EQUIPO: GENERICO, TIPO: C08A, MODELO EQUIPO: GENERICO",
+        "cantidad": 1,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 100
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 110
+          }
+        ]
+      }
+    ],
+    "presupuestos": [
+      {
+        "id": "ref-1",
+        "proveedor": "Proveedor Uno",
+        "fecha": "2026-10-01",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "nombreOriginal": "ref-1-TallerAeronutico.pdf",
+        "bytes": 44,
+        "sha256": "cdeeac0af6e0bb126bcd94bfacf2ddd2560fb8f0dfcecfc5310cd1d9322a9bc0"
+      },
+      {
+        "id": "ref-2",
+        "proveedor": "Proveedor Dos",
+        "fecha": "2026-10-02",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "nombreOriginal": "ref-2-TallerAeronutico.pdf",
+        "bytes": 44,
+        "sha256": "3c2afe3fa7603ebc9e3a273f9c43fae57003978fd9cf10a29ba2cf2c38849a53"
+      }
+    ]
+  }
+}

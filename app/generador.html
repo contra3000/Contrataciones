@@ -97,6 +97,26 @@
       <p id="sgc-generador-msj" class="aviso-clave" role="status" aria-live="polite" hidden></p>
     </section>
 
+    <!-- ORDEN-RONDA-42 pieza 1a (ADR-043): la SCo junta varios requerimientos.
+         El rol Abastecimiento entra con la identidad completa y elige los
+         requerimientos exportados. No hay aquí nada que completar: lo que llega
+         es el archivo que exportó quien lo pidió, con su huella. -->
+    <section id="sgc-abastecimiento" class="seccion-operador" aria-label="Abastecimiento" hidden>
+      <h2>Abastecimiento</h2>
+      <p class="subtitulo">
+        Elegí los requerimientos exportados para armar la SCo. El mismo ítem
+        pedido por dos dependencias es un solo renglón con la cantidad sumada.
+      </p>
+
+      <div class="campo">
+        <label for="sgc-abast-archivos">Requerimientos exportados</label>
+        <input id="sgc-abast-archivos" type="file" multiple accept=".json">
+      </div>
+
+      <p id="sgc-abast-msj" class="error-global" role="alert" hidden></p>
+      <ul id="sgc-abast-lista"></ul>
+    </section>
+
     <!-- El asistente busca esta sección y esta lista al montarse (wizard.montar
          los deja en su estado). En el generador no se usan: el rol ya se eligió
          más arriba y no hay padrón del que sacar una lista. Se declara igual,
@@ -500,6 +520,11 @@
        expediente local que ellos, y no antes porque el archivo que arma es
        exactamente el mismo que se imprime. -->
   <script src="js/generador/intercambio.js"></script>
+
+  <!-- ORDEN-RONDA-42 pieza 1: el rol Abastecimiento. Entra con la identidad
+       completa y junta los requerimientos exportados; la consolidación de la
+       pieza 2 vive en el mismo módulo. -->
+  <script src="js/generador/abastecimiento.js"></script>
 
   <script src="js/generador.js"></script>
 </body>

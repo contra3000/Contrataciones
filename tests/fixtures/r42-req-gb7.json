@@ -1,0 +1,117 @@
+{
+  "sello": {
+    "formato": "sgc-requerimiento/1",
+    "versionGenerador": "r41-1c112e5",
+    "versionCatalogo": "98201747",
+    "rol": "generador",
+    "grado": "Primer Teniente",
+    "nombre": "Juan",
+    "apellido": "Contreras",
+    "numeroControl": 12345,
+    "fecha": "2026-10-29T13:57:41.310Z",
+    "version": 1,
+    "estado": "para-abastecimiento",
+    "paso": 0,
+    "huella": "d8623a59569e7681cf77638443c63067a79944200fd9438cf0d941cbdb29ee80"
+  },
+  "expediente": {
+    "titulo": "Matafuegos Grupo Base 7",
+    "anio": "2026",
+    "trimestre": "1",
+    "lugarEntrega": "Depósito de Intendencia, Hangar 3",
+    "moneda": "ARS",
+    "modalidad": "comun",
+    "ocaJustificacion": "",
+    "pac": {
+      "numero": "1",
+      "justificacion": ""
+    },
+    "campos": {
+      "operador": "Juan Contreras · 12.345",
+      "dependenciaSolicitante": "Grupo Base 7",
+      "justificacion": "Necesidad de Grupo Base 7.",
+      "objetivo": ""
+    },
+    "renglones": [
+      {
+        "codigo": "3.3.3-1627.36",
+        "item": "MANT. Y REPAR. MATAFUEGO; MANT. MATAFUEGO",
+        "cantidad": 5,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 15500
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 15800
+          }
+        ]
+      },
+      {
+        "codigo": "2.9.6-1115.14",
+        "item": "TERMOSTATOS P/CALEFACTORES; MARCA EQUIPO: GENERICO, TIPO: C08A, MODELO EQUIPO: GENERICO",
+        "cantidad": 2,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 30000
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 31000
+          }
+        ]
+      },
+      {
+        "codigo": "2.3.1-6563.129",
+        "item": "PAPELES EN HOJA; TIPO PAPEL: PAPEL OBRA, DIMENSION: 21 X 29,7 Cm, GRAMAJE: 80 GR/M, PRESENTACION: RESMA X 500 HOJAS, TIPO DE PAPEL: PAPEL OBRA, CERTIFICACION SOSTENIBLE: SIN VALOR",
+        "cantidad": 3,
+        "unidad": "CAJA",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 25000
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 26000
+          }
+        ]
+      }
+    ],
+    "presupuestos": [
+      {
+        "id": "ref-1",
+        "proveedor": "Proveedor Uno",
+        "fecha": "2026-10-01",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "nombreOriginal": "ref-1-GrupoBase7.pdf",
+        "bytes": 38,
+        "sha256": "e1273c72d143473c0fbb8ef3927f3931ffa490f334375254458c3e68e505a21a"
+      },
+      {
+        "id": "ref-2",
+        "proveedor": "Proveedor Dos",
+        "fecha": "2026-10-02",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "nombreOriginal": "ref-2-GrupoBase7.pdf",
+        "bytes": 38,
+        "sha256": "8f1964367914ea8a7f981bfab90c1908bf92d4a65fe540aa6dee4b0750a287c8"
+      }
+    ]
+  }
+}

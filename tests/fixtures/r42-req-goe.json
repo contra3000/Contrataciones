@@ -1,0 +1,98 @@
+{
+  "sello": {
+    "formato": "sgc-requerimiento/1",
+    "versionGenerador": "r41-1c112e5",
+    "versionCatalogo": "98201747",
+    "rol": "generador",
+    "grado": "Primer Teniente",
+    "nombre": "Juan",
+    "apellido": "Contreras",
+    "numeroControl": 12345,
+    "fecha": "2026-10-29T13:57:32.301Z",
+    "version": 1,
+    "estado": "para-abastecimiento",
+    "paso": 0,
+    "huella": "7bfa484d2519ca52a6ed216940ac647cdfa7bc7eead3dbc2a7a4e8f2fd02587d"
+  },
+  "expediente": {
+    "titulo": "Matafuegos y papel GOE",
+    "anio": "2026",
+    "trimestre": "1",
+    "lugarEntrega": "Depósito de Intendencia, Hangar 3",
+    "moneda": "ARS",
+    "modalidad": "comun",
+    "ocaJustificacion": "",
+    "pac": {
+      "numero": "1",
+      "justificacion": ""
+    },
+    "campos": {
+      "operador": "Juan Contreras · 12.345",
+      "dependenciaSolicitante": "GOE",
+      "justificacion": "Necesidad de GOE.",
+      "objetivo": ""
+    },
+    "renglones": [
+      {
+        "codigo": "3.3.3-1627.36",
+        "item": "MANT. Y REPAR. MATAFUEGO; MANT. MATAFUEGO",
+        "cantidad": 10,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 15000
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 16000
+          }
+        ]
+      },
+      {
+        "codigo": "2.3.1-6563.129",
+        "item": "PAPELES EN HOJA; TIPO PAPEL: PAPEL OBRA, DIMENSION: 21 X 29,7 Cm, GRAMAJE: 80 GR/M, PRESENTACION: RESMA X 500 HOJAS, TIPO DE PAPEL: PAPEL OBRA, CERTIFICACION SOSTENIBLE: SIN VALOR",
+        "cantidad": 5,
+        "unidad": "UN",
+        "aclaracion": "",
+        "valoresReferencia": [
+          {
+            "presupuestoId": "ref-1",
+            "base": "unitario",
+            "valor": 5200
+          },
+          {
+            "presupuestoId": "ref-2",
+            "base": "unitario",
+            "valor": 5400
+          }
+        ]
+      }
+    ],
+    "presupuestos": [
+      {
+        "id": "ref-1",
+        "proveedor": "Proveedor Uno",
+        "fecha": "2026-10-01",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "nombreOriginal": "ref-1-GOE.pdf",
+        "bytes": 31,
+        "sha256": "0065abc7748388009a5bbd92bc5e60acdc87ed74f2d66d8607ec0c5fdd7db9f9"
+      },
+      {
+        "id": "ref-2",
+        "proveedor": "Proveedor Dos",
+        "fecha": "2026-10-02",
+        "tipo": "presupuesto",
+        "referencia": true,
+        "nombreOriginal": "ref-2-GOE.pdf",
+        "bytes": 31,
+        "sha256": "4e33601e435875b34bc25d010ac7a28de230c78b1652b2030c0caaac5db0a23c"
+      }
+    ]
+  }
+}
